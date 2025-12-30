@@ -1,0 +1,7 @@
+{
+  "name": "kirana-ui",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}

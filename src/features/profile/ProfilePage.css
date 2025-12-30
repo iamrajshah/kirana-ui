@@ -1,0 +1,19 @@
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ion-color-light);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-weight: 600;
+  color: var(--ion-color-medium);
+}
+
+.info-value {
+  color: var(--ion-color-dark);
+}

@@ -1,0 +1,122 @@
+{
+  "common": {
+    "appName": "Kirana POS",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "clear": "Clear",
+    "submit": "Submit",
+    "back": "Back",
+    "next": "Next",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "total": "Total",
+    "amount": "Amount",
+    "quantity": "Quantity",
+    "price": "Price",
+    "date": "Date",
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email",
+    "phone": "Phone",
+    "password": "Password",
+    "emailOrPhone": "Email or Phone",
+    "loginButton": "Sign In",
+    "loginError": "Invalid credentials",
+    "logoutConfirm": "Are you sure you want to logout?"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "todaySales": "Today's Sales",
+    "pendingInvoices": "Pending Invoices",
+    "lowStock": "Low Stock Items",
+    "totalCustomers": "Total Customers"
+  },
+  "billing": {
+    "title": "Billing",
+    "newBill": "New Bill",
+    "searchProduct": "Search product by name, SKU or barcode",
+    "selectCustomer": "Select Customer",
+    "addCustomer": "Add New Customer",
+    "cart": "Cart",
+    "emptyCart": "Cart is empty",
+    "subtotal": "Subtotal",
+    "gst": "GST",
+    "total": "Total",
+    "generateInvoice": "Generate Invoice",
+    "invoiceGenerated": "Invoice generated successfully",
+    "addToCart": "Add to Cart",
+    "removeFromCart": "Remove"
+  },
+  "customers": {
+    "title": "Customers",
+    "addCustomer": "Add Customer",
+    "editCustomer": "Edit Customer",
+    "customerName": "Customer Name",
+    "customerPhone": "Phone Number",
+    "customerEmail": "Email",
+    "creditBalance": "Credit Balance",
+    "viewLedger": "View Ledger",
+    "customerAdded": "Customer added successfully",
+    "customerUpdated": "Customer updated successfully"
+  },
+  "products": {
+    "title": "Products",
+    "addProduct": "Add Product",
+    "editProduct": "Edit Product",
+    "productName": "Product Name",
+    "category": "Category",
+    "variants": "Variants",
+    "sku": "SKU",
+    "price": "Price",
+    "productAdded": "Product added successfully",
+    "productUpdated": "Product updated successfully"
+  },
+  "inventory": {
+    "title": "Inventory",
+    "updateStock": "Update Stock",
+    "currentStock": "Current Stock",
+    "lowStockThreshold": "Low Stock Alert",
+    "stockUpdated": "Stock updated successfully",
+    "lowStockWarning": "Low stock alert"
+  },
+  "payments": {
+    "title": "Payments",
+    "recordPayment": "Record Payment",
+    "paymentMode": "Payment Mode",
+    "cash": "Cash",
+    "upi": "UPI",
+    "card": "Card",
+    "cheque": "Cheque",
+    "bankTransfer": "Bank Transfer",
+    "referenceNote": "Reference/Note",
+    "selectInvoice": "Select Invoice (Optional)",
+    "paymentRecorded": "Payment recorded successfully"
+  },
+  "invoice": {
+    "invoiceNumber": "Invoice #",
+    "paid": "Paid",
+    "unpaid": "Unpaid",
+    "partial": "Partial"
+  },
+  "errors": {
+    "networkError": "Network error. Please check your connection.",
+    "serverError": "Server error. Please try again later.",
+    "validationError": "Please check the form for errors.",
+    "unauthorized": "You are not authorized to perform this action.",
+    "notFound": "The requested resource was not found."
+  }
+}
