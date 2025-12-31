@@ -12,6 +12,8 @@ import {
   personAdd,
   swapHorizontal,
   receipt,
+  briefcase,
+  cardOutline,
 } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import { ROUTES } from '@core/constants';
@@ -28,6 +30,8 @@ import { PaymentsPage } from '@features/payments/PaymentsPage';
 import { ReportsPage } from '@features/reports/ReportsPage';
 import { UsersPage } from '@features/users/UsersPage';
 import { ImportExportPage } from '@features/import-export/ImportExportPage';
+import SuppliersPage from '@features/suppliers/SuppliersPage';
+import PurchasesPage from '@features/purchases/PurchasesPage';
 
 export const MainLayout: React.FC = () => {
   const { t } = useTranslation();
@@ -43,6 +47,8 @@ export const MainLayout: React.FC = () => {
         <Route exact path={ROUTES.DASHBOARD} component={DashboardPage} />
         <Route exact path={ROUTES.BILLING} component={BillingPage} />
         <Route exact path={ROUTES.CUSTOMERS} component={CustomersPage} />
+        <Route exact path={ROUTES.SUPPLIERS} component={SuppliersPage} />
+        <Route exact path={ROUTES.PURCHASES} component={PurchasesPage} />
         <Route exact path={ROUTES.PRODUCTS} component={ProductsPage} />
         <Route exact path={ROUTES.INVENTORY} component={InventoryPage} />
         <Route exact path={ROUTES.INVOICES} component={InvoicesPage} />
@@ -71,6 +77,20 @@ export const MainLayout: React.FC = () => {
           <IonTabButton tab={ROUTES.CUSTOMERS} href={ROUTES.CUSTOMERS}>
             <IonIcon icon={people} />
             <IonLabel>{t('customers.title')}</IonLabel>
+          </IonTabButton>
+        )}
+
+        {hasAccessToTab(userRoles, 'suppliers') && (
+          <IonTabButton tab={ROUTES.SUPPLIERS} href={ROUTES.SUPPLIERS}>
+            <IonIcon icon={briefcase} />
+            <IonLabel>{t('suppliers.title')}</IonLabel>
+          </IonTabButton>
+        )}
+
+        {hasAccessToTab(userRoles, 'purchases') && (
+          <IonTabButton tab={ROUTES.PURCHASES} href={ROUTES.PURCHASES}>
+            <IonIcon icon={cardOutline} />
+            <IonLabel>{t('purchases.title')}</IonLabel>
           </IonTabButton>
         )}
 

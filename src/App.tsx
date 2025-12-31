@@ -12,6 +12,12 @@ import { ProfilePage } from '@features/profile/ProfilePage';
 import { ChangePasswordPage } from '@features/profile/ChangePasswordPage';
 import { CustomerLedgerPage } from '@features/customers/CustomerLedgerPage';
 import InvoiceDetailPage from '@features/invoices/InvoiceDetailPage';
+import SuppliersPage from '@features/suppliers/SuppliersPage';
+import SupplierLedgerPage from '@features/suppliers/SupplierLedgerPage';
+import PurchasesPage from '@features/purchases/PurchasesPage';
+import CreatePurchasePage from '@features/purchases/CreatePurchasePage';
+import PurchaseDetailPage from '@features/purchases/PurchaseDetailPage';
+import ToastContainer from '@components/ToastContainer';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -53,10 +59,15 @@ const App: React.FC = () => {
             <Route exact path={ROUTES.PROFILE} render={() => <PrivateRoute><ProfilePage /></PrivateRoute>} />
             <Route exact path={ROUTES.CHANGE_PASSWORD} render={() => <PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
             <Route exact path="/customers/:id/ledger" render={() => <PrivateRoute><CustomerLedgerPage /></PrivateRoute>} />
+            <Route exact path="/suppliers/:id/ledger" render={() => <PrivateRoute><SupplierLedgerPage /></PrivateRoute>} />
             <Route exact path="/invoices/:id" render={() => <PrivateRoute><InvoiceDetailPage /></PrivateRoute>} />
+            <Route exact path="/purchases/:id" render={() => <PrivateRoute><PurchaseDetailPage /></PrivateRoute>} />
+            <Route exact path={ROUTES.PURCHASE_CREATE} render={() => <PrivateRoute><CreatePurchasePage /></PrivateRoute>} />
             <Route exact path={ROUTES.DASHBOARD} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
             <Route exact path={ROUTES.BILLING} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
             <Route exact path={ROUTES.CUSTOMERS} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
+            <Route exact path={ROUTES.SUPPLIERS} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
+            <Route exact path={ROUTES.PURCHASES} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
             <Route exact path={ROUTES.PRODUCTS} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
             <Route exact path={ROUTES.INVENTORY} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
             <Route exact path={ROUTES.INVOICES} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
@@ -66,6 +77,7 @@ const App: React.FC = () => {
             <Route exact path={ROUTES.IMPORT_EXPORT} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
           </IonRouterOutlet>
         </IonReactRouter>
+        <ToastContainer />
       </IonApp>
     </Provider>
   );

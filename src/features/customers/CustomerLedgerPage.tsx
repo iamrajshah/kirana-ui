@@ -20,6 +20,7 @@ import {
   IonCol,
 } from '@ionic/react';
 import { useParams } from 'react-router';
+import { useHistory } from 'react-router';
 import { useGetCustomerByIdQuery, useGetCustomerLedgerQuery } from '@core/api/customerApi';
 import { Loading, EmptyState } from '@components';
 import { formatCurrency, formatDateTime } from '@utils/helpers';
@@ -27,11 +28,18 @@ import './CustomerLedgerPage.css';
 
 export const CustomerLedgerPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const history = useHistory();
   
   console.log('CustomerLedgerPage - Customer ID:', id);
   
   const { data: customerData, isLoading: loadingCustomer, error: customerError } = useGetCustomerByIdQuery(id);
   const { data: ledgerData, isLoading: loadingLedger, error: ledgerError } = useGetCustomerLedgerQuery({ id });
+
+  const handleInvoiceClick = (entry: any) => {
+    if (entry.entry_type === 'INVOICE' && entry.reference_id) {
+      history.push(`/invoices/${entry.reference_id}`);
+    }
+  };
 
   console.log('Customer Data:', customerData);
   console.log('Ledger Data:', ledgerData);
@@ -166,7 +174,12 @@ export const CustomerLedgerPage: React.FC = () => {
                     ) : (
                       <IonList>
                         {debitEntries.map((entry) => (
-                          <IonItem key={entry.id} className="ledger-item">
+                          <IonItem 
+                            key={entry.id} 
+                            className="ledger-item"
+                            button={entry.entry_type === 'INVOICE' && !!entry.reference_id}
+                            onClick={() => handleInvoiceClick(entry)}
+                          >
                             <IonLabel>
                               <div className="entry-header">
                                 <IonBadge color={getEntryTypeColor(entry.entry_type)} mode="ios">
@@ -176,7 +189,9 @@ export const CustomerLedgerPage: React.FC = () => {
                               </div>
                               <p className="entry-description">{entry.description}</p>
                               {entry.reference_id && (
-                                <p className="entry-reference">Ref: #{entry.reference_id}</p>
+                                <p className="entry-reference" style={{ color: 'var(--ion-color-primary)', fontWeight: '500' }}>
+                                  {entry.entry_type === 'INVOICE' ? '📄 Invoice #' : 'Ref: #'}{entry.reference_id}
+                                </p>
                               )}
                             </IonLabel>
                             <div slot="end" className="entry-amount debit-amount">
@@ -207,7 +222,12 @@ export const CustomerLedgerPage: React.FC = () => {
                     ) : (
                       <IonList>
                         {creditEntries.map((entry) => (
-                          <IonItem key={entry.id} className="ledger-item">
+                          <IonItem 
+                            key={entry.id} 
+                            className="ledger-item"
+                            button={entry.entry_type === 'INVOICE' && !!entry.reference_id}
+                            onClick={() => handleInvoiceClick(entry)}
+                          >
                             <IonLabel>
                               <div className="entry-header">
                                 <IonBadge color={getEntryTypeColor(entry.entry_type)} mode="ios">
@@ -217,7 +237,9 @@ export const CustomerLedgerPage: React.FC = () => {
                               </div>
                               <p className="entry-description">{entry.description}</p>
                               {entry.reference_id && (
-                                <p className="entry-reference">Ref: #{entry.reference_id}</p>
+                                <p className="entry-reference" style={{ color: 'var(--ion-color-primary)', fontWeight: '500' }}>
+                                  {entry.entry_type === 'INVOICE' ? '📄 Invoice #' : 'Ref: #'}{entry.reference_id}
+                                </p>
                               )}
                             </IonLabel>
                             <div slot="end" className="entry-amount credit-amount">

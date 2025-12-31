@@ -29,6 +29,7 @@ export const Input: React.FC<InputProps> = ({
       <IonInput
         label={label}
         labelPlacement="stacked"
+        value={value}
         onIonInput={(e: CustomEvent) => onChange(e.detail.value ?? '')}
         type={type}
         placeholder={placeholder}

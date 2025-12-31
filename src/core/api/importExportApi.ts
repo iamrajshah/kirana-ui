@@ -3,16 +3,22 @@ import type { ApiResponse } from '../types';
 
 export interface ImportJob {
   id: string;
-  file_name: string;
-  file_path: string;
-  import_type: string;
+  file_name?: string;
+  file_path?: string;
+  type: string;
+  import_type?: string;
   status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
-  total_rows: number;
-  valid_rows: number;
-  invalid_rows: number;
+  file_url: string | null;
+  created_at: string | null;
+  row_counts: {
+    total: number;
+    pending: number;
+    valid: number;
+    invalid: number;
+    imported: number;
+  };
   error_details?: any;
-  created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 export interface ImportJobDetails extends ImportJob {

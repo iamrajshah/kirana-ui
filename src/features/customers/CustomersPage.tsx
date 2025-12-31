@@ -15,17 +15,21 @@ import {
   IonHeader,
   IonToolbar,
   IonTitle,
+  IonItemSliding,
+  IonItemOptions,
+  IonItemOption,
 } from '@ionic/react';
-import { add, close } from 'ionicons/icons';
+import { add, close, pencil, trash } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router';
-import { useGetCustomersQuery, useCreateCustomerMutation } from '@core/api/customerApi';
+import { useGetCustomersQuery, useCreateCustomerMutation, useUpdateCustomerMutation } from '@core/api/customerApi';
 import { SearchBar, Input, Button, EmptyState, Loading } from '@components';
 import { Navbar } from '@components/Navbar';
 import { formatCurrency } from '@utils/helpers';
 import { useAppSelector } from '@core/hooks';
 import { selectCurrentUser } from '@core/auth/authSlice';
 import { hasPermission } from '@core/permissions/permissions';
+import notificationService from '@core/services/notificationService';
 
 export const CustomersPage: React.FC = () => {
   const { t } = useTranslation();
@@ -33,12 +37,15 @@ export const CustomersPage: React.FC = () => {
   const user = useAppSelector(selectCurrentUser);
   const userRoles = user?.roles || [];
   const canCreateCustomer = hasPermission(userRoles, 'CUSTOMER_CREATE');
+  const canUpdateCustomer = hasPermission(userRoles, 'CUSTOMER_UPDATE');
   
   const [search, setSearch] = useState('');
   const { data, isLoading, refetch } = useGetCustomersQuery({ search });
   const [createCustomer, { isLoading: creating }] = useCreateCustomerMutation();
+  const [updateCustomer, { isLoading: updating }] = useUpdateCustomerMutation();
 
   const [showModal, setShowModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<any>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -47,38 +54,43 @@ export const CustomersPage: React.FC = () => {
 
   const handleCreateCustomer = async () => {
     try {
-      console.log('👤 Creating customer:', {
-        name,
-        phone,
-        email: email || undefined,
-        opening_balance: Number(creditBalance),
-      });
+      if (editingCustomer) {
+        await updateCustomer({
+          id: editingCustomer.id,
+          name,
+          phone,
+          email: email || undefined,
+        }).unwrap();
+        notificationService.success(t('customers.customerUpdated'));
+      } else {
+        await createCustomer({
+          name,
+          phone,
+          email: email || undefined,
+          opening_balance: Number(creditBalance),
+        }).unwrap();
+        notificationService.success(t('customers.customerCreated'));
+      }
 
-      const result = await createCustomer({
-        name,
-        phone,
-        email: email || undefined,
-        opening_balance: Number(creditBalance),
-      }).unwrap();
-
-      console.log('✅ Customer created:', result);
-
-      setShowSuccess(true);
       setShowModal(false);
       resetForm();
       refetch();
     } catch (error: any) {
-      console.error('❌ Failed to create customer:', error);
-      console.error('Error details:', {
-        status: error?.status,
-        data: error?.data,
-        message: error?.message,
-      });
-      alert(`Failed to create customer: ${error?.data?.message || error?.message || 'Unknown error'}`);
+      notificationService.handleApiError(error);
     }
   };
 
+  const handleEditCustomer = (customer: any) => {
+    setEditingCustomer(customer);
+    setName(customer.name);
+    setPhone(customer.phone || '');
+    setEmail(customer.email || '');
+    setCreditBalance(customer.credit_balance?.toString() || '0');
+    setShowModal(true);
+  };
+
   const resetForm = () => {
+    setEditingCustomer(null);
     setName('');
     setPhone('');
     setEmail('');
@@ -111,27 +123,38 @@ export const CustomersPage: React.FC = () => {
           ) : (
             <IonList>
               {customers.map((customer) => (
-                <IonItem 
-                  key={customer.id} 
-                  button 
-                  onClick={() => history.push(`/customers/${customer.id}/ledger`)}
-                >
-                  <IonLabel>
-                    <h2 className="font-semibold text-lg">{customer.name}</h2>
-                    <p className="text-gray-600">{customer.phone}</p>
-                    {customer.credit_balance !== 0 && (
-                      <p 
-                        className="font-medium"
-                        style={{ color: customer.credit_balance > 0 ? 'var(--ion-color-danger)' : 'var(--ion-color-success)' }}
+                <IonItemSliding key={customer.id}>
+                  <IonItem 
+                    button 
+                    onClick={() => history.push(`/customers/${customer.id}/ledger`)}
+                  >
+                    <IonLabel>
+                      <h2 className="font-semibold text-lg">{customer.name}</h2>
+                      <p className="text-gray-600">{customer.phone}</p>
+                      {customer.credit_balance !== 0 && (
+                        <p 
+                          className="font-medium"
+                          style={{ color: customer.credit_balance > 0 ? 'var(--ion-color-danger)' : 'var(--ion-color-success)' }}
+                        >
+                          {customer.credit_balance > 0 
+                            ? `${t('customers.creditBalance')}: ${formatCurrency(customer.credit_balance)}`
+                            : `You Owe: ${formatCurrency(Math.abs(customer.credit_balance))}`
+                          }
+                        </p>
+                      )}
+                    </IonLabel>
+                  </IonItem>
+                  {canUpdateCustomer && (
+                    <IonItemOptions side="end">
+                      <IonItemOption 
+                        color="primary" 
+                        onClick={() => handleEditCustomer(customer)}
                       >
-                        {customer.credit_balance > 0 
-                          ? `${t('customers.creditBalance')}: ${formatCurrency(customer.credit_balance)}`
-                          : `You Owe: ${formatCurrency(Math.abs(customer.credit_balance))}`
-                        }
-                      </p>
-                    )}
-                  </IonLabel>
-                </IonItem>
+                        <IonIcon slot="icon-only" icon={pencil} />
+                      </IonItemOption>
+                    </IonItemOptions>
+                  )}
+                </IonItemSliding>
               ))}
             </IonList>
           )}
@@ -152,19 +175,16 @@ export const CustomersPage: React.FC = () => {
         {/* Add Customer Modal */}
         {showModal && (
           <IonModal 
-            isOpen={true}
-            onDidDismiss={() => {
-              console.log('🚪 Modal dismissed');
-              setShowModal(false);
-            }}
+            isOpen={showModal}
+            onDidDismiss={() => setShowModal(false)}
           >
           <IonHeader>
             <IonToolbar>
-              <IonTitle>{t('customers.addCustomer')}</IonTitle>
+              <IonTitle>{editingCustomer ? t('customers.editCustomer') : t('customers.addCustomer')}</IonTitle>
               <IonButtons slot="end">
                 <IonButton onClick={() => {
-                  console.log('❌ Close button clicked');
                   setShowModal(false);
+                  resetForm();
                 }}>
                   <IonIcon icon={close} />
                 </IonButton>
@@ -186,16 +206,15 @@ export const CustomersPage: React.FC = () => {
               required
             />
             <Input label={t('customers.customerEmail')} value={email} onChange={setEmail} />
-            <Input
-              label={t('customers.creditBalance')}
-              value={creditBalance}
-              onChange={setCreditBalance}
-              type="number"
-            />
-            <Button onClick={() => {
-              console.log('💾 Save button clicked');
-              handleCreateCustomer();
-            }} loading={creating} fullWidth size="large">
+            {!editingCustomer && (
+              <Input
+                label={t('customers.creditBalance')}
+                value={creditBalance}
+                onChange={setCreditBalance}
+                type="number"
+              />
+            )}
+            <Button onClick={handleCreateCustomer} loading={creating || updating} fullWidth size="large">
               {t('common.save')}
             </Button>
           </IonContent>

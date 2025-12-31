@@ -1,0 +1,18 @@
+.purchase-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.purchase-date {
+  margin: 4px 0 0 0;
+  color: var(--ion-color-medium);
+  font-size: 0.9em;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}

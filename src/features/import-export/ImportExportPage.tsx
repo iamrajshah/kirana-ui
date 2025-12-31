@@ -59,6 +59,25 @@ export const ImportExportPage: React.FC = () => {
   const [exportingLedger, setExportingLedger] = useState(false);
 
   const importJobs = importJobsResponse?.data || [];
+  
+  // Filter import jobs by selected type
+  const filteredImportJobs = importJobs.filter(job => {
+    const jobType = (job.type || job.import_type || '').toUpperCase();
+    // Handle different variations of type names
+    if (selectedImportType === 'CUSTOMERS' && (jobType === 'CUSTOMER' || jobType === 'CUSTOMERS')) {
+      return true;
+    }
+    if (selectedImportType === 'PRODUCTS' && (jobType === 'PRODUCT' || jobType === 'PRODUCTS')) {
+      return true;
+    }
+    if (selectedImportType === 'INVENTORY' && jobType === 'INVENTORY') {
+      return true;
+    }
+    if (selectedImportType === 'CATEGORIES' && (jobType === 'CATEGORY' || jobType === 'CATEGORIES')) {
+      return true;
+    }
+    return false;
+  });
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -279,21 +298,21 @@ export const ImportExportPage: React.FC = () => {
                   <div style={{ textAlign: 'center', padding: '20px' }}>
                     <IonSpinner />
                   </div>
-                ) : importJobs.length === 0 ? (
+                ) : filteredImportJobs.length === 0 ? (
                   <p style={{ textAlign: 'center', color: 'var(--ion-color-medium)' }}>
-                    No import jobs yet
+                    No import jobs for {selectedImportType.toLowerCase()}
                   </p>
                 ) : (
                   <IonList>
-                    {importJobs.map((job) => (
+                    {filteredImportJobs.map((job) => (
                       <IonCard key={job.id}>
                         <IonItem lines="none">
                           <IonIcon icon={document} slot="start" />
                           <IonLabel>
-                            <h2>{job.file_name}</h2>
-                            <p>{job.import_type}</p>
+                            <h2>{job.file_url?.split('/').pop() || 'Import File'}</h2>
+                            <p>{job.type || job.import_type}</p>
                             <p style={{ fontSize: '12px' }}>
-                              Total: {job.total_rows} | Valid: {job.valid_rows} | Invalid: {job.invalid_rows}
+                              Total: {job.row_counts.total} | Valid: {job.row_counts.valid} | Invalid: {job.row_counts.invalid}
                             </p>
                           </IonLabel>
                           <div slot="end" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
@@ -301,7 +320,7 @@ export const ImportExportPage: React.FC = () => {
                               <IonIcon icon={getStatusIcon(job.status)} style={{ marginRight: '4px' }} />
                               {job.status}
                             </IonBadge>
-                            {job.status === 'PENDING' && job.valid_rows > 0 && (
+                            {job.status === 'PENDING' && job.row_counts.valid > 0 && (
                               <IonButton
                                 size="small"
                                 onClick={() => handleCommit(job.id)}
