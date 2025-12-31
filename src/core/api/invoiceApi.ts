@@ -1,10 +1,20 @@
 import { apiSlice } from './apiSlice';
-import type { ApiResponse, PaginatedApiResponse, Invoice, InvoiceItem } from '../types';
+import type { ApiResponse, Invoice, InvoiceItem } from '../types';
+
+interface InvoicesResponse {
+  success: boolean;
+  data: Invoice[];
+  pagination: {
+    total: number;
+    skip: number;
+    take: number;
+  };
+}
 
 export const invoiceApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getInvoices: builder.query<
-      PaginatedApiResponse<Invoice>,
+      InvoicesResponse,
       { skip?: number; take?: number } | void
     >({
       query: (params = {}) => ({
@@ -12,6 +22,10 @@ export const invoiceApi = apiSlice.injectEndpoints({
         params,
       }),
       providesTags: ['Invoice'],
+    }),
+    getInvoiceById: builder.query<ApiResponse<Invoice>, string>({
+      query: (id) => `/invoices/${id}`,
+      providesTags: (result, error, id) => [{ type: 'Invoice', id }],
     }),
     createInvoice: builder.mutation<
       ApiResponse<Invoice>,
@@ -38,5 +52,6 @@ export const invoiceApi = apiSlice.injectEndpoints({
 
 export const {
   useGetInvoicesQuery,
+  useGetInvoiceByIdQuery,
   useCreateInvoiceMutation,
 } = invoiceApi;

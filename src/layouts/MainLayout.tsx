@@ -11,6 +11,7 @@ import {
   statsChart,
   personAdd,
   swapHorizontal,
+  receipt,
 } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import { ROUTES } from '@core/constants';
@@ -22,6 +23,7 @@ import { BillingPage } from '@features/billing/BillingPage';
 import { CustomersPage } from '@features/customers/CustomersPage';
 import { ProductsPage } from '@features/products/ProductsPage';
 import { InventoryPage } from '@features/inventory/InventoryPage';
+import { InvoicesPage } from '@features/invoices/InvoicesPage';
 import { PaymentsPage } from '@features/payments/PaymentsPage';
 import { ReportsPage } from '@features/reports/ReportsPage';
 import { UsersPage } from '@features/users/UsersPage';
@@ -43,71 +45,79 @@ export const MainLayout: React.FC = () => {
         <Route exact path={ROUTES.CUSTOMERS} component={CustomersPage} />
         <Route exact path={ROUTES.PRODUCTS} component={ProductsPage} />
         <Route exact path={ROUTES.INVENTORY} component={InventoryPage} />
+        <Route exact path={ROUTES.INVOICES} component={InvoicesPage} />
         <Route exact path={ROUTES.PAYMENTS} component={PaymentsPage} />
-        <Route exact path="/reports" component={ReportsPage} />
-        <Route exact path="/users" component={UsersPage} />
-        <Route exact path="/import-export" component={ImportExportPage} />
+        <Route exact path={ROUTES.REPORTS} component={ReportsPage} />
+        <Route exact path={ROUTES.USERS} component={UsersPage} />
+        <Route exact path={ROUTES.IMPORT_EXPORT} component={ImportExportPage} />
       </IonRouterOutlet>
 
       <IonTabBar slot="bottom">
         {hasAccessToTab(userRoles, 'dashboard') && (
-          <IonTabButton tab="dashboard" href={ROUTES.DASHBOARD}>
+          <IonTabButton tab={ROUTES.DASHBOARD} href={ROUTES.DASHBOARD}>
             <IonIcon icon={home} />
             <IonLabel>{t('dashboard.title')}</IonLabel>
           </IonTabButton>
         )}
 
         {hasAccessToTab(userRoles, 'billing') && (
-          <IonTabButton tab="billing" href={ROUTES.BILLING}>
+          <IonTabButton tab={ROUTES.BILLING} href={ROUTES.BILLING}>
             <IonIcon icon={cart} />
             <IonLabel>{t('billing.title')}</IonLabel>
           </IonTabButton>
         )}
 
         {hasAccessToTab(userRoles, 'customers') && (
-          <IonTabButton tab="customers" href={ROUTES.CUSTOMERS}>
+          <IonTabButton tab={ROUTES.CUSTOMERS} href={ROUTES.CUSTOMERS}>
             <IonIcon icon={people} />
             <IonLabel>{t('customers.title')}</IonLabel>
           </IonTabButton>
         )}
 
         {hasAccessToTab(userRoles, 'products') && (
-          <IonTabButton tab="products" href={ROUTES.PRODUCTS}>
+          <IonTabButton tab={ROUTES.PRODUCTS} href={ROUTES.PRODUCTS}>
             <IonIcon icon={cube} />
             <IonLabel>{t('products.title')}</IonLabel>
           </IonTabButton>
         )}
 
         {hasAccessToTab(userRoles, 'inventory') && (
-          <IonTabButton tab="inventory" href={ROUTES.INVENTORY}>
+          <IonTabButton tab={ROUTES.INVENTORY} href={ROUTES.INVENTORY}>
             <IonIcon icon={layers} />
             <IonLabel>{t('inventory.title')}</IonLabel>
           </IonTabButton>
         )}
 
+        {hasAccessToTab(userRoles, 'invoices') && (
+          <IonTabButton tab={ROUTES.INVOICES} href={ROUTES.INVOICES}>
+            <IonIcon icon={receipt} />
+            <IonLabel>Invoices</IonLabel>
+          </IonTabButton>
+        )}
+
         {hasAccessToTab(userRoles, 'payments') && (
-          <IonTabButton tab="payments" href={ROUTES.PAYMENTS}>
+          <IonTabButton tab={ROUTES.PAYMENTS} href={ROUTES.PAYMENTS}>
             <IonIcon icon={cash} />
             <IonLabel>{t('payments.title')}</IonLabel>
           </IonTabButton>
         )}
 
         {hasAccessToTab(userRoles, 'reports') && (
-          <IonTabButton tab="reports" href="/reports">
+          <IonTabButton tab={ROUTES.REPORTS} href={ROUTES.REPORTS}>
             <IonIcon icon={statsChart} />
             <IonLabel>Reports</IonLabel>
           </IonTabButton>
         )}
 
         {hasAccessToTab(userRoles, 'users') && (
-          <IonTabButton tab="users" href="/users">
+          <IonTabButton tab={ROUTES.USERS} href={ROUTES.USERS}>
             <IonIcon icon={personAdd} />
             <IonLabel>Users</IonLabel>
           </IonTabButton>
         )}
 
         {hasAccessToTab(userRoles, 'import-export') && (
-          <IonTabButton tab="import-export" href="/import-export">
+          <IonTabButton tab={ROUTES.IMPORT_EXPORT} href={ROUTES.IMPORT_EXPORT}>
             <IonIcon icon={swapHorizontal} />
             <IonLabel>Import/Export</IonLabel>
           </IonTabButton>

@@ -1,6 +1,27 @@
 import { apiSlice } from './apiSlice';
 import type { ApiResponse, PaginatedApiResponse, Customer } from '../types';
 
+export interface LedgerEntry {
+  id: string;
+  entry_type: 'OPENING_BALANCE' | 'INVOICE' | 'PAYMENT' | 'CREDIT_NOTE' | 'ADJUSTMENT';
+  amount: number;
+  description: string;
+  reference_id: string | null;
+  created_at: string;
+  created_by: string | null;
+}
+
+export interface LedgerSummary {
+  totalDebit: number;
+  totalCredit: number;
+  balance: number;
+}
+
+export interface CustomerLedgerResponse {
+  ledger: LedgerEntry[];
+  summary: LedgerSummary;
+}
+
 export const customerApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getCustomers: builder.query<
@@ -39,6 +60,16 @@ export const customerApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: (_result, _error, { id }) => [{ type: 'Customer', id }],
     }),
+    getCustomerLedger: builder.query<
+      ApiResponse<CustomerLedgerResponse>,
+      { id: string; page?: number; limit?: number }
+    >({
+      query: ({ id, page = 1, limit = 50 }) => ({
+        url: `/customers/${id}/ledger`,
+        params: { page, limit },
+      }),
+      providesTags: (_result, _error, { id }) => [{ type: 'Customer', id }, 'Payment'],
+    }),
   }),
 });
 
@@ -47,4 +78,5 @@ export const {
   useGetCustomerByIdQuery,
   useCreateCustomerMutation,
   useUpdateCustomerMutation,
+  useGetCustomerLedgerQuery,
 } = customerApi;

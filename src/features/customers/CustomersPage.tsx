@@ -18,6 +18,7 @@ import {
 } from '@ionic/react';
 import { add, close } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
+import { useHistory } from 'react-router';
 import { useGetCustomersQuery, useCreateCustomerMutation } from '@core/api/customerApi';
 import { SearchBar, Input, Button, EmptyState, Loading } from '@components';
 import { Navbar } from '@components/Navbar';
@@ -28,6 +29,7 @@ import { hasPermission } from '@core/permissions/permissions';
 
 export const CustomersPage: React.FC = () => {
   const { t } = useTranslation();
+  const history = useHistory();
   const user = useAppSelector(selectCurrentUser);
   const userRoles = user?.roles || [];
   const canCreateCustomer = hasPermission(userRoles, 'CUSTOMER_CREATE');
@@ -109,7 +111,11 @@ export const CustomersPage: React.FC = () => {
           ) : (
             <IonList>
               {customers.map((customer) => (
-                <IonItem key={customer.id} button>
+                <IonItem 
+                  key={customer.id} 
+                  button 
+                  onClick={() => history.push(`/customers/${customer.id}/ledger`)}
+                >
                   <IonLabel>
                     <h2 className="font-semibold text-lg">{customer.name}</h2>
                     <p className="text-gray-600">{customer.phone}</p>

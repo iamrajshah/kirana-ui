@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   IonHeader, 
   IonToolbar, 
@@ -26,26 +26,27 @@ export const Navbar: React.FC<NavbarProps> = ({ title }) => {
   const dispatch = useAppDispatch();
   const history = useHistory();
   const [showPopover, setShowPopover] = useState(false);
-  const [popoverEvent, setPopoverEvent] = useState<any>(undefined);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = () => {
     dispatch(logout());
     history.replace(ROUTES.LOGIN);
   };
 
-  const handleUserClick = (e: any) => {
-    setPopoverEvent(e.nativeEvent);
+  const handleUserClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setShowPopover(true);
   };
 
   const navigateToProfile = () => {
     setShowPopover(false);
-    history.push('/profile');
+    history.push(ROUTES.PROFILE);
   };
 
   const navigateToChangePassword = () => {
     setShowPopover(false);
-    history.push('/change-password');
+    history.push(ROUTES.CHANGE_PASSWORD);
   };
 
   return (
@@ -53,21 +54,42 @@ export const Navbar: React.FC<NavbarProps> = ({ title }) => {
       <IonToolbar>
         <IonTitle>{title}</IonTitle>
         {user && (
-          <div slot="end" className="flex items-center gap-3 mr-4">
+          <div slot="end" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginRight: '16px' }}>
             <div 
-              className="text-right cursor-pointer" 
+              ref={popoverRef}
               onClick={handleUserClick}
-              style={{ cursor: 'pointer' }}
+              style={{ 
+                cursor: 'pointer',
+                textAlign: 'right',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
-              <div className="font-semibold text-sm">
+              <div style={{ fontWeight: 600, fontSize: '14px' }}>
                 {user.tenant?.name || 'Store'}
               </div>
-              <div className="text-gray-500 flex items-center justify-end" style={{ fontSize: '11px' }}>
+              <div style={{ 
+                fontSize: '11px', 
+                color: 'var(--ion-color-medium)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                gap: '4px'
+              }}>
                 {user.name || user.email}
-                <IonIcon icon={chevronDown} style={{ marginLeft: '4px', fontSize: '12px' }} />
+                <IonIcon icon={chevronDown} style={{ fontSize: '12px' }} />
               </div>
             </div>
             <IonButtons>
+              <IonButton onClick={navigateToProfile} fill="clear" size="small">
+                <IonIcon slot="icon-only" icon={person} />
+              </IonButton>
+              <IonButton onClick={navigateToChangePassword} fill="clear" size="small">
+                <IonIcon slot="icon-only" icon={lockClosed} />
+              </IonButton>
               <IonButton onClick={handleLogout} fill="clear" size="small">
                 <IonIcon slot="icon-only" icon={logOutOutline} />
               </IonButton>
@@ -78,15 +100,16 @@ export const Navbar: React.FC<NavbarProps> = ({ title }) => {
       
       <IonPopover
         isOpen={showPopover}
-        event={popoverEvent}
+        trigger={undefined}
+        reference="event"
         onDidDismiss={() => setShowPopover(false)}
       >
         <IonList>
-          <IonItem button onClick={navigateToProfile}>
+          <IonItem button={true} detail={false} onClick={navigateToProfile}>
             <IonIcon icon={person} slot="start" />
             <IonLabel>My Profile</IonLabel>
           </IonItem>
-          <IonItem button onClick={navigateToChangePassword}>
+          <IonItem button={true} detail={false} onClick={navigateToChangePassword}>
             <IonIcon icon={lockClosed} slot="start" />
             <IonLabel>Change Password</IonLabel>
           </IonItem>

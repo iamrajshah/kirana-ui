@@ -20,8 +20,13 @@ export const ROUTES = {
   CUSTOMER_DETAIL: '/customers/:id',
   PRODUCTS: '/products',
   INVENTORY: '/inventory',
+  INVOICES: '/invoices',
   PAYMENTS: '/payments',
+  REPORTS: '/reports',
+  USERS: '/users',
+  IMPORT_EXPORT: '/import-export',
   PROFILE: '/profile',
+  CHANGE_PASSWORD: '/change-password',
 } as const;
 
 // Storage Keys

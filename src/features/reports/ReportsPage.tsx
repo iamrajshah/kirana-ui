@@ -268,10 +268,10 @@ export const ReportsPage: React.FC = () => {
       <Navbar title="Reports" />
       <IonContent>
         <div className="p-4">
-          <IonSegment 
+          <IonSegment
+            key={selectedReport}
             value={selectedReport}
             onIonChange={handleSegmentChange}
-            mode="md"
           >
             <IonSegmentButton value="sales">
               <IonLabel>SALES</IonLabel>

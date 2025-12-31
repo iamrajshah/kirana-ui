@@ -20,10 +20,13 @@ import { Input } from '@components/Input';
 import { useUpdateProfileMutation } from '@core/api/userApi';
 import { useAppSelector } from '@core/hooks';
 import { useTranslation } from 'react-i18next';
+import { useHistory } from 'react-router';
+import { ROUTES } from '@core/constants';
 import './ProfilePage.css';
 
 export const ProfilePage: React.FC = () => {
   const { t } = useTranslation();
+  const history = useHistory();
   const user = useAppSelector((state) => state.auth.user);
   
   const [name, setName] = useState('');
@@ -69,6 +72,11 @@ export const ProfilePage: React.FC = () => {
 
       console.log('✅ Profile updated successfully');
       setShowSuccess(true);
+      
+      // Redirect to dashboard after 1 second
+      setTimeout(() => {
+        history.push(ROUTES.DASHBOARD);
+      }, 1000);
     } catch (error: any) {
       console.error('❌ Error updating profile:', error);
       setErrorMessage(error?.data?.message || 'Failed to update profile');

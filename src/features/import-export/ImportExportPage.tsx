@@ -35,8 +35,8 @@ import { API_BASE_URL, STORAGE_KEYS } from '@core/constants';
 import './ImportExportPage.css';
 
 type TabType = 'import' | 'export';
-type ImportType = 'CUSTOMERS' | 'PRODUCTS' | 'INVENTORY';
-type ExportType = 'customers' | 'products' | 'inventory' | 'invoices' | 'ledger';
+type ImportType = 'CUSTOMERS' | 'PRODUCTS' | 'INVENTORY' | 'CATEGORIES';
+type ExportType = 'customers' | 'products' | 'inventory' | 'categories' | 'invoices' | 'ledger';
 
 export const ImportExportPage: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState<TabType>('import');
@@ -54,6 +54,7 @@ export const ImportExportPage: React.FC = () => {
   const [exportingCustomers, setExportingCustomers] = useState(false);
   const [exportingProducts, setExportingProducts] = useState(false);
   const [exportingInventory, setExportingInventory] = useState(false);
+  const [exportingCategories, setExportingCategories] = useState(false);
   const [exportingInvoices, setExportingInvoices] = useState(false);
   const [exportingLedger, setExportingLedger] = useState(false);
 
@@ -121,6 +122,9 @@ export const ImportExportPage: React.FC = () => {
       case 'inventory':
         setExportingInventory(true);
         break;
+      case 'categories':
+        setExportingCategories(true);
+        break;
       case 'invoices':
         setExportingInvoices(true);
         break;
@@ -145,16 +149,13 @@ export const ImportExportPage: React.FC = () => {
       const blob = await response.blob();
       
       // Download file using blob
-      if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${type}_${new Date().toISOString().split('T')[0]}.${format === 'CSV' ? 'csv' : 'xlsx'}`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      }
+      const url = URL.createObjectURL(blob);
+      const link = Object.assign(document.createElement('a'), {
+        href: url,
+        download: `${type}_${new Date().toISOString().split('T')[0]}.${format === 'CSV' ? 'csv' : 'xlsx'}`
+      });
+      link.click();
+      URL.revokeObjectURL(url);
       
       setShowSuccess(true);
     } catch (error: any) {
@@ -166,6 +167,7 @@ export const ImportExportPage: React.FC = () => {
       setExportingCustomers(false);
       setExportingProducts(false);
       setExportingInventory(false);
+      setExportingCategories(false);
       setExportingInvoices(false);
       setExportingLedger(false);
     }
@@ -200,16 +202,16 @@ export const ImportExportPage: React.FC = () => {
       <Navbar title="Import / Export" />
       <IonContent className="ion-padding">
         <IonSegment
+          key={selectedTab}
           value={selectedTab}
           onIonChange={(e) => setSelectedTab(e.detail.value as TabType)}
-          mode="md"
         >
           <IonSegmentButton value="import">
-            <IonLabel>Import</IonLabel>
+            <IonLabel>IMPORT</IonLabel>
             <IonIcon icon={cloudUpload} />
           </IonSegmentButton>
           <IonSegmentButton value="export">
-            <IonLabel>Export</IonLabel>
+            <IonLabel>EXPORT</IonLabel>
             <IonIcon icon={cloudDownload} />
           </IonSegmentButton>
         </IonSegment>
@@ -222,9 +224,9 @@ export const ImportExportPage: React.FC = () => {
               </IonCardHeader>
               <IonCardContent>
                 <IonSegment
+                  key={selectedImportType}
                   value={selectedImportType}
                   onIonChange={(e) => setSelectedImportType(e.detail.value as ImportType)}
-                  mode="md"
                 >
                   <IonSegmentButton value="CUSTOMERS">
                     <IonLabel>Customers</IonLabel>
@@ -234,6 +236,9 @@ export const ImportExportPage: React.FC = () => {
                   </IonSegmentButton>
                   <IonSegmentButton value="INVENTORY">
                     <IonLabel>Inventory</IonLabel>
+                  </IonSegmentButton>
+                  <IonSegmentButton value="CATEGORIES">
+                    <IonLabel>Categories</IonLabel>
                   </IonSegmentButton>
                 </IonSegment>
 
@@ -398,6 +403,32 @@ export const ImportExportPage: React.FC = () => {
                           expand="block"
                           onClick={() => handleExport('inventory', 'EXCEL')}
                           loading={exportingInventory}
+                        >
+                          <IonIcon icon={cloudDownload} slot="start" />
+                          Excel
+                        </IonButton>
+                      </div>
+                    </IonCardContent>
+                  </IonCard>
+
+                  <IonCard>
+                    <IonCardHeader>
+                      <IonCardTitle>Categories</IonCardTitle>
+                    </IonCardHeader>
+                    <IonCardContent>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <IonButton
+                          expand="block"
+                          onClick={() => handleExport('categories', 'CSV')}
+                          loading={exportingCategories}
+                        >
+                          <IonIcon icon={cloudDownload} slot="start" />
+                          CSV
+                        </IonButton>
+                        <IonButton
+                          expand="block"
+                          onClick={() => handleExport('categories', 'EXCEL')}
+                          loading={exportingCategories}
                         >
                           <IonIcon icon={cloudDownload} slot="start" />
                           Excel

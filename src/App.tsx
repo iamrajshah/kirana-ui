@@ -10,6 +10,8 @@ import { MainLayout } from '@layouts/MainLayout';
 import { LoginPage } from '@features/login/LoginPage';
 import { ProfilePage } from '@features/profile/ProfilePage';
 import { ChangePasswordPage } from '@features/profile/ChangePasswordPage';
+import { CustomerLedgerPage } from '@features/customers/CustomerLedgerPage';
+import InvoiceDetailPage from '@features/invoices/InvoiceDetailPage';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -48,17 +50,20 @@ const App: React.FC = () => {
           <IonRouterOutlet>
             <Route exact path={ROUTES.LOGIN} component={LoginPage} />
             <Route exact path="/" render={() => <Redirect to={ROUTES.LOGIN} />} />
-            <Route exact path="/profile" render={() => <PrivateRoute><ProfilePage /></PrivateRoute>} />
-            <Route exact path="/change-password" render={() => <PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
-            <Route path="/dashboard" render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route path="/billing" render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route path="/customers" render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route path="/products" render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route path="/inventory" render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route path="/payments" render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route path="/reports" render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route path="/users" render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route path="/import-export" render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
+            <Route exact path={ROUTES.PROFILE} render={() => <PrivateRoute><ProfilePage /></PrivateRoute>} />
+            <Route exact path={ROUTES.CHANGE_PASSWORD} render={() => <PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
+            <Route exact path="/customers/:id/ledger" render={() => <PrivateRoute><CustomerLedgerPage /></PrivateRoute>} />
+            <Route exact path="/invoices/:id" render={() => <PrivateRoute><InvoiceDetailPage /></PrivateRoute>} />
+            <Route exact path={ROUTES.DASHBOARD} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
+            <Route exact path={ROUTES.BILLING} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
+            <Route exact path={ROUTES.CUSTOMERS} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
+            <Route exact path={ROUTES.PRODUCTS} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
+            <Route exact path={ROUTES.INVENTORY} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
+            <Route exact path={ROUTES.INVOICES} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
+            <Route exact path={ROUTES.PAYMENTS} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
+            <Route exact path={ROUTES.REPORTS} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
+            <Route exact path={ROUTES.USERS} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
+            <Route exact path={ROUTES.IMPORT_EXPORT} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
           </IonRouterOutlet>
         </IonReactRouter>
       </IonApp>

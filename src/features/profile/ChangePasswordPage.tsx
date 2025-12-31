@@ -22,10 +22,13 @@ import { save, lockClosed, checkmarkCircle } from 'ionicons/icons';
 import { Input } from '@components/Input';
 import { useChangePasswordMutation } from '@core/api/userApi';
 import { useTranslation } from 'react-i18next';
+import { useHistory } from 'react-router';
+import { ROUTES } from '@core/constants';
 import './ChangePasswordPage.css';
 
 export const ChangePasswordPage: React.FC = () => {
   const { t } = useTranslation();
+  const history = useHistory();
   
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -102,6 +105,11 @@ export const ChangePasswordPage: React.FC = () => {
       console.log('✅ Password changed successfully');
       setShowSuccess(true);
       resetForm();
+      
+      // Redirect to dashboard after 1.5 seconds
+      setTimeout(() => {
+        history.push(ROUTES.DASHBOARD);
+      }, 1500);
     } catch (error: any) {
       console.error('❌ Error changing password:', error);
       setErrorMessage(error?.data?.message || 'Failed to change password');

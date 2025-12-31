@@ -6,6 +6,7 @@ export const ROLE_PERMISSIONS = {
     'customers',
     'products',
     'inventory',
+    'invoices',
     'payments',
     'reports',
     'users',
@@ -17,6 +18,7 @@ export const ROLE_PERMISSIONS = {
     'customers',
     'products',
     'inventory',
+    'invoices',
     'payments',
     'reports',
     'import-export',
@@ -25,6 +27,7 @@ export const ROLE_PERMISSIONS = {
     'dashboard',
     'billing',
     'customers',
+    'invoices',
     'payments',
   ],
 };
