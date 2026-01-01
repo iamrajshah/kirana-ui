@@ -10,6 +10,7 @@ import {
   IonList,
   IonItem,
   IonLabel,
+  IonMenuButton,
 } from '@ionic/react';
 import { logOutOutline, personCircleOutline, person, lockClosed, chevronDown } from 'ionicons/icons';
 import { useAppSelector, useAppDispatch } from '../core/hooks';
@@ -52,6 +53,9 @@ export const Navbar: React.FC<NavbarProps> = ({ title }) => {
   return (
     <IonHeader>
       <IonToolbar>
+        <IonButtons slot="start">
+          <IonMenuButton />
+        </IonButtons>
         <IonTitle>{title}</IonTitle>
         {user && (
           <div slot="end" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginRight: '16px' }}>

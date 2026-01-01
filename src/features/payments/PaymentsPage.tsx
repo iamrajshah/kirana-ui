@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Navbar } from '@components/Navbar';
 import {
   IonContent,
@@ -16,6 +16,8 @@ import {
   IonHeader,
   IonToolbar,
   IonTitle,
+  IonItemDivider,
+  IonItemGroup,
 } from '@ionic/react';
 import { add, close } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +26,7 @@ import { useGetCustomersQuery } from '@core/api/customerApi';
 import { Input, Select, Button, EmptyState, Loading } from '@components';
 import { formatCurrency, formatDateTime, generateIdempotencyKey } from '@utils/helpers';
 import { PAYMENT_MODES } from '@core/constants';
+import type { PaymentMode } from '@core/types';
 
 export const PaymentsPage: React.FC = () => {
   const { t } = useTranslation();
@@ -65,7 +68,7 @@ export const PaymentsPage: React.FC = () => {
       const result = await createPayment({
         customer_id: customerId,
         amount: Number(amount),
-        payment_mode: paymentMode as any,
+        payment_mode: paymentMode as PaymentMode,
         reference_note: referenceNote || undefined,
         idempotency_key: generateIdempotencyKey(),
       }).unwrap();
@@ -76,7 +79,8 @@ export const PaymentsPage: React.FC = () => {
       setShowModal(false);
       resetForm();
       refetch();
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as { status?: number; data?: { message?: string }; message?: string };
       console.error('❌ Failed to create payment:', error);
       console.error('Error details:', {
         status: error?.status,
@@ -96,10 +100,27 @@ export const PaymentsPage: React.FC = () => {
     setReferenceNote('');
   };
 
-  const payments = data?.data || [];
+  const payments = useMemo(() => data?.data || [], [data?.data]);
   const customers =
     customersData?.data?.map((c) => ({ value: c.id, label: `${c.name} (${c.phone})` })) ||
     [];
+
+  // Group payments by date
+  const groupedPayments = useMemo(() => {
+    const groups: { [key: string]: typeof payments } = {};
+    payments.forEach((payment) => {
+      const date = new Date(payment.created_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(payment);
+    });
+    return groups;
+  }, [payments]);
 
   return (
     <IonPage>
@@ -120,19 +141,28 @@ export const PaymentsPage: React.FC = () => {
             />
           ) : (
             <IonList>
-              {payments.map((payment) => (
-                <IonItem key={payment.id}>
-                  <IonLabel>
-                    <h2 className="font-semibold">{payment.customer?.name}</h2>
-                    <p className="text-gray-600">{formatDateTime(payment.created_at)}</p>
-                    <p className="text-sm">{payment.payment_mode}</p>
-                  </IonLabel>
-                  <div slot="end" className="text-right">
-                    <div className="font-bold text-success text-lg">
-                      {formatCurrency(payment.amount)}
-                    </div>
-                  </div>
-                </IonItem>
+              {Object.entries(groupedPayments).map(([date, datePayments]) => (
+                <IonItemGroup key={date}>
+                  <IonItemDivider color="light" sticky>
+                    <IonLabel>
+                      <h2 style={{ fontWeight: '600' }}>{date}</h2>
+                    </IonLabel>
+                  </IonItemDivider>
+                  {datePayments.map((payment) => (
+                    <IonItem key={payment.id}>
+                      <IonLabel>
+                        <h2 className="font-semibold">{payment.customer?.name}</h2>
+                        <p className="text-gray-600">{formatDateTime(payment.created_at)}</p>
+                        <p className="text-sm">{payment.payment_mode}</p>
+                      </IonLabel>
+                      <div slot="end" className="text-right">
+                        <div className="font-bold text-success text-lg">
+                          {formatCurrency(payment.amount)}
+                        </div>
+                      </div>
+                    </IonItem>
+                  ))}
+                </IonItemGroup>
               ))}
             </IonList>
           )}

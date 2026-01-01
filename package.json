@@ -14,8 +14,9 @@
     "ionic:build": "vite build"
   },
   "dependencies": {
+    "@capacitor/android": "^5.7.8",
     "@capacitor/app": "^5.0.6",
-    "@capacitor/core": "^5.5.1",
+    "@capacitor/core": "^5.7.8",
     "@capacitor/haptics": "^5.0.6",
     "@capacitor/keyboard": "^5.0.6",
     "@capacitor/status-bar": "^5.0.6",
@@ -33,7 +34,7 @@
     "react-redux": "^9.0.4"
   },
   "devDependencies": {
-    "@capacitor/cli": "^5.5.1",
+    "@capacitor/cli": "^5.7.8",
     "@types/node": "^20.10.7",
     "@types/react": "^18.2.47",
     "@types/react-dom": "^18.2.18",

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Navbar } from '@components/Navbar';
+import { useHistory } from 'react-router';
 import {
   IonContent,
   IonPage,
@@ -17,6 +18,8 @@ import {
   IonHeader,
   IonToolbar,
   IonTitle,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
 } from '@ionic/react';
 import { add, close } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
@@ -25,29 +28,77 @@ import { useGetCategoriesQuery } from '@core/api/categoryApi';
 import { SearchBar, Loading, EmptyState, Input, Select, Button } from '@components';
 import { formatCurrency } from '@utils/helpers';
 
+const PACKAGING_OPTIONS = [
+  { value: 'PACKET', label: 'Packet' },
+  { value: 'BOX', label: 'Box' },
+  { value: 'BOTTLE', label: 'Bottle' },
+  { value: 'LOOSE', label: 'Loose' },
+  { value: 'KG', label: 'KG' },
+];
+
 export const ProductsPage: React.FC = () => {
   const { t } = useTranslation();
+  const history = useHistory();
   const [search, setSearch] = useState('');
-  const { data, isLoading } = useGetProductsQuery({ search });
+  const [skip, setSkip] = useState(0);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const take = 50;
+  const { data, isLoading, isFetching } = useGetProductsQuery({ search, skip, take });
   const { data: categoriesData } = useGetCategoriesQuery();
   const [createProduct, { isLoading: creating }] = useCreateProductMutation();
   const [createVariant, { isLoading: creatingVariant }] = useCreateVariantMutation();
 
+  useEffect(() => {
+    setSkip(0);
+    setAllProducts([]);
+  }, [search]);
+
+  // Accumulate products as they're fetched
+  useEffect(() => {
+    if (data?.data) {
+      if (skip === 0) {
+        setAllProducts(data.data);
+      } else {
+        setAllProducts(prev => {
+          const existingIds = new Set(prev.map((p: any) => p.id));
+          const newProducts = data.data.filter((p: any) => !existingIds.has(p.id));
+          return [...prev, ...newProducts];
+        });
+      }
+    }
+  }, [data, skip]);
+
   const [showModal, setShowModal] = useState(false);
-  const [productName, setProductName] = useState('');
-  const [categoryId, setCategoryId] = useState<number | null>(null);
-  const [brand, setBrand] = useState('');
-  const [size, setSize] = useState('');
-  const [packaging, setPackaging] = useState<'PACKET' | 'BOX' | 'BOTTLE' | 'LOOSE' | 'KG' | null>(null);
-  const [price, setPrice] = useState('');
-  const [gstPercent, setGstPercent] = useState('');
-  const [sku, setSku] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const products = data?.data || [];
+  const [productName, setProductName] = useState('');
+  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [brand, setBrand] = useState('');
+  const [size, setSize] = useState('');
+  const [packaging, setPackaging] = useState<string | null>(null);
+  const [price, setPrice] = useState('');
+  const [gstPercent, setGstPercent] = useState('');
+  const [sku, setSku] = useState('');
+
+  const total = data?.meta?.total || 0;
+  const currentBatchSize = data?.data?.length || 0;
+  const hasMore = allProducts.length < total && currentBatchSize === take;
+
+  const loadMore = async (e: CustomEvent) => {
+    if (hasMore && !isFetching) {
+      setSkip(prev => prev + take);
+    }
+    setTimeout(() => {
+      (e.target as HTMLIonInfiniteScrollElement).complete();
+    }, 100);
+  };
   const categories = categoriesData?.data || [];
+
+  const categoryOptions = useMemo(() => {
+    return categories.map((cat) => ({ value: cat.id.toString(), label: cat.name }));
+  }, [categories]);
 
   const resetForm = () => {
     setProductName('');
@@ -74,84 +125,77 @@ export const ProductsPage: React.FC = () => {
         return;
       }
 
-      console.log('📦 Creating product:', { productName, categoryId });
-
-      // Create product
       const productResult = await createProduct({
         name: productName,
         category_id: categoryId,
       }).unwrap();
 
-      console.log('✅ Product created:', productResult);
-
-      // Create variant
-      const variantResult = await createVariant({
+      await createVariant({
         productId: productResult.data.id,
         variant: {
           brand: brand || null,
           size: size || null,
-          packaging: packaging || null,
+          packaging: (packaging as any) || null,
           price: parseFloat(price),
           gst_percent: gstPercent ? parseFloat(gstPercent) : null,
           sku: sku || null,
         },
       }).unwrap();
 
-      console.log('✅ Variant created:', variantResult);
-
       setShowSuccess(true);
       setShowModal(false);
       resetForm();
     } catch (error: any) {
-      console.error('❌ Error creating product:', error);
       setErrorMessage(error?.data?.message || 'Failed to create product');
       setShowError(true);
     }
   };
 
-  const packagingOptions = [
-    { value: 'PACKET', label: 'Packet' },
-    { value: 'BOX', label: 'Box' },
-    { value: 'BOTTLE', label: 'Bottle' },
-    { value: 'LOOSE', label: 'Loose' },
-    { value: 'KG', label: 'KG' },
-  ];
+  const handleProductClick = (productId: string) => {
+    history.push(`/products/${productId}`);
+  };
 
   return (
     <IonPage>
       <Navbar title={t('products.title')} />
       <IonContent>
-        <div className="p-4">
+        <div style={{ padding: '16px' }}>
           <SearchBar value={search} onChange={setSearch} placeholder={t('common.search')} />
 
-          {isLoading ? (
+          {isLoading && allProducts.length === 0 ? (
             <Loading isOpen={isLoading} />
-          ) : products.length === 0 ? (
+          ) : allProducts.length === 0 ? (
             <EmptyState message="No products found" />
           ) : (
-            <IonList>
-              {products.map((product) => (
-                <IonItem key={product.id} button>
-                  <IonLabel>
-                    <h2 className="font-semibold text-lg">{product.name}</h2>
-                    <p className="text-gray-600">{product.category?.name}</p>
-                    {product.variants && product.variants.length > 0 && (
-                      <div className="mt-2">
-                        {product.variants.map((variant) => (
-                          <div key={variant.id} className="flex justify-between text-sm py-1">
-                            <span>SKU: {variant.sku}</span>
-                            <span className="font-medium">{formatCurrency(variant.price)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </IonLabel>
-                  <IonBadge slot="end" color={product.is_active ? 'success' : 'medium'}>
-                    {product.is_active ? t('common.active') : t('common.inactive')}
-                  </IonBadge>
-                </IonItem>
-              ))}
-            </IonList>
+            <>
+              <IonList>
+                {allProducts.map((product) => (
+                  <IonItem key={product.id} button onClick={() => handleProductClick(product.id)}>
+                    <IonLabel>
+                      <h2 style={{ fontWeight: '600', fontSize: '16px' }}>{product.name}</h2>
+                      <p>{product.category?.name}</p>
+                      {product.variants && product.variants.length > 0 && (
+                        <div style={{ marginTop: '8px' }}>
+                          {product.variants.map((variant) => (
+                            <div key={variant.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', paddingTop: '4px', paddingBottom: '4px' }}>
+                              <span>SKU: {variant.sku}</span>
+                              <span style={{ fontWeight: '500' }}>{formatCurrency(variant.price)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </IonLabel>
+                    <IonBadge slot="end" color={product.is_active ? 'success' : 'medium'}>
+                      {product.is_active ? t('common.active') : t('common.inactive')}
+                    </IonBadge>
+                  </IonItem>
+                ))}
+              </IonList>
+              
+              <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
+                <IonInfiniteScrollContent loadingText="Loading more products..." />
+              </IonInfiniteScroll>
+            </>
           )}
         </div>
 
@@ -160,108 +204,6 @@ export const ProductsPage: React.FC = () => {
             <IonIcon icon={add} />
           </IonFabButton>
         </IonFab>
-
-        {showModal && (
-          <IonModal isOpen={true} onDidDismiss={() => setShowModal(false)}>
-            <IonPage>
-              <IonHeader>
-                <IonToolbar>
-                  <IonTitle>Create Product</IonTitle>
-                  <IonButtons slot="end">
-                    <IonButton onClick={() => setShowModal(false)}>
-                      <IonIcon icon={close} />
-                    </IonButton>
-                  </IonButtons>
-                </IonToolbar>
-              </IonHeader>
-              <IonContent className="ion-padding">
-                <div className="space-y-4">
-                  <Input
-                    label="Product Name *"
-                    value={productName}
-                    onChange={(e) => setProductName(e.target.value)}
-                    placeholder="Enter product name"
-                  />
-
-                  <Select
-                    label="Category"
-                    value={categoryId?.toString() || ''}
-                    onChange={(e) => setCategoryId(e.target.value ? parseInt(e.target.value) : null)}
-                  >
-                    <option value="">Select category</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </Select>
-
-                  <div className="text-lg font-semibold mt-6 mb-2">Variant Details</div>
-
-                  <Input
-                    label="Brand"
-                    value={brand}
-                    onChange={(e) => setBrand(e.target.value)}
-                    placeholder="Enter brand"
-                  />
-
-                  <Input
-                    label="Size"
-                    value={size}
-                    onChange={(e) => setSize(e.target.value)}
-                    placeholder="e.g., 1L, 500g"
-                  />
-
-                  <Select
-                    label="Packaging"
-                    value={packaging || ''}
-                    onChange={(e) => setPackaging(e.target.value as any || null)}
-                  >
-                    <option value="">Select packaging</option>
-                    {packagingOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </Select>
-
-                  <Input
-                    label="Price *"
-                    type="number"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="Enter price"
-                  />
-
-                  <Input
-                    label="GST %"
-                    type="number"
-                    value={gstPercent}
-                    onChange={(e) => setGstPercent(e.target.value)}
-                    placeholder="Enter GST percentage"
-                  />
-
-                  <Input
-                    label="SKU"
-                    value={sku}
-                    onChange={(e) => setSku(e.target.value)}
-                    placeholder="Enter SKU code"
-                  />
-
-                  <div className="mt-6">
-                    <Button
-                      onClick={handleCreateProduct}
-                      disabled={creating || creatingVariant || !productName || !price}
-                      isLoading={creating || creatingVariant}
-                    >
-                      Create Product
-                    </Button>
-                  </div>
-                </div>
-              </IonContent>
-            </IonPage>
-          </IonModal>
-        )}
 
         <IonToast
           isOpen={showSuccess}
@@ -278,6 +220,66 @@ export const ProductsPage: React.FC = () => {
           color="danger"
           onDidDismiss={() => setShowError(false)}
         />
+
+        {showModal && (
+          <IonModal isOpen={showModal} onDidDismiss={() => setShowModal(false)}>
+            <IonHeader>
+              <IonToolbar>
+                <IonTitle>Create Product</IonTitle>
+                <IonButtons slot="end">
+                  <IonButton onClick={() => setShowModal(false)}>
+                    <IonIcon icon={close} />
+                  </IonButton>
+                </IonButtons>
+              </IonToolbar>
+            </IonHeader>
+            <IonContent>
+              <div style={{ padding: '16px' }}>
+                <Input
+                  label="Product Name *"
+                  value={productName}
+                  onChange={setProductName}
+                  placeholder="Enter product name"
+                />
+
+                <Select
+                  label="Category"
+                  value={categoryId?.toString() || ''}
+                  onChange={(value) => setCategoryId(value ? parseInt(value) : null)}
+                  options={categoryOptions}
+                  placeholder="Select category"
+                />
+
+                <h3 style={{ fontSize: '16px', fontWeight: '600', marginTop: '24px', marginBottom: '8px' }}>Variant Details</h3>
+
+                <Input label="Brand" value={brand} onChange={setBrand} placeholder="Enter brand" />
+                <Input label="Size" value={size} onChange={setSize} placeholder="e.g., 1L, 500g" />
+
+                <Select
+                  label="Packaging"
+                  value={packaging || ''}
+                  onChange={(value) => setPackaging(value || null)}
+                  placeholder="Select packaging"
+                  options={PACKAGING_OPTIONS}
+                />
+
+                <Input label="Price *" type="number" value={price} onChange={setPrice} placeholder="Enter price" />
+                <Input label="GST %" type="number" value={gstPercent} onChange={setGstPercent} placeholder="Enter GST percentage" />
+                <Input label="SKU" value={sku} onChange={setSku} placeholder="Enter SKU code" />
+
+                <div style={{ marginTop: '24px' }}>
+                  <Button
+                    onClick={handleCreateProduct}
+                    disabled={creating || creatingVariant || !productName || !price}
+                    loading={creating || creatingVariant}
+                  >
+                    Create Product
+                  </Button>
+                </div>
+              </div>
+            </IonContent>
+          </IonModal>
+        )}
       </IonContent>
     </IonPage>
   );

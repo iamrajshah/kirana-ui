@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   IonPage,
   IonContent,
@@ -24,6 +24,8 @@ import {
   RefresherEventDetail,
   IonSelect,
   IonSelectOption,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
 } from '@ionic/react';
 import { add, close, pencil, cash } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
@@ -52,6 +54,9 @@ const SuppliersPage: React.FC = () => {
   const hasUpdatePermission = hasPermission(userRoles, 'SUPPLIER_UPDATE');
   
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [allSuppliers, setAllSuppliers] = useState<any[]>([]);
+  const limit = 50;
   const [showModal, setShowModal] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<any>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -68,14 +73,48 @@ const SuppliersPage: React.FC = () => {
   const [paymentMode, setPaymentMode] = useState('CASH');
   const [paymentNotes, setPaymentNotes] = useState('');
 
-  const { data, isLoading, refetch } = useGetSuppliersQuery({});
+  const { data, isLoading, isFetching, refetch } = useGetSuppliersQuery({ page, limit });
   const [createSupplier, { isLoading: creating }] = useCreateSupplierMutation();
   const [updateSupplier, { isLoading: updating }] = useUpdateSupplierMutation();
   const [makePayment, { isLoading: processingPayment }] = useMakeSupplierPaymentMutation();
 
-  const suppliers = data?.data || [];
+  // Reset pagination when search changes
+  useEffect(() => {
+    setPage(1);
+    setAllSuppliers([]);
+  }, [searchTerm]);
+
+  // Accumulate suppliers as they're fetched
+  useEffect(() => {
+    if (data?.data) {
+      if (page === 1) {
+        setAllSuppliers(data.data);
+      } else {
+        setAllSuppliers(prev => {
+          const existingIds = new Set(prev.map((s: any) => s.id));
+          const newSuppliers = data.data.filter((s: any) => !existingIds.has(s.id));
+          return [...prev, ...newSuppliers];
+        });
+      }
+    }
+  }, [data, page]);
+
+  const total = data?.meta?.total || 0;
+  const currentBatchSize = data?.data?.length || 0;
+  const hasMore = allSuppliers.length < total && currentBatchSize === limit;
+
+  const loadMore = async (e: CustomEvent) => {
+    if (hasMore && !isFetching) {
+      setPage(prev => prev + 1);
+    }
+    setTimeout(() => {
+      (e.target as HTMLIonInfiniteScrollElement).complete();
+    }, 100);
+  };
 
   const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
+    setPage(1);
+    setAllSuppliers([]);
     await refetch();
     event.detail.complete();
   };
@@ -153,7 +192,7 @@ const SuppliersPage: React.FC = () => {
       await makePayment({
         id: paymentSupplier.id,
         amount: parseFloat(paymentAmount),
-        payment_mode: paymentMode as 'CASH' | 'UPI' | 'CARD' | 'BANK_TRANSFER',
+        payment_mode: paymentMode as 'CASH' | 'UPI' | 'CARD' | 'BANK',
         description: paymentNotes.trim() || undefined,
       }).unwrap();
 
@@ -166,7 +205,7 @@ const SuppliersPage: React.FC = () => {
     }
   };
 
-  const filteredSuppliers = suppliers.filter((supplier) =>
+  const filteredSuppliers = allSuppliers.filter((supplier) =>
     supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supplier.phone.includes(searchTerm)
   );
@@ -185,7 +224,7 @@ const SuppliersPage: React.FC = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        {isLoading ? (
+        {isLoading && allSuppliers.length === 0 ? (
           <div className="ion-text-center ion-padding">
             <IonSpinner />
           </div>
@@ -196,58 +235,64 @@ const SuppliersPage: React.FC = () => {
             </IonText>
           </div>
         ) : (
-          <IonList>
-            {filteredSuppliers.map((supplier) => (
-              <IonItemSliding key={supplier.id}>
-                <IonItem
-                  button
-                  onClick={() => history.push(`/suppliers/${supplier.id}/ledger`)}
-                >
-                  <IonLabel>
-                    <h2 className="font-semibold text-lg">{supplier.name}</h2>
-                    <p className="text-gray-600">{supplier.phone}</p>
-                    {supplier.email && <p className="text-gray-500">{supplier.email}</p>}
-                    {supplier.balance !== 0 && (
-                      <p
-                        className="font-medium"
-                        style={{
-                          color:
-                            supplier.balance > 0
-                              ? 'var(--ion-color-danger)'
-                              : 'var(--ion-color-success)',
+          <>
+            <IonList>
+              {filteredSuppliers.map((supplier) => (
+                <IonItemSliding key={supplier.id}>
+                  <IonItem
+                    button
+                    onClick={() => history.push(`/suppliers/${supplier.id}/ledger`)}
+                  >
+                    <IonLabel>
+                      <h2 className="font-semibold text-lg">{supplier.name}</h2>
+                      <p className="text-gray-600">{supplier.phone}</p>
+                      {supplier.email && <p className="text-gray-500">{supplier.email}</p>}
+                      {supplier.balance !== 0 && (
+                        <p
+                          className="font-medium"
+                          style={{
+                            color:
+                              supplier.balance > 0
+                                ? 'var(--ion-color-danger)'
+                                : 'var(--ion-color-success)',
+                          }}
+                        >
+                          {supplier.balance > 0
+                            ? `${t('suppliers.amountOwed')}: ${formatCurrency(supplier.balance)}`
+                            : `${t('suppliers.advance')}: ${formatCurrency(Math.abs(supplier.balance))}`}
+                        </p>
+                      )}
+                    </IonLabel>
+                  </IonItem>
+                  <IonItemOptions side="end">
+                    {supplier.balance > 0 && (
+                      <IonItemOption 
+                        color="success" 
+                        onClick={() => {
+                          setPaymentSupplier(supplier);
+                          handleMakePayment();
                         }}
+                        disabled={!hasUpdatePermission}
                       >
-                        {supplier.balance > 0
-                          ? `${t('suppliers.amountOwed')}: ${formatCurrency(supplier.balance)}`
-                          : `${t('suppliers.advance')}: ${formatCurrency(Math.abs(supplier.balance))}`}
-                      </p>
+                        <IonIcon slot="icon-only" icon={cash} />
+                      </IonItemOption>
                     )}
-                  </IonLabel>
-                </IonItem>
-                <IonItemOptions side="end">
-                  {supplier.balance > 0 && (
                     <IonItemOption 
-                      color="success" 
-                      onClick={() => {
-                        setPaymentSupplier(supplier);
-                        handleMakePayment();
-                      }}
+                      color="primary" 
+                      onClick={() => handleEditSupplier(supplier)}
                       disabled={!hasUpdatePermission}
                     >
-                      <IonIcon slot="icon-only" icon={cash} />
+                      <IonIcon slot="icon-only" icon={pencil} />
                     </IonItemOption>
-                  )}
-                  <IonItemOption 
-                    color="primary" 
-                    onClick={() => handleEditSupplier(supplier)}
-                    disabled={!hasUpdatePermission}
-                  >
-                    <IonIcon slot="icon-only" icon={pencil} />
-                  </IonItemOption>
-                </IonItemOptions>
-              </IonItemSliding>
-            ))}
-          </IonList>
+                  </IonItemOptions>
+                </IonItemSliding>
+              ))}
+            </IonList>
+
+            <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
+              <IonInfiniteScrollContent loadingText="Loading more suppliers..." />
+            </IonInfiniteScroll>
+          </>
         )}
 
         {/* Add Supplier FAB */}
@@ -383,7 +428,7 @@ const SuppliersPage: React.FC = () => {
                   <IonSelectOption value="CASH">Cash</IonSelectOption>
                   <IonSelectOption value="UPI">UPI</IonSelectOption>
                   <IonSelectOption value="CARD">Card</IonSelectOption>
-                  <IonSelectOption value="BANK_TRANSFER">Bank Transfer</IonSelectOption>
+                  <IonSelectOption value="BANK">Bank Transfer</IonSelectOption>
                 </IonSelect>
               </div>
 

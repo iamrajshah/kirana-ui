@@ -1,12 +1,12 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.kirana.pos',
-  appName: 'Kirana POS',
+  appId: 'com.example.app',
+  appName: 'kirana-ui',
   webDir: 'dist',
   server: {
-    androidScheme: 'https',
-  },
+    androidScheme: 'https'
+  }
 };
 
 export default config;

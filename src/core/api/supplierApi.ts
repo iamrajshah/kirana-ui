@@ -45,9 +45,9 @@ export const supplierApi = apiSlice.injectEndpoints({
       PaginatedApiResponse<Supplier>,
       { page?: number; limit?: number; isActive?: boolean } | void
     >({
-      query: (params = {}) => ({
+      query: (params) => ({
         url: '/suppliers',
-        params,
+        params: params || {},
       }),
       providesTags: ['Supplier'],
     }),
@@ -100,7 +100,7 @@ export const supplierApi = apiSlice.injectEndpoints({
     }),
     makeSupplierPayment: builder.mutation<
       ApiResponse<any>,
-      { id: string; amount: number; payment_mode: 'CASH' | 'UPI' | 'CARD' | 'BANK_TRANSFER'; description?: string }
+      { id: string; amount: number; payment_mode: 'CASH' | 'UPI' | 'CARD' | 'BANK'; description?: string }
     >({
       query: ({ id, ...body }) => ({
         url: `/suppliers/${id}/payments`,

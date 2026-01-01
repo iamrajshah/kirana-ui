@@ -1,5 +1,5 @@
 import { apiSlice } from './apiSlice';
-import type { ApiResponse } from '../types';
+import type { ApiResponse, PaginatedApiResponse } from '../types';
 
 export interface SalesReport {
   date: string;
@@ -50,6 +50,69 @@ export interface TopSellingProduct {
   total_revenue: number;
 }
 
+export interface SupplierOutstanding {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  outstanding_balance: number;
+  total_invoices: number;
+  last_transaction_date: string;
+}
+
+export interface PurchaseRegister {
+  id: string;
+  invoice_number: string;
+  invoice_date: string;
+  total_amount: number;
+  paid_amount: number;
+  pending_amount: number;
+  status: string;
+  supplier_name: string;
+  supplier_phone: string;
+  item_count: number;
+  created_at: string;
+}
+
+export interface TopPayable {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  outstanding_amount: number;
+  unpaid_invoices: number;
+  latest_invoice_date: string;
+  last_transaction_date: string;
+}
+
+export interface SupplierLedgerSummary {
+  supplier_id: string;
+  supplier_name: string;
+  supplier_phone: string;
+  total_purchases: number;
+  total_payments: number;
+  balance: number;
+  transaction_count: number;
+}
+
+export interface PurchaseTrendMonth {
+  month: string;
+  year: number;
+  purchase_count: number;
+  total_amount: number;
+  avg_purchase_value: number;
+}
+
+export interface SupplierPaymentHistory {
+  id: string;
+  transaction_type: string;
+  transaction_date: string;
+  amount: number;
+  invoice_number: string;
+  balance_after: number;
+  notes: string;
+}
+
 export const reportsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getSalesReport: builder.query<
@@ -88,6 +151,58 @@ export const reportsApi = apiSlice.injectEndpoints({
         params: params || {},
       }),
     }),
+    // Supplier & Purchase Reports
+    getSupplierOutstanding: builder.query<
+      ApiResponse<SupplierOutstanding[]>,
+      { page?: number; limit?: number; minAmount?: number } | void
+    >({
+      query: (params) => ({
+        url: '/reports/supplier-outstanding',
+        params: params || {},
+      }),
+    }),
+    getPurchaseRegister: builder.query<
+      ApiResponse<PurchaseRegister[]>,
+      { page?: number; limit?: number; from?: string; to?: string; supplierId?: string; status?: string } | void
+    >({
+      query: (params) => ({
+        url: '/reports/purchase-register',
+        params: params || {},
+      }),
+    }),
+    getTopPayables: builder.query<ApiResponse<TopPayable[]>, { limit?: number } | void>({
+      query: (params) => ({
+        url: '/reports/top-payables',
+        params: params || {},
+      }),
+    }),
+    getSupplierLedgerSummary: builder.query<
+      PaginatedApiResponse<SupplierLedgerSummary>,
+      { page?: number; limit?: number; from?: string; to?: string; supplierId?: string } | void
+    >({
+      query: (params) => ({
+        url: '/reports/supplier-ledger-summary',
+        params: params || {},
+      }),
+    }),
+    getPurchaseTrend: builder.query<
+      ApiResponse<PurchaseTrendMonth[]>,
+      { months?: number } | void
+    >({
+      query: (params) => ({
+        url: '/reports/purchase-trend',
+        params: params || {},
+      }),
+    }),
+    getSupplierPaymentHistory: builder.query<
+      ApiResponse<SupplierPaymentHistory[]>,
+      { supplierId: string; page?: number; limit?: number; from?: string; to?: string }
+    >({
+      query: ({ supplierId, ...params }) => ({
+        url: `/reports/supplier/${supplierId}/payment-history`,
+        params,
+      }),
+    }),
   }),
 });
 
@@ -98,4 +213,10 @@ export const {
   useGetDailyCashbookQuery,
   useGetProfitLossQuery,
   useGetTopSellingQuery,
+  useGetSupplierOutstandingQuery,
+  useGetPurchaseRegisterQuery,
+  useGetTopPayablesQuery,
+  useGetSupplierLedgerSummaryQuery,
+  useGetPurchaseTrendQuery,
+  useGetSupplierPaymentHistoryQuery,
 } = reportsApi;

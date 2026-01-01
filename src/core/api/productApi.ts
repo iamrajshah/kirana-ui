@@ -6,6 +6,11 @@ interface CreateProductRequest {
   category_id?: number | null;
 }
 
+interface UpdateProductRequest {
+  name?: string;
+  category_id?: number | null;
+}
+
 interface CreateVariantRequest {
   brand?: string | null;
   size?: string | null;
@@ -26,6 +31,10 @@ export const productApi = apiSlice.injectEndpoints({
         params,
       }),
       providesTags: ['Product'],
+    }),
+    getProductById: builder.query<ApiResponse<Product>, string>({
+      query: (id) => `/products/${id}`,
+      providesTags: (result, error, id) => [{ type: 'Product', id }],
     }),
     searchVariants: builder.query<
       ApiResponse<ProductVariant[]>,
@@ -59,13 +68,26 @@ export const productApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Product', 'Inventory'],
     }),
+    updateProduct: builder.mutation<
+      ApiResponse<Product>,
+      { id: string; data: UpdateProductRequest }
+    >({
+      query: ({ id, data }) => ({
+        url: `/products/${id}`,
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['Product'],
+    }),
   }),
 });
 
 export const {
   useGetProductsQuery,
+  useGetProductByIdQuery,
   useSearchVariantsQuery,
   useLazySearchVariantsQuery,
   useCreateProductMutation,
   useCreateVariantMutation,
+  useUpdateProductMutation,
 } = productApi;

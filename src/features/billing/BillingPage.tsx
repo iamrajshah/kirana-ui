@@ -31,7 +31,7 @@ export const BillingPage: React.FC = () => {
   const { t } = useTranslation();
   const [searchVariants, { data: variantsData, isLoading: searchLoading }] =
     useLazySearchVariantsQuery();
-  const { data: customersData } = useGetCustomersQuery();
+  const { data: customersData } = useGetCustomersQuery({ skip: 0, take: 1000 });
   const [createInvoice, { isLoading: creating }] = useCreateInvoiceMutation();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -126,11 +126,13 @@ export const BillingPage: React.FC = () => {
 
       console.log('✅ Invoice created:', result);
 
+      notificationService.success(`Invoice #${result.data?.invoice_number || ''} created successfully!`);
       setShowSuccess(true);
       // Reset cart
       setCart([]);
       setGstAmount(0);
       setSearchTerm('');
+      setSelectedCustomerId('');
     } catch (error: any) {
       console.error('❌ Failed to create invoice:', error);
       console.error('Error details:', {
@@ -139,6 +141,7 @@ export const BillingPage: React.FC = () => {
         message: error?.message,
       });
       const errMsg = error?.data?.message || error?.message || 'Failed to create invoice';
+      notificationService.error(errMsg);
       setErrorMessage(errMsg);
       setShowError(true);
     }

@@ -88,7 +88,7 @@ const SupplierLedgerPage: React.FC = () => {
       await makePayment({
         id: id!,
         amount: parseFloat(amount),
-        payment_mode: paymentMode as 'CASH' | 'UPI' | 'CARD' | 'BANK_TRANSFER',
+        payment_mode: paymentMode as 'CASH' | 'UPI' | 'CARD' | 'BANK',
         description: notes.trim() || undefined,
       }).unwrap();
 

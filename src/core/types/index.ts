@@ -55,13 +55,18 @@ export interface Product {
   category?: Category;
   is_active: boolean;
   variants?: ProductVariant[];
+  product_variants?: ProductVariant[]; // Backend returns this
 }
 
 export interface ProductVariant {
   id: string;
   product_id: string;
+  brand?: string;
+  size?: string;
+  packaging?: string;
   sku: string;
   price: number;
+  gst_percent?: number;
   is_active: boolean;
   product?: Product;
   inventory?: Inventory;
@@ -94,7 +99,7 @@ export interface Invoice {
   items?: InvoiceItem[];
 }
 
-export type PaymentMode = 'CASH' | 'UPI' | 'CARD' | 'CHEQUE' | 'BANK_TRANSFER';
+export type PaymentMode = 'CASH' | 'UPI' | 'CARD' | 'CHEQUE' | 'BANK';
 
 export interface Payment {
   id: string;
@@ -113,6 +118,8 @@ export interface DashboardStats {
   pending_invoices: number;
   low_stock_items: number;
   total_customers: number;
+  supplier_payables: number;
+  customer_receivables: number;
 }
 
 // API Response wrappers - Matches backend exactly

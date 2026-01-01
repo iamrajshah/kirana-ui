@@ -27,6 +27,10 @@ export const Select: React.FC<SelectProps> = ({
   disabled = false,
   error,
 }) => {
+  const handleChange = React.useCallback((e: CustomEvent) => {
+    onChange(e.detail.value);
+  }, [onChange]);
+
   return (
     <div className="mb-4">
       <IonItem className={error ? 'ion-invalid' : ''} lines="none">
@@ -34,7 +38,8 @@ export const Select: React.FC<SelectProps> = ({
           {label} {required && <span className="text-danger">*</span>}
         </IonLabel>
         <IonSelect
-          onIonChange={(e: CustomEvent) => onChange(e.detail.value)}
+          value={value}
+          onIonChange={handleChange}
           placeholder={placeholder}
           disabled={disabled}
           interface="popover"

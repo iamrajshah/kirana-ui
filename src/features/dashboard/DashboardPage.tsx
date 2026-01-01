@@ -104,6 +104,19 @@ export const DashboardPage: React.FC = () => {
                     </div>
                   </Card>
                 </IonCol>
+
+                <IonCol size="6">
+                  <Card className="bg-success-50">
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-success-700">
+                        {formatCurrency(stats?.customer_receivables || 0)}
+                      </div>
+                      <div className="text-sm text-gray-600 mt-2">
+                        {t('dashboard.customerReceivables')}
+                      </div>
+                    </div>
+                  </Card>
+                </IonCol>
               </IonRow>
             </IonGrid>
           </div>

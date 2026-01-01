@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   IonContent,
   IonPage,
@@ -18,6 +18,8 @@ import {
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
 } from '@ionic/react';
 import { add, close, pencil, trash } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
@@ -40,9 +42,34 @@ export const CustomersPage: React.FC = () => {
   const canUpdateCustomer = hasPermission(userRoles, 'CUSTOMER_UPDATE');
   
   const [search, setSearch] = useState('');
-  const { data, isLoading, refetch } = useGetCustomersQuery({ search });
+  const [skip, setSkip] = useState(0);
+  const [allCustomers, setAllCustomers] = useState<any[]>([]);
+  const take = 50;
+  
+  const { data, isLoading, isFetching } = useGetCustomersQuery({ search, skip, take });
   const [createCustomer, { isLoading: creating }] = useCreateCustomerMutation();
   const [updateCustomer, { isLoading: updating }] = useUpdateCustomerMutation();
+
+  // Reset pagination when search changes
+  useEffect(() => {
+    setSkip(0);
+    setAllCustomers([]);
+  }, [search]);
+
+  // Accumulate customers as they're fetched
+  useEffect(() => {
+    if (data?.data) {
+      if (skip === 0) {
+        setAllCustomers(data.data);
+      } else {
+        setAllCustomers(prev => {
+          const existingIds = new Set(prev.map(c => c.id));
+          const newCustomers = data.data.filter((c: any) => !existingIds.has(c.id));
+          return [...prev, ...newCustomers];
+        });
+      }
+    }
+  }, [data, skip]);
 
   const [showModal, setShowModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<any>(null);
@@ -74,7 +101,7 @@ export const CustomersPage: React.FC = () => {
 
       setShowModal(false);
       resetForm();
-      refetch();
+      setSkip(0);
     } catch (error: any) {
       notificationService.handleApiError(error);
     }
@@ -97,7 +124,18 @@ export const CustomersPage: React.FC = () => {
     setCreditBalance('0');
   };
 
-  const customers = data?.data || [];
+  const total = data?.meta?.total || 0;
+  const currentBatchSize = data?.data?.length || 0;
+  const hasMore = allCustomers.length < total && currentBatchSize === take;
+
+  const loadMore = async (e: CustomEvent) => {
+    if (hasMore && !isFetching) {
+      setSkip(prev => prev + take);
+    }
+    setTimeout(() => {
+      (e.target as HTMLIonInfiniteScrollElement).complete();
+    }, 100);
+  };
 
   return (
     <IonPage>
@@ -106,9 +144,9 @@ export const CustomersPage: React.FC = () => {
         <div className="p-4">
           <SearchBar value={search} onChange={setSearch} placeholder={t('common.search')} />
 
-          {isLoading ? (
+          {isLoading && allCustomers.length === 0 ? (
             <Loading isOpen={isLoading} />
-          ) : customers.length === 0 ? (
+          ) : allCustomers.length === 0 ? (
             <EmptyState
               message="No customers found"
               action={
@@ -121,42 +159,48 @@ export const CustomersPage: React.FC = () => {
               }
             />
           ) : (
-            <IonList>
-              {customers.map((customer) => (
-                <IonItemSliding key={customer.id}>
-                  <IonItem 
-                    button 
-                    onClick={() => history.push(`/customers/${customer.id}/ledger`)}
-                  >
-                    <IonLabel>
-                      <h2 className="font-semibold text-lg">{customer.name}</h2>
-                      <p className="text-gray-600">{customer.phone}</p>
-                      {customer.credit_balance !== 0 && (
-                        <p 
-                          className="font-medium"
-                          style={{ color: customer.credit_balance > 0 ? 'var(--ion-color-danger)' : 'var(--ion-color-success)' }}
+            <>
+              <IonList>
+                {allCustomers.map((customer) => (
+                  <IonItemSliding key={customer.id}>
+                    <IonItem 
+                      button 
+                      onClick={() => history.push(`/customers/${customer.id}/ledger`)}
+                    >
+                      <IonLabel>
+                        <h2 className="font-semibold text-lg">{customer.name}</h2>
+                        <p className="text-gray-600">{customer.phone}</p>
+                        {customer.credit_balance !== 0 && (
+                          <p 
+                            className="font-medium"
+                            style={{ color: customer.credit_balance > 0 ? 'var(--ion-color-danger)' : 'var(--ion-color-success)' }}
+                          >
+                            {customer.credit_balance > 0 
+                              ? `${t('customers.creditBalance')}: ${formatCurrency(customer.credit_balance)}`
+                              : `You Owe: ${formatCurrency(Math.abs(customer.credit_balance))}`
+                            }
+                          </p>
+                        )}
+                      </IonLabel>
+                    </IonItem>
+                    {canUpdateCustomer && (
+                      <IonItemOptions side="end">
+                        <IonItemOption 
+                          color="primary" 
+                          onClick={() => handleEditCustomer(customer)}
                         >
-                          {customer.credit_balance > 0 
-                            ? `${t('customers.creditBalance')}: ${formatCurrency(customer.credit_balance)}`
-                            : `You Owe: ${formatCurrency(Math.abs(customer.credit_balance))}`
-                          }
-                        </p>
-                      )}
-                    </IonLabel>
-                  </IonItem>
-                  {canUpdateCustomer && (
-                    <IonItemOptions side="end">
-                      <IonItemOption 
-                        color="primary" 
-                        onClick={() => handleEditCustomer(customer)}
-                      >
-                        <IonIcon slot="icon-only" icon={pencil} />
-                      </IonItemOption>
-                    </IonItemOptions>
-                  )}
-                </IonItemSliding>
-              ))}
-            </IonList>
+                          <IonIcon slot="icon-only" icon={pencil} />
+                        </IonItemOption>
+                      </IonItemOptions>
+                    )}
+                  </IonItemSliding>
+                ))}
+              </IonList>
+              
+              <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
+                <IonInfiniteScrollContent loadingText="Loading more customers..." />
+              </IonInfiniteScroll>
+            </>
           )}
         </div>
 

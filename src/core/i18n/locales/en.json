@@ -50,7 +50,8 @@
     "pendingInvoices": "Pending Invoices",
     "lowStock": "Low Stock Items",
     "totalCustomers": "Total Customers",
-    "supplierPayables": "Amount Owed to Suppliers"
+    "supplierPayables": "Amount Owed to Suppliers",
+    "customerReceivables": "Amount Customers Owe"
   },
   "billing": {
     "title": "Billing",

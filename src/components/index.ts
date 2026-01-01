@@ -6,3 +6,4 @@ export { SearchBar } from './SearchBar';
 export { Loading } from './Loading';
 export { ErrorAlert } from './ErrorAlert';
 export { EmptyState } from './EmptyState';
+export { SideMenu } from './SideMenu';

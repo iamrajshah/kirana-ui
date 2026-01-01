@@ -143,18 +143,10 @@ const PurchasesPage: React.FC = () => {
                   </div>
 
                   {purchase.status !== 'PAID' && (
-                    <div
-                      style={{
-                        marginTop: '12px',
-                        padding: '8px',
-                        background: 'var(--ion-color-danger-tint)',
-                        borderRadius: '4px',
-                      }}
-                    >
+                    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--ion-color-light)' }}>
                       <IonText color="danger">
-                        <small>{t('purchases.pendingAmount')}:</small>
-                        <br />
-                        <strong>{formatCurrency(purchase.total_amount - purchase.paid_amount)}</strong>
+                        <small style={{ display: 'block', marginBottom: '4px' }}>{t('purchases.pendingAmount')}</small>
+                        <strong style={{ fontSize: '1.1rem' }}>{formatCurrency(purchase.total_amount - purchase.paid_amount)}</strong>
                       </IonText>
                     </div>
                   )}

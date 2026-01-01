@@ -61,7 +61,7 @@ export const purchaseApi = apiSlice.injectEndpoints({
         invoice_date: string;
         items: PurchaseItem[];
         payment_amount?: number;
-        payment_mode?: 'CASH' | 'UPI' | 'CARD' | 'BANK_TRANSFER';
+        payment_mode?: 'CASH' | 'UPI' | 'CARD' | 'BANK';
       }
     >({
       query: (body) => ({

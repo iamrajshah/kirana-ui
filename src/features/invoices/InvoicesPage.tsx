@@ -1,17 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   IonContent,
   IonPage,
   IonList,
-  IonItem,
-  IonLabel,
   IonBadge,
   IonCard,
   IonCardHeader,
   IonCardTitle,
   IonCardContent,
-  IonChip,
   IonIcon,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
 } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { Navbar } from '@components/Navbar';
@@ -23,11 +22,46 @@ import './InvoicesPage.css';
 
 export const InvoicesPage: React.FC = () => {
   const [search, setSearch] = useState('');
+  const [skip, setSkip] = useState(0);
+  const [allInvoices, setAllInvoices] = useState<any[]>([]);
+  const take = 50;
   const history = useHistory();
   
-  const { data, isLoading } = useGetInvoicesQuery({});
-  
-  const invoices = data?.data || [];
+  const { data, isLoading, isFetching } = useGetInvoicesQuery({ skip, take });
+
+  // Reset pagination when starting fresh
+  useEffect(() => {
+    setSkip(0);
+    setAllInvoices([]);
+  }, []);
+
+  // Accumulate invoices as they're fetched
+  useEffect(() => {
+    if (data?.data) {
+      if (skip === 0) {
+        setAllInvoices(data.data);
+      } else {
+        setAllInvoices(prev => {
+          const existingIds = new Set(prev.map((inv: any) => inv.id));
+          const newInvoices = data.data.filter((inv: any) => !existingIds.has(inv.id));
+          return [...prev, ...newInvoices];
+        });
+      }
+    }
+  }, [data, skip]);
+
+  const total = data?.pagination?.total || 0;
+  const currentBatchSize = data?.data?.length || 0;
+  const hasMore = allInvoices.length < total && currentBatchSize === take;
+
+  const loadMore = async (e: CustomEvent) => {
+    if (hasMore && !isFetching) {
+      setSkip(prev => prev + take);
+    }
+    setTimeout(() => {
+      (e.target as HTMLIonInfiniteScrollElement).complete();
+    }, 100);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -43,7 +77,7 @@ export const InvoicesPage: React.FC = () => {
   };
 
   // Filter invoices based on search
-  const filteredInvoices = invoices.filter((invoice) => {
+  const filteredInvoices = allInvoices.filter((invoice) => {
     if (!search) return true;
     const searchLower = search.toLowerCase();
     return (
@@ -64,15 +98,16 @@ export const InvoicesPage: React.FC = () => {
             placeholder="Search by invoice number, customer name or phone" 
           />
 
-          {isLoading ? (
+          {isLoading && allInvoices.length === 0 ? (
             <Loading isOpen={isLoading} />
           ) : filteredInvoices.length === 0 ? (
             <EmptyState
               message={search ? "No invoices found matching your search" : "No invoices found"}
             />
           ) : (
-            <IonList>
-              {filteredInvoices.map((invoice) => (
+            <>
+              <IonList>
+                {filteredInvoices.map((invoice) => (
                 <IonCard 
                   key={invoice.id} 
                   className="invoice-card"
@@ -140,6 +175,11 @@ export const InvoicesPage: React.FC = () => {
                 </IonCard>
               ))}
             </IonList>
+
+            <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
+              <IonInfiniteScrollContent loadingText="Loading more invoices..." />
+            </IonInfiniteScroll>
+            </>
           )}
         </div>
       </IonContent>
