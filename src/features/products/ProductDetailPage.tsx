@@ -22,7 +22,7 @@ import {
 } from '@ionic/react';
 import { pencil, close } from 'ionicons/icons';
 import { useParams } from 'react-router';
-import { useGetProductByIdQuery, useUpdateProductMutation } from '@core/api/productApi';
+import { useGetProductByIdQuery, useUpdateProductMutation, useUpdateVariantMutation } from '@core/api/productApi';
 import { useGetCategoriesQuery } from '@core/api/categoryApi';
 import { Loading, EmptyState, Input, Select, Button } from '@components';
 import { formatCurrency } from '@utils/helpers';
@@ -33,14 +33,18 @@ export const ProductDetailPage: React.FC = () => {
   const { data, isLoading, error } = useGetProductByIdQuery(id);
   const { data: categoriesData } = useGetCategoriesQuery();
   const [updateProduct, { isLoading: updating }] = useUpdateProductMutation();
+  const [updateVariant, { isLoading: updatingVariant }] = useUpdateVariantMutation();
 
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showVariantEditModal, setShowVariantEditModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const [editName, setEditName] = useState('');
   const [editCategoryId, setEditCategoryId] = useState<number | null>(null);
+  const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
+  const [editSellingPrice, setEditSellingPrice] = useState('');
 
   const categories = categoriesData?.data || [];
 
@@ -49,6 +53,48 @@ export const ProductDetailPage: React.FC = () => {
       setEditName(data.data.name);
       setEditCategoryId(typeof data.data.category_id === 'string' ? parseInt(data.data.category_id) : data.data.category_id);
       setShowEditModal(true);
+    }
+  };
+
+  const handleVariantEditClick = (variantId: string) => {
+    const product = data?.data;
+    if (!product) return;
+    const variants = product.variants || product.product_variants || [];
+    const variant = variants.find((v: ProductVariant) => v.id?.toString() === variantId?.toString());
+    if (!variant) {
+      console.error('Variant not found:', variantId, 'Available variants:', variants.map(v => v.id));
+      return;
+    }
+    console.log('Editing variant:', variant.id, 'Product:', variant.product_id);
+    setEditingVariant(variant);
+    setEditSellingPrice(variant.selling_price?.toString() || variant.price.toString());
+    setShowVariantEditModal(true);
+  };
+
+  const handleUpdateVariantPrice = async () => {
+    if (!editingVariant) return;
+    
+    const sellingPrice = parseFloat(editSellingPrice);
+    if (isNaN(sellingPrice) || sellingPrice <= 0) {
+      setErrorMessage('Please enter a valid selling price');
+      setShowError(true);
+      return;
+    }
+
+    try {
+      await updateVariant({
+        id: editingVariant.id,
+        data: { selling_price: sellingPrice },
+      }).unwrap();
+
+      setShowSuccess(true);
+      setShowVariantEditModal(false);
+      setEditingVariant(null);
+      setEditSellingPrice('');
+    } catch (err) {
+      const error = err as { data?: { message?: string } };
+      setErrorMessage(error?.data?.message || 'Failed to update variant');
+      setShowError(true);
     }
   };
 
@@ -143,9 +189,22 @@ export const ProductDetailPage: React.FC = () => {
               {variants.map((variant: ProductVariant) => (
                 <IonCard key={variant.id}>
                   <IonCardHeader>
-                    <IonCardTitle>
-                      {variant.brand || 'Variant'} - {variant.size || ''}
-                    </IonCardTitle>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <IonCardTitle>
+                        {variant.brand || 'Variant'} - {variant.size || ''}
+                      </IonCardTitle>
+                      <IonButton 
+                        fill="clear" 
+                        size="small"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleVariantEditClick(variant.id?.toString());
+                        }}
+                      >
+                        <IonIcon icon={pencil} />
+                      </IonButton>
+                    </div>
                   </IonCardHeader>
                   <IonCardContent>
                     <IonList>
@@ -161,6 +220,14 @@ export const ProductDetailPage: React.FC = () => {
                           {formatCurrency(Number(variant.price))}
                         </IonLabel>
                       </IonItem>
+                      {variant.selling_price && (
+                        <IonItem>
+                          <IonLabel>Selling Price</IonLabel>
+                          <IonLabel slot="end" style={{ fontWeight: 'bold', color: '#2dd36f' }}>
+                            {formatCurrency(Number(variant.selling_price))}
+                          </IonLabel>
+                        </IonItem>
+                      )}
                       {variant.gst_percent && (
                         <IonItem>
                           <IonLabel>GST</IonLabel>
@@ -256,6 +323,69 @@ export const ProductDetailPage: React.FC = () => {
                     loading={updating}
                   >
                     Update Product
+                  </Button>
+                </div>
+              </div>
+            </IonContent>
+          </IonModal>
+        )}
+
+        {showVariantEditModal && editingVariant && (
+          <IonModal 
+            isOpen={showVariantEditModal}
+            onDidDismiss={() => {
+              setShowVariantEditModal(false);
+              setEditingVariant(null);
+              setEditSellingPrice('');
+            }}
+          >
+            <IonHeader>
+              <IonToolbar>
+                <IonTitle>Edit Selling Price</IonTitle>
+                <IonButtons slot="end">
+                  <IonButton onClick={() => setShowVariantEditModal(false)}>
+                    <IonIcon icon={close} />
+                  </IonButton>
+                </IonButtons>
+              </IonToolbar>
+            </IonHeader>
+            <IonContent>
+              <div style={{ padding: '16px' }}>
+                <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                  <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
+                    {editingVariant.brand || 'Variant'} - {editingVariant.size || ''}
+                  </p>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#999' }}>
+                    SKU: {editingVariant.sku || 'N/A'}
+                  </p>
+                </div>
+
+                <div style={{ marginBottom: '12px' }}>
+                  <IonLabel style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>
+                    Base Price (Cost Price)
+                  </IonLabel>
+                  <div style={{ padding: '12px', backgroundColor: '#f0f0f0', borderRadius: '4px' }}>
+                    <span style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                      {formatCurrency(Number(editingVariant.price))}
+                    </span>
+                  </div>
+                </div>
+
+                <Input
+                  label="Selling Price *"
+                  type="number"
+                  value={editSellingPrice}
+                  onChange={setEditSellingPrice}
+                  placeholder="Enter selling price"
+                />
+
+                <div style={{ marginTop: '24px' }}>
+                  <Button
+                    onClick={handleUpdateVariantPrice}
+                    disabled={updatingVariant || !editSellingPrice || parseFloat(editSellingPrice) <= 0}
+                    loading={updatingVariant}
+                  >
+                    Update Selling Price
                   </Button>
                 </div>
               </div>

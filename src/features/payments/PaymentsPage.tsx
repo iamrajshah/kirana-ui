@@ -23,6 +23,7 @@ import { add, close } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import { useGetPaymentsQuery, useCreatePaymentMutation } from '@core/api/paymentApi';
 import { useGetCustomersQuery } from '@core/api/customerApi';
+import { useLazyGetPendingInvoicesByCustomerQuery } from '@core/api/invoiceApi';
 import { Input, Select, Button, EmptyState, Loading } from '@components';
 import { formatCurrency, formatDateTime, generateIdempotencyKey } from '@utils/helpers';
 import { PAYMENT_MODES } from '@core/constants';
@@ -36,12 +37,36 @@ export const PaymentsPage: React.FC = () => {
 
   const [showModal, setShowModal] = useState(false);
   const [customerId, setCustomerId] = useState('');
+  const [invoiceId, setInvoiceId] = useState('');
   const [amount, setAmount] = useState('');
   const [paymentMode, setPaymentMode] = useState('CASH');
   const [referenceNote, setReferenceNote] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  
+  const [getPendingInvoices, { data: pendingInvoicesData, isLoading: loadingInvoices }] = useLazyGetPendingInvoicesByCustomerQuery();
+
+  // Load pending invoices when customer is selected
+  React.useEffect(() => {
+    if (customerId) {
+      getPendingInvoices(customerId);
+    } else {
+      setInvoiceId('');
+      setAmount('');
+    }
+  }, [customerId, getPendingInvoices]);
+
+  // Auto-fill amount when invoice is selected
+  React.useEffect(() => {
+    if (invoiceId && pendingInvoicesData?.data) {
+      const selectedInvoice = pendingInvoicesData.data.find(inv => inv.id === invoiceId);
+      if (selectedInvoice) {
+        const balanceAmount = (selectedInvoice.total_amount || 0) - (selectedInvoice.paid_amount || 0);
+        setAmount(balanceAmount.toString());
+      }
+    }
+  }, [invoiceId, pendingInvoicesData]);
 
   const handleCreatePayment = async () => {
     // Validation
@@ -67,6 +92,7 @@ export const PaymentsPage: React.FC = () => {
 
       const result = await createPayment({
         customer_id: customerId,
+        invoice_id: invoiceId || undefined,
         amount: Number(amount),
         payment_mode: paymentMode as PaymentMode,
         reference_note: referenceNote || undefined,
@@ -95,6 +121,7 @@ export const PaymentsPage: React.FC = () => {
 
   const resetForm = () => {
     setCustomerId('');
+    setInvoiceId('');
     setAmount('');
     setPaymentMode('CASH');
     setReferenceNote('');
@@ -210,12 +237,31 @@ export const PaymentsPage: React.FC = () => {
               placeholder={t('billing.selectCustomer')}
               required
             />
+            {customerId && loadingInvoices && (
+              <div className="text-center py-2 text-sm">Loading invoices...</div>
+            )}
+            {customerId && pendingInvoicesData?.data && pendingInvoicesData.data.length > 0 && (
+              <Select
+                label="Select Invoice (Optional)"
+                value={invoiceId}
+                onChange={setInvoiceId}
+                options={[
+                  { value: '', label: 'General Payment (No Invoice)' },
+                  ...pendingInvoicesData.data.map(inv => ({
+                    value: inv.id,
+                    label: `${inv.invoice_number} - ${formatCurrency((inv.total_amount || 0) - (inv.paid_amount || 0))} (${inv.status})`
+                  }))
+                ]}
+                placeholder="Select an invoice"
+              />
+            )}
             <Input
               label={t('common.amount')}
               value={amount}
               onChange={setAmount}
               type="number"
               required
+              placeholder={invoiceId ? "Amount auto-filled, edit for partial payment" : "Enter amount"}
             />
             <Select
               label={t('payments.paymentMode')}

@@ -79,6 +79,17 @@ export const productApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Product'],
     }),
+    updateVariant: builder.mutation<
+      ApiResponse<ProductVariant>,
+      { id: string; data: { selling_price?: number; price?: number } }
+    >({
+      query: ({ id, data }) => ({
+        url: `/variants/${id}`,
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['Product'],
+    }),
   }),
 });
 
@@ -90,4 +101,5 @@ export const {
   useCreateProductMutation,
   useCreateVariantMutation,
   useUpdateProductMutation,
+  useUpdateVariantMutation,
 } = productApi;

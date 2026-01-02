@@ -22,6 +22,7 @@ export const paymentApi = apiSlice.injectEndpoints({
         invoice_id?: string;
         reference_note?: string;
         idempotency_key?: string;
+        invoice_allocations?: Array<{ invoice_id: string; amount: number }>; // Multi-invoice support
       }
     >({
       query: (body) => ({

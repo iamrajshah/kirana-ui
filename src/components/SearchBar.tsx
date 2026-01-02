@@ -16,6 +16,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 }) => {
   return (
     <IonSearchbar
+      value={value}
       onIonInput={(e: CustomEvent) => onChange(e.detail.value ?? '')}
       placeholder={placeholder}
       debounce={debounce}

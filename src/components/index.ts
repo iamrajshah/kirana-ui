@@ -7,3 +7,4 @@ export { Loading } from './Loading';
 export { ErrorAlert } from './ErrorAlert';
 export { EmptyState } from './EmptyState';
 export { SideMenu } from './SideMenu';
+export { PaymentModal } from './PaymentModal';

@@ -66,6 +66,8 @@ export interface ProductVariant {
   packaging?: string;
   sku: string;
   price: number;
+  selling_price?: number; // Added for editable selling price
+  mrp_price?: number;
   gst_percent?: number;
   is_active: boolean;
   product?: Product;
@@ -81,33 +83,62 @@ export interface Inventory {
 }
 
 export interface InvoiceItem {
+  id?: string;
   variant_id: string;
   quantity: number;
-  price: number;
+  unit_price?: number; // Price per unit (for create/update - optional, overrides selling_price)
+  price?: number; // Total line price (for backward compatibility)
+  discount_amount?: number; // Item-level discount
+  final_price?: number; // Final price after discount (returned from API)
+  variant?: {
+    id: string;
+    sku: string;
+    selling_price?: number;
+    mrp_price?: number;
+    product?: {
+      id: string;
+      name: string;
+    };
+  };
 }
+
+export type InvoiceStatus = 'DRAFT' | 'FINALIZED' | 'UNPAID' | 'PARTIAL' | 'PAID' | 'CANCELLED';
 
 export interface Invoice {
   id: string;
   invoice_number: string;
-  customer_id: string;
+  customer_id?: string;
   customer?: Customer;
-  total_amount: number;
+  items?: InvoiceItem[];
+  subtotal_amount?: number; // Amount before discounts and GST
+  discount_amount?: number; // Total discount (items + bill-level)
   gst_amount: number;
-  status: 'PAID' | 'UNPAID' | 'PARTIAL';
+  total_amount: number;
+  paid_amount?: number;
+  balance_amount?: number; // Calculated: total - paid
+  status: InvoiceStatus;
   invoice_url?: string;
   created_at: string;
-  items?: InvoiceItem[];
+  finalized_at?: string;
+  cancelled_at?: string;
 }
 
-export type PaymentMode = 'CASH' | 'UPI' | 'CARD' | 'CHEQUE' | 'BANK';
+export type PaymentMode = 'CASH' | 'UPI' | 'CARD' | 'BANK' | 'ADJUSTMENT';
 
 export interface Payment {
   id: string;
   customer_id: string;
   customer?: Customer;
   invoice_id?: string;
-  invoice?: Invoice;
+  invoice?: {
+    id: string;
+    invoice_number: string;
+    total_amount: number;
+    paid_amount?: number;
+    status: InvoiceStatus;
+  };
   amount: number;
+  applied_amount?: number; // Amount actually applied to invoice
   payment_mode: PaymentMode;
   reference_note?: string;
   created_at: string;
