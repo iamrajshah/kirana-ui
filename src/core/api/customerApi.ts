@@ -26,11 +26,21 @@ export const customerApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getCustomers: builder.query<
       PaginatedApiResponse<Customer>,
-      { skip?: number; take?: number; search?: string } | void
+      { skip?: number; take?: number; search?: string }
     >({
       query: (params = {}) => ({
         url: '/customers',
         params,
+      }),
+      providesTags: ['Customer'],
+    }),
+    searchCustomers: builder.query<
+      PaginatedApiResponse<Customer>,
+      string
+    >({
+      query: (searchQuery) => ({
+        url: '/customers',
+        params: { search: searchQuery, take: 10 },
       }),
       providesTags: ['Customer'],
     }),
@@ -75,6 +85,7 @@ export const customerApi = apiSlice.injectEndpoints({
 
 export const {
   useGetCustomersQuery,
+  useLazySearchCustomersQuery,
   useGetCustomerByIdQuery,
   useCreateCustomerMutation,
   useUpdateCustomerMutation,

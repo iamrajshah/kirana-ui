@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from '@components/Navbar';
 import {
   IonContent,
@@ -8,18 +8,16 @@ import {
   IonList,
   IonItem,
   IonLabel,
-  IonSegment,
-  IonSegmentButton,
   IonCard,
   IonCardContent,
 } from '@ionic/react';
-import { add, remove, trash, cash, bookmark } from 'ionicons/icons';
+import { add, trash, cash, bookmark } from 'ionicons/icons';
 import { useLocation, useHistory } from 'react-router-dom';
 import { useLazySearchVariantsQuery } from '@core/api/productApi';
 import { useCreateInvoiceMutation, useUpdateInvoiceMutation, useGetInvoiceByIdQuery } from '@core/api/invoiceApi';
-import { useGetCustomersQuery } from '@core/api/customerApi';
+import { useLazySearchCustomersQuery } from '@core/api/customerApi';
 import { useCreatePaymentMutation } from '@core/api/paymentApi';
-import { SearchBar, Select, PaymentModal, Loading } from '@components';
+import { SearchBar, PaymentModal, Loading } from '@components';
 import { formatCurrency, generateIdempotencyKey, debounce } from '@utils/helpers';
 import notificationService from '@core/services/notificationService';
 import type { PaymentMode } from '@core/types';
@@ -44,13 +42,15 @@ export const BillingPage: React.FC = () => {
   
   const [searchVariants, { data: variantsData, isLoading: searchLoading }] =
     useLazySearchVariantsQuery();
-  const { data: customersData, isLoading: customersLoading } = useGetCustomersQuery({ skip: 0, take: 1000 });
+  const [searchCustomers, { data: customersData, isLoading: customersLoading }] =
+    useLazySearchCustomersQuery();
   const [createInvoice, { isLoading: creating }] = useCreateInvoiceMutation();
   const [updateInvoice, { isLoading: updating }] = useUpdateInvoiceMutation();
   const { data: invoiceData, isLoading: invoiceLoading } = useGetInvoiceByIdQuery(editInvoiceId || '', { skip: !editInvoiceId });
   const [createPayment, { isLoading: isCreatingPayment }] = useCreatePaymentMutation();
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [selectedCustomerName, setSelectedCustomerName] = useState('');
@@ -67,6 +67,7 @@ export const BillingPage: React.FC = () => {
       const invoice = invoiceData.data as {
         customer_id: string;
         customer?: {
+          id?: string;
           name: string;
           phone: string;
         };
@@ -127,6 +128,12 @@ export const BillingPage: React.FC = () => {
     }
   }, 300);
 
+  const handleCustomerSearch = debounce((term: string) => {
+    if (term.length >= 2) {
+      searchCustomers(term);
+    }
+  }, 300);
+
   const addToCart = (variant: unknown) => {
     const variantData = variant as { id: string; selling_price?: number; price?: number; product_name?: string; sku?: string };
     const existing = cart.find((item) => item.variant_id === variantData.id);
@@ -165,48 +172,18 @@ export const BillingPage: React.FC = () => {
     );
   };
 
-  const updateItemDiscount = (
-    variantId: string,
-    discount: number,
-    type: DiscountType = 'amount'
-  ) => {
-    setCart(
-      cart.map((item) =>
-        item.variant_id === variantId
-          ? { ...item, discount_amount: discount, discount_type: type }
-          : item
-      )
-    );
-  };
-
   const removeFromCart = (variantId: string) => {
     setCart(cart.filter((item) => item.variant_id !== variantId));
   };
 
   const calculateLineTotal = (item: CartItem) => {
-    const lineSubtotal = Number(item.unit_price) * Number(item.quantity);
-    let itemDiscount = 0;
-    if (item.discount_type === 'percent') {
-      itemDiscount = (lineSubtotal * Number(item.discount_amount)) / 100;
-    } else {
-      itemDiscount = Number(item.discount_amount);
-    }
-    return Math.max(0, lineSubtotal - itemDiscount);
+    return Number(item.unit_price) * Number(item.quantity);
   };
 
   const calculateSubtotal = () => {
-    return cart.reduce((sum, item) => sum + (Number(item.unit_price) * Number(item.quantity)), 0);
+    return cart.reduce((sum, item) => sum + calculateLineTotal(item), 0);
   };
 
-  const calculateTotalItemDiscount = () => {
-    return cart.reduce((sum, item) => {
-      const lineSubtotal = Number(item.unit_price) * Number(item.quantity);
-      if (item.discount_type === 'percent') {
-        return sum + (lineSubtotal * Number(item.discount_amount)) / 100;
-      }
-      return sum + Number(item.discount_amount);
-    }, 0);
-  };
 
   const calculateBillDiscount = () => {
     const subtotal = calculateSubtotal();
@@ -218,9 +195,8 @@ export const BillingPage: React.FC = () => {
 
   const calculateTotal = () => {
     const subtotal = calculateSubtotal();
-    const totalItemDiscount = calculateTotalItemDiscount();
     const billDiscountAmount = calculateBillDiscount();
-    const afterDiscount = Math.max(0, subtotal - totalItemDiscount - billDiscountAmount);
+    const afterDiscount = Math.max(0, subtotal - billDiscountAmount);
     return afterDiscount + Number(gstAmount);
   };
 
@@ -388,15 +364,13 @@ export const BillingPage: React.FC = () => {
     setGstAmount(0);
     setBillDiscount(0);
     setSearchTerm('');
+    setCustomerSearchTerm('');
     setSelectedCustomerId('');
     setSelectedCustomerName('');
     setLoadedInvoiceData(null);
     setShowPaymentModal(false);
     setPendingInvoiceId(null);
   };
-
-  const customers =
-    customersData?.data?.map((c) => ({ value: c.id, label: `${c.name} (${c.phone})` })) || [];
 
   return (
     <IonPage>
@@ -406,173 +380,191 @@ export const BillingPage: React.FC = () => {
         {creating && <Loading isOpen={creating} message="Saving invoice..." />}
         {updating && <Loading isOpen={updating} message="Updating invoice..." />}
         <div className="max-w-2xl mx-auto">
-          {/* Customer Selection - Compact */}
-          {editInvoiceId ? (
-            <div className="mb-3">
-              <label className="block text-sm font-medium mb-1">Customer</label>
-              <div className="px-3 py-2 bg-gray-100 rounded border">
-                <span className="text-sm">{selectedCustomerName || 'Loading...'}</span>
+          {/* Customer Selection */}
+          <div className="mb-2">
+            <label className="block text-xs font-medium mb-1 text-gray-700">Customer</label>
+            {selectedCustomerId ? (
+              <div className="flex items-center justify-between px-3 py-2 bg-green-50 rounded-lg border border-green-300">
+                <span className="text-sm font-medium text-green-900">{selectedCustomerName}</span>
+                <IonButton
+                  fill="clear"
+                  size="small"
+                  color="danger"
+                  onClick={() => {
+                    setSelectedCustomerId('');
+                    setSelectedCustomerName('');
+                    setCustomerSearchTerm('');
+                    setCart([]);
+                  }}
+                  style={{ margin: 0, height: '28px' }}
+                >
+                  <span className="text-xs">Change</span>
+                </IonButton>
               </div>
-            </div>
-          ) : (
-            <Select
-              label="Select Customer"
-              value={selectedCustomerId}
-              onChange={setSelectedCustomerId}
-              options={customers}
-              placeholder="Choose customer"
-              required
-            />
-          )}
-
-          {/* Product Search - Compact */}
-          <div className="mt-3">
-            <SearchBar
-              value={searchTerm}
-              onChange={(val: string) => {
-                setSearchTerm(val);
-                handleSearch(val);
-              }}
-              placeholder="Search product by name or SKU"
-            />
+            ) : (
+              <>
+                <SearchBar
+                  value={customerSearchTerm}
+                  onChange={(val: string) => {
+                    setCustomerSearchTerm(val);
+                    handleCustomerSearch(val);
+                  }}
+                  placeholder="Search customer by name or phone"
+                />
+                {customerSearchTerm && customersLoading && (
+                  <div className="text-center py-2 text-xs text-gray-500">Loading...</div>
+                )}
+                {customerSearchTerm && customersData?.data && customersData.data.length > 0 && (
+                  <IonList className="mt-1" style={{ maxHeight: '200px', overflow: 'auto' }}>
+                    {customersData.data.map((customer: unknown) => {
+                      const c = customer as { id: string; name: string; phone: string };
+                      return (
+                        <IonItem
+                          key={c.id}
+                          button
+                          onClick={() => {
+                            setSelectedCustomerId(c.id);
+                            setSelectedCustomerName(`${c.name} (${c.phone})`);
+                            setCustomerSearchTerm('');
+                          }}
+                          lines="none"
+                          style={{ '--min-height': '40px' }}
+                        >
+                          <IonLabel>
+                            <h3 className="text-sm font-medium">{c.name}</h3>
+                            <p className="text-xs text-gray-500">{c.phone}</p>
+                          </IonLabel>
+                        </IonItem>
+                      );
+                    })}
+                  </IonList>
+                )}
+              </>
+            )}
           </div>
 
-          {/* Search Results - Compact */}
+          {/* Product Search */}
+          {selectedCustomerId && (
+            <div className="mt-2">
+              <SearchBar
+                value={searchTerm}
+                onChange={(val: string) => {
+                  setSearchTerm(val);
+                  handleSearch(val);
+                }}
+                placeholder="Search product by name or SKU"
+              />
+            </div>
+          )}
+
+          {/* Search Results */}
           {searchTerm && searchLoading && (
-            <div className="text-center py-2 text-sm">Loading...</div>
+            <div className="text-center py-2 text-xs text-gray-500">Loading...</div>
           )}
           {searchTerm && variantsData?.data && variantsData.data.length > 0 && (
-            <IonList className="mt-2">
+            <IonList className="mt-1" style={{ maxHeight: '180px', overflow: 'auto' }}>
               {variantsData.data.map((variant: unknown) => {
                 const v = variant as { id: string; product_name?: string; sku?: string; selling_price?: number; price?: number };
                 return (
-                <IonItem key={v.id} button onClick={() => addToCart(variant)} lines="none">
+                <IonItem key={v.id} button onClick={() => addToCart(variant)} lines="none" style={{ '--min-height': '45px' }}>
                   <IonLabel>
-                    <h3 className="text-sm font-medium">{v.product_name}</h3>
+                    <h3 className="text-xs font-medium">{v.product_name}</h3>
                     <p className="text-xs text-gray-500">
                       {v.sku} • {formatCurrency(v.selling_price || v.price)}
                     </p>
                   </IonLabel>
-                  <IonIcon icon={add} slot="end" color="primary" />
+                  <IonIcon icon={add} slot="end" color="primary" style={{ fontSize: '20px' }} />
                 </IonItem>
                 );
               })}
             </IonList>
           )}
 
-          {/* Cart - Compact Design */}
-          <div className="mt-4">
-            <h3 className="text-sm font-semibold mb-2">Cart Items</h3>
-            {cart.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 text-sm">
-                Cart is empty. Search and add products above.
-              </div>
-            ) : (
-              <div className="space-y-2">
+          {/* Cart */}
+          {selectedCustomerId && (
+            <div className="mt-2">
+              <h3 className="text-xs font-semibold mb-1 text-gray-700">Cart Items ({cart.length})</h3>
+              {cart.length === 0 ? (
+                <div className="text-center py-4 text-gray-400 text-xs">
+                  Cart is empty
+                </div>
+              ) : (
+                <div className="space-y-1">
                 {cart.map((item) => (
-                  <IonCard key={item.variant_id} className="m-0">
-                    <IonCardContent className="p-3">
+                  <IonCard key={item.variant_id} className="m-0" style={{ marginBottom: '2px' }}>
+                    <IonCardContent className="p-1.5">
                       {/* Product Info Row */}
-                      <div className="flex justify-between items-start mb-2">
+                      <div className="flex justify-between items-center mb-0.5">
                         <div className="flex-1">
-                          <h4 className="text-sm font-medium">{item.product_name}</h4>
-                          <p className="text-xs text-gray-500">{item.sku}</p>
+                          <h4 className="text-xs font-medium leading-none">{item.product_name}</h4>
+                          <p className="text-xs text-gray-500 mt-0.5">{item.sku}</p>
                         </div>
                         <IonButton
                           fill="clear"
                           size="small"
                           color="danger"
                           onClick={() => removeFromCart(item.variant_id)}
-                          className="m-0"
+                          style={{ margin: 0, height: '20px', width: '20px', '--padding-start': '0', '--padding-end': '0' }}
                         >
-                          <IonIcon icon={trash} slot="icon-only" />
+                          <IonIcon icon={trash} slot="icon-only" style={{ fontSize: '14px' }} />
                         </IonButton>
                       </div>
 
                       {/* Quantity & Price Row */}
-                      <div className="grid grid-cols-3 gap-2 mb-2">
+                      <div className="grid grid-cols-2 gap-1 mb-0.5">
                         {/* Quantity */}
                         <div>
-                          <label className="text-xs text-gray-600 block mb-1">Qty</label>
-                          <div className="flex items-center gap-1">
-                            <IonButton
-                              fill="outline"
-                              size="small"
+                          <label className="text-xs text-gray-600 block mb-0.5" style={{ fontSize: '10px' }}>Qty</label>
+                          <div className="flex items-center gap-0.5">
+                            <button
                               onClick={() => updateQuantity(item.variant_id, item.quantity - 1)}
-                              className="h-8 w-8"
+                              className="h-7 w-6 flex items-center justify-center border border-gray-300 rounded bg-white active:bg-gray-100"
+                              style={{ minWidth: '24px', padding: 0 }}
                             >
-                              <IonIcon icon={remove} slot="icon-only" />
-                            </IonButton>
-                            <div className="flex-1 text-center font-semibold text-sm">
-                              {item.quantity}
-                            </div>
-                            <IonButton
-                              fill="outline"
-                              size="small"
+                              <span className="text-lg font-bold leading-none">−</span>
+                            </button>
+                            <input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => {
+                                const qty = parseInt(e.target.value) || 1;
+                                updateQuantity(item.variant_id, Math.max(1, qty));
+                              }}
+                              className="h-7 text-center font-semibold text-sm border border-gray-300 rounded"
+                              style={{ width: '100%', maxWidth: '60px', padding: '0 2px' }}
+                              min="1"
+                            />
+                            <button
                               onClick={() => updateQuantity(item.variant_id, item.quantity + 1)}
-                              className="h-8 w-8"
+                              className="h-7 w-6 flex items-center justify-center border border-gray-300 rounded bg-white active:bg-gray-100"
+                              style={{ minWidth: '24px', padding: 0 }}
                             >
-                              <IonIcon icon={add} slot="icon-only" />
-                            </IonButton>
+                              <span className="text-lg font-bold leading-none">+</span>
+                            </button>
                           </div>
                         </div>
 
                         {/* Selling Price */}
                         <div>
-                          <label className="text-xs text-gray-600 block mb-1">Price</label>
-                          <input
-                            type="number"
-                            value={item.unit_price}
-                            onChange={(e) =>
-                              updatePrice(item.variant_id, parseFloat(e.target.value) || 0)
-                            }
-                            className="w-full px-2 py-1 text-sm border rounded"
-                            step="0.01"
-                          />
-                        </div>
-
-                        {/* Discount */}
-                        <div>
-                          <label className="text-xs text-gray-600 block mb-1">Disc</label>
-                          <div className="flex gap-1">
+                          <label className="text-xs text-gray-600 block mb-0.5" style={{ fontSize: '10px' }}>Price</label>
+                          <div className="flex items-center gap-1.5">
                             <input
                               type="number"
-                              value={item.discount_amount}
+                              value={item.unit_price}
                               onChange={(e) =>
-                                updateItemDiscount(
-                                  item.variant_id,
-                                  parseFloat(e.target.value) || 0,
-                                  item.discount_type
-                                )
+                                updatePrice(item.variant_id, parseFloat(e.target.value) || 0)
                               }
-                              className="w-16 px-1 py-1 text-xs border rounded"
+                              className="flex-1 h-7 px-1.5 text-sm border border-gray-300 rounded"
                               step="0.01"
                             />
-                            <IonSegment
-                              value={item.discount_type}
-                              onIonChange={(e) =>
-                                updateItemDiscount(
-                                  item.variant_id,
-                                  item.discount_amount,
-                                  e.detail.value as DiscountType
-                                )
-                              }
-                              className="w-14 h-7"
-                            >
-                              <IonSegmentButton value="amount" className="text-xs">
-                                ₹
-                              </IonSegmentButton>
-                              <IonSegmentButton value="percent" className="text-xs">
-                                %
-                              </IonSegmentButton>
-                            </IonSegment>
+                            <span className="text-gray-700 font-bold" style={{ fontSize: '14px', minWidth: '18px' }}>₹</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Line Total */}
-                      <div className="text-right text-sm font-semibold text-primary">
-                        Total: {formatCurrency(calculateLineTotal(item))}
+                      <div className="text-right text-xs font-semibold text-primary">
+                        {formatCurrency(calculateLineTotal(item))}
                       </div>
                     </IonCardContent>
                   </IonCard>
@@ -580,74 +572,53 @@ export const BillingPage: React.FC = () => {
               </div>
             )}
           </div>
+          )}
 
-          {/* Billing Summary - Compact */}
+          {/* Billing Summary */}
           {cart.length > 0 && (
-            <IonCard className="mt-4">
-              <IonCardContent className="p-3">
+            <IonCard className="mt-1" style={{ maxWidth: '500px', margin: '4px auto 0' }}>
+              <IonCardContent className="p-1.5">
                 {/* Subtotal */}
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Subtotal:</span>
-                  <span className="font-semibold">{formatCurrency(calculateSubtotal())}</span>
+                <div className="flex justify-between mb-1">
+                  <span className="text-gray-700" style={{ fontSize: '11px' }}>Subtotal:</span>
+                  <span className="font-semibold" style={{ fontSize: '11px' }}>{formatCurrency(calculateSubtotal())}</span>
                 </div>
 
-                {/* Item Discounts */}
-                {calculateTotalItemDiscount() > 0 && (
-                  <div className="flex justify-between text-xs text-gray-600 mb-2">
-                    <span>Item Discounts:</span>
-                    <span>- {formatCurrency(calculateTotalItemDiscount())}</span>
-                  </div>
-                )}
-
-                {/* Bill Discount */}
-                <div className="mb-2">
-                  <label className="text-xs text-gray-600 block mb-1">Bill Discount:</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      value={billDiscount}
-                      onChange={(e) => setBillDiscount(parseFloat(e.target.value) || 0)}
-                      className="flex-1 px-2 py-1 text-sm border rounded"
-                      placeholder="0"
-                      step="0.01"
-                    />
-                    <IonSegment
-                      value={billDiscountType}
-                      onIonChange={(e) => setBillDiscountType(e.detail.value as DiscountType)}
-                      className="w-20 h-8"
-                    >
-                      <IonSegmentButton value="amount" className="text-xs">
-                        ₹
-                      </IonSegmentButton>
-                      <IonSegmentButton value="percent" className="text-xs">
-                        %
-                      </IonSegmentButton>
-                    </IonSegment>
-                  </div>
-                  {billDiscount > 0 && (
-                    <div className="text-xs text-gray-600 mt-1">
-                      - {formatCurrency(calculateBillDiscount())}
-                    </div>
-                  )}
+                {/* Bill Discount - Single Row */}
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-gray-700" style={{ fontSize: '11px', minWidth: '65px' }}>Bill Disc:</span>
+                  <input
+                    type="number"
+                    value={billDiscount}
+                    onChange={(e) => {
+                      setBillDiscount(parseFloat(e.target.value) || 0);
+                      setBillDiscountType('amount');
+                    }}
+                    className="flex-1 h-7 px-1.5 text-sm border border-gray-300 rounded"
+                    placeholder="0"
+                    step="0.01"
+                  />
+                  <span className="text-gray-700 font-bold" style={{ fontSize: '14px', minWidth: '18px' }}>₹</span>
                 </div>
 
-                {/* GST */}
-                <div className="mb-2">
-                  <label className="text-xs text-gray-600 block mb-1">GST Amount:</label>
+                {/* GST - Single Row */}
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-gray-700" style={{ fontSize: '11px', minWidth: '65px' }}>GST Amt:</span>
                   <input
                     type="number"
                     value={gstAmount}
                     onChange={(e) => setGstAmount(parseFloat(e.target.value) || 0)}
-                    className="w-full px-2 py-1 text-sm border rounded"
+                    className="flex-1 h-7 px-1.5 text-sm border border-gray-300 rounded"
                     placeholder="0"
                     step="0.01"
                   />
+                  <span className="text-gray-700 font-bold" style={{ fontSize: '14px', minWidth: '18px' }}>₹</span>
                 </div>
 
                 {/* Final Total */}
-                <div className="flex justify-between text-lg font-bold border-t pt-2 mt-2">
-                  <span>Total:</span>
-                  <span className="text-primary">{formatCurrency(calculateTotal())}</span>
+                <div className="flex justify-between font-bold border-t border-gray-200 pt-1 mt-1">
+                  <span style={{ fontSize: '13px' }}>Total:</span>
+                  <span className="text-primary" style={{ fontSize: '14px' }}>{formatCurrency(calculateTotal())}</span>
                 </div>
               </IonCardContent>
             </IonCard>
@@ -655,24 +626,26 @@ export const BillingPage: React.FC = () => {
 
           {/* Action Buttons */}
           {cart.length > 0 && (
-            <div className="grid grid-cols-2 gap-2 mt-4 pb-4">
+            <div className="grid grid-cols-2 gap-2 mt-2 pb-2">
               <IonButton
                 onClick={handleSaveAsDraft}
                 disabled={cart.length === 0 || creating || updating}
                 fill="outline"
                 expand="block"
+                size="small"
               >
-                <IonIcon icon={bookmark} slot="start" />
-                {editInvoiceId ? 'Update Draft' : 'Save as Draft'}
+                <IonIcon icon={bookmark} slot="start" style={{ fontSize: '18px' }} />
+                <span className="text-xs">{editInvoiceId ? 'Update' : 'Draft'}</span>
               </IonButton>
               <IonButton
                 onClick={handleSaveAndCollectPayment}
                 disabled={cart.length === 0 || creating}
                 color="success"
                 expand="block"
+                size="small"
               >
-                <IonIcon icon={cash} slot="start" />
-                Save & Collect
+                <IonIcon icon={cash} slot="start" style={{ fontSize: '18px' }} />
+                <span className="text-xs">Save & Pay</span>
               </IonButton>
             </div>
           )}
