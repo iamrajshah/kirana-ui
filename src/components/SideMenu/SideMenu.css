@@ -1,0 +1,23 @@
+ion-menu ion-content {
+  --background: var(--ion-item-background, var(--ion-background-color, #fff));
+}
+
+ion-menu ion-list {
+  padding: 8px 0;
+}
+
+ion-menu ion-item {
+  --padding-start: 16px;
+  --inner-padding-end: 16px;
+  margin: 4px 8px;
+  border-radius: 8px;
+}
+
+ion-menu ion-item:hover {
+  --background: var(--ion-color-light);
+}
+
+ion-menu ion-icon {
+  margin-right: 16px;
+  font-size: 24px;
+}

@@ -1,0 +1,116 @@
+.invoice-card {
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.invoice-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.invoice-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.invoice-number {
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.invoice-date {
+  font-size: 12px;
+  color: var(--ion-color-medium);
+  margin: 0;
+}
+
+.customer-info {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ion-color-light);
+}
+
+.customer-name {
+  font-weight: 600;
+  font-size: 16px;
+  margin: 0 0 4px 0;
+  color: var(--ion-color-dark);
+}
+
+.customer-phone {
+  font-size: 14px;
+  color: var(--ion-color-medium);
+  margin: 0;
+}
+
+.invoice-amounts {
+  margin: 12px 0;
+}
+
+.amount-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.amount-label {
+  font-size: 14px;
+  color: var(--ion-color-medium);
+}
+
+.amount-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ion-color-dark);
+}
+
+.total-row {
+  border-top: 1px solid var(--ion-color-light);
+  margin-top: 8px;
+  padding-top: 12px;
+}
+
+.total-row .amount-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ion-color-dark);
+}
+
+.total-row .amount-value.total {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ion-color-primary);
+}
+
+.invoice-actions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ion-color-light);
+}
+
+.view-invoice-link {
+  display: inline-block;
+  color: var(--ion-color-primary);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.view-invoice-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .invoice-number {
+    font-size: 16px;
+  }
+  
+  .customer-name {
+    font-size: 15px;
+  }
+}

@@ -1,0 +1,104 @@
+.ledger-summary {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--ion-color-light);
+  border-radius: 8px;
+}
+
+.summary-item {
+  text-align: center;
+}
+
+.summary-label {
+  font-size: 12px;
+  color: var(--ion-color-medium);
+  margin-bottom: 4px;
+}
+
+.summary-value {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.summary-value.debit {
+  color: var(--ion-color-danger);
+}
+
+.summary-value.credit {
+  color: var(--ion-color-success);
+}
+
+.summary-value.balance {
+  font-size: 20px;
+}
+
+.ledger-card {
+  margin: 0;
+}
+
+.debit-card .ion-card-header {
+  background: rgba(var(--ion-color-danger-rgb), 0.05);
+}
+
+.credit-card .ion-card-header {
+  background: rgba(var(--ion-color-success-rgb), 0.05);
+}
+
+.ledger-item {
+  --padding-start: 12px;
+  --padding-end: 12px;
+  margin-bottom: 8px;
+}
+
+.entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.entry-date {
+  font-size: 11px;
+  color: var(--ion-color-medium);
+}
+
+.entry-description {
+  margin: 4px 0;
+  font-size: 14px;
+  color: var(--ion-color-dark);
+}
+
+.entry-reference {
+  margin: 0;
+  font-size: 11px;
+  color: var(--ion-color-medium);
+  font-style: italic;
+}
+
+.entry-amount {
+  font-size: 16px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.debit-amount {
+  color: var(--ion-color-danger);
+}
+
+.credit-amount {
+  color: var(--ion-color-success);
+}
+
+@media (max-width: 768px) {
+  .summary-value {
+    font-size: 16px;
+  }
+  
+  .summary-value.balance {
+    font-size: 18px;
+  }
+  
+  .ledger-card {
+    margin-bottom: 16px;
+  }
+}

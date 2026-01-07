@@ -1,0 +1,10 @@
+.import-section,
+.export-section {
+  margin-top: 20px;
+}
+
+.export-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

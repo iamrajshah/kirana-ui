@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Touch-friendly minimum sizes */
+ion-button {
+  --min-height: 48px;
+}
+
+ion-fab-button {
+  --min-height: 56px;
+  --min-width: 56px;
+}
+
+/* Custom utility classes */
+.min-h-touch {
+  min-height: 48px;
+}
+
+.min-w-touch {
+  min-width: 48px;
+}
