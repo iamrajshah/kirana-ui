@@ -31,6 +31,8 @@ import {
   useFinalizeInvoiceMutation,
   useCancelInvoiceMutation 
 } from '../../core/api/invoiceApi';
+import { useTranslation } from 'react-i18next';
+
 import { useCreatePaymentMutation } from '@core/api/paymentApi';
 import { PaymentModal } from '@components';
 import { formatDateTime, formatCurrency, generateIdempotencyKey } from '@utils/helpers';
@@ -40,6 +42,7 @@ import './InvoiceDetailPage.css';
 
 const InvoiceDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { t } = useTranslation();
   const history = useHistory();
   const { data, isLoading, error, refetch } = useGetInvoiceByIdQuery(id);
   const [finalizeInvoice, { isLoading: finalizing }] = useFinalizeInvoiceMutation();

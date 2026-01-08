@@ -1,23 +1,38 @@
 import React, { useState } from 'react';
-import { IonContent, IonPage, IonToast } from '@ionic/react';
+import { IonContent, IonPage, IonToast, IonSelect, IonSelectOption, IonIcon, IonToggle } from '@ionic/react';
 import { useHistory } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import { language as languageIcon, contrast } from 'ionicons/icons';
 import { useLoginMutation } from '@core/api/authApi';
 import { useAppDispatch } from '@hooks/useAppDispatch';
 import { setCredentials } from '@core/auth/authSlice';
 import { Button, Input } from '@components';
 import { ROUTES, APP_NAME } from '@core/constants';
 import { isValidEmail, isValidPhone } from '@utils/helpers';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export const LoginPage: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const history = useHistory();
   const dispatch = useAppDispatch();
   const [login, { isLoading }] = useLoginMutation();
+  const { theme, toggleTheme } = useTheme();
 
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+
+  const languages = [
+    { code: 'en', name: 'English' },
+    { code: 'hi', name: 'हिंदी' },
+    { code: 'mr', name: 'मराठी' },
+    { code: 'gu', name: 'ગુજરાતી' },
+  ];
+
+  const handleLanguageChange = (langCode: string) => {
+    i18n.changeLanguage(langCode);
+    localStorage.setItem('i18nextLng', langCode);
+  };
 
   const handleLogin = async () => {
     console.log('=== handleLogin CALLED ===');
@@ -74,23 +89,57 @@ export const LoginPage: React.FC = () => {
     <IonPage>
       <IonContent className="ion-padding">
         <div className="flex flex-col items-center justify-center min-h-full px-4">
+          {/* Language & Theme Selector */}
+          <div className="mb-4 flex items-center gap-4 p-3 rounded-lg" style={{ backgroundColor: 'var(--ion-color-light)' }}>
+            {/* Language Selector */}
+            <div className="flex items-center gap-2 flex-1">
+              <IonIcon icon={languageIcon} className="text-xl" style={{ color: 'var(--ion-color-primary)' }} />
+              <IonSelect
+                value={i18n.language}
+                onIonChange={(e) => handleLanguageChange(e.detail.value)}
+                interface="action-sheet"
+                interfaceOptions={{
+                  header: 'Select Language',
+                  cssClass: 'language-selector-sheet'
+                }}
+                className="w-full"
+                style={{ padding: 0 }}
+              >
+                {languages.map((lang) => (
+                  <IonSelectOption key={lang.code} value={lang.code}>
+                    {lang.name}
+                  </IonSelectOption>
+                ))}
+              </IonSelect>
+            </div>
+
+            {/* Theme Toggle */}
+            <div className="flex items-center gap-2">
+              <IonIcon icon={contrast} style={{ color: 'var(--ion-color-primary)' }} />
+              <IonToggle
+                checked={theme === 'dark'}
+                onIonChange={toggleTheme}
+              />
+            </div>
+          </div>
+
           <div className="w-full max-w-md">
             {/* App Logo/Title */}
             <div className="text-center mb-12">
-              <h1 className="text-4xl font-bold text-primary-600 mb-2">{APP_NAME}</h1>
-              <p className="text-gray-500">{t('common.appName')}</p>
+              <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--ion-color-primary)' }}>{APP_NAME}</h1>
+              <p style={{ color: 'var(--ion-color-medium)' }}>{t('common.appName')}</p>
             </div>
 
             {/* Login Form */}
-            <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-semibold mb-6 text-center">{t('auth.login')}</h2>
+            <form onSubmit={handleSubmit} className="rounded-lg shadow-md p-6" style={{ backgroundColor: 'var(--ion-card-background)' }}>
+              <h2 className="text-2xl font-semibold mb-6 text-center" style={{ color: 'var(--ion-text-color)' }}>{t('auth.login')}</h2>
 
               <Input
                 label={t('auth.emailOrPhone')}
                 value={emailOrPhone}
                 onChange={setEmailOrPhone}
                 type="text"
-                placeholder="email@example.com or 9876543210"
+                placeholder={t('common.placeholders.emailOrPhone')}
                 required
               />
 
@@ -99,23 +148,23 @@ export const LoginPage: React.FC = () => {
                 value={password}
                 onChange={setPassword}
                 type="password"
-                placeholder="Enter password"
+                placeholder={t('common.placeholders.password')}
                 required
               />
 
-              <Button
-                type="submit"
-                loading={isLoading}
-                fullWidth
-                size="large"
-                className="mt-4"
-              >
-                {t('auth.loginButton')}
-              </Button>
+              <div className="mt-4">
+                <Button
+                  type="submit"
+                  fullWidth
+                  size="large"
+                >
+                  {t('auth.loginButton')}
+                </Button>
+              </div>
             </form>
 
             {/* Version Info */}
-            <div className="text-center mt-8 text-sm text-gray-500">
+            <div className="text-center mt-8 text-sm" style={{ color: 'var(--ion-color-medium)' }}>
               Version {import.meta.env.VITE_APP_VERSION}
             </div>
           </div>

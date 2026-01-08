@@ -14,20 +14,27 @@ import {
   IonToolbar,
   IonTitle,
   IonButtons,
+  IonItem,
+  IonLabel,
+  IonSelect,
+  IonSelectOption,
+  IonToggle,
 } from '@ionic/react';
-import { save, person } from 'ionicons/icons';
+import { save, person, language as languageIcon, contrast } from 'ionicons/icons';
 import { Input } from '@components/Input';
 import { useUpdateProfileMutation } from '@core/api/userApi';
 import { useAppSelector } from '@core/hooks';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router';
 import { ROUTES } from '@core/constants';
+import { useTheme } from '../../contexts/ThemeContext';
 import './ProfilePage.css';
 
 export const ProfilePage: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const history = useHistory();
   const user = useAppSelector((state) => state.auth.user);
+  const { theme, toggleTheme } = useTheme();
   
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -38,6 +45,18 @@ export const ProfilePage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
 
   const [updateProfile, { isLoading: updating }] = useUpdateProfileMutation();
+
+  const languages = [
+    { code: 'en', name: 'English' },
+    { code: 'hi', name: 'हिंदी' },
+    { code: 'mr', name: 'मराठी' },
+    { code: 'gu', name: 'ગુજરાતી' },
+  ];
+
+  const handleLanguageChange = (langCode: string) => {
+    i18n.changeLanguage(langCode);
+    localStorage.setItem('i18nextLng', langCode);
+  };
 
   useEffect(() => {
     if (user) {
@@ -91,7 +110,7 @@ export const ProfilePage: React.FC = () => {
           <IonButtons slot="start">
             <IonBackButton defaultHref="/dashboard" />
           </IonButtons>
-          <IonTitle>My Profile</IonTitle>
+          <IonTitle>{t('profile.title')}</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
@@ -99,19 +118,19 @@ export const ProfilePage: React.FC = () => {
           <IonCardHeader>
             <IonCardTitle>
               <IonIcon icon={person} style={{ marginRight: '8px' }} />
-              Update Profile Information
+              {t('profile.updateProfileInformation')}
             </IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
             <Input
-              label="Name"
+              label={t('profile.name')}
               value={name}
               onChange={setName}
-              placeholder="Enter your name"
+              placeholder={t('profile.name')}
               required
             />
             <Input
-              label="Phone"
+              label={t('profile.phone')}
               value={phone}
               onChange={setPhone}
               type="tel"
@@ -119,7 +138,7 @@ export const ProfilePage: React.FC = () => {
               required
             />
             <Input
-              label="Email"
+              label={t('profile.email')}
               value={email}
               onChange={setEmail}
               type="email"
@@ -128,31 +147,66 @@ export const ProfilePage: React.FC = () => {
             
             <IonButton
               onClick={handleUpdateProfile}
-              loading={updating}
+
               expand="block"
               style={{ marginTop: '20px' }}
             >
               <IonIcon icon={save} slot="start" />
-              Update Profile
+              {t('profile.updateProfile')}
             </IonButton>
           </IonCardContent>
         </IonCard>
 
         <IonCard>
+          <IonItem>
+            <IonIcon icon={languageIcon} slot="start" />
+            <IonLabel>{t('profile.language')}</IonLabel>
+            <IonSelect
+              value={i18n.language}
+              placeholder={t('profile.selectLanguage')}
+              onIonChange={(e) => handleLanguageChange(e.detail.value)}
+              interface="action-sheet"
+              interfaceOptions={{
+                header: t('profile.selectLanguage'),
+                cssClass: 'language-selector-sheet'
+              }}
+            >
+              {languages.map((lang) => (
+                <IonSelectOption key={lang.code} value={lang.code}>
+                  {lang.name}
+                </IonSelectOption>
+              ))}
+            </IonSelect>
+          </IonItem>
+
+          <IonItem>
+            <IonIcon icon={contrast} slot="start" />
+            <IonLabel>{t('profile.theme')}</IonLabel>
+            <IonToggle
+              checked={theme === 'dark'}
+              onIonChange={toggleTheme}
+              slot="end"
+            >
+              {theme === 'dark' ? t('profile.darkMode') : t('profile.lightMode')}
+            </IonToggle>
+          </IonItem>
+        </IonCard>
+
+        <IonCard>
           <IonCardHeader>
-            <IonCardTitle>Account Information</IonCardTitle>
+            <IonCardTitle>{t('profile.accountInformation')}</IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
             <div className="info-row">
-              <span className="info-label">User ID:</span>
+              <span className="info-label">{t('profile.userId')}:</span>
               <span className="info-value">{user?.id}</span>
             </div>
             <div className="info-row">
-              <span className="info-label">Role:</span>
+              <span className="info-label">{t('profile.role')}:</span>
               <span className="info-value">{user?.roles?.[0] || 'USER'}</span>
             </div>
             <div className="info-row">
-              <span className="info-label">Company:</span>
+              <span className="info-label">{t('profile.company')}:</span>
               <span className="info-value">{user?.tenant?.name || 'N/A'}</span>
             </div>
           </IonCardContent>

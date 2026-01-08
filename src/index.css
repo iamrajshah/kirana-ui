@@ -9,6 +9,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color: var(--ion-text-color);
+  background-color: var(--ion-background-color);
 }
 
 /* Touch-friendly minimum sizes */
@@ -28,4 +30,178 @@ ion-fab-button {
 
 .min-w-touch {
   min-width: 48px;
+}
+
+/* Dark mode text color overrides for Tailwind classes */
+body.dark .text-gray-700,
+body.dark .text-gray-800,
+body.dark .text-gray-900,
+body.dark .text-black {
+  color: var(--ion-text-color) !important;
+}
+
+body.dark .text-gray-500,
+body.dark .text-gray-600 {
+  color: var(--ion-text-color-secondary) !important;
+}
+
+body.dark .bg-gray-100,
+body.dark .bg-gray-50 {
+  background-color: var(--ion-card-background) !important;
+}
+
+body.dark .border-gray-200,
+body.dark .border-gray-300 {
+  border-color: var(--ion-border-color) !important;
+}
+/* Fix IonSelect popover dark mode */
+body.dark .select-popover .popover-content,
+body.dark ion-popover ion-content,
+body.dark ion-popover ion-list,
+body.dark ion-popover ion-item {
+  background-color: var(--ion-background-color);
+  color: var(--ion-text-color);
+}
+
+body.dark ion-popover ion-radio,
+body.dark ion-popover ion-label {
+  color: var(--ion-text-color);
+}
+
+body.dark ion-select-popover ion-list,
+body.dark ion-select-popover ion-item {
+  background-color: var(--ion-background-color);
+  color: var(--ion-text-color);
+}
+
+body.dark ion-select-popover ion-radio-group ion-item {
+  --background: var(--ion-background-color);
+  --color: var(--ion-text-color);
+}
+
+body.dark .alert-wrapper {
+  background-color: var(--ion-background-color);
+  color: var(--ion-text-color);
+}
+
+body.dark .alert-button {
+  color: var(--ion-color-primary);
+}
+
+/* Comprehensive dark mode fixes for all components */
+body.dark ion-card {
+  background-color: var(--ion-card-background);
+  color: var(--ion-text-color);
+}
+
+body.dark ion-card-title,
+body.dark ion-card-header,
+body.dark ion-list-header {
+  color: var(--ion-text-color);
+}
+
+body.dark ion-item {
+  --background: var(--ion-item-background);
+  --color: var(--ion-text-color);
+}
+
+body.dark ion-label h2,
+body.dark ion-label h3,
+body.dark ion-label p {
+  color: var(--ion-text-color);
+}
+
+body.dark ion-input,
+body.dark ion-textarea,
+body.dark ion-select {
+  --color: var(--ion-text-color);
+  --placeholder-color: var(--ion-color-medium);
+}
+
+body.dark ion-modal {
+  --background: var(--ion-background-color);
+}
+
+body.dark ion-modal ion-content {
+  --background: var(--ion-background-color);
+}
+
+body.dark ion-searchbar {
+  --background: var(--ion-item-background);
+  --color: var(--ion-text-color);
+  --placeholder-color: var(--ion-color-medium);
+  --icon-color: var(--ion-color-medium);
+}
+
+body.dark .ion-color-light {
+  --ion-color-base: var(--ion-color-step-50);
+  --ion-color-contrast: var(--ion-text-color);
+}
+
+/* Fix native input elements in dark mode */
+body.dark input[type="text"],
+body.dark input[type="number"],
+body.dark input[type="email"],
+body.dark input[type="password"],
+body.dark input[type="tel"],
+body.dark textarea {
+  background-color: var(--ion-item-background) !important;
+  color: var(--ion-text-color) !important;
+  border-color: var(--ion-border-color) !important;
+}
+
+body.dark input[type="text"]::placeholder,
+body.dark input[type="number"]::placeholder,
+body.dark input[type="email"]::placeholder,
+body.dark input[type="password"]::placeholder,
+body.dark input[type="tel"]::placeholder,
+body.dark textarea::placeholder {
+  color: var(--ion-color-medium) !important;
+}
+
+/* Fix buttons in dark mode */
+body.dark button {
+  background-color: var(--ion-item-background);
+  color: var(--ion-text-color);
+  border-color: var(--ion-border-color);
+}
+
+body.dark button.bg-white {
+  background-color: var(--ion-item-background) !important;
+}
+
+body.dark button.active\:bg-gray-100:active,
+body.dark .active\:bg-gray-100:active {
+  background-color: var(--ion-color-step-150) !important;
+}
+
+/* Language Selector Action Sheet Styling */
+.language-selector-sheet .action-sheet-group {
+  background-color: var(--ion-background-color) !important;
+}
+
+.language-selector-sheet .action-sheet-button {
+  color: var(--ion-text-color) !important;
+}
+
+.language-selector-sheet .action-sheet-title {
+  color: var(--ion-text-color) !important;
+  font-weight: 600 !important;
+}
+
+.language-selector-sheet .action-sheet-button.action-sheet-selected {
+  color: var(--ion-color-primary) !important;
+  font-weight: 600 !important;
+}
+
+body.dark .language-selector-sheet .action-sheet-group {
+  background-color: var(--ion-background-color) !important;
+}
+
+body.dark .language-selector-sheet .action-sheet-button {
+  color: var(--ion-text-color) !important;
+}
+
+body.dark .language-selector-sheet .action-sheet-title {
+  color: var(--ion-text-color) !important;
 }

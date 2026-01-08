@@ -65,7 +65,7 @@ export const Input: React.FC<InputProps> = ({
               icon={showPassword ? eyeOff : eye}
               style={{ 
                 fontSize: '22px',
-                color: '#666',
+                color: 'var(--ion-color-medium)',
                 pointerEvents: 'none',
               }}
             />

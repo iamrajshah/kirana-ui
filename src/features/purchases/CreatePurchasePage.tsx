@@ -171,7 +171,7 @@ const CreatePurchasePage: React.FC = () => {
 
   return (
     <IonPage>
-      <Navbar title="Create Purchase" />
+      <Navbar title={t('purchases.createPurchase')} />
       <IonContent className="ion-padding">
         {/* Supplier & Invoice Info */}
         <IonCard>
@@ -182,25 +182,25 @@ const CreatePurchasePage: React.FC = () => {
                 fullWidth
               >
                 {selectedSupplierId 
-                  ? `✓ ${suppliers.find(s => s.id === selectedSupplierId)?.name}`
-                  : 'Select Supplier'}
+                  ? `${t('purchases.selectSupplierSelected')} ${suppliers.find(s => s.id === selectedSupplierId)?.name}`
+                  : t('purchases.selectSupplierButton')}
               </Button>
             </div>
 
             <Input
-              label="Invoice Number"
+              label={t('purchases.invoiceNumberLabel')}
               value={invoiceNumber}
               onChange={setInvoiceNumber}
-              placeholder="Enter supplier invoice number"
+              placeholder={t('purchases.enterSupplierInvoiceNumber')}
               required
             />
 
             <Input
-              label="Invoice Date"
+              label={t('purchases.invoiceDateLabel')}
               value={invoiceDate}
               onChange={setInvoiceDate}
               type="text"
-              placeholder="YYYY-MM-DD"
+              placeholder={t('purchases.invoiceDateFormat')}
             />
           </IonCardContent>
         </IonCard>
@@ -214,10 +214,10 @@ const CreatePurchasePage: React.FC = () => {
                 setSearchTerm(val);
                 handleSearch(val);
               }}
-              placeholder="Search products to add..."
+              placeholder={t('purchases.searchProductsAdd')}
             />
 
-            {searchLoading && <IonText color="medium"><p>Searching...</p></IonText>}
+            {searchLoading && <IonText color="medium"><p>{t('purchases.searching')}</p></IonText>}
 
             {searchTerm.length >= 2 && variants.length > 0 && (
               <IonList>
@@ -241,7 +241,7 @@ const CreatePurchasePage: React.FC = () => {
           <IonCard>
             <IonCardHeader>
               <IonCardTitle>
-                Items ({cart.length})
+                {t('purchases.itemsLabel')} ({cart.length})
                 <IonBadge color="primary" style={{ marginLeft: '8px' }}>
                   {formatCurrency(subtotal)}
                 </IonBadge>
@@ -277,13 +277,13 @@ const CreatePurchasePage: React.FC = () => {
                               border: '1px solid var(--ion-color-medium)',
                               borderRadius: '4px',
                             }}
-                            placeholder="Unit Price"
+                            placeholder={t('purchases.unitPricePlaceholder')}
                           />
                         </div>
                       </div>
 
                       <p style={{ marginTop: '8px', color: 'var(--ion-color-primary)' }}>
-                        Total: {formatCurrency(item.quantity * item.unit_price)}
+                        {t('purchases.total')} {formatCurrency(item.quantity * item.unit_price)}
                       </p>
                     </IonLabel>
 
@@ -301,23 +301,23 @@ const CreatePurchasePage: React.FC = () => {
         {cart.length > 0 && (
           <IonCard>
             <IonCardHeader>
-              <IonCardTitle>Payment Details</IonCardTitle>
+              <IonCardTitle>{t('purchases.paymentDetailsLabel')}</IonCardTitle>
             </IonCardHeader>
             <IonCardContent>
               <div style={{ marginBottom: '16px' }}>
-                <IonText color="medium"><p>Subtotal</p></IonText>
+                <IonText color="medium"><p>{t('purchases.subtotal')}</p></IonText>
                 <IonText><h2 style={{ margin: 0 }}>{formatCurrency(subtotal)}</h2></IonText>
               </div>
 
               <div style={{ marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <label style={{ fontWeight: '500' }}>Payment Amount</label>
+                  <label style={{ fontWeight: '500' }}>{t('purchases.paymentAmountLabel')}</label>
                   <IonButton 
                     size="small" 
                     fill="outline"
                     onClick={() => setPaymentAmount(subtotal.toString())}
                   >
-                    Pay Full
+                    {t('purchases.payFull')}
                   </IonButton>
                 </div>
                 <Input
@@ -331,7 +331,7 @@ const CreatePurchasePage: React.FC = () => {
 
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                  Payment Mode
+                  {t('purchases.paymentModeLabel')}
                 </label>
                 <IonSelect
                   value={paymentMode}
@@ -343,10 +343,10 @@ const CreatePurchasePage: React.FC = () => {
                     padding: '8px'
                   }}
                 >
-                  <IonSelectOption value="CASH">Cash</IonSelectOption>
-                  <IonSelectOption value="UPI">UPI</IonSelectOption>
-                  <IonSelectOption value="CARD">Card</IonSelectOption>
-                  <IonSelectOption value="BANK_TRANSFER">Bank Transfer</IonSelectOption>
+                  <IonSelectOption value="CASH">{t('purchases.cash')}</IonSelectOption>
+                  <IonSelectOption value="UPI">{t('purchases.upi')}</IonSelectOption>
+                  <IonSelectOption value="CARD">{t('purchases.card')}</IonSelectOption>
+                  <IonSelectOption value="BANK_TRANSFER">{t('purchases.bankTransferOption')}</IonSelectOption>
                 </IonSelect>
               </div>
 
@@ -360,7 +360,7 @@ const CreatePurchasePage: React.FC = () => {
                   }}
                 >
                   <IonText color="danger">
-                    <p style={{ margin: 0 }}>Pending Amount: <strong>{formatCurrency(pending)}</strong></p>
+                    <p style={{ margin: 0 }}>{t('purchases.pendingAmountLabel')} <strong>{formatCurrency(pending)}</strong></p>
                   </IonText>
                 </div>
               )}
@@ -373,7 +373,7 @@ const CreatePurchasePage: React.FC = () => {
                 size="large"
               >
                 <IonIcon icon={checkmarkCircle} slot="start" />
-                Create Purchase
+                {t('purchases.createPurchaseButton')}
               </Button>
             </IonCardContent>
           </IonCard>
@@ -381,7 +381,7 @@ const CreatePurchasePage: React.FC = () => {
 
         {cart.length === 0 && (
           <EmptyState 
-            message="Add products to create purchase order" 
+            message={t('purchases.addProductsMessage')} 
             icon="cart"
           />
         )}
@@ -391,9 +391,9 @@ const CreatePurchasePage: React.FC = () => {
           <IonModal isOpen={true} onDidDismiss={() => setShowSupplierModal(false)}>
             <IonHeader>
               <IonToolbar>
-                <IonTitle>Select Supplier</IonTitle>
+                <IonTitle>{t('purchases.selectSupplierTitle')}</IonTitle>
                 <IonButtons slot="end">
-                  <IonButton onClick={() => setShowSupplierModal(false)}>Close</IonButton>
+                  <IonButton onClick={() => setShowSupplierModal(false)}>{t('purchases.close')}</IonButton>
                 </IonButtons>
               </IonToolbar>
             </IonHeader>

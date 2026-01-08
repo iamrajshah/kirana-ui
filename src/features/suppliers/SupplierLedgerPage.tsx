@@ -80,7 +80,7 @@ const SupplierLedgerPage: React.FC = () => {
   };
   const handleMakePayment = async () => {
     if (!amount || parseFloat(amount) <= 0) {
-      notificationService.warning('Please enter a valid amount');
+      notificationService.warning(t('suppliers.enterValidAmount'));
       return;
     }
 
@@ -97,7 +97,7 @@ const SupplierLedgerPage: React.FC = () => {
       setPaymentMode('CASH');
       setNotes('');
       setShowPaymentModal(false);
-      notificationService.success('Payment recorded successfully');
+      notificationService.success(t('suppliers.paymentRecordedSuccess'));
       refetch();
     } catch (error) {
       notificationService.handleApiError(error);
@@ -112,7 +112,7 @@ const SupplierLedgerPage: React.FC = () => {
             <IonButtons slot="start">
               <IonBackButton defaultHref="/suppliers" />
             </IonButtons>
-            <IonTitle>Supplier Ledger</IonTitle>
+            <IonTitle>{t('suppliers.ledger.title')}</IonTitle>
           </IonToolbar>
         </IonHeader>
         <IonContent>
@@ -132,11 +132,11 @@ const SupplierLedgerPage: React.FC = () => {
             <IonButtons slot="start">
               <IonBackButton defaultHref="/suppliers" />
             </IonButtons>
-            <IonTitle>Supplier Ledger</IonTitle>
+            <IonTitle>{t('suppliers.ledger.title')}</IonTitle>
           </IonToolbar>
         </IonHeader>
         <IonContent>
-          <EmptyState message="Supplier not found" />
+          <EmptyState message={t('suppliers.ledger.supplierNotFound')} />
         </IonContent>
       </IonPage>
     );
@@ -175,7 +175,7 @@ const SupplierLedgerPage: React.FC = () => {
 
   return (
     <IonPage>
-      <Navbar title="Supplier Ledger" />
+      <Navbar title={t('suppliers.ledger.title')} />
       <IonContent className="ion-padding">
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent />
@@ -188,16 +188,16 @@ const SupplierLedgerPage: React.FC = () => {
           </IonCardHeader>
           <IonCardContent>
             <div style={{ marginBottom: '12px' }}>
-              <strong>Phone:</strong> {supplier.phone}
+              <strong>{t('suppliers.ledger.phone')}</strong> {supplier.phone}
             </div>
             {supplier.email && (
               <div style={{ marginBottom: '12px' }}>
-                <strong>Email:</strong> {supplier.email}
+                <strong>{t('suppliers.ledger.email')}</strong> {supplier.email}
               </div>
             )}
             {supplier.address && (
               <div style={{ marginBottom: '12px' }}>
-                <strong>Address:</strong> {supplier.address}
+                <strong>{t('suppliers.ledger.address')}</strong> {supplier.address}
               </div>
             )}
 
@@ -207,10 +207,10 @@ const SupplierLedgerPage: React.FC = () => {
                 <IonRow>
                   <IonCol size="12">
                     <div className="summary-item">
-                      <div className="summary-label">Current Balance</div>
+                      <div className="summary-label">{t('suppliers.ledger.currentBalance')}</div>
                       <div className={`summary-value balance ${balance > 0 ? 'credit' : 'debit'}`}>
                         {formatCurrency(Math.abs(balance))}
-                        {balance > 0 ? ' (Payable)' : balance < 0 ? ' (Advance)' : ''}
+                        {balance > 0 ? ` ${t('suppliers.ledger.payable')}` : balance < 0 ? ` ${t('suppliers.ledger.advance')}` : ''}
                       </div>
                     </div>
                   </IonCol>
@@ -221,7 +221,7 @@ const SupplierLedgerPage: React.FC = () => {
         </IonCard>
 
         {entries.length === 0 ? (
-          <EmptyState message="No transactions found" />
+          <EmptyState message={t('suppliers.ledger.noTransactions')} />
         ) : (
           <IonGrid>
             <IonRow>
@@ -230,7 +230,7 @@ const SupplierLedgerPage: React.FC = () => {
                 <IonCard className="ledger-card credit-card">
                   <IonCardHeader>
                     <IonCardTitle>
-                      Credit (Purchases)
+                      {t('suppliers.ledger.creditPurchases')}
                       <IonBadge color="danger" style={{ marginLeft: '8px' }}>
                         {creditEntries.length}
                       </IonBadge>
@@ -238,7 +238,7 @@ const SupplierLedgerPage: React.FC = () => {
                   </IonCardHeader>
                   <IonCardContent>
                     {creditEntries.length === 0 ? (
-                      <EmptyState message="No purchase entries" />
+                      <EmptyState message={t('suppliers.ledger.noPurchaseEntries')} />
                     ) : (
                       <IonList>
                         {creditEntries.map((entry) => (
@@ -277,7 +277,7 @@ const SupplierLedgerPage: React.FC = () => {
                 <IonCard className="ledger-card debit-card">
                   <IonCardHeader>
                     <IonCardTitle>
-                      Debit (Payments Made)
+                      {t('suppliers.ledger.debitPayments')}
                       <IonBadge color="success" style={{ marginLeft: '8px' }}>
                         {debitEntries.length}
                       </IonBadge>
@@ -285,7 +285,7 @@ const SupplierLedgerPage: React.FC = () => {
                   </IonCardHeader>
                   <IonCardContent>
                     {debitEntries.length === 0 ? (
-                      <EmptyState message="No payment entries" />
+                      <EmptyState message={t('suppliers.ledger.noPaymentEntries')} />
                     ) : (
                       <IonList>
                         {debitEntries.map((entry) => (
@@ -336,7 +336,7 @@ const SupplierLedgerPage: React.FC = () => {
           <IonModal isOpen={true} onDidDismiss={() => setShowPaymentModal(false)}>
             <IonHeader>
               <IonToolbar>
-                <IonTitle>Make Payment</IonTitle>
+                <IonTitle>{t('suppliers.ledger.makePayment')}</IonTitle>
                 <IonButtons slot="end">
                   <IonButton onClick={() => setShowPaymentModal(false)}>
                     <IonIcon icon={close} />
@@ -356,7 +356,7 @@ const SupplierLedgerPage: React.FC = () => {
               <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
                 <div style={{ flex: 1 }}>
                   <Input
-                    label="Amount"
+                    label={t('suppliers.ledger.amount')}
                     value={amount}
                     onChange={setAmount}
                     type="number"
@@ -369,14 +369,14 @@ const SupplierLedgerPage: React.FC = () => {
                     onClick={() => setAmount(balance.toString())}
                     style={{ marginBottom: '0' }}
                   >
-                    Pay Full
+                    {t('suppliers.ledger.payFull')}
                   </IonButton>
                 )}
               </div>
 
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                  Payment Mode
+                  {t('suppliers.ledger.paymentMode')}
                 </label>
                 <IonSelect
                   value={paymentMode}
@@ -388,18 +388,18 @@ const SupplierLedgerPage: React.FC = () => {
                     padding: '8px'
                   }}
                 >
-                  <IonSelectOption value="CASH">Cash</IonSelectOption>
-                  <IonSelectOption value="UPI">UPI</IonSelectOption>
-                  <IonSelectOption value="CARD">Card</IonSelectOption>
-                  <IonSelectOption value="BANK_TRANSFER">Bank Transfer</IonSelectOption>
+                  <IonSelectOption value="CASH">{t('suppliers.ledger.cash')}</IonSelectOption>
+                  <IonSelectOption value="UPI">{t('suppliers.ledger.upi')}</IonSelectOption>
+                  <IonSelectOption value="CARD">{t('suppliers.ledger.card')}</IonSelectOption>
+                  <IonSelectOption value="BANK_TRANSFER">{t('suppliers.ledger.bankTransfer')}</IonSelectOption>
                 </IonSelect>
               </div>
 
               <Input
-                label="Notes (Optional)"
+                label={t('suppliers.ledger.notesOptional')}
                 value={notes}
                 onChange={setNotes}
-                placeholder="Add payment notes..."
+                placeholder={t('suppliers.ledger.addPaymentNotes')}
               />
 
               <Button
@@ -409,7 +409,7 @@ const SupplierLedgerPage: React.FC = () => {
                 fullWidth
                 size="large"
               >
-                Record Payment
+                {t('suppliers.ledger.recordPayment')}
               </Button>
             </IonContent>
           </IonModal>

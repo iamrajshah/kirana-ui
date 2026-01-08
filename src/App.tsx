@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Route, Redirect } from 'react-router';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
@@ -19,6 +19,8 @@ import PurchasesPage from '@features/purchases/PurchasesPage';
 import CreatePurchasePage from '@features/purchases/CreatePurchasePage';
 import PurchaseDetailPage from '@features/purchases/PurchaseDetailPage';
 import ToastContainer from '@components/ToastContainer';
+import { ThemeProvider } from './contexts/ThemeContext';
+import i18n from './core/i18n';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -50,9 +52,18 @@ setupIonicReact({
 });
 
 const App: React.FC = () => {
+  useEffect(() => {
+    // Load saved language from localStorage
+    const savedLanguage = localStorage.getItem('i18nextLng');
+    if (savedLanguage && savedLanguage !== i18n.language) {
+      i18n.changeLanguage(savedLanguage);
+    }
+  }, []);
+
   return (
     <Provider store={store}>
-      <IonApp>
+      <ThemeProvider>
+        <IonApp>
         <IonReactRouter>
           <IonRouterOutlet>
             <Route exact path={ROUTES.LOGIN} component={LoginPage} />
@@ -81,6 +92,7 @@ const App: React.FC = () => {
         </IonReactRouter>
         <ToastContainer />
       </IonApp>
+      </ThemeProvider>
     </Provider>
   );
 };

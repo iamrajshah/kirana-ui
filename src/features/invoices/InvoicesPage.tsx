@@ -23,10 +23,13 @@ import { formatCurrency, formatDateTime } from '@utils/helpers';
 import { documentText } from 'ionicons/icons';
 import type { InvoiceStatus } from '@core/types';
 import './InvoicesPage.css';
+import { useTranslation } from 'react-i18next';
 
 export const InvoicesPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [skip, setSkip] = useState(0);
+    const { t } = useTranslation();
+  
   const [allInvoices, setAllInvoices] = useState<unknown[]>([]);
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'ALL'>('ALL');
   const take = 50;
@@ -106,7 +109,7 @@ export const InvoicesPage: React.FC = () => {
 
   return (
     <IonPage>
-      <Navbar title="Invoices" />
+      <Navbar title={t('invoices.title')} />
       <IonContent>
         <div className="p-4 max-w-4xl mx-auto">
           <SearchBar 
@@ -153,7 +156,7 @@ export const InvoicesPage: React.FC = () => {
           ) : (
             <>
               <IonList className="ion-no-padding">
-                {filteredInvoices.reduce((acc: any[], invoice, index) => {
+                {filteredInvoices.reduce((acc: React.ReactNode[], invoice, index) => {
                   const inv = invoice as {
                     id: string;
                     invoice_number: string;
@@ -183,7 +186,7 @@ export const InvoicesPage: React.FC = () => {
                   
                   if (currentDate !== prevDate) {
                     acc.push(
-                      <div key={`divider-${currentDate}`} className="sticky top-0 z-10 bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700">
+                      <div key={`divider-${currentDate}`} className="sticky top-0 z-10 px-4 py-2 text-sm font-semibold" style={{ backgroundColor: 'var(--ion-color-light)', color: 'var(--ion-text-color)' }}>
                         {currentDate}
                       </div>
                     );
@@ -244,7 +247,7 @@ export const InvoicesPage: React.FC = () => {
                   );
                   
                   return acc;
-                }, [])}
+                }, []) as any}
               </IonList>
 
             <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>

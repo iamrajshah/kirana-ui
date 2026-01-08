@@ -184,7 +184,7 @@ const SuppliersPage: React.FC = () => {
 
   const handleSubmitPayment = async () => {
     if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
-      notificationService.warning('Please enter a valid amount');
+      notificationService.warning(t('suppliers.enterValidAmount'));
       return;
     }
 
@@ -196,7 +196,7 @@ const SuppliersPage: React.FC = () => {
         description: paymentNotes.trim() || undefined,
       }).unwrap();
 
-      notificationService.success('Payment recorded successfully');
+      notificationService.success(t('suppliers.paymentRecordedSuccess'));
       resetPaymentForm();
       setShowPaymentModal(false);
       refetch();

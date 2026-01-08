@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   IonPage,
   IonContent,
@@ -20,7 +21,7 @@ import {
 import {
   cloudUpload,
   cloudDownload,
-  document,
+  document as documentIcon,
   checkmarkCircle,
   closeCircle,
   time,
@@ -39,6 +40,7 @@ type ImportType = 'CUSTOMERS' | 'PRODUCTS' | 'INVENTORY' | 'CATEGORIES';
 type ExportType = 'customers' | 'products' | 'inventory' | 'categories' | 'invoices' | 'ledger';
 
 export const ImportExportPage: React.FC = () => {
+  const { t } = useTranslation();
   const [selectedTab, setSelectedTab] = useState<TabType>('import');
   const [selectedImportType, setSelectedImportType] = useState<ImportType>('CUSTOMERS');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -89,7 +91,7 @@ export const ImportExportPage: React.FC = () => {
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      setErrorMessage('Please select a file');
+      setErrorMessage(t('importExport.pleaseSelectFile'));
       setShowError(true);
       return;
     }
@@ -109,7 +111,7 @@ export const ImportExportPage: React.FC = () => {
       if (fileInput) fileInput.value = '';
     } catch (error: any) {
       console.error('❌ Error uploading file:', error);
-      setErrorMessage(error?.data?.message || 'Failed to upload file');
+      setErrorMessage(error?.data?.message || t('importExport.uploadFailed'));
       setShowError(true);
     }
   };
@@ -122,7 +124,7 @@ export const ImportExportPage: React.FC = () => {
       setShowSuccess(true);
     } catch (error: any) {
       console.error('❌ Error committing job:', error);
-      setErrorMessage(error?.data?.message || 'Failed to commit import');
+      setErrorMessage(error?.data?.message || t('importExport.commitFailed'));
       setShowError(true);
     }
   };
@@ -218,7 +220,7 @@ export const ImportExportPage: React.FC = () => {
 
   return (
     <IonPage>
-      <Navbar title="Import / Export" />
+      <Navbar title={t('importExport.title')} />
       <IonContent className="ion-padding">
         <IonSegment
           key={selectedTab}
@@ -226,11 +228,11 @@ export const ImportExportPage: React.FC = () => {
           onIonChange={(e) => setSelectedTab(e.detail.value as TabType)}
         >
           <IonSegmentButton value="import">
-            <IonLabel>IMPORT</IonLabel>
+            <IonLabel>{t('importExport.import')}</IonLabel>
             <IonIcon icon={cloudUpload} />
           </IonSegmentButton>
           <IonSegmentButton value="export">
-            <IonLabel>EXPORT</IonLabel>
+            <IonLabel>{t('importExport.export')}</IonLabel>
             <IonIcon icon={cloudDownload} />
           </IonSegmentButton>
         </IonSegment>
@@ -239,7 +241,7 @@ export const ImportExportPage: React.FC = () => {
           <div className="import-section">
             <IonCard>
               <IonCardHeader>
-                <IonCardTitle>Upload Import File</IonCardTitle>
+                <IonCardTitle>{t('importExport.uploadImportFile')}</IonCardTitle>
               </IonCardHeader>
               <IonCardContent>
                 <IonSegment
@@ -248,16 +250,16 @@ export const ImportExportPage: React.FC = () => {
                   onIonChange={(e) => setSelectedImportType(e.detail.value as ImportType)}
                 >
                   <IonSegmentButton value="CUSTOMERS">
-                    <IonLabel>Customers</IonLabel>
+                    <IonLabel>{t('importExport.customers')}</IonLabel>
                   </IonSegmentButton>
                   <IonSegmentButton value="PRODUCTS">
-                    <IonLabel>Products</IonLabel>
+                    <IonLabel>{t('importExport.productsExport')}</IonLabel>
                   </IonSegmentButton>
                   <IonSegmentButton value="INVENTORY">
-                    <IonLabel>Inventory</IonLabel>
+                    <IonLabel>{t('importExport.inventoryExport')}</IonLabel>
                   </IonSegmentButton>
                   <IonSegmentButton value="CATEGORIES">
-                    <IonLabel>Categories</IonLabel>
+                    <IonLabel>{t('importExport.categoriesExport')}</IonLabel>
                   </IonSegmentButton>
                 </IonSegment>
 
@@ -271,27 +273,26 @@ export const ImportExportPage: React.FC = () => {
                   />
                   {selectedFile && (
                     <p style={{ fontSize: '14px', color: 'var(--ion-color-medium)' }}>
-                      Selected: {selectedFile.name}
+                      {t('importExport.selectedFile')} {selectedFile.name}
                     </p>
                   )}
                 </div>
 
                 <IonButton
                   onClick={handleUpload}
-                  loading={uploading}
                   expand="block"
-                  disabled={!selectedFile}
+                  disabled={true}
                   style={{ marginTop: '20px' }}
                 >
-                  <IonIcon icon={cloudUpload} slot="start" />
-                  Upload File
+                  {uploading ? <IonSpinner name="crescent" /> : <IonIcon icon={cloudUpload} slot="start" />}
+                  {t('importExport.uploadFile')}
                 </IonButton>
               </IonCardContent>
             </IonCard>
 
             <IonCard>
               <IonCardHeader>
-                <IonCardTitle>Import History</IonCardTitle>
+                <IonCardTitle>{t('importExport.importHistory')}</IonCardTitle>
               </IonCardHeader>
               <IonCardContent>
                 {loadingJobs ? (
@@ -300,19 +301,19 @@ export const ImportExportPage: React.FC = () => {
                   </div>
                 ) : filteredImportJobs.length === 0 ? (
                   <p style={{ textAlign: 'center', color: 'var(--ion-color-medium)' }}>
-                    No import jobs for {selectedImportType.toLowerCase()}
+                    {t('importExport.noImportJobs')} {selectedImportType.toLowerCase()}
                   </p>
                 ) : (
                   <IonList>
                     {filteredImportJobs.map((job) => (
                       <IonCard key={job.id}>
                         <IonItem lines="none">
-                          <IonIcon icon={document} slot="start" />
+                          <IonIcon icon={documentIcon} slot="start" />
                           <IonLabel>
-                            <h2>{job.file_url?.split('/').pop() || 'Import File'}</h2>
+                            <h2>{job.file_url?.split('/').pop() || t('importExport.importFile')}</h2>
                             <p>{job.type || job.import_type}</p>
                             <p style={{ fontSize: '12px' }}>
-                              Total: {job.row_counts.total} | Valid: {job.row_counts.valid} | Invalid: {job.row_counts.invalid}
+                              {t('importExport.total')} {job.row_counts.total} | {t('importExport.valid')} {job.row_counts.valid} | {t('importExport.invalid')} {job.row_counts.invalid}
                             </p>
                           </IonLabel>
                           <div slot="end" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
@@ -324,9 +325,9 @@ export const ImportExportPage: React.FC = () => {
                               <IonButton
                                 size="small"
                                 onClick={() => handleCommit(job.id)}
-                                loading={committing}
+                                
                               >
-                                Commit
+                                {t('importExport.commit')}
                               </IonButton>
                             )}
                           </div>
@@ -344,35 +345,35 @@ export const ImportExportPage: React.FC = () => {
           <div className="export-section">
             <IonCard>
               <IonCardHeader>
-                <IonCardTitle>Export Data</IonCardTitle>
+                <IonCardTitle>{t('importExport.exportData')}</IonCardTitle>
               </IonCardHeader>
               <IonCardContent>
                 <p style={{ marginBottom: '20px' }}>
-                  Download your data in CSV or Excel format
+                  {t('importExport.downloadDataFormat')}
                 </p>
 
                 <div className="export-buttons">
                   <IonCard>
                     <IonCardHeader>
-                      <IonCardTitle>Customers</IonCardTitle>
+                      <IonCardTitle>{t('importExport.customers')}</IonCardTitle>
                     </IonCardHeader>
                     <IonCardContent>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <IonButton
                           expand="block"
                           onClick={() => handleExport('customers', 'CSV')}
-                          loading={exportingCustomers}
+                          
                         >
                           <IonIcon icon={cloudDownload} slot="start" />
-                          CSV
+                          {t('importExport.csv')}
                         </IonButton>
                         <IonButton
                           expand="block"
                           onClick={() => handleExport('customers', 'EXCEL')}
-                          loading={exportingCustomers}
+                          
                         >
                           <IonIcon icon={cloudDownload} slot="start" />
-                          Excel
+                          {t('importExport.excel')}
                         </IonButton>
                       </div>
                     </IonCardContent>
@@ -380,25 +381,25 @@ export const ImportExportPage: React.FC = () => {
 
                   <IonCard>
                     <IonCardHeader>
-                      <IonCardTitle>Products</IonCardTitle>
+                      <IonCardTitle>{t('importExport.productsExport')}</IonCardTitle>
                     </IonCardHeader>
                     <IonCardContent>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <IonButton
                           expand="block"
                           onClick={() => handleExport('products', 'CSV')}
-                          loading={exportingProducts}
+                          
                         >
                           <IonIcon icon={cloudDownload} slot="start" />
-                          CSV
+                          {t('importExport.csv')}
                         </IonButton>
                         <IonButton
                           expand="block"
                           onClick={() => handleExport('products', 'EXCEL')}
-                          loading={exportingProducts}
+                          
                         >
                           <IonIcon icon={cloudDownload} slot="start" />
-                          Excel
+                          {t('importExport.excel')}
                         </IonButton>
                       </div>
                     </IonCardContent>
@@ -406,25 +407,25 @@ export const ImportExportPage: React.FC = () => {
 
                   <IonCard>
                     <IonCardHeader>
-                      <IonCardTitle>Inventory</IonCardTitle>
+                      <IonCardTitle>{t('importExport.inventoryExport')}</IonCardTitle>
                     </IonCardHeader>
                     <IonCardContent>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <IonButton
                           expand="block"
                           onClick={() => handleExport('inventory', 'CSV')}
-                          loading={exportingInventory}
+                          
                         >
                           <IonIcon icon={cloudDownload} slot="start" />
-                          CSV
+                          {t('importExport.csv')}
                         </IonButton>
                         <IonButton
                           expand="block"
                           onClick={() => handleExport('inventory', 'EXCEL')}
-                          loading={exportingInventory}
+                          
                         >
                           <IonIcon icon={cloudDownload} slot="start" />
-                          Excel
+                          {t('importExport.excel')}
                         </IonButton>
                       </div>
                     </IonCardContent>
@@ -432,25 +433,25 @@ export const ImportExportPage: React.FC = () => {
 
                   <IonCard>
                     <IonCardHeader>
-                      <IonCardTitle>Categories</IonCardTitle>
+                      <IonCardTitle>{t('importExport.categoriesExport')}</IonCardTitle>
                     </IonCardHeader>
                     <IonCardContent>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <IonButton
                           expand="block"
                           onClick={() => handleExport('categories', 'CSV')}
-                          loading={exportingCategories}
+                          
                         >
                           <IonIcon icon={cloudDownload} slot="start" />
-                          CSV
+                          {t('importExport.csv')}
                         </IonButton>
                         <IonButton
                           expand="block"
                           onClick={() => handleExport('categories', 'EXCEL')}
-                          loading={exportingCategories}
+                          
                         >
                           <IonIcon icon={cloudDownload} slot="start" />
-                          Excel
+                          {t('importExport.excel')}
                         </IonButton>
                       </div>
                     </IonCardContent>
@@ -458,25 +459,25 @@ export const ImportExportPage: React.FC = () => {
 
                   <IonCard>
                     <IonCardHeader>
-                      <IonCardTitle>Invoices</IonCardTitle>
+                      <IonCardTitle>{t('importExport.invoicesExport')}</IonCardTitle>
                     </IonCardHeader>
                     <IonCardContent>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <IonButton
                           expand="block"
                           onClick={() => handleExport('invoices', 'CSV')}
-                          loading={exportingInvoices}
+                          
                         >
                           <IonIcon icon={cloudDownload} slot="start" />
-                          CSV
+                          {t('importExport.csv')}
                         </IonButton>
                         <IonButton
                           expand="block"
                           onClick={() => handleExport('invoices', 'EXCEL')}
-                          loading={exportingInvoices}
+                          
                         >
                           <IonIcon icon={cloudDownload} slot="start" />
-                          Excel
+                          {t('importExport.excel')}
                         </IonButton>
                       </div>
                     </IonCardContent>
@@ -484,22 +485,22 @@ export const ImportExportPage: React.FC = () => {
 
                   <IonCard>
                     <IonCardHeader>
-                      <IonCardTitle>Customer Ledger</IonCardTitle>
+                      <IonCardTitle>{t('importExport.customerLedgerExport')}</IonCardTitle>
                     </IonCardHeader>
                     <IonCardContent>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <IonButton
                           expand="block"
                           onClick={() => handleExport('ledger', 'CSV')}
-                          loading={exportingLedger}
+                          
                         >
                           <IonIcon icon={cloudDownload} slot="start" />
-                          CSV
+                          {t('importExport.csv')}
                         </IonButton>
                         <IonButton
                           expand="block"
                           onClick={() => handleExport('ledger', 'EXCEL')}
-                          loading={exportingLedger}
+                          
                         >
                           <IonIcon icon={cloudDownload} slot="start" />
                           Excel

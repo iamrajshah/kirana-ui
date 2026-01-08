@@ -28,14 +28,6 @@ import { useGetCategoriesQuery } from '@core/api/categoryApi';
 import { SearchBar, Loading, EmptyState, Input, Select, Button } from '@components';
 import { formatCurrency } from '@utils/helpers';
 
-const PACKAGING_OPTIONS = [
-  { value: 'PACKET', label: 'Packet' },
-  { value: 'BOX', label: 'Box' },
-  { value: 'BOTTLE', label: 'Bottle' },
-  { value: 'LOOSE', label: 'Loose' },
-  { value: 'KG', label: 'KG' },
-];
-
 export const ProductsPage: React.FC = () => {
   const { t } = useTranslation();
   const history = useHistory();
@@ -47,6 +39,14 @@ export const ProductsPage: React.FC = () => {
   const { data: categoriesData } = useGetCategoriesQuery();
   const [createProduct, { isLoading: creating }] = useCreateProductMutation();
   const [createVariant, { isLoading: creatingVariant }] = useCreateVariantMutation();
+
+  const PACKAGING_OPTIONS = [
+    { value: 'PACKET', label: t('products.packagingPacket') },
+    { value: 'BOX', label: t('products.packagingBox') },
+    { value: 'BOTTLE', label: t('products.packagingBottle') },
+    { value: 'LOOSE', label: t('products.packagingLoose') },
+    { value: 'KG', label: t('products.packagingKG') },
+  ];
 
   useEffect(() => {
     setSkip(0);
@@ -114,13 +114,13 @@ export const ProductsPage: React.FC = () => {
   const handleCreateProduct = async () => {
     try {
       if (!productName.trim()) {
-        setErrorMessage('Product name is required');
+        setErrorMessage(t('products.productNameRequired'));
         setShowError(true);
         return;
       }
 
       if (!price || parseFloat(price) <= 0) {
-        setErrorMessage('Valid price is required');
+        setErrorMessage(t('products.validPriceRequired'));
         setShowError(true);
         return;
       }
@@ -146,7 +146,7 @@ export const ProductsPage: React.FC = () => {
       setShowModal(false);
       resetForm();
     } catch (error: any) {
-      setErrorMessage(error?.data?.message || 'Failed to create product');
+      setErrorMessage(error?.data?.message || t('products.failedToCreateProduct'));
       setShowError(true);
     }
   };
@@ -165,7 +165,7 @@ export const ProductsPage: React.FC = () => {
           {isLoading && allProducts.length === 0 ? (
             <Loading isOpen={isLoading} />
           ) : allProducts.length === 0 ? (
-            <EmptyState message="No products found" />
+            <EmptyState message={t('products.noProductsFound')} />
           ) : (
             <>
               <IonList>
@@ -207,7 +207,7 @@ export const ProductsPage: React.FC = () => {
 
         <IonToast
           isOpen={showSuccess}
-          message="Product created successfully"
+          message={t('products.productCreatedSuccessfully')}
           duration={2000}
           color="success"
           onDidDismiss={() => setShowSuccess(false)}
@@ -225,7 +225,7 @@ export const ProductsPage: React.FC = () => {
           <IonModal isOpen={showModal} onDidDismiss={() => setShowModal(false)}>
             <IonHeader>
               <IonToolbar>
-                <IonTitle>Create Product</IonTitle>
+                <IonTitle>{t('products.createProductTitle')}</IonTitle>
                 <IonButtons slot="end">
                   <IonButton onClick={() => setShowModal(false)}>
                     <IonIcon icon={close} />
@@ -236,36 +236,36 @@ export const ProductsPage: React.FC = () => {
             <IonContent>
               <div style={{ padding: '16px' }}>
                 <Input
-                  label="Product Name *"
+                  label={t('products.productNameLabel')}
                   value={productName}
                   onChange={setProductName}
-                  placeholder="Enter product name"
+                  placeholder={t('products.enterProductNamePlaceholder')}
                 />
 
                 <Select
-                  label="Category"
+                  label={t('products.categoryLabel')}
                   value={categoryId?.toString() || ''}
                   onChange={(value) => setCategoryId(value ? parseInt(value) : null)}
                   options={categoryOptions}
-                  placeholder="Select category"
+                  placeholder={t('products.selectCategoryPlaceholder2')}
                 />
 
-                <h3 style={{ fontSize: '16px', fontWeight: '600', marginTop: '24px', marginBottom: '8px' }}>Variant Details</h3>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', marginTop: '24px', marginBottom: '8px' }}>{t('products.variantDetailsHeading')}</h3>
 
-                <Input label="Brand" value={brand} onChange={setBrand} placeholder="Enter brand" />
-                <Input label="Size" value={size} onChange={setSize} placeholder="e.g., 1L, 500g" />
+                <Input label={t('products.brandLabel')} value={brand} onChange={setBrand} placeholder={t('products.enterBrandPlaceholder')} />
+                <Input label={t('products.sizeLabel')} value={size} onChange={setSize} placeholder={t('products.sizePlaceholder')} />
 
                 <Select
-                  label="Packaging"
+                  label={t('products.packagingLabel')}
                   value={packaging || ''}
                   onChange={(value) => setPackaging(value || null)}
-                  placeholder="Select packaging"
+                  placeholder={t('products.selectPackagingPlaceholder')}
                   options={PACKAGING_OPTIONS}
                 />
 
-                <Input label="Price *" type="number" value={price} onChange={setPrice} placeholder="Enter price" />
-                <Input label="GST %" type="number" value={gstPercent} onChange={setGstPercent} placeholder="Enter GST percentage" />
-                <Input label="SKU" value={sku} onChange={setSku} placeholder="Enter SKU code" />
+                <Input label={t('products.priceLabel')} type="number" value={price} onChange={setPrice} placeholder={t('products.enterPricePlaceholder')} />
+                <Input label={t('products.gstLabel')} type="number" value={gstPercent} onChange={setGstPercent} placeholder={t('products.enterGSTPercentage')} />
+                <Input label={t('products.skuLabel')} value={sku} onChange={setSku} placeholder={t('products.enterSKUCode')} />
 
                 <div style={{ marginTop: '24px' }}>
                   <Button
@@ -273,7 +273,7 @@ export const ProductsPage: React.FC = () => {
                     disabled={creating || creatingVariant || !productName || !price}
                     loading={creating || creatingVariant}
                   >
-                    Create Product
+                    {t('products.createProductButton')}
                   </Button>
                 </div>
               </div>
