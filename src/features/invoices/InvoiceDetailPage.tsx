@@ -82,11 +82,11 @@ const InvoiceDetailPage: React.FC = () => {
   const handleFinalizeInvoice = async () => {
     try {
       await finalizeInvoice(id).unwrap();
-      setToastMessage('Invoice finalized successfully!');
+      setToastMessage(t('invoiceDetail.invoiceFinalizedSuccess'));
       setShowSuccessToast(true);
       refetch();
     } catch (error: any) {
-      setToastMessage(error?.data?.message || 'Failed to finalize invoice');
+      setToastMessage(error?.data?.message || t('invoiceDetail.failedToFinalizeInvoice'));
       setShowErrorToast(true);
     }
   };
@@ -94,13 +94,13 @@ const InvoiceDetailPage: React.FC = () => {
   const handleCancelInvoice = async () => {
     try {
       await cancelInvoice({ id, reason: cancelReason || 'Cancelled by user' }).unwrap();
-      setToastMessage('Invoice cancelled successfully');
+      setToastMessage(t('invoiceDetail.invoiceCancelledSuccess'));
       setShowSuccessToast(true);
       setShowCancelAlert(false);
       setCancelReason('');
       refetch();
     } catch (error: any) {
-      setToastMessage(error?.data?.message || 'Failed to cancel invoice');
+      setToastMessage(error?.data?.message || t('invoiceDetail.failedToCancelInvoice'));
       setShowErrorToast(true);
     }
   };
@@ -130,13 +130,13 @@ const InvoiceDetailPage: React.FC = () => {
       }).unwrap();
 
       console.log('Payment successful');
-      setToastMessage('Payment recorded successfully!');
+      setToastMessage(t('invoiceDetail.paymentRecordedSuccess'));
       setShowSuccessToast(true);
       setShowPaymentModal(false);
       refetch();
     } catch (error: any) {
       console.error('Payment error:', error);
-      setToastMessage(error?.data?.message || 'Payment failed');
+      setToastMessage(error?.data?.message || t('invoiceDetail.paymentFailed'));
       setShowErrorToast(true);
       throw error;
     }
@@ -175,13 +175,13 @@ const InvoiceDetailPage: React.FC = () => {
             <IonButtons slot="start">
               <IonBackButton defaultHref="/invoices" />
             </IonButtons>
-            <IonTitle>Invoice Details</IonTitle>
+            <IonTitle>{t('invoiceDetail.title')}</IonTitle>
           </IonToolbar>
         </IonHeader>
         <IonContent className="ion-padding">
           <IonCard>
             <IonCardContent>
-              <p>Invoice not found or error loading invoice details.</p>
+              <p>{t('invoiceDetail.invoiceNotFound')}</p>
             </IonCardContent>
           </IonCard>
         </IonContent>
@@ -199,7 +199,7 @@ const InvoiceDetailPage: React.FC = () => {
           <IonButtons slot="start">
             <IonBackButton defaultHref="/invoices" />
           </IonButtons>
-          <IonTitle>Invoice Details</IonTitle>
+          <IonTitle>{t('invoiceDetail.title')}</IonTitle>
         </IonToolbar>
       </IonHeader>
 
@@ -214,12 +214,12 @@ const InvoiceDetailPage: React.FC = () => {
                 <p className="text-sm text-gray-500">{formatDateTime(invoice.created_at)}</p>
                 {invoice.finalized_at && (
                   <p className="text-xs text-gray-500">
-                    Finalized: {formatDateTime(invoice.finalized_at)}
+                    {t('invoiceDetail.finalized')} {formatDateTime(invoice.finalized_at)}
                   </p>
                 )}
                 {invoice.cancelled_at && (
                   <p className="text-xs text-danger">
-                    Cancelled: {formatDateTime(invoice.cancelled_at)}
+                    {t('invoiceDetail.cancelled')} {formatDateTime(invoice.cancelled_at)}
                   </p>
                 )}
               </div>
@@ -234,7 +234,7 @@ const InvoiceDetailPage: React.FC = () => {
         {invoice.customer && (
           <IonCard>
             <IonCardHeader>
-              <IonCardTitle className="text-base">Customer Information</IonCardTitle>
+              <IonCardTitle className="text-base">{t('invoiceDetail.customerInformation')}</IonCardTitle>
             </IonCardHeader>
             <IonCardContent>
               <div>
@@ -249,7 +249,7 @@ const InvoiceDetailPage: React.FC = () => {
         {/* Invoice Items */}
         <IonCard>
           <IonCardHeader>
-            <IonCardTitle className="text-base">Items</IonCardTitle>
+            <IonCardTitle className="text-base">{t('invoiceDetail.items')}</IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
             {invoice.items && invoice.items.length > 0 ? (
@@ -259,7 +259,7 @@ const InvoiceDetailPage: React.FC = () => {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <p className="font-medium text-sm">
-                          {item.variant?.product?.name || 'Unknown Product'}
+                          {item.variant?.product?.name || t('invoiceDetail.unknownProduct')}
                         </p>
                         {item.variant?.sku && (
                           <p className="text-xs text-gray-500">SKU: {item.variant.sku}</p>
@@ -286,7 +286,7 @@ const InvoiceDetailPage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">No items found</p>
+              <p className="text-sm text-gray-500">{t('invoiceDetail.noItemsFound')}</p>
             )}
           </IonCardContent>
         </IonCard>
@@ -296,26 +296,26 @@ const InvoiceDetailPage: React.FC = () => {
           <IonCardContent>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span>Subtotal:</span>
+                <span>{t('invoiceDetail.subtotal')}</span>
                 <span>{formatCurrency(invoice.subtotal_amount || 0)}</span>
               </div>
               
               {invoice.discount_amount > 0 && (
                 <div className="flex justify-between text-danger">
-                  <span>Discount:</span>
+                  <span>{t('invoiceDetail.discount')}</span>
                   <span>-{formatCurrency(invoice.discount_amount)}</span>
                 </div>
               )}
               
               {invoice.gst_amount > 0 && (
                 <div className="flex justify-between">
-                  <span>GST:</span>
+                  <span>{t('invoiceDetail.gst')}</span>
                   <span>{formatCurrency(invoice.gst_amount)}</span>
                 </div>
               )}
               
               <div className="flex justify-between font-bold text-base border-t pt-2">
-                <span>Total Amount:</span>
+                <span>{t('invoiceDetail.totalAmount')}</span>
                 <span>{formatCurrency(invoice.total_amount || 0)}</span>
               </div>
 
@@ -323,13 +323,13 @@ const InvoiceDetailPage: React.FC = () => {
                 <>
                   {invoice.paid_amount > 0 && (
                     <div className="flex justify-between text-success">
-                      <span>Paid:</span>
+                      <span>{t('invoiceDetail.paid')}</span>
                       <span>{formatCurrency(invoice.paid_amount)}</span>
                     </div>
                   )}
                   
                   <div className={`flex justify-between font-semibold ${calculateBalance() > 0 ? 'text-danger' : 'text-success'}`}>
-                    <span>Balance:</span>
+                    <span>{t('invoiceDetail.balance')}</span>
                     <span>{formatCurrency(calculateBalance())}</span>
                   </div>
                 </>
@@ -349,7 +349,7 @@ const InvoiceDetailPage: React.FC = () => {
                 fill="outline"
               >
                 <IonIcon icon={create} slot="start" />
-                Edit Draft
+                {t('invoiceDetail.editDraft')}
               </IonButton>
               
               <IonButton
@@ -362,7 +362,7 @@ const InvoiceDetailPage: React.FC = () => {
                 color="primary"
               >
                 <IonIcon icon={checkmarkCircle} slot="start" />
-                Finalize & Collect Payment
+                {t('invoiceDetail.finalizeAndCollectPayment')}
               </IonButton>
             </>
           )}
@@ -374,7 +374,7 @@ const InvoiceDetailPage: React.FC = () => {
               color="success"
             >
               <IonIcon icon={cash} slot="start" />
-              Add Payment
+              {t('invoiceDetail.addPayment')}
             </IonButton>
           )}
 
@@ -390,7 +390,7 @@ const InvoiceDetailPage: React.FC = () => {
               fill="outline"
             >
               <IonIcon icon={closeCircle} slot="start" />
-              Cancel Invoice
+              {t('invoiceDetail.cancelInvoice')}
             </IonButton>
           )}
         </div>
@@ -420,23 +420,23 @@ const InvoiceDetailPage: React.FC = () => {
             setShowCancelAlert(false);
             setCancelReason('');
           }}
-          header="Cancel Invoice"
-          message="Are you sure you want to cancel this invoice? This action cannot be undone."
+          header={t('invoiceDetail.cancelInvoiceTitle')}
+          message={t('invoiceDetail.cancelInvoiceMessage')}
           inputs={[
             {
               name: 'reason',
               type: 'textarea',
-              placeholder: 'Reason for cancellation (optional)',
+              placeholder: t('invoiceDetail.cancelReasonPlaceholder'),
               value: cancelReason,
             },
           ]}
           buttons={[
             {
-              text: 'No',
+              text: t('invoiceDetail.no'),
               role: 'cancel',
             },
             {
-              text: 'Yes, Cancel',
+              text: t('invoiceDetail.yesCancelInvoice'),
               role: 'destructive',
               handler: (data) => {
                 setCancelReason(data.reason || '');
