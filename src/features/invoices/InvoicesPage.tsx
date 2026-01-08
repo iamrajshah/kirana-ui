@@ -115,7 +115,7 @@ export const InvoicesPage: React.FC = () => {
           <SearchBar 
             value={search} 
             onChange={setSearch} 
-            placeholder="Search by invoice number, customer name or phone" 
+            placeholder={t('invoices.searchPlaceholder')} 
           />
 
           {/* Status Filter */}
@@ -127,22 +127,22 @@ export const InvoicesPage: React.FC = () => {
               scrollable
             >
               <IonSegmentButton value="ALL">
-                <IonLabel>All</IonLabel>
+                <IonLabel>{t('invoices.all')}</IonLabel>
               </IonSegmentButton>
               <IonSegmentButton value="DRAFT">
-                <IonLabel>Draft</IonLabel>
+                <IonLabel>{t('invoices.draft')}</IonLabel>
               </IonSegmentButton>
               <IonSegmentButton value="UNPAID">
-                <IonLabel>Unpaid</IonLabel>
+                <IonLabel>{t('invoices.unpaid')}</IonLabel>
               </IonSegmentButton>
               <IonSegmentButton value="PARTIAL">
-                <IonLabel>Partial</IonLabel>
+                <IonLabel>{t('invoices.partial')}</IonLabel>
               </IonSegmentButton>
               <IonSegmentButton value="PAID">
-                <IonLabel>Paid</IonLabel>
+                <IonLabel>{t('invoices.paid')}</IonLabel>
               </IonSegmentButton>
               <IonSegmentButton value="CANCELLED">
-                <IonLabel>Cancelled</IonLabel>
+                <IonLabel>{t('invoices.cancelled')}</IonLabel>
               </IonSegmentButton>
             </IonSegment>
           </div>
@@ -151,7 +151,7 @@ export const InvoicesPage: React.FC = () => {
             <Loading isOpen={isLoading} />
           ) : filteredInvoices.length === 0 ? (
             <EmptyState
-              message={search ? "No invoices found matching your search" : "No invoices found"}
+              message={search ? t('invoices.noInvoicesSearch') : t('invoices.noInvoicesFound')}
             />
           ) : (
             <>
@@ -186,7 +186,12 @@ export const InvoicesPage: React.FC = () => {
                   
                   if (currentDate !== prevDate) {
                     acc.push(
-                      <div key={`divider-${currentDate}`} className="sticky top-0 z-10 px-4 py-2 text-sm font-semibold" style={{ backgroundColor: 'var(--ion-color-light)', color: 'var(--ion-text-color)' }}>
+                      <div key={`divider-${currentDate}`} className="sticky top-0 z-10 px-4 py-2 text-sm font-semibold" style={{ 
+                        backgroundColor: 'var(--ion-card-background, var(--ion-background-color))', 
+                        borderBottom: '2px solid var(--ion-color-primary, #3880ff)',
+                        color: 'var(--ion-text-color)',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                      }}>
                         {currentDate}
                       </div>
                     );
@@ -195,53 +200,51 @@ export const InvoicesPage: React.FC = () => {
                   acc.push(
                     <IonCard 
                       key={inv.id} 
-                      className="m-2 shadow-sm"
+                      className="mx-2 mb-2 shadow-sm"
                       button
                       onClick={() => history.push(`/invoices/${inv.id}`)}
+                      style={{ 
+                        borderBottom: '1px solid var(--ion-color-light-shade, rgba(0,0,0,0.1))'
+                      }}
                     >
-                      <IonCardContent className="p-3">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <IonIcon icon={documentText} className="text-primary flex-shrink-0" />
-                              <h3 className="text-sm font-semibold truncate">{inv.invoice_number}</h3>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">{new Date(inv.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
+                      <IonCardContent className="p-2.5">
+                        {/* Header: Invoice # and Status */}
+                        <div className="flex justify-between items-center mb-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <IonIcon icon={documentText} className="text-primary flex-shrink-0" style={{ fontSize: '16px' }} />
+                            <h3 className="text-sm font-semibold truncate">{inv.invoice_number}</h3>
+                            <span className="text-xs" style={{ color: 'var(--ion-color-medium)' }}>
+                              {new Date(inv.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
                           </div>
-                          <IonBadge color={getStatusColor(inv.status)} mode="ios" className="text-xs">
+                          <IonBadge color={getStatusColor(inv.status)} mode="ios" style={{ fontSize: '10px', padding: '2px 6px' }}>
                             {inv.status}
                           </IonBadge>
                         </div>
                         
+                        {/* Customer Info - Single Line */}
                         {inv.customer && (
-                          <div className="mb-2 pb-2 border-b border-gray-200">
-                            <p className="text-sm font-medium truncate">{inv.customer.name}</p>
-                            <p className="text-xs text-gray-500">{inv.customer.phone}</p>
+                          <div className="mb-1.5 truncate text-xs" style={{ color: 'var(--ion-color-medium)' }}>
+                            {inv.customer.name} • {inv.customer.phone}
                           </div>
                         )}
                         
+                        {/* Amount Summary - Compact */}
                         <div className="flex justify-between items-center">
-                          <span className="text-xs text-gray-600">Total:</span>
                           <span className="text-sm font-bold text-primary">
                             {formatCurrency(inv.total_amount || 0)}
                           </span>
-                        </div>
-                        
-                        {((inv.paid_amount && inv.paid_amount > 0) || inv.status === 'PAID' || inv.status === 'PARTIAL') && (
-                          <div className="flex justify-between items-center mt-1">
-                            <span className="text-xs text-gray-600">Paid:</span>
-                            <span className="text-xs text-success">{formatCurrency(inv.paid_amount || 0)}</span>
-                          </div>
-                        )}
-                        
-                        {inv.status !== 'DRAFT' && inv.status !== 'CANCELLED' && (inv.balance_amount && inv.balance_amount > 0 || (inv.total_amount || 0) - (inv.paid_amount || 0) > 0) && (
-                          <div className="flex justify-between items-center mt-1">
-                            <span className="text-xs font-semibold text-danger">Balance:</span>
+                          
+                          {inv.status !== 'DRAFT' && inv.status !== 'CANCELLED' && (inv.balance_amount && inv.balance_amount > 0 || (inv.total_amount || 0) - (inv.paid_amount || 0) > 0) ? (
                             <span className="text-xs font-semibold text-danger">
-                              {formatCurrency((inv.total_amount || 0) - (inv.paid_amount || 0))}
+                              {t('invoices.due')}: {formatCurrency((inv.total_amount || 0) - (inv.paid_amount || 0))}
                             </span>
-                          </div>
-                        )}
+                          ) : inv.status === 'PAID' ? (
+                            <span className="text-xs font-semibold text-success">
+                              {t('invoices.paidCheck')}
+                            </span>
+                          ) : null}
+                        </div>
                       </IonCardContent>
                     </IonCard>
                   );
@@ -251,7 +254,7 @@ export const InvoicesPage: React.FC = () => {
               </IonList>
 
             <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
-              <IonInfiniteScrollContent loadingText="Loading more invoices..." />
+              <IonInfiniteScrollContent loadingText={t('invoices.loadingMore')} />
             </IonInfiniteScroll>
             </>
           )}

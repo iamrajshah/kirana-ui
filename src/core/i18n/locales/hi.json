@@ -404,7 +404,15 @@
     "invoiceNumber": "चालान #",
     "paid": "भुगतान किया गया",
     "unpaid": "अवैतनिक",
-    "partial": "आंशिक"
+    "partial": "आंशिक",
+    "all": "सभी",
+    "draft": "ड्राफ्ट",
+    "cancelled": "रद्द",
+    "due": "बकाया",
+    "paidCheck": "✓ भुगतान किया",
+    "noInvoicesFound": "कोई चालान नहीं मिला",
+    "noInvoicesSearch": "आपकी खोज से मेल खाने वाला कोई चालान नहीं मिला",
+    "loadingMore": "अधिक चालान लोड हो रहे हैं..."
   },
   "reports": {
     "title": "रिपोर्ट",

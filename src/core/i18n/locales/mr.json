@@ -404,7 +404,15 @@
     "invoiceNumber": "चलन #",
     "paid": "पेमेंट केले",
     "unpaid": "अप्रदान",
-    "partial": "आंशिक"
+    "partial": "आंशिक",
+    "all": "सर्व",
+    "draft": "मसुदा",
+    "cancelled": "रद्द",
+    "due": "थकीत",
+    "paidCheck": "✓ भरले",
+    "noInvoicesFound": "कोणतेही बील सापडले नाहीत",
+    "noInvoicesSearch": "तुमच्या शोधाशी जुळणारे बील सापडले नाहीत",
+    "loadingMore": "अधिक बिले लोड होत आहेत..."
   },
   "reports": {
     "title": "अहवाल",

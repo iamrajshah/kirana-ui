@@ -404,7 +404,15 @@
     "invoiceNumber": "Invoice #",
     "paid": "Paid",
     "unpaid": "Unpaid",
-    "partial": "Partial"
+    "partial": "Partial",
+    "all": "All",
+    "draft": "Draft",
+    "cancelled": "Cancelled",
+    "due": "Due",
+    "paidCheck": "✓ Paid",
+    "noInvoicesFound": "No invoices found",
+    "noInvoicesSearch": "No invoices found matching your search",
+    "loadingMore": "Loading more invoices..."
   },
   "reports": {
     "title": "Reports",

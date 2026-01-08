@@ -19,7 +19,7 @@ export const categoryApi = apiSlice.injectEndpoints({
     >({
       query: (params = {}) => ({
         url: '/categories',
-        params,
+        params: params || {},
       }),
       providesTags: ['Category'],
     }),

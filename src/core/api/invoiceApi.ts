@@ -47,7 +47,7 @@ export const invoiceApi = apiSlice.injectEndpoints({
     >({
       query: (params = {}) => ({
         url: '/invoices',
-        params,
+        params: params || {},
       }),
       providesTags: ['Invoice'],
     }),

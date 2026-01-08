@@ -28,7 +28,7 @@ export const productApi = apiSlice.injectEndpoints({
     >({
       query: (params = {}) => ({
         url: '/products',
-        params,
+        params: params || {},
       }),
       providesTags: ['Product'],
     }),

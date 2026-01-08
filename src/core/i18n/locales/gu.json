@@ -404,7 +404,15 @@
     "invoiceNumber": "ચલન #",
     "paid": "ચુકવેલ",
     "unpaid": "અપ્રદાન",
-    "partial": "આંશિક"
+    "partial": "આંશિક",
+    "all": "બધા",
+    "draft": "ડ્રાફ્ટ",
+    "cancelled": "રદ",
+    "due": "બાકી",
+    "paidCheck": "✓ ચુકવ્યુ",
+    "noInvoicesFound": "કોઈ ચલન મળ્યું નથી",
+    "noInvoicesSearch": "તમારી શોધ સાથે મેળ ખાતા કોઈ ચલન મળ્યા નથી",
+    "loadingMore": "વધુ ચલન લોડ થઈ રહ્યા છે..."
   },
   "reports": {
     "title": "રિપોર્ટ્સ",
