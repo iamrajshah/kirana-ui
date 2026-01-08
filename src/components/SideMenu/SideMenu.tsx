@@ -130,7 +130,7 @@ export const SideMenu: React.FC = () => {
             <IonMenuToggle>
               <IonItem button onClick={() => handleNavigation(ROUTES.INVOICES)}>
                 <IonIcon icon={receipt} slot="start" />
-                <IonLabel>Invoices</IonLabel>
+                <IonLabel>{t('invoices.title')}</IonLabel>
               </IonItem>
             </IonMenuToggle>
           )}
@@ -139,7 +139,7 @@ export const SideMenu: React.FC = () => {
             <IonMenuToggle>
               <IonItem button onClick={() => handleNavigation(ROUTES.REPORTS)}>
                 <IonIcon icon={statsChart} slot="start" />
-                <IonLabel>Reports</IonLabel>
+                <IonLabel>{t('reports.title')}</IonLabel>
               </IonItem>
             </IonMenuToggle>
           )}
@@ -148,7 +148,7 @@ export const SideMenu: React.FC = () => {
             <IonMenuToggle>
               <IonItem button onClick={() => handleNavigation(ROUTES.USERS)}>
                 <IonIcon icon={personAdd} slot="start" />
-                <IonLabel>Users</IonLabel>
+                <IonLabel>{t('users.title')}</IonLabel>
               </IonItem>
             </IonMenuToggle>
           )}
@@ -157,7 +157,7 @@ export const SideMenu: React.FC = () => {
             <IonMenuToggle>
               <IonItem button onClick={() => handleNavigation(ROUTES.IMPORT_EXPORT)}>
                 <IonIcon icon={swapHorizontal} slot="start" />
-                <IonLabel>Import/Export</IonLabel>
+                <IonLabel>{t('importExport.title')}</IonLabel>
               </IonItem>
             </IonMenuToggle>
           )}

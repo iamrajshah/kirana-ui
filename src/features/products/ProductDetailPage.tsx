@@ -22,6 +22,7 @@ import {
 } from '@ionic/react';
 import { pencil, close } from 'ionicons/icons';
 import { useParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useGetProductByIdQuery, useUpdateProductMutation, useUpdateVariantMutation } from '@core/api/productApi';
 import { useGetCategoriesQuery } from '@core/api/categoryApi';
 import { Loading, EmptyState, Input, Select, Button } from '@components';
@@ -29,6 +30,7 @@ import { formatCurrency } from '@utils/helpers';
 import type { ProductVariant } from '@core/types';
 
 export const ProductDetailPage: React.FC = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, error } = useGetProductByIdQuery(id);
   const { data: categoriesData } = useGetCategoriesQuery();
@@ -76,7 +78,7 @@ export const ProductDetailPage: React.FC = () => {
     
     const sellingPrice = parseFloat(editSellingPrice);
     if (isNaN(sellingPrice) || sellingPrice <= 0) {
-      setErrorMessage('Please enter a valid selling price');
+      setErrorMessage(t('errors.validPrice'));
       setShowError(true);
       return;
     }
@@ -93,7 +95,7 @@ export const ProductDetailPage: React.FC = () => {
       setEditSellingPrice('');
     } catch (err) {
       const error = err as { data?: { message?: string } };
-      setErrorMessage(error?.data?.message || 'Failed to update variant');
+      setErrorMessage(error?.data?.message || t('products.updateFailed'));
       setShowError(true);
     }
   };
@@ -112,7 +114,7 @@ export const ProductDetailPage: React.FC = () => {
       setShowEditModal(false);
     } catch (err) {
       const error = err as { data?: { message?: string } };
-      setErrorMessage(error?.data?.message || 'Failed to update product');
+      setErrorMessage(error?.data?.message || t('products.updateFailed'));
       setShowError(true);
     }
   };
@@ -129,11 +131,11 @@ export const ProductDetailPage: React.FC = () => {
             <IonButtons slot="start">
               <IonBackButton defaultHref="/products" />
             </IonButtons>
-            <IonTitle>Product Not Found</IonTitle>
+            <IonTitle>{t('products.productNotFound')}</IonTitle>
           </IonToolbar>
         </IonHeader>
         <IonContent>
-          <EmptyState message="Product not found" />
+          <EmptyState message={t('products.productNotFound')} />
         </IonContent>
       </IonPage>
     );
@@ -159,22 +161,22 @@ export const ProductDetailPage: React.FC = () => {
       </IonHeader>
       <IonContent>
         <div style={{ padding: '16px' }}>
-          <IonCard>
+          <IonCard style={{ backgroundColor: 'var(--ion-card-background)' }}>
             <IonCardHeader>
-              <IonCardTitle>Product Info</IonCardTitle>
+              <IonCardTitle style={{ color: 'var(--ion-text-color)' }}>{t('products.productInfo')}</IonCardTitle>
             </IonCardHeader>
             <IonCardContent>
               <IonList>
                 <IonItem>
                   <IonLabel>
-                    <h3>Category</h3>
-                    <p>{product.category?.name || 'Uncategorized'}</p>
+                    <h3 style={{ color: 'var(--ion-text-color)' }}>{t('products.category')}</h3>
+                    <p style={{ color: 'var(--ion-color-medium)' }}>{product.category?.name || t('products.uncategorized')}</p>
                   </IonLabel>
                 </IonItem>
                 <IonItem>
-                  <IonLabel>Status</IonLabel>
+                  <IonLabel style={{ color: 'var(--ion-text-color)' }}>{t('common.status')}</IonLabel>
                   <IonBadge slot="end" color={product.is_active ? 'success' : 'danger'}>
-                    {product.is_active ? 'Active' : 'Inactive'}
+                    {product.is_active ? t('products.active') : t('products.inactive')}
                   </IonBadge>
                 </IonItem>
               </IonList>
@@ -183,15 +185,15 @@ export const ProductDetailPage: React.FC = () => {
 
           {variants && variants.length > 0 && (
             <div style={{ marginTop: '16px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>
-                Variants ({variants.length})
+              <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', color: 'var(--ion-text-color)' }}>
+                {t('products.variants')} ({variants.length})
               </h2>
               {variants.map((variant: ProductVariant) => (
-                <IonCard key={variant.id}>
+                <IonCard key={variant.id} style={{ backgroundColor: 'var(--ion-card-background)' }}>
                   <IonCardHeader>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <IonCardTitle>
-                        {variant.brand || 'Variant'} - {variant.size || ''}
+                      <IonCardTitle style={{ color: 'var(--ion-text-color)' }}>
+                        {variant.brand || t('products.variant')} - {variant.size || ''}
                       </IonCardTitle>
                       <IonButton 
                         fill="clear" 
@@ -210,39 +212,39 @@ export const ProductDetailPage: React.FC = () => {
                     <IonList>
                       {variant.packaging && (
                         <IonItem>
-                          <IonLabel>Packaging</IonLabel>
-                          <IonLabel slot="end">{variant.packaging}</IonLabel>
+                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>{t('products.packaging')}</IonLabel>
+                          <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>{variant.packaging}</IonLabel>
                         </IonItem>
                       )}
                       <IonItem>
-                        <IonLabel>Price</IonLabel>
-                        <IonLabel slot="end" style={{ fontWeight: 'bold' }}>
+                        <IonLabel style={{ color: 'var(--ion-text-color)' }}>{t('products.price')}</IonLabel>
+                        <IonLabel slot="end" style={{ fontWeight: 'bold', color: 'var(--ion-text-color)' }}>
                           {formatCurrency(Number(variant.price))}
                         </IonLabel>
                       </IonItem>
                       {variant.selling_price && (
                         <IonItem>
-                          <IonLabel>Selling Price</IonLabel>
-                          <IonLabel slot="end" style={{ fontWeight: 'bold', color: '#2dd36f' }}>
+                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>{t('products.sellingPrice')}</IonLabel>
+                          <IonLabel slot="end" style={{ fontWeight: 'bold', color: 'var(--ion-color-success)' }}>
                             {formatCurrency(Number(variant.selling_price))}
                           </IonLabel>
                         </IonItem>
                       )}
                       {variant.gst_percent && (
                         <IonItem>
-                          <IonLabel>GST</IonLabel>
-                          <IonLabel slot="end">{variant.gst_percent}%</IonLabel>
+                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>GST</IonLabel>
+                          <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>{variant.gst_percent}%</IonLabel>
                         </IonItem>
                       )}
                       {variant.sku && (
                         <IonItem>
-                          <IonLabel>SKU</IonLabel>
-                          <IonLabel slot="end">{variant.sku}</IonLabel>
+                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>{t('products.sku')}</IonLabel>
+                          <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>{variant.sku}</IonLabel>
                         </IonItem>
                       )}
                       {variant.inventory && (
                         <IonItem>
-                          <IonLabel>Stock</IonLabel>
+                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>{t('inventory.currentStock')}</IonLabel>
                           <IonBadge
                             slot="end"
                             color={
@@ -265,7 +267,7 @@ export const ProductDetailPage: React.FC = () => {
           {(!variants || variants.length === 0) && (
             <IonCard>
               <IonCardContent>
-                <EmptyState message="No variants found for this product" />
+                <EmptyState message={t('products.noVariants')} />
               </IonCardContent>
             </IonCard>
           )}
@@ -273,7 +275,7 @@ export const ProductDetailPage: React.FC = () => {
 
         <IonToast
           isOpen={showSuccess}
-          message="Product updated successfully"
+          message={t('products.productUpdated')}
           duration={2000}
           color="success"
           onDidDismiss={() => setShowSuccess(false)}
@@ -291,7 +293,7 @@ export const ProductDetailPage: React.FC = () => {
           <IonModal isOpen={showEditModal} onDidDismiss={() => setShowEditModal(false)}>
             <IonHeader>
               <IonToolbar>
-                <IonTitle>Edit Product</IonTitle>
+                <IonTitle>{t('products.editProductTitle')}</IonTitle>
                 <IonButtons slot="end">
                   <IonButton onClick={() => setShowEditModal(false)}>
                     <IonIcon icon={close} />
@@ -302,18 +304,18 @@ export const ProductDetailPage: React.FC = () => {
             <IonContent>
               <div style={{ padding: '16px' }}>
                 <Input
-                  label="Product Name *"
+                  label={t('products.productNameLabel')}
                   value={editName}
                   onChange={setEditName}
-                  placeholder="Enter product name"
+                  placeholder={t('products.enterProductName')}
                 />
 
                 <Select
-                  label="Category"
+                  label={t('products.category')}
                   value={editCategoryId?.toString() || ''}
                   onChange={(value) => setEditCategoryId(value ? parseInt(value) : null)}
                   options={categories.map((cat) => ({ value: cat.id.toString(), label: cat.name }))}
-                  placeholder="Select category"
+                  placeholder={t('common.placeholders.selectCategory')}
                 />
 
                 <div style={{ marginTop: '24px' }}>
@@ -322,7 +324,7 @@ export const ProductDetailPage: React.FC = () => {
                     disabled={updating || !editName.trim()}
                     loading={updating}
                   >
-                    Update Product
+                    {t('products.updateProduct')}
                   </Button>
                 </div>
               </div>
@@ -341,7 +343,7 @@ export const ProductDetailPage: React.FC = () => {
           >
             <IonHeader>
               <IonToolbar>
-                <IonTitle>Edit Selling Price</IonTitle>
+                <IonTitle>{t('products.editSellingPriceTitle')}</IonTitle>
                 <IonButtons slot="end">
                   <IonButton onClick={() => setShowVariantEditModal(false)}>
                     <IonIcon icon={close} />
@@ -353,16 +355,16 @@ export const ProductDetailPage: React.FC = () => {
               <div style={{ padding: '16px' }}>
                 <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
                   <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
-                    {editingVariant.brand || 'Variant'} - {editingVariant.size || ''}
+                    {editingVariant.brand || t('products.variant')} - {editingVariant.size || ''}
                   </p>
                   <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#999' }}>
-                    SKU: {editingVariant.sku || 'N/A'}
+                    {t('products.sku')}: {editingVariant.sku || 'N/A'}
                   </p>
                 </div>
 
                 <div style={{ marginBottom: '12px' }}>
                   <IonLabel style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>
-                    Base Price (Cost Price)
+                    {t('products.basePriceCostPrice')}
                   </IonLabel>
                   <div style={{ padding: '12px', backgroundColor: '#f0f0f0', borderRadius: '4px' }}>
                     <span style={{ fontSize: '18px', fontWeight: 'bold' }}>
@@ -372,11 +374,11 @@ export const ProductDetailPage: React.FC = () => {
                 </div>
 
                 <Input
-                  label="Selling Price *"
+                  label={t('products.sellingPriceLabel')}
                   type="number"
                   value={editSellingPrice}
                   onChange={setEditSellingPrice}
-                  placeholder="Enter selling price"
+                  placeholder={t('products.enterPrice')}
                 />
 
                 <div style={{ marginTop: '24px' }}>
@@ -385,7 +387,7 @@ export const ProductDetailPage: React.FC = () => {
                     disabled={updatingVariant || !editSellingPrice || parseFloat(editSellingPrice) <= 0}
                     loading={updatingVariant}
                   >
-                    Update Selling Price
+                    {t('products.updatePrice')}
                   </Button>
                 </div>
               </div>

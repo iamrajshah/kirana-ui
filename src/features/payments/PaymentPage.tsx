@@ -23,6 +23,7 @@ import { useLazyGetPendingInvoicesByCustomerQuery } from '@core/api/invoiceApi';
 import { useCreatePaymentMutation } from '@core/api/paymentApi';
 import { formatCurrency, formatDateTime, generateIdempotencyKey } from '@utils/helpers';
 import type { PaymentMode, Invoice } from '@core/types';
+import { useTranslation } from 'react-i18next';
 
 interface InvoiceAllocation {
   invoice_id: string;
@@ -33,6 +34,7 @@ interface InvoiceAllocation {
 }
 
 export const PaymentPage: React.FC = () => {
+   const { t } = useTranslation();
   const { data: customersData } = useGetCustomersQuery({ skip: 0, take: 1000 });
   const [getPendingInvoices, { data: pendingInvoicesData, isLoading: loadingInvoices }] =
     useLazyGetPendingInvoicesByCustomerQuery();
@@ -187,7 +189,7 @@ export const PaymentPage: React.FC = () => {
 
   return (
     <IonPage>
-      <Navbar title="Record Payment" />
+      <Navbar title={t('payments.recordPayment')} />
       <IonContent className="ion-padding">
         <div className="max-w-4xl mx-auto">
           {/* Customer Selection */}

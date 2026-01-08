@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Navbar } from '@components/Navbar';
 import {
   IonContent,
@@ -35,6 +36,7 @@ import { Loading, EmptyState } from '@components';
 import { formatCurrency, formatNumber } from '@utils/helpers';
 
 export const ReportsPage: React.FC = () => {
+  const { t } = useTranslation();
   const [selectedReport, setSelectedReport] = useState<string>('sales');
   
   // Pagination state
@@ -110,10 +112,10 @@ export const ReportsPage: React.FC = () => {
   const renderSalesReport = () => {
     if (salesLoading) return <Loading isOpen={true} />;
     
-    // Backend returns { breakdown: [...] } when groupBy is provided
-    const salesBreakdown = salesData?.data?.breakdown || [];
+    // Backend returns array directly in data field
+    const salesBreakdown = salesData?.data || [];
     
-    if (salesBreakdown.length === 0) return <EmptyState message="No sales data" />;
+    if (salesBreakdown.length === 0) return <EmptyState message={t('reports.noSalesData')} />;
 
     return (
       <IonList>
@@ -138,10 +140,10 @@ export const ReportsPage: React.FC = () => {
     if (outstandingLoading) return <Loading isOpen={true} />;
     
     // Backend returns { summary: {...}, customers: [...] }
-    const customers = outstandingData?.data?.customers || [];
-    const summary = outstandingData?.data?.summary;
+    const customers = outstandingData?.data || [];
+    const summary = { total: customers.reduce((sum: number, c: any) => sum + c.total_outstanding, 0) };
     
-    if (customers.length === 0) return <EmptyState message="No outstanding balances" />;
+    if (customers.length === 0) return <EmptyState message={t('reports.noOutstandingBalances')} />;
 
     return (
       <div>
@@ -149,7 +151,7 @@ export const ReportsPage: React.FC = () => {
           <IonCard>
             <IonCardHeader>
               <IonCardTitle>
-                Total Outstanding: {formatCurrency(summary.total_outstanding)}
+                Total Outstanding: {formatCurrency(summary.total)}
               </IonCardTitle>
             </IonCardHeader>
           </IonCard>
@@ -176,10 +178,15 @@ export const ReportsPage: React.FC = () => {
     if (inventoryLoading) return <Loading isOpen={true} />;
     
     // Backend returns { summary: {...}, items: [...] }
-    const inventory = inventoryData?.data?.items || [];
-    const summary = inventoryData?.data?.summary;
+    const inventory = inventoryData?.data || [];
+    const summary = {
+      totalItems: inventory.length,
+      lowStockItems: inventory.filter((item: any) => item.is_low_stock).length,
+      outOfStockItems: inventory.filter((item: any) => item.quantity === 0).length,
+      totalValue: inventory.reduce((sum: number, item: any) => sum + item.stock_value, 0)
+    };
     
-    if (inventory.length === 0) return <EmptyState message="No inventory data" />;
+    if (inventory.length === 0) return <EmptyState message={t('reports.noInventoryData')} />;
 
     const lowStockItems = inventory.filter((item: any) => item.is_low_stock);
 
@@ -188,25 +195,25 @@ export const ReportsPage: React.FC = () => {
         {summary && (
           <IonCard>
             <IonCardHeader>
-              <IonCardTitle>Inventory Summary</IonCardTitle>
+              <IonCardTitle>{t('reports.inventorySummary')}</IonCardTitle>
             </IonCardHeader>
             <IonCardContent>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <p className="text-sm text-gray-600">Total Items</p>
-                  <p className="font-bold text-lg">{summary.total_items}</p>
+                  <p className="text-sm text-gray-600">{t('reports.totalItems')}</p>
+                  <p className="font-bold text-lg">{summary.totalItems}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Low Stock</p>
-                  <p className="font-bold text-lg text-danger">{summary.low_stock_items}</p>
+                  <p className="text-sm text-gray-600">{t('reports.lowStock')}</p>
+                  <p className="font-bold text-lg text-danger">{summary.lowStockItems}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Out of Stock</p>
-                  <p className="font-bold text-lg text-danger">{summary.out_of_stock_items}</p>
+                  <p className="text-sm text-gray-600">{t('reports.outOfStock')}</p>
+                  <p className="font-bold text-lg text-danger">{summary.outOfStockItems}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total Value</p>
-                  <p className="font-bold text-lg">{formatCurrency(summary.total_inventory_value)}</p>
+                  <p className="text-sm text-gray-600">{t('reports.totalValue')}</p>
+                  <p className="font-bold text-lg">{formatCurrency(summary.totalValue)}</p>
                 </div>
               </div>
             </IonCardContent>
@@ -215,7 +222,7 @@ export const ReportsPage: React.FC = () => {
         {lowStockItems.length > 0 && (
           <IonCard color="danger">
             <IonCardHeader>
-              <IonCardTitle>Low Stock Alert ({lowStockItems.length} items)</IonCardTitle>
+              <IonCardTitle>{t('reports.lowStockAlertCount')} ({lowStockItems.length} {t('reports.items')})</IonCardTitle>
             </IonCardHeader>
           </IonCard>
         )}
@@ -245,27 +252,33 @@ export const ReportsPage: React.FC = () => {
     
     // Backend returns { date, summary: {...}, breakdown: [...] }
     const cashbook = cashbookData?.data;
-    if (!cashbook) return <EmptyState message="No cashbook data" />;
+    if (!cashbook) return <EmptyState message={t('reports.noCashbookData')} />;
 
-    const breakdown = cashbook.breakdown || [];
-    const summary = cashbook.summary;
+    const breakdown = Array.isArray(cashbook) ? cashbook : [cashbook];
+    const summary: any = (breakdown as any[]).reduce((acc: any, item: any) => ({
+      cash: acc.cash + (item.cash || 0),
+      upi: acc.upi + (item.upi || 0),
+      card: acc.card + (item.card || 0),
+      bank_transfer: acc.bank_transfer + (item.bank_transfer || 0),
+      total: acc.total + (item.total || 0)
+    }), { cash: 0, upi: 0, card: 0, bank_transfer: 0, total: 0 });
 
     // Create a map for easy access
     const paymentMap = breakdown.reduce((acc: any, item: any) => {
       acc[item.payment_mode] = item.total_amount;
       return acc;
-    }, {});
+    }, {} as any);
 
     return (
       <div className="p-4">
         <IonCard>
           <IonCardHeader>
-            <IonCardTitle>Date: {cashbook.date}</IonCardTitle>
+            <IonCardTitle>{t('reports.dateLabel')} {cashbook.date}</IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
             {summary && (
               <div className="mb-4">
-                <p className="text-sm text-gray-600">Total Transactions: {summary.total_transactions}</p>
+                <p className="text-sm text-gray-600">{t('reports.totalTransactions')} {summary.total_transactions}</p>
               </div>
             )}
             <IonList>
@@ -280,7 +293,7 @@ export const ReportsPage: React.FC = () => {
               ))}
               {summary && (
                 <IonItem>
-                  <IonLabel className="font-bold">Total Collection</IonLabel>
+                  <IonLabel className="font-bold">{t('reports.totalCollection')}</IonLabel>
                   <div slot="end" className="font-bold text-lg text-primary">
                     {formatCurrency(summary.total_collection)}
                   </div>
@@ -297,7 +310,7 @@ export const ReportsPage: React.FC = () => {
     if (topSellingLoading) return <Loading isOpen={true} />;
     
     // Backend returns { products: [...] }
-    const products = topSellingData?.data?.products || [];
+    const products = topSellingData?.data || [];
     if (products.length === 0) return <EmptyState message="No sales data" />;
 
     return (
@@ -327,10 +340,15 @@ export const ReportsPage: React.FC = () => {
     if (supplierOutstandingLoading && supplierOutstandingPage === 1) return <Loading isOpen={true} />;
     
     const suppliers = allSupplierOutstanding;
-    const pagination = supplierOutstandingData?.pagination;
+    const pagination = {
+      total: supplierOutstandingData?.data?.length || 0,
+      page: supplierOutstandingPage,
+      pageSize: 10,
+      totalPages: Math.ceil((supplierOutstandingData?.data?.length || 0) / 10)
+    };
     const hasMore = pagination ? pagination.page < pagination.totalPages : false;
     
-    if (suppliers.length === 0 && !supplierOutstandingLoading) return <EmptyState message="No outstanding suppliers found" />;
+    if (suppliers.length === 0 && !supplierOutstandingLoading) return <EmptyState message={t('reports.noOutstandingSuppliers')} />;
 
     const totalOutstanding = suppliers.reduce((sum: number, s: any) => sum + s.outstanding_balance, 0);
 
@@ -345,15 +363,15 @@ export const ReportsPage: React.FC = () => {
       <div>
         <IonCard>
           <IonCardHeader>
-            <IonCardTitle>Summary</IonCardTitle>
+            <IonCardTitle>{t('reports.summary')}</IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
             <div className="flex justify-between mb-2">
-              <span>Total Suppliers with Outstanding:</span>
+              <span>{t('reports.totalSuppliersWithOutstanding')}</span>
               <strong>{pagination?.total || suppliers.length}</strong>
             </div>
             <div className="flex justify-between">
-              <span>Total Outstanding Amount:</span>
+              <span>{t('reports.totalOutstandingAmount')}</span>
               <strong>{formatCurrency(totalOutstanding)}</strong>
             </div>
           </IonCardContent>
@@ -379,7 +397,7 @@ export const ReportsPage: React.FC = () => {
         </IonList>
         
         <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
-          <IonInfiniteScrollContent loadingText="Loading more suppliers..." />
+          <IonInfiniteScrollContent loadingText={t('reports.loadingMoreSuppliers')} />
         </IonInfiniteScroll>
       </div>
     );
@@ -390,10 +408,15 @@ export const ReportsPage: React.FC = () => {
     
     const purchases = allPurchaseRegister;
     const summary = (purchaseRegisterData as any)?.summary;
-    const pagination = purchaseRegisterData?.pagination;
+    const pagination = {
+      total: purchaseRegisterData?.data?.length || 0,
+      page: 1,
+      pageSize: 10,
+      totalPages: Math.ceil((purchaseRegisterData?.data?.length || 0) / 10)
+    };
     const hasMore = pagination ? pagination.page < pagination.totalPages : false;
     
-    if (purchases.length === 0 && !purchaseRegisterLoading) return <EmptyState message="No purchases found" />;
+    if (purchases.length === 0 && !purchaseRegisterLoading) return <EmptyState message={t('reports.noPurchasesFound')} />;
 
     const loadMore = async (e: CustomEvent) => {
       if (hasMore) {
@@ -407,23 +430,23 @@ export const ReportsPage: React.FC = () => {
         {summary && (
           <IonCard>
             <IonCardHeader>
-              <IonCardTitle>Purchase Summary</IonCardTitle>
+              <IonCardTitle>{t('reports.purchaseSummary')}</IonCardTitle>
             </IonCardHeader>
             <IonCardContent>
               <div className="flex justify-between mb-2">
-                <span>Total Purchases:</span>
+                <span>{t('reports.totalPurchasesCount')}</span>
                 <strong>{summary.total_count || 0}</strong>
               </div>
               <div className="flex justify-between mb-2">
-                <span>Total Amount:</span>
+                <span>{t('reports.totalAmountLabel')}</span>
                 <strong>{formatCurrency(summary.total_amount || 0)}</strong>
               </div>
               <div className="flex justify-between mb-2">
-                <span>Paid Amount:</span>
+                <span>{t('reports.paidAmountLabel')}</span>
                 <strong style={{ color: 'var(--ion-color-success)' }}>{formatCurrency(summary.total_paid || 0)}</strong>
               </div>
               <div className="flex justify-between">
-                <span>Pending Amount:</span>
+                <span>{t('reports.pendingAmountLabel')}</span>
                 <strong style={{ color: 'var(--ion-color-danger)' }}>{formatCurrency(summary.total_pending || 0)}</strong>
               </div>
             </IonCardContent>
@@ -446,7 +469,7 @@ export const ReportsPage: React.FC = () => {
                 </div>
                 {purchase.pending_amount > 0 && (
                   <div className="text-sm" style={{ color: 'var(--ion-color-danger)' }}>
-                    Pending: {formatCurrency(purchase.pending_amount)}
+                    {t('reports.pendingShort')} {formatCurrency(purchase.pending_amount)}
                   </div>
                 )}
                 <div className="text-xs mt-1" style={{ 
@@ -462,7 +485,7 @@ export const ReportsPage: React.FC = () => {
         </IonList>
         
         <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
-          <IonInfiniteScrollContent loadingText="Loading more purchases..." />
+          <IonInfiniteScrollContent loadingText={t('reports.loadingMorePurchases')} />
         </IonInfiniteScroll>
       </div>
     );
@@ -473,7 +496,7 @@ export const ReportsPage: React.FC = () => {
     
     const suppliers = topPayablesData?.data || [];
     
-    if (suppliers.length === 0) return <EmptyState message="No payables found" />;
+    if (suppliers.length === 0) return <EmptyState message={t('reports.noPayablesFound')} />;
 
     return (
       <IonList>
@@ -540,15 +563,15 @@ export const ReportsPage: React.FC = () => {
               </IonLabel>
               <div slot="end" className="text-right">
                 <div className="text-sm text-gray-600">
-                  Purchases: {formatCurrency(ledger.total_credit || 0)}
+                  {t('reports.purchases')} {formatCurrency(ledger.total_credit || 0)}
                 </div>
                 <div className="text-sm" style={{ color: 'var(--ion-color-success)' }}>
-                  Payments: {formatCurrency(ledger.total_debit || 0)}
+                  {t('reports.payments')} {formatCurrency(ledger.total_debit || 0)}
                 </div>
                 <strong className="text-lg" style={{ 
                   color: ledger.balance > 0 ? 'var(--ion-color-danger)' : 'var(--ion-color-success)' 
                 }}>
-                  Balance: {formatCurrency(Math.abs(ledger.balance))}
+                  {t('reports.balanceLabel')} {formatCurrency(Math.abs(ledger.balance))}
                 </strong>
               </div>
             </IonItem>
@@ -556,7 +579,7 @@ export const ReportsPage: React.FC = () => {
         </IonList>
         
         <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
-          <IonInfiniteScrollContent loadingText="Loading more ledgers..." />
+          <IonInfiniteScrollContent loadingText={t('reports.loadingMoreLedgers')} />
         </IonInfiniteScroll>
       </div>
     );
@@ -576,15 +599,15 @@ export const ReportsPage: React.FC = () => {
       <div>
         <IonCard>
           <IonCardHeader>
-            <IonCardTitle>Purchase Trend Summary</IonCardTitle>
+            <IonCardTitle>{t('reports.purchaseTrendSummary')}</IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
             <div className="flex justify-between mb-2">
-              <span>Total Purchases ({trends.length} months):</span>
+              <span>{t('reports.totalPurchases')} ({trends.length} months):</span>
               <strong>{totalCount}</strong>
             </div>
             <div className="flex justify-between">
-              <span>Total Amount:</span>
+              <span>{t('reports.totalAmountLabel')}</span>
               <strong>{formatCurrency(totalAmount)}</strong>
             </div>
           </IonCardContent>
@@ -626,24 +649,24 @@ export const ReportsPage: React.FC = () => {
       <div>
         <IonCard>
           <IonCardHeader>
-            <IonCardTitle>Revenue Summary</IonCardTitle>
+            <IonCardTitle>{t('reports.revenueSummary')}</IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
             <div className="space-y-3">
               <div className="flex justify-between py-2 border-b">
-                <span className="font-semibold">Gross Revenue</span>
+                <span className="font-semibold">{t('reports.grossRevenue')}</span>
                 <strong style={{ color: 'var(--ion-color-success)' }}>
                   {formatCurrency(data.revenue?.gross_revenue || 0)}
                 </strong>
               </div>
               <div className="flex justify-between py-2 border-b">
-                <span className="font-semibold">GST Collected</span>
+                <span className="font-semibold">{t('reports.gstCollected')}</span>
                 <strong>
                   {formatCurrency(data.revenue?.gst_collected || 0)}
                 </strong>
               </div>
               <div className="flex justify-between py-2 border-b">
-                <span className="font-semibold">Net Revenue</span>
+                <span className="font-semibold">{t('reports.netRevenue')}</span>
                 <strong style={{ color: 'var(--ion-color-success)' }}>
                   {formatCurrency(data.revenue?.net_revenue || 0)}
                 </strong>
@@ -654,24 +677,24 @@ export const ReportsPage: React.FC = () => {
 
         <IonCard>
           <IonCardHeader>
-            <IonCardTitle>Collections</IonCardTitle>
+            <IonCardTitle>{t('reports.collectionsTitle')}</IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
             <div className="space-y-3">
               <div className="flex justify-between py-2 border-b">
-                <span className="font-semibold">Total Payments</span>
+                <span className="font-semibold">{t('reports.totalPayments')}</span>
                 <strong style={{ color: 'var(--ion-color-success)' }}>
                   {formatCurrency(data.collections?.total_payments || 0)}
                 </strong>
               </div>
               <div className="flex justify-between py-2 border-b">
-                <span className="font-semibold">Outstanding Amount</span>
+                <span className="font-semibold">{t('reports.outstandingAmount')}</span>
                 <strong style={{ color: 'var(--ion-color-danger)' }}>
                   {formatCurrency(data.collections?.outstanding_amount || 0)}
                 </strong>
               </div>
               <div className="flex justify-between py-2">
-                <span className="font-semibold">Collection Efficiency</span>
+                <span className="font-semibold">{t('reports.collectionEfficiency')}</span>
                 <strong>
                   {data.collections?.collection_efficiency || 0}%
                 </strong>
@@ -682,18 +705,18 @@ export const ReportsPage: React.FC = () => {
 
         <IonCard>
           <IonCardHeader>
-            <IonCardTitle>Summary</IonCardTitle>
+            <IonCardTitle>{t('reports.summary')}</IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
             <div className="space-y-3">
               <div className="flex justify-between py-2 border-b">
-                <span className="font-semibold">Cash in Hand</span>
+                <span className="font-semibold">{t('reports.cashInHand')}</span>
                 <strong style={{ color: 'var(--ion-color-success)' }}>
                   {formatCurrency(cashInHand)}
                 </strong>
               </div>
               <div className="flex justify-between py-2">
-                <span className="font-semibold">Receivables</span>
+                <span className="font-semibold">{t('reports.receivables')}</span>
                 <strong style={{ color: 'var(--ion-color-warning)' }}>
                   {formatCurrency(receivables)}
                 </strong>
@@ -707,7 +730,7 @@ export const ReportsPage: React.FC = () => {
 
   return (
     <IonPage>
-      <Navbar title="Reports" />
+      <Navbar title={t('reports.title')} />
       <IonContent>
         <div className="p-4">
           {/* Report Selector Dropdown */}
@@ -721,21 +744,21 @@ export const ReportsPage: React.FC = () => {
                   onIonChange={(e) => setSelectedReport(e.detail.value)}
                   interface="action-sheet"
                   interfaceOptions={{
-                    header: 'Select Report Type',
-                    subHeader: 'Choose a report to view'
+                    header: t('reports.selectReportType'),
+                    subHeader: t('reports.chooseReport')
                   }}
                 >
-                  <IonSelectOption value="sales">Sales Report</IonSelectOption>
-                  <IonSelectOption value="outstanding">Outstanding Customers</IonSelectOption>
-                  <IonSelectOption value="inventory">Inventory Summary</IonSelectOption>
-                  <IonSelectOption value="cashbook">Daily Cashbook</IonSelectOption>
-                  <IonSelectOption value="profitLoss">Profit & Loss</IonSelectOption>
-                  <IonSelectOption value="topSelling">Top Selling Products</IonSelectOption>
-                  <IonSelectOption value="supplierOutstanding">Supplier Outstanding</IonSelectOption>
-                  <IonSelectOption value="purchaseRegister">Purchase Register</IonSelectOption>
-                  <IonSelectOption value="topPayables">Top Payables</IonSelectOption>
-                  <IonSelectOption value="supplierLedger">Supplier Ledger Summary</IonSelectOption>
-                  <IonSelectOption value="purchaseTrend">Purchase Trend</IonSelectOption>
+                  <IonSelectOption value="sales">{t('reports.salesReport')}</IonSelectOption>
+                  <IonSelectOption value="outstanding">{t('reports.outstandingCustomers')}</IonSelectOption>
+                  <IonSelectOption value="inventory">{t('reports.inventorySummaryReport')}</IonSelectOption>
+                  <IonSelectOption value="cashbook">{t('reports.dailyCashbook')}</IonSelectOption>
+                  <IonSelectOption value="profitLoss">{t('reports.profitAndLoss')}</IonSelectOption>
+                  <IonSelectOption value="topSelling">{t('reports.topSellingProducts')}</IonSelectOption>
+                  <IonSelectOption value="supplierOutstanding">{t('reports.supplierOutstandingReport')}</IonSelectOption>
+                  <IonSelectOption value="purchaseRegister">{t('reports.purchaseRegisterReport')}</IonSelectOption>
+                  <IonSelectOption value="topPayables">{t('reports.topPayablesReport')}</IonSelectOption>
+                  <IonSelectOption value="supplierLedger">{t('reports.supplierLedgerSummary')}</IonSelectOption>
+                  <IonSelectOption value="purchaseTrend">{t('reports.purchaseTrendReport')}</IonSelectOption>
                 </IonSelect>
               </IonItem>
             </IonCardContent>

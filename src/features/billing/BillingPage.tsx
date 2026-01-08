@@ -21,6 +21,7 @@ import { SearchBar, PaymentModal, Loading } from '@components';
 import { formatCurrency, generateIdempotencyKey, debounce } from '@utils/helpers';
 import notificationService from '@core/services/notificationService';
 import type { PaymentMode } from '@core/types';
+import { useTranslation } from 'react-i18next';
 
 interface CartItem {
   variant_id: string;
@@ -36,6 +37,7 @@ interface CartItem {
 type DiscountType = 'amount' | 'percent';
 
 export const BillingPage: React.FC = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const history = useHistory();
   const editInvoiceId = new URLSearchParams(location.search).get('edit');
@@ -202,13 +204,13 @@ export const BillingPage: React.FC = () => {
 
   const handleSaveAsDraft = async () => {
     if (cart.length === 0) {
-      notificationService.error('Please add products to cart');
+      notificationService.error(t('billing.pleaseAddProducts'));
       return;
     }
 
     const customerId = selectedCustomerId || loadedInvoiceData?.customer?.id?.toString() || '';
     if (!editInvoiceId && !customerId) {
-      notificationService.error('Please select a customer first');
+      notificationService.error(t('billing.pleaseSelectCustomer'));
       return;
     }
 
@@ -261,14 +263,14 @@ export const BillingPage: React.FC = () => {
       }
     } catch (error: unknown) {
       const err = error as { data?: { message?: string }; message?: string };
-      const errMsg = err?.data?.message || err?.message || 'Failed to save draft';
+      const errMsg = err?.data?.message || err?.message || t('billing.failedToSaveDraft');
       notificationService.error(errMsg);
     }
   };
 
   const handleSaveAndCollectPayment = async () => {
     if (cart.length === 0) {
-      notificationService.error('Please add products to cart');
+      notificationService.error(t('billing.pleaseAddProducts'));
       return;
     }
 
@@ -281,7 +283,7 @@ export const BillingPage: React.FC = () => {
     });
     
     if (!customerId) {
-      notificationService.error('Please select a customer first');
+      notificationService.error(t('billing.pleaseSelectCustomer'));
       return;
     }
 
@@ -314,7 +316,7 @@ export const BillingPage: React.FC = () => {
       setShowPaymentModal(true);
     } catch (error: unknown) {
       const err = error as { data?: { message?: string }; message?: string };
-      const errMsg = err?.data?.message || err?.message || 'Failed to create invoice';
+      const errMsg = err?.data?.message || err?.message || t('billing.failedToCreateInvoice');
       notificationService.error(errMsg);
     }
   };
@@ -330,7 +332,7 @@ export const BillingPage: React.FC = () => {
     });
     
     if (!pendingInvoiceId || !customerId) {
-      notificationService.error('Missing customer or invoice information');
+      notificationService.error(t('billing.missingCustomerOrInvoice'));
       return;
     }
 
@@ -345,7 +347,7 @@ export const BillingPage: React.FC = () => {
       }).unwrap();
 
       console.log('Payment result:', result);
-      notificationService.success('Payment recorded successfully!');
+      notificationService.success(t('billing.paymentRecordedSuccessfully'));
       setShowPaymentModal(false);
       setPendingInvoiceId(null);
       resetForm();
@@ -353,7 +355,7 @@ export const BillingPage: React.FC = () => {
     } catch (error: unknown) {
       console.error('Payment error:', error);
       const err = error as { data?: { message?: string }; message?: string };
-      const errMsg = err?.data?.message || err?.message || 'Payment failed';
+      const errMsg = err?.data?.message || err?.message || t('billing.paymentFailed');
       notificationService.error(errMsg);
       throw error;
     }
@@ -374,15 +376,15 @@ export const BillingPage: React.FC = () => {
 
   return (
     <IonPage>
-      <Navbar title={editInvoiceId ? "Edit Draft Invoice" : "Billing"} />
+      <Navbar title={editInvoiceId ? t('billing.editDraftInvoice') : t('billing.title')} />
       <IonContent className="ion-padding">
-        {invoiceLoading && <Loading isOpen={invoiceLoading} message="Loading invoice..." />}
-        {creating && <Loading isOpen={creating} message="Saving invoice..." />}
-        {updating && <Loading isOpen={updating} message="Updating invoice..." />}
+        {invoiceLoading && <Loading isOpen={invoiceLoading} message={t('billing.loadingInvoice')} />}
+        {creating && <Loading isOpen={creating} message={t('billing.savingInvoice')} />}
+        {updating && <Loading isOpen={updating} message={t('billing.updatingInvoice')} />}
         <div className="max-w-2xl mx-auto">
           {/* Customer Selection */}
           <div className="mb-2">
-            <label className="block text-xs font-medium mb-1 text-gray-700">Customer</label>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--ion-text-color)' }}>{t('billing.customerLabel')}</label>
             {selectedCustomerId ? (
               <div className="flex items-center justify-between px-3 py-2 bg-green-50 rounded-lg border border-green-300">
                 <span className="text-sm font-medium text-green-900">{selectedCustomerName}</span>
@@ -398,7 +400,7 @@ export const BillingPage: React.FC = () => {
                   }}
                   style={{ margin: 0, height: '28px' }}
                 >
-                  <span className="text-xs">Change</span>
+                  <span className="text-xs">{t('billing.change')}</span>
                 </IonButton>
               </div>
             ) : (
@@ -409,10 +411,10 @@ export const BillingPage: React.FC = () => {
                     setCustomerSearchTerm(val);
                     handleCustomerSearch(val);
                   }}
-                  placeholder="Search customer by name or phone"
+                  placeholder={t('billing.searchCustomerPlaceholder')}
                 />
                 {customerSearchTerm && customersLoading && (
-                  <div className="text-center py-2 text-xs text-gray-500">Loading...</div>
+                  <div className="text-center py-2 text-xs" style={{ color: 'var(--ion-text-color)' }}>{t('common.loading')}</div>
                 )}
                 {customerSearchTerm && customersData?.data && customersData.data.length > 0 && (
                   <IonList className="mt-1" style={{ maxHeight: '200px', overflow: 'auto' }}>
@@ -432,7 +434,7 @@ export const BillingPage: React.FC = () => {
                         >
                           <IonLabel>
                             <h3 className="text-sm font-medium">{c.name}</h3>
-                            <p className="text-xs text-gray-500">{c.phone}</p>
+                            <p className="text-xs" style={{ color: 'var(--ion-color-medium)' }}>{c.phone}</p>
                           </IonLabel>
                         </IonItem>
                       );
@@ -452,14 +454,14 @@ export const BillingPage: React.FC = () => {
                   setSearchTerm(val);
                   handleSearch(val);
                 }}
-                placeholder="Search product by name or SKU"
+                placeholder={t('billing.searchProductPlaceholder')}
               />
             </div>
           )}
 
           {/* Search Results */}
           {searchTerm && searchLoading && (
-            <div className="text-center py-2 text-xs text-gray-500">Loading...</div>
+            <div className="text-center py-2 text-xs" style={{ color: 'var(--ion-text-color)' }}>{t('common.loading')}</div>
           )}
           {searchTerm && variantsData?.data && variantsData.data.length > 0 && (
             <IonList className="mt-1" style={{ maxHeight: '180px', overflow: 'auto' }}>
@@ -469,7 +471,7 @@ export const BillingPage: React.FC = () => {
                 <IonItem key={v.id} button onClick={() => addToCart(variant)} lines="none" style={{ '--min-height': '45px' }}>
                   <IonLabel>
                     <h3 className="text-xs font-medium">{v.product_name}</h3>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs" style={{ color: 'var(--ion-color-medium)' }}>
                       {v.sku} • {formatCurrency(v.selling_price || v.price)}
                     </p>
                   </IonLabel>
@@ -483,10 +485,10 @@ export const BillingPage: React.FC = () => {
           {/* Cart */}
           {selectedCustomerId && (
             <div className="mt-2">
-              <h3 className="text-xs font-semibold mb-1 text-gray-700">Cart Items ({cart.length})</h3>
+              <h3 className="text-xs font-semibold mb-1" style={{ color: 'var(--ion-text-color)' }}>{t('billing.cartItems')} ({cart.length})</h3>
               {cart.length === 0 ? (
-                <div className="text-center py-4 text-gray-400 text-xs">
-                  Cart is empty
+                <div className="text-center py-4 text-xs" style={{ color: 'var(--ion-color-medium)' }}>
+                  {t('billing.emptyCart')}
                 </div>
               ) : (
                 <div className="space-y-1">
@@ -497,7 +499,7 @@ export const BillingPage: React.FC = () => {
                       <div className="flex justify-between items-center mb-0.5">
                         <div className="flex-1">
                           <h4 className="text-xs font-medium leading-none">{item.product_name}</h4>
-                          <p className="text-xs text-gray-500 mt-0.5">{item.sku}</p>
+                          <p className="text-xs mt-0.5" style={{ color: 'var(--ion-color-medium)' }}>{item.sku}</p>
                         </div>
                         <IonButton
                           fill="clear"
@@ -514,7 +516,7 @@ export const BillingPage: React.FC = () => {
                       <div className="grid grid-cols-2 gap-1 mb-0.5">
                         {/* Quantity */}
                         <div>
-                          <label className="text-xs text-gray-600 block mb-0.5" style={{ fontSize: '10px' }}>Qty</label>
+                          <label className="text-xs block mb-0.5" style={{ fontSize: '10px', color: 'var(--ion-text-color)' }}>{t('billing.qty')}</label>
                           <div className="flex items-center gap-0.5">
                             <button
                               onClick={() => updateQuantity(item.variant_id, item.quantity - 1)}
@@ -546,7 +548,7 @@ export const BillingPage: React.FC = () => {
 
                         {/* Selling Price */}
                         <div>
-                          <label className="text-xs text-gray-600 block mb-0.5" style={{ fontSize: '10px' }}>Price</label>
+                          <label className="text-xs block mb-0.5" style={{ fontSize: '10px', color: 'var(--ion-text-color)' }}>{t('billing.priceLabel')}</label>
                           <div className="flex items-center gap-1.5">
                             <input
                               type="number"
@@ -557,7 +559,7 @@ export const BillingPage: React.FC = () => {
                               className="flex-1 h-7 px-1.5 text-sm border border-gray-300 rounded"
                               step="0.01"
                             />
-                            <span className="text-gray-700 font-bold" style={{ fontSize: '14px', minWidth: '18px' }}>₹</span>
+                            <span className="font-bold" style={{ fontSize: '14px', minWidth: '18px', color: 'var(--ion-text-color)' }}>₹</span>
                           </div>
                         </div>
                       </div>
@@ -580,13 +582,13 @@ export const BillingPage: React.FC = () => {
               <IonCardContent className="p-1.5">
                 {/* Subtotal */}
                 <div className="flex justify-between mb-1">
-                  <span className="text-gray-700" style={{ fontSize: '11px' }}>Subtotal:</span>
+                  <span style={{ fontSize: '11px', color: 'var(--ion-text-color-secondary)' }}>{t('billing.subtotalLabel')}</span>
                   <span className="font-semibold" style={{ fontSize: '11px' }}>{formatCurrency(calculateSubtotal())}</span>
                 </div>
 
                 {/* Bill Discount - Single Row */}
                 <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-gray-700" style={{ fontSize: '11px', minWidth: '65px' }}>Bill Disc:</span>
+                  <span style={{ fontSize: '11px', minWidth: '65px', color: 'var(--ion-text-color-secondary)' }}>{t('billing.billDiscount')}</span>
                   <input
                     type="number"
                     value={billDiscount}
@@ -598,12 +600,12 @@ export const BillingPage: React.FC = () => {
                     placeholder="0"
                     step="0.01"
                   />
-                  <span className="text-gray-700 font-bold" style={{ fontSize: '14px', minWidth: '18px' }}>₹</span>
+                  <span className="font-bold" style={{ fontSize: '14px', minWidth: '18px', color: 'var(--ion-text-color)' }}>₹</span>
                 </div>
 
                 {/* GST - Single Row */}
                 <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-gray-700" style={{ fontSize: '11px', minWidth: '65px' }}>GST Amt:</span>
+                  <span style={{ fontSize: '11px', minWidth: '65px', color: 'var(--ion-text-color-secondary)' }}>{t('billing.gstAmount')}</span>
                   <input
                     type="number"
                     value={gstAmount}
@@ -612,12 +614,12 @@ export const BillingPage: React.FC = () => {
                     placeholder="0"
                     step="0.01"
                   />
-                  <span className="text-gray-700 font-bold" style={{ fontSize: '14px', minWidth: '18px' }}>₹</span>
+                  <span className="font-bold" style={{ fontSize: '14px', minWidth: '18px', color: 'var(--ion-text-color)' }}>₹</span>
                 </div>
 
                 {/* Final Total */}
                 <div className="flex justify-between font-bold border-t border-gray-200 pt-1 mt-1">
-                  <span style={{ fontSize: '13px' }}>Total:</span>
+                  <span style={{ fontSize: '13px' }}>{t('billing.totalLabel')}</span>
                   <span className="text-primary" style={{ fontSize: '14px' }}>{formatCurrency(calculateTotal())}</span>
                 </div>
               </IonCardContent>
@@ -635,7 +637,7 @@ export const BillingPage: React.FC = () => {
                 size="small"
               >
                 <IonIcon icon={bookmark} slot="start" style={{ fontSize: '18px' }} />
-                <span className="text-xs">{editInvoiceId ? 'Update' : 'Draft'}</span>
+                <span className="text-xs">{editInvoiceId ? t('billing.update') : t('billing.draft')}</span>
               </IonButton>
               <IonButton
                 onClick={handleSaveAndCollectPayment}
@@ -645,7 +647,7 @@ export const BillingPage: React.FC = () => {
                 size="small"
               >
                 <IonIcon icon={cash} slot="start" style={{ fontSize: '18px' }} />
-                <span className="text-xs">Save & Pay</span>
+                <span className="text-xs">{t('billing.saveAndPay')}</span>
               </IonButton>
             </div>
           )}

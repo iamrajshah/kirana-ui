@@ -21,18 +21,20 @@ import {
   IonToggle,
 } from '@ionic/react';
 import { add, close, person, shield } from 'ionicons/icons';
+import { useTranslation } from 'react-i18next';
 import { Navbar } from '@components/Navbar';
 import { Input } from '@components/Input';
 import { Select } from '@components/Select';
 import { useGetUsersQuery, useCreateUserMutation, useUpdateUserStatusMutation } from '@core/api/userApi';
 import './UsersPage.css';
 
-const ROLE_OPTIONS = [
-  { value: 'MANAGER', label: 'Manager' },
-  { value: 'CASHIER', label: 'Cashier' },
-];
-
 export const UsersPage: React.FC = () => {
+  const { t } = useTranslation();
+  const ROLE_OPTIONS = [
+    { value: 'MANAGER', label: t('users.manager') },
+    { value: 'CASHIER', label: t('users.cashier') },
+  ];
+  
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -62,13 +64,13 @@ export const UsersPage: React.FC = () => {
     console.log('👤 Creating user...', { name, phone, email, role });
 
     if (!name.trim()) {
-      setErrorMessage('Name is required');
+      setErrorMessage(t('users.nameRequired'));
       setShowError(true);
       return;
     }
 
     if (!phone.trim()) {
-      setErrorMessage('Phone is required');
+      setErrorMessage(t('users.phoneRequired'));
       setShowError(true);
       return;
     }
@@ -94,7 +96,7 @@ export const UsersPage: React.FC = () => {
       resetForm();
     } catch (error) {
       console.error('❌ Error creating user:', error);
-      setErrorMessage(error?.data?.message || 'Failed to create user');
+      setErrorMessage(error?.data?.message || t('users.failedToCreateUser'));
       setShowError(true);
     }
   };
@@ -108,7 +110,7 @@ export const UsersPage: React.FC = () => {
       console.log('✅ User status updated');
     } catch (error) {
       console.error('❌ Error updating user status:', error);
-      setErrorMessage(error?.data?.message || 'Failed to update user status');
+      setErrorMessage(error?.data?.message || t('users.failedToUpdateUserStatus'));
       setShowError(true);
     }
   };
@@ -121,7 +123,7 @@ export const UsersPage: React.FC = () => {
 
   return (
     <IonPage>
-      <Navbar title="Users" />
+      <Navbar title={t('users.title')} />
       <IonContent className="ion-padding">
         {isLoading ? (
           <div className="loading-container">
@@ -195,7 +197,7 @@ export const UsersPage: React.FC = () => {
             <IonPage>
               <IonHeader>
                 <IonToolbar>
-                  <IonTitle>Create New User</IonTitle>
+                  <IonTitle>{t('users.createNewUser')}</IonTitle>
                   <IonButtons slot="end">
                     <IonButton
                       onClick={() => {
@@ -210,44 +212,44 @@ export const UsersPage: React.FC = () => {
               </IonHeader>
               <IonContent className="ion-padding">
                 <Input
-                  label="Name"
+                  label={t('users.userName')}
                   value={name}
                   onChange={setName}
-                  placeholder="Enter user name"
+                  placeholder={t('users.enterUserName')}
                   required
                 />
                 <Input
-                  label="Phone"
+                  label={t('users.userPhone')}
                   value={phone}
                   onChange={setPhone}
                   type="tel"
-                  placeholder="+1234567890"
+                  placeholder={t('users.phonePlaceholder')}
                   required
                 />
                 <Input
-                  label="Email"
+                  label={t('users.userEmail')}
                   value={email}
                   onChange={setEmail}
                   type="email"
-                  placeholder="user@example.com"
+                  placeholder={t('users.emailPlaceholder')}
                 />
                 <Input
-                  label="Password"
+                  label={t('users.password')}
                   value={password}
                   onChange={setPassword}
                   type="password"
-                  placeholder="Min 8 characters"
+                  placeholder={t('users.passwordPlaceholder')}
                   required
                 />
                 <Select
-                  label="Role"
+                  label={t('users.role')}
                   value={role}
                   onChange={(value) => setRole(value as 'MANAGER' | 'CASHIER')}
                   options={ROLE_OPTIONS}
                   required
                 />
                 <p style={{ fontSize: '12px', color: 'var(--ion-color-medium)', marginTop: '8px' }}>
-                  Password must be at least 8 characters with uppercase, lowercase, and number.
+                  {t('users.passwordRequirement')}
                 </p>
                 <IonButton
                   onClick={() => {
@@ -258,7 +260,7 @@ export const UsersPage: React.FC = () => {
                   expand="block"
                   style={{ marginTop: '20px' }}
                 >
-                  {creating ? 'Creating...' : 'Create User'}
+                  {creating ? t('common.creating') : t('users.createUser')}
                 </IonButton>
               </IonContent>
             </IonPage>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   IonContent,
   IonPage,
@@ -23,6 +24,7 @@ import { EmptyState } from '@components';
 import './PurchaseDetailPage.css';
 
 const PurchaseDetailPage: React.FC = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, error } = useGetPurchaseByIdQuery(id);
 
@@ -44,7 +46,7 @@ const PurchaseDetailPage: React.FC = () => {
   if (isLoading) {
     return (
       <IonPage>
-        <Navbar title="Purchase Details" />
+        <Navbar title={t('purchases.purchaseDetails')} />
         <IonContent className="ion-padding">
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '50px' }}>
             <IonSpinner />
@@ -57,7 +59,7 @@ const PurchaseDetailPage: React.FC = () => {
   if (error || !purchase) {
     return (
       <IonPage>
-        <Navbar title="Purchase Details" />
+        <Navbar title={t('purchases.purchaseDetails')} />
         <IonContent className="ion-padding">
           <EmptyState message="Purchase not found or error loading details" />
         </IonContent>
@@ -67,7 +69,7 @@ const PurchaseDetailPage: React.FC = () => {
 
   return (
     <IonPage>
-      <Navbar title="Purchase Details" />
+      <Navbar title={t('purchases.purchaseDetails')} />
       <IonContent className="ion-padding">
         {/* Purchase Header */}
         <IonCard>

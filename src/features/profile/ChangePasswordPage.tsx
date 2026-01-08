@@ -163,7 +163,7 @@ export const ChangePasswordPage: React.FC = () => {
             
             <IonButton
               onClick={handleChangePassword}
-              loading={changing}
+
               expand="block"
               style={{ marginTop: '20px' }}
               disabled={!passwordValidation.isValid || newPassword !== confirmPassword}

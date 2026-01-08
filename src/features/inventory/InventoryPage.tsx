@@ -51,7 +51,7 @@ export const InventoryPage: React.FC = () => {
       if (!selectedItem) return;
 
       if (!quantity || parseFloat(quantity) < 0) {
-        setErrorMessage('Valid quantity is required');
+        setErrorMessage(t('inventory.validQuantityRequired'));
         setShowError(true);
         return;
       }
@@ -90,7 +90,7 @@ export const InventoryPage: React.FC = () => {
           {isLoading ? (
             <Loading isOpen={isLoading} />
           ) : inventory.length === 0 ? (
-            <EmptyState message="No inventory items found" />
+            <EmptyState message={t('inventory.noInventoryItems')} />
           ) : (
             <IonList>
               {inventory.map((item) => (
@@ -126,7 +126,7 @@ export const InventoryPage: React.FC = () => {
             <IonPage>
               <IonHeader>
                 <IonToolbar>
-                  <IonTitle>Update Inventory</IonTitle>
+                  <IonTitle>{t('inventory.updateInventoryTitle')}</IonTitle>
                   <IonButtons slot="end">
                     <IonButton onClick={() => setShowModal(false)}>
                       <IonIcon icon={close} />
@@ -142,28 +142,28 @@ export const InventoryPage: React.FC = () => {
                   </div>
 
                   <Input
-                    label="Quantity *"
+                    label={t('inventory.quantityRequired')}
                     type="number"
                     value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    placeholder="Enter quantity"
+                    onChange={setQuantity}
+                    placeholder={t('inventory.enterQuantityPlaceholder')}
                   />
 
                   <Input
-                    label="Low Stock Threshold"
+                    label={t('inventory.lowStockThresholdLabel')}
                     type="number"
                     value={lowStockThreshold}
-                    onChange={(e) => setLowStockThreshold(e.target.value)}
-                    placeholder="Enter low stock threshold"
+                    onChange={setLowStockThreshold}
+                    placeholder={t('inventory.enterLowStockPlaceholder')}
                   />
 
                   <div className="mt-6">
                     <Button
                       onClick={handleUpdateInventory}
                       disabled={updating || !quantity}
-                      isLoading={updating}
+                      loading={updating}
                     >
-                      Update Inventory
+                      {t('inventory.updateInventoryButton')}
                     </Button>
                   </div>
                 </div>
@@ -174,7 +174,7 @@ export const InventoryPage: React.FC = () => {
 
         <IonToast
           isOpen={showSuccess}
-          message="Inventory updated successfully"
+          message={t('inventory.inventoryUpdatedSuccess')}
           duration={2000}
           color="success"
           onDidDismiss={() => setShowSuccess(false)}
