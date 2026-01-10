@@ -21,6 +21,7 @@ export const LoginPage: React.FC = () => {
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const languages = [
     { code: 'en', name: 'English' },
@@ -37,11 +38,12 @@ export const LoginPage: React.FC = () => {
   const handleLogin = async () => {
     console.log('=== handleLogin CALLED ===');
     setError('');
+    setSuccess('');
 
     console.log('emailOrPhone:', emailOrPhone, 'password:', password);
     if (!emailOrPhone || !password) {
       console.log('Missing fields');
-      setError('Please fill in all fields');
+      setError(t('auth.fillAllFields') || 'Please fill in all fields');
       return;
     }
 
@@ -58,6 +60,7 @@ export const LoginPage: React.FC = () => {
       
       if (response.success && response.data) {
         console.log('Dispatching credentials:', response.data);
+        setSuccess(t('auth.loginSuccess') || 'Login successful!');
         dispatch(setCredentials(response.data));
         console.log('Credentials dispatched');
         
@@ -70,13 +73,29 @@ export const LoginPage: React.FC = () => {
         setTimeout(() => {
           console.log('Executing navigation NOW');
           window.location.href = '/dashboard';
-        }, 500);
+        }, 1000);
       } else {
         console.error('Login response not successful:', response);
+        setError(response.message || t('auth.loginError') || 'Login failed');
       }
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err?.data?.message || t('auth.loginError'));
+      // Handle different error types
+      let errorMessage = t('auth.loginError') || 'Login failed';
+      
+      if (err?.data?.message) {
+        errorMessage = err.data.message;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      } else if (err?.status === 401) {
+        errorMessage = t('auth.invalidCredentials') || 'Invalid email/phone or password';
+      } else if (err?.status === 500) {
+        errorMessage = t('auth.serverError') || 'Server error. Please try again later.';
+      } else if (!navigator.onLine) {
+        errorMessage = t('auth.networkError') || 'Network error. Please check your connection.';
+      }
+      
+      setError(errorMessage);
     }
   };
 
@@ -174,8 +193,18 @@ export const LoginPage: React.FC = () => {
           isOpen={!!error}
           onDidDismiss={() => setError('')}
           message={error}
-          duration={3000}
+          duration={4000}
           color="danger"
+          position="top"
+        />
+        
+        <IonToast
+          isOpen={!!success}
+          onDidDismiss={() => setSuccess('')}
+          message={success}
+          duration={2000}
+          color="success"
+          position="top"
         />
       </IonContent>
     </IonPage>

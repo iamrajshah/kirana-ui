@@ -36,6 +36,20 @@ export interface DailyCashbook {
 }
 
 export interface ProfitLoss {
+  revenue?: {
+    gross_revenue: number;
+    gst_collected: number;
+    net_revenue: number;
+  };
+  collections?: {
+    total_payments: number;
+    outstanding_amount: number;
+    collection_efficiency: number;
+  };
+  summary?: {
+    cash_in_hand: number;
+    receivables: number;
+  };
   total_revenue: number;
   total_cost: number;
   gross_profit: number;
