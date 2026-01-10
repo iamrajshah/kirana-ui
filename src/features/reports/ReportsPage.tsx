@@ -112,8 +112,8 @@ export const ReportsPage: React.FC = () => {
   const renderSalesReport = () => {
     if (salesLoading) return <Loading isOpen={true} />;
     
-    // Backend returns array directly in data field
-    const salesBreakdown = salesData?.data || [];
+    // Backend returns { breakdown: [...] } when groupBy is set
+    const salesBreakdown = Array.isArray(salesData?.data?.breakdown) ? salesData.data.breakdown : [];
     
     if (salesBreakdown.length === 0) return <EmptyState message={t('reports.noSalesData')} />;
 
@@ -140,8 +140,12 @@ export const ReportsPage: React.FC = () => {
     if (outstandingLoading) return <Loading isOpen={true} />;
     
     // Backend returns { summary: {...}, customers: [...] }
-    const customers = outstandingData?.data || [];
-    const summary = { total: customers.reduce((sum: number, c: any) => sum + c.total_outstanding, 0) };
+    const customers = Array.isArray(outstandingData?.data?.customers) ? outstandingData.data.customers : [];
+    const summary = outstandingData?.data?.summary || { 
+      total: customers.reduce((sum: number, c: any) => sum + (c.outstanding_balance || 0), 0),
+      total_customers: customers.length,
+      total_outstanding: customers.reduce((sum: number, c: any) => sum + (c.outstanding_balance || 0), 0)
+    };
     
     if (customers.length === 0) return <EmptyState message={t('reports.noOutstandingBalances')} />;
 
@@ -151,7 +155,7 @@ export const ReportsPage: React.FC = () => {
           <IonCard>
             <IonCardHeader>
               <IonCardTitle>
-                Total Outstanding: {formatCurrency(summary.total)}
+                Total Outstanding: {formatCurrency(summary.total_outstanding)}
               </IonCardTitle>
             </IonCardHeader>
           </IonCard>
@@ -178,12 +182,12 @@ export const ReportsPage: React.FC = () => {
     if (inventoryLoading) return <Loading isOpen={true} />;
     
     // Backend returns { summary: {...}, items: [...] }
-    const inventory = inventoryData?.data || [];
-    const summary = {
-      totalItems: inventory.length,
-      lowStockItems: inventory.filter((item: any) => item.is_low_stock).length,
-      outOfStockItems: inventory.filter((item: any) => item.quantity === 0).length,
-      totalValue: inventory.reduce((sum: number, item: any) => sum + item.stock_value, 0)
+    const inventory = Array.isArray(inventoryData?.data?.items) ? inventoryData.data.items : [];
+    const summary = inventoryData?.data?.summary || {
+      total_items: inventory.length,
+      low_stock_items: inventory.filter((item: any) => item.is_low_stock).length,
+      out_of_stock_items: inventory.filter((item: any) => item.quantity === 0).length,
+      total_inventory_value: inventory.reduce((sum: number, item: any) => sum + (item.stock_value || 0), 0)
     };
     
     if (inventory.length === 0) return <EmptyState message={t('reports.noInventoryData')} />;
@@ -201,19 +205,19 @@ export const ReportsPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <p className="text-sm text-gray-600">{t('reports.totalItems')}</p>
-                  <p className="font-bold text-lg">{summary.totalItems}</p>
+                  <p className="font-bold text-lg">{summary.total_items}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">{t('reports.lowStock')}</p>
-                  <p className="font-bold text-lg text-danger">{summary.lowStockItems}</p>
+                  <p className="font-bold text-lg text-danger">{summary.low_stock_items}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">{t('reports.outOfStock')}</p>
-                  <p className="font-bold text-lg text-danger">{summary.outOfStockItems}</p>
+                  <p className="font-bold text-lg text-danger">{summary.out_of_stock_items}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">{t('reports.totalValue')}</p>
-                  <p className="font-bold text-lg">{formatCurrency(summary.totalValue)}</p>
+                  <p className="font-bold text-lg">{formatCurrency(summary.total_inventory_value)}</p>
                 </div>
               </div>
             </IonCardContent>
@@ -254,20 +258,11 @@ export const ReportsPage: React.FC = () => {
     const cashbook = cashbookData?.data;
     if (!cashbook) return <EmptyState message={t('reports.noCashbookData')} />;
 
-    const breakdown = Array.isArray(cashbook) ? cashbook : [cashbook];
-    const summary: any = (breakdown as any[]).reduce((acc: any, item: any) => ({
-      cash: acc.cash + (item.cash || 0),
-      upi: acc.upi + (item.upi || 0),
-      card: acc.card + (item.card || 0),
-      bank_transfer: acc.bank_transfer + (item.bank_transfer || 0),
-      total: acc.total + (item.total || 0)
-    }), { cash: 0, upi: 0, card: 0, bank_transfer: 0, total: 0 });
-
-    // Create a map for easy access
-    const paymentMap = breakdown.reduce((acc: any, item: any) => {
-      acc[item.payment_mode] = item.total_amount;
-      return acc;
-    }, {} as any);
+    const breakdown = Array.isArray(cashbook?.breakdown) ? cashbook.breakdown : [];
+    const summary = cashbook?.summary || {
+      total_collection: breakdown.reduce((sum: number, item: any) => sum + (item.total_amount || 0), 0),
+      total_transactions: breakdown.reduce((sum: number, item: any) => sum + (item.transaction_count || 0), 0)
+    };
 
     return (
       <div className="p-4">
@@ -310,7 +305,7 @@ export const ReportsPage: React.FC = () => {
     if (topSellingLoading) return <Loading isOpen={true} />;
     
     // Backend returns { products: [...] }
-    const products = topSellingData?.data || [];
+    const products = Array.isArray(topSellingData?.data?.products) ? topSellingData.data.products : [];
     if (products.length === 0) return <EmptyState message="No sales data" />;
 
     return (
@@ -494,7 +489,7 @@ export const ReportsPage: React.FC = () => {
   const renderTopPayables = () => {
     if (topPayablesLoading) return <Loading isOpen={true} />;
     
-    const suppliers = topPayablesData?.data || [];
+    const suppliers = Array.isArray(topPayablesData?.data) ? topPayablesData.data : [];
     
     if (suppliers.length === 0) return <EmptyState message={t('reports.noPayablesFound')} />;
 
@@ -588,7 +583,7 @@ export const ReportsPage: React.FC = () => {
   const renderPurchaseTrend = () => {
     if (purchaseTrendLoading) return <Loading isOpen={true} />;
     
-    const trends = purchaseTrendData?.data || [];
+    const trends = Array.isArray(purchaseTrendData?.data) ? purchaseTrendData.data : [];
     
     if (trends.length === 0) return <EmptyState message="No trend data available" />;
 
