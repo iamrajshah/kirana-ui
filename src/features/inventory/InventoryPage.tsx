@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Navbar } from '@components/Navbar';
 import {
   IonContent,
@@ -15,6 +15,7 @@ import {
   IonHeader,
   IonToolbar,
   IonTitle,
+  IonListHeader,
 } from '@ionic/react';
 import { create, close } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
@@ -38,6 +39,25 @@ export const InventoryPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
 
   const inventory = data?.data || [];
+
+  // Group inventory by category
+  const groupedInventory = useMemo(() => {
+    const groups: Record<string, Inventory[]> = {};
+    
+    inventory.forEach((item) => {
+      const categoryName = item.variant?.product?.category?.name || 'Uncategorized';
+      if (!groups[categoryName]) {
+        groups[categoryName] = [];
+      }
+      groups[categoryName].push(item);
+    });
+    
+    return groups;
+  }, [inventory]);
+
+  const categoryNames = useMemo(() => {
+    return Object.keys(groupedInventory).sort();
+  }, [groupedInventory]);
 
   const handleEditClick = (item: Inventory) => {
     setSelectedItem(item);
@@ -92,32 +112,56 @@ export const InventoryPage: React.FC = () => {
           ) : inventory.length === 0 ? (
             <EmptyState message={t('inventory.noInventoryItems')} />
           ) : (
-            <IonList>
-              {inventory.map((item) => (
-                <IonItem key={item.variant_id}>
-                  <IonLabel>
-                    <h2 className="font-semibold">{item.variant?.product?.name}</h2>
-                    <p className="text-gray-600">SKU: {item.variant?.sku}</p>
-                    <p className="text-sm">
-                      {t('inventory.lowStockThreshold')}: {item.low_stock_threshold}
-                    </p>
-                  </IonLabel>
-                  <div slot="end" className="flex items-center gap-2">
-                    <div className="text-right">
-                      <IonBadge color={item.is_low_stock ? 'danger' : 'success'} className="text-lg">
-                        {formatNumber(item.quantity)}
-                      </IonBadge>
-                      {item.is_low_stock && (
-                        <p className="text-xs text-danger mt-1">{t('inventory.lowStockWarning')}</p>
-                      )}
-                    </div>
-                    <IonButton onClick={() => handleEditClick(item)} fill="clear">
-                      <IonIcon icon={create} />
-                    </IonButton>
-                  </div>
-                </IonItem>
+            <>
+              {categoryNames.map((categoryName) => (
+                <div key={categoryName} style={{ marginBottom: '16px' }}>
+                  <IonListHeader style={{ 
+                    fontSize: '16px', 
+                    fontWeight: '700', 
+                    color: 'var(--ion-color-primary)',
+                    padding: '8px 16px',
+                    background: 'var(--ion-color-light)',
+                    borderRadius: '8px',
+                    marginBottom: '8px'
+                  }}>
+                    {categoryName}
+                    <IonBadge 
+                      color="primary" 
+                      style={{ marginLeft: '8px' }}
+                    >
+                      {groupedInventory[categoryName].length}
+                    </IonBadge>
+                  </IonListHeader>
+                  
+                  <IonList>
+                    {groupedInventory[categoryName].map((item) => (
+                      <IonItem key={item.variant_id}>
+                        <IonLabel>
+                          <h2 className="font-semibold">{item.variant?.product?.name}</h2>
+                          <p className="text-gray-600">SKU: {item.variant?.sku}</p>
+                          <p className="text-sm">
+                            {t('inventory.lowStockThreshold')}: {item.low_stock_threshold}
+                          </p>
+                        </IonLabel>
+                        <div slot="end" className="flex items-center gap-2">
+                          <div className="text-right">
+                            <IonBadge color={item.is_low_stock ? 'danger' : 'success'} className="text-lg">
+                              {formatNumber(item.quantity)}
+                            </IonBadge>
+                            {item.is_low_stock && (
+                              <p className="text-xs text-danger mt-1">{t('inventory.lowStockWarning')}</p>
+                            )}
+                          </div>
+                          <IonButton onClick={() => handleEditClick(item)} fill="clear">
+                            <IonIcon icon={create} />
+                          </IonButton>
+                        </div>
+                      </IonItem>
+                    ))}
+                  </IonList>
+                </div>
               ))}
-            </IonList>
+            </>
           )}
         </div>
 
