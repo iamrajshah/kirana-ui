@@ -30,16 +30,22 @@ import {
   IonCol,
   IonSelect,
   IonSelectOption,
+  IonAlert,
 } from '@ionic/react';
 import { cash, close } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import { useParams, useHistory } from 'react-router';
-import { Navbar } from '@components/Navbar';
 
 import {
   useGetSupplierByIdQuery,
   useGetSupplierLedgerQuery,
   useMakeSupplierPaymentMutation,
+  useGetBankAccountsQuery,
+  useCreateBankAccountMutation,
+  useUpdateBankAccountMutation,
+  useDeleteBankAccountMutation,
+  useSetPrimaryBankAccountMutation,
+  BankAccount,
 } from '../../core/api/supplierApi';
 import { Input, Button, EmptyState } from '../../components';
 import { formatCurrency, formatDateTime } from '@utils/helpers';
@@ -47,6 +53,8 @@ import { useAppSelector } from '../../core/hooks';
 import { selectCurrentUser } from '../../core/auth/authSlice';
 import { hasPermission } from '../../core/permissions/permissions';
 import notificationService from '@core/services/notificationService';
+import { PrimaryBankAccountCard, BankAccountModal, BankAccountFormModal } from './components';
+import type { BankAccountFormData } from './components';
 import './SupplierLedgerPage.css';
 
 const SupplierLedgerPage: React.FC = () => {
@@ -54,7 +62,20 @@ const SupplierLedgerPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();  const history = useHistory();  const user = useAppSelector(selectCurrentUser);
   const userRoles = user?.roles || [];
   const hasUpdatePermission = hasPermission(userRoles, 'SUPPLIER_UPDATE');
+  const hasManagePermission = hasPermission(userRoles, 'SUPPLIER_MANAGE');
+  
+  // Debug permission check
+  console.log('DEBUG - User:', user);
+  console.log('DEBUG - User Roles:', userRoles);
+  console.log('DEBUG - Has Manage Permission:', hasManagePermission);
+  
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  // Bank account modals
+  const [showBankAccountsModal, setShowBankAccountsModal] = useState(false);
+  const [showBankAccountFormModal, setShowBankAccountFormModal] = useState(false);
+  const [editingBankAccount, setEditingBankAccount] = useState<BankAccount | null>(null);
+  const [deletingBankAccount, setDeletingBankAccount] = useState<BankAccount | null>(null);
 
   // Payment form state
   const [amount, setAmount] = useState('');
@@ -63,11 +84,22 @@ const SupplierLedgerPage: React.FC = () => {
 
   const { data: supplierData, isLoading: loadingSupplier } = useGetSupplierByIdQuery(id!);
   const { data: ledgerData, isLoading: loadingLedger, refetch } = useGetSupplierLedgerQuery({ id: id!, page: 1, limit: 50 });
+  const { data: bankAccountsData, isLoading: loadingBankAccounts } = useGetBankAccountsQuery(id!);
   const [makePayment, { isLoading: processingPayment }] = useMakeSupplierPaymentMutation();
+  const [createBankAccount, { isLoading: creatingBankAccount }] = useCreateBankAccountMutation();
+  const [updateBankAccount, { isLoading: updatingBankAccount }] = useUpdateBankAccountMutation();
+  const [deleteBankAccount, { isLoading: deletingAccount }] = useDeleteBankAccountMutation();
+  const [setPrimaryBankAccount, { isLoading: settingPrimary }] = useSetPrimaryBankAccountMutation();
 
   const supplier = supplierData?.data;
   const entries = ledgerData?.data?.entries || [];
   const balance = ledgerData?.data?.balance || 0;
+  const bankAccounts = bankAccountsData?.data || [];
+  const primaryBankAccount = bankAccounts.find((acc) => acc.is_primary) || null;
+
+  console.log('DEBUG - showBankAccountsModal:', showBankAccountsModal);
+  console.log('DEBUG - showBankAccountFormModal:', showBankAccountFormModal);
+  console.log('DEBUG - bankAccounts:', bankAccounts);
 
   const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
     await refetch();
@@ -78,6 +110,85 @@ const SupplierLedgerPage: React.FC = () => {
       history.push(`/purchases/${entry.ref_id}`);
     }
   };
+
+  // Bank account handlers
+  const handleAddBankAccount = () => {
+    console.log('DEBUG - handleAddBankAccount called');
+    setEditingBankAccount(null);
+    setShowBankAccountsModal(false);
+    setShowBankAccountFormModal(true);
+  };
+
+  const handleEditBankAccount = (account: BankAccount) => {
+    console.log('DEBUG - handleEditBankAccount called', account);
+    setEditingBankAccount(account);
+    setShowBankAccountsModal(false);
+    setShowBankAccountFormModal(true);
+  };
+
+  const handleDeleteBankAccount = (account: BankAccount) => {
+    setDeletingBankAccount(account);
+  };
+
+  const confirmDeleteBankAccount = async () => {
+    if (!deletingBankAccount) return;
+
+    try {
+      await deleteBankAccount({
+        supplierId: id!,
+        bankAccountId: deletingBankAccount.id,
+      }).unwrap();
+      notificationService.success('Bank account deactivated successfully');
+      setDeletingBankAccount(null);
+    } catch (error) {
+      notificationService.handleApiError(error);
+    }
+  };
+
+  const handleSetPrimary = async (account: BankAccount) => {
+    try {
+      await setPrimaryBankAccount({
+        supplierId: id!,
+        bankAccountId: account.id,
+      }).unwrap();
+      notificationService.success('Primary account updated successfully');
+    } catch (error) {
+      notificationService.handleApiError(error);
+    }
+  };
+
+  const handleBankAccountFormSubmit = async (formData: BankAccountFormData) => {
+    console.log('DEBUG - handleBankAccountFormSubmit called with:', formData);
+    console.log('DEBUG - supplierId:', id);
+    console.log('DEBUG - editingBankAccount:', editingBankAccount);
+    
+    try {
+      if (editingBankAccount) {
+        console.log('DEBUG - Calling updateBankAccount API');
+        await updateBankAccount({
+          supplierId: id!,
+          bankAccountId: editingBankAccount.id,
+          ...formData,
+        }).unwrap();
+        notificationService.success('Bank account updated successfully');
+      } else {
+        console.log('DEBUG - Calling createBankAccount API');
+        const result = await createBankAccount({
+          supplierId: id!,
+          ...formData,
+        }).unwrap();
+        console.log('DEBUG - createBankAccount result:', result);
+        notificationService.success('Bank account added successfully');
+      }
+      setShowBankAccountFormModal(false);
+      setEditingBankAccount(null);
+      setShowBankAccountsModal(true);
+    } catch (error) {
+      console.error('DEBUG - API error:', error);
+      notificationService.handleApiError(error);
+    }
+  };
+  
   const handleMakePayment = async () => {
     if (!amount || parseFloat(amount) <= 0) {
       notificationService.warning(t('suppliers.enterValidAmount'));
@@ -175,7 +286,14 @@ const SupplierLedgerPage: React.FC = () => {
 
   return (
     <IonPage>
-      <Navbar title={t('suppliers.ledger.title')} />
+      <IonHeader>
+        <IonToolbar>
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/suppliers" />
+          </IonButtons>
+          <IonTitle>{t('suppliers.ledger.title')}</IonTitle>
+        </IonToolbar>
+      </IonHeader>
       <IonContent className="ion-padding">
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent />
@@ -219,6 +337,18 @@ const SupplierLedgerPage: React.FC = () => {
             </div>
           </IonCardContent>
         </IonCard>
+
+        {/* Primary Bank Account Card */}
+        <PrimaryBankAccountCard
+          bankAccount={primaryBankAccount}
+          onManageClick={() => {
+            console.log('DEBUG - onManageClick called, hasPermission:', hasManagePermission);
+            console.log('DEBUG - Setting showBankAccountsModal to true');
+            setShowBankAccountsModal(true);
+            console.log('DEBUG - After setState call');
+          }}
+          hasPermission={hasManagePermission}
+        />
 
         {entries.length === 0 ? (
           <EmptyState message={t('suppliers.ledger.noTransactions')} />
@@ -415,6 +545,57 @@ const SupplierLedgerPage: React.FC = () => {
           </IonModal>
         )}
       </IonContent>
+
+      {/* Bank Account Management Modal */}
+      {showBankAccountsModal && (
+        <BankAccountModal
+          isOpen={showBankAccountsModal}
+          onClose={() => {
+            console.log('DEBUG - BankAccountModal onClose called');
+            setShowBankAccountsModal(false);
+          }}
+          supplierId={id!}
+          bankAccounts={bankAccounts}
+          onAddClick={handleAddBankAccount}
+          onEditClick={handleEditBankAccount}
+          onDeleteClick={handleDeleteBankAccount}
+          onSetPrimaryClick={handleSetPrimary}
+        />
+      )}
+
+      {/* Bank Account Form Modal */}
+      {showBankAccountFormModal && (
+        <BankAccountFormModal
+          isOpen={showBankAccountFormModal}
+          onClose={() => {
+            setShowBankAccountFormModal(false);
+            setEditingBankAccount(null);
+          }}
+          onSubmit={handleBankAccountFormSubmit}
+          isLoading={creatingBankAccount || updatingBankAccount}
+          editingAccount={editingBankAccount}
+        />
+      )}
+
+      {/* Delete Confirmation Alert */}
+      <IonAlert
+        isOpen={!!deletingBankAccount}
+        onDidDismiss={() => setDeletingBankAccount(null)}
+        header="Deactivate Bank Account"
+        message={`Are you sure you want to deactivate the bank account at ${deletingBankAccount?.bank_name}? This action can be undone by adding the account again.`}
+        buttons={[
+          {
+            text: 'Cancel',
+            role: 'cancel',
+            handler: () => setDeletingBankAccount(null),
+          },
+          {
+            text: 'Deactivate',
+            role: 'destructive',
+            handler: confirmDeleteBankAccount,
+          },
+        ]}
+      />
     </IonPage>
   );
 };

@@ -20,6 +20,7 @@ import {
   IonTitle,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
+  IonListHeader,
 } from '@ionic/react';
 import { add, close } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
@@ -85,6 +86,25 @@ export const ProductsPage: React.FC = () => {
   const total = data?.meta?.total || 0;
   const currentBatchSize = data?.data?.length || 0;
   const hasMore = allProducts.length < total && currentBatchSize === take;
+
+  // Group products by category
+  const groupedProducts = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    
+    allProducts.forEach((product) => {
+      const categoryName = product.category?.name || 'Uncategorized';
+      if (!groups[categoryName]) {
+        groups[categoryName] = [];
+      }
+      groups[categoryName].push(product);
+    });
+    
+    return groups;
+  }, [allProducts]);
+
+  const categoryNames = useMemo(() => {
+    return Object.keys(groupedProducts).sort();
+  }, [groupedProducts]);
 
   const loadMore = async (e: CustomEvent) => {
     if (hasMore && !isFetching) {
@@ -168,29 +188,50 @@ export const ProductsPage: React.FC = () => {
             <EmptyState message={t('products.noProductsFound')} />
           ) : (
             <>
-              <IonList>
-                {allProducts.map((product) => (
-                  <IonItem key={product.id} button onClick={() => handleProductClick(product.id)}>
-                    <IonLabel>
-                      <h2 style={{ fontWeight: '600', fontSize: '16px' }}>{product.name}</h2>
-                      <p>{product.category?.name}</p>
-                      {product.variants && product.variants.length > 0 && (
-                        <div style={{ marginTop: '8px' }}>
-                          {product.variants.map((variant) => (
-                            <div key={variant.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', paddingTop: '4px', paddingBottom: '4px' }}>
-                              <span>SKU: {variant.sku}</span>
-                              <span style={{ fontWeight: '500' }}>{formatCurrency(variant.price)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </IonLabel>
-                    <IonBadge slot="end" color={product.is_active ? 'success' : 'medium'}>
-                      {product.is_active ? t('common.active') : t('common.inactive')}
+              {categoryNames.map((categoryName) => (
+                <div key={categoryName} style={{ marginBottom: '16px' }}>
+                  <IonListHeader style={{ 
+                    fontSize: '16px', 
+                    fontWeight: '700', 
+                    color: 'var(--ion-color-primary)',
+                    padding: '8px 16px',
+                    background: 'var(--ion-color-light)',
+                    borderRadius: '8px',
+                    marginBottom: '8px'
+                  }}>
+                    {categoryName}
+                    <IonBadge 
+                      color="primary" 
+                      style={{ marginLeft: '8px' }}
+                    >
+                      {groupedProducts[categoryName].length}
                     </IonBadge>
-                  </IonItem>
-                ))}
-              </IonList>
+                  </IonListHeader>
+                  
+                  <IonList>
+                    {groupedProducts[categoryName].map((product) => (
+                      <IonItem key={product.id} button onClick={() => handleProductClick(product.id)}>
+                        <IonLabel>
+                          <h2 style={{ fontWeight: '600', fontSize: '16px' }}>{product.name}</h2>
+                          {product.variants && product.variants.length > 0 && (
+                            <div style={{ marginTop: '8px' }}>
+                              {product.variants.map((variant) => (
+                                <div key={variant.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', paddingTop: '4px', paddingBottom: '4px' }}>
+                                  <span>SKU: {variant.sku}</span>
+                                  <span style={{ fontWeight: '500' }}>{formatCurrency(variant.price)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </IonLabel>
+                        <IonBadge slot="end" color={product.is_active ? 'success' : 'medium'}>
+                          {product.is_active ? t('common.active') : t('common.inactive')}
+                        </IonBadge>
+                      </IonItem>
+                    ))}
+                  </IonList>
+                </div>
+              ))}
               
               <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
                 <IonInfiniteScrollContent loadingText="Loading more products..." />
