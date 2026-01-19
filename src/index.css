@@ -205,3 +205,17 @@ body.dark .language-selector-sheet .action-sheet-button {
 body.dark .language-selector-sheet .action-sheet-title {
   color: var(--ion-text-color) !important;
 }
+
+/* Barcode Scanner Styles */
+body.scanner-active {
+  background: transparent !important;
+  --background: transparent !important;
+}
+
+body.scanner-active ion-app,
+body.scanner-active ion-content,
+body.scanner-active ion-page,
+body.scanner-active .ion-page {
+  background: transparent !important;
+  --background: transparent !important;
+}

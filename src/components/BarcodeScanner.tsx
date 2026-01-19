@@ -1,15 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { IonButton, IonIcon, isPlatform } from '@ionic/react';
 import { camera } from 'ionicons/icons';
-
-// Capacitor BarcodeScanner plugin (optional - will be installed separately)
-// @ts-ignore - Plugin may not be installed yet
-let BarcodeScanner: any = null;
-try {
-  BarcodeScanner = require('@capacitor-community/barcode-scanner').BarcodeScanner;
-} catch (e) {
-  console.warn('Barcode scanner plugin not installed');
-}
+import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
 
 interface BarcodeScannerComponentProps {
   onScan: (barcode: string) => void;
@@ -25,11 +17,11 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
   const isMobile = isPlatform('capacitor');
 
   useEffect(() => {
-    if (isMobile && BarcodeScanner) {
+    if (isMobile) {
       checkPermission();
     }
     return () => {
-      if (isScanning && BarcodeScanner) {
+      if (isScanning) {
         stopScan();
       }
     };
@@ -37,7 +29,6 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
   }, []);
 
   const checkPermission = async () => {
-    if (!BarcodeScanner) return;
     try {
       const status = await BarcodeScanner.checkPermission({ force: false });
       setHasPermission(status.granted);
@@ -48,7 +39,6 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
   };
 
   const requestPermission = async () => {
-    if (!BarcodeScanner) return;
     try {
       const status = await BarcodeScanner.checkPermission({ force: true });
       setHasPermission(status.granted);
@@ -63,23 +53,30 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
   };
 
   const startScan = async () => {
-    if (!isMobile || !BarcodeScanner) {
-      onError?.('Barcode scanning is only available on mobile devices with the plugin installed');
-      return;
-    }
-
-    if (hasPermission === false) {
-      await requestPermission();
-      return;
-    }
-
-    if (hasPermission === null) {
-      await checkPermission();
+    if (!isMobile) {
+      onError?.('Barcode scanning is only available on mobile devices');
       return;
     }
 
     try {
+      // Always request permission explicitly before scanning
+      const permissionStatus = await BarcodeScanner.checkPermission({ force: true });
+      
+      if (!permissionStatus.granted) {
+        if (permissionStatus.denied) {
+          onError?.('Camera permission denied. Please enable it in app settings.');
+        } else {
+          onError?.('Camera permission is required to scan barcodes');
+        }
+        setHasPermission(false);
+        return;
+      }
+
+      setHasPermission(true);
       setIsScanning(true);
+      
+      // Prepare scanner
+      await BarcodeScanner.prepare();
       
       // Make background of WebView transparent
       await BarcodeScanner.hideBackground();
@@ -87,6 +84,7 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
       // Add scanning class to body for styling
       document.body.classList.add('scanner-active');
       
+      // Start scanning
       const result = await BarcodeScanner.startScan();
       
       if (result.hasContent) {
@@ -102,7 +100,6 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
   };
 
   const stopScan = async () => {
-    if (!BarcodeScanner) return;
     try {
       document.body.classList.remove('scanner-active');
       await BarcodeScanner.showBackground();
@@ -114,7 +111,7 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
     }
   };
 
-  if (!isMobile || !BarcodeScanner) {
+  if (!isMobile) {
     return (
       <IonButton
         expand="block"
@@ -122,24 +119,30 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
         disabled
       >
         <IonIcon slot="start" icon={camera} />
-        {!isMobile ? 'Camera Scanner (Mobile Only)' : 'Install Barcode Scanner Plugin'}
+        Camera Scanner (Mobile Only)
       </IonButton>
     );
   }
 
   if (isScanning) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-between p-6 bg-transparent">
+      <div className="scanner-ui fixed inset-0 z-50 flex flex-col items-center justify-between p-6">
         <div className="w-full max-w-md mt-20">
-          <div className="bg-white rounded-lg p-4 shadow-lg">
-            <p className="text-center text-gray-800 font-medium">
+          <div className="bg-black bg-opacity-70 rounded-lg p-4 shadow-lg">
+            <p className="text-center text-white font-medium mb-2">
               Point camera at barcode
+            </p>
+            <p className="text-center text-gray-300 text-xs">
+              Note: Emulators may not show camera. Use a real device for best results.
             </p>
           </div>
         </div>
         
-        {/* Scanning frame */}
-        <div className="w-64 h-64 border-4 border-white rounded-lg opacity-50" />
+        {/* Scanning frame with bright border */}
+        <div 
+          className="w-64 h-64 border-4 border-green-400 rounded-lg shadow-lg" 
+          style={{ borderStyle: 'dashed' }}
+        />
         
         <IonButton
           expand="block"
