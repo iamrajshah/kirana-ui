@@ -21,17 +21,20 @@ import {
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonListHeader,
+  useIonActionSheet,
 } from '@ionic/react';
-import { add, close } from 'ionicons/icons';
+import { add, close, barcodeOutline } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import { useGetProductsQuery, useCreateProductMutation, useCreateVariantMutation } from '@core/api/productApi';
 import { useGetCategoriesQuery } from '@core/api/categoryApi';
 import { SearchBar, Loading, EmptyState, Input, Select, Button } from '@components';
 import { formatCurrency } from '@utils/helpers';
+import { ROUTES } from '@core/constants';
 
 export const ProductsPage: React.FC = () => {
   const { t } = useTranslation();
   const history = useHistory();
+  const [present] = useIonActionSheet();
   const [search, setSearch] = useState('');
   const [skip, setSkip] = useState(0);
   const [allProducts, setAllProducts] = useState<any[]>([]);
@@ -241,7 +244,31 @@ export const ProductsPage: React.FC = () => {
         </div>
 
         <IonFab vertical="bottom" horizontal="end" slot="fixed">
-          <IonFabButton onClick={() => setShowModal(true)}>
+          <IonFabButton onClick={() => {
+            present({
+              header: 'Add Product',
+              buttons: [
+                {
+                  text: 'Scan Barcode',
+                  icon: barcodeOutline,
+                  handler: () => {
+                    history.push(ROUTES.PRODUCT_BARCODE);
+                  },
+                },
+                {
+                  text: 'Add Manually',
+                  icon: add,
+                  handler: () => {
+                    setShowModal(true);
+                  },
+                },
+                {
+                  text: 'Cancel',
+                  role: 'cancel',
+                },
+              ],
+            });
+          }}>
             <IonIcon icon={add} />
           </IonFabButton>
         </IonFab>

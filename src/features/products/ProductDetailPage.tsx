@@ -64,10 +64,8 @@ export const ProductDetailPage: React.FC = () => {
     const variants = product.variants || product.product_variants || [];
     const variant = variants.find((v: ProductVariant) => v.id?.toString() === variantId?.toString());
     if (!variant) {
-      console.error('Variant not found:', variantId, 'Available variants:', variants.map(v => v.id));
       return;
     }
-    console.log('Editing variant:', variant.id, 'Product:', variant.product_id);
     setEditingVariant(variant);
     setEditSellingPrice(variant.selling_price?.toString() || variant.price.toString());
     setShowVariantEditModal(true);

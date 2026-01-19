@@ -76,19 +76,11 @@ export const InventoryPage: React.FC = () => {
         return;
       }
 
-      console.log('📦 Updating inventory:', {
-        variant_id: selectedItem.variant_id,
-        quantity: parseFloat(quantity),
-        low_stock_threshold: lowStockThreshold ? parseInt(lowStockThreshold) : undefined,
-      });
-
       await updateInventory({
         variant_id: selectedItem.variant_id,
         quantity: parseFloat(quantity),
         low_stock_threshold: lowStockThreshold ? parseInt(lowStockThreshold) : undefined,
       }).unwrap();
-
-      console.log('✅ Inventory updated successfully');
 
       setShowSuccess(true);
       setShowModal(false);

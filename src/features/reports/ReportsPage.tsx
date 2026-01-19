@@ -112,8 +112,9 @@ export const ReportsPage: React.FC = () => {
   const renderSalesReport = () => {
     if (salesLoading) return <Loading isOpen={true} />;
     
-    // Backend returns { breakdown: [...] } when groupBy is set
-    const salesBreakdown = Array.isArray(salesData?.data?.breakdown) ? salesData.data.breakdown : [];
+    // Backend returns ApiResponse with data array or { breakdown: [...] }
+    const responseData: any = salesData?.data;
+    const salesBreakdown = Array.isArray(responseData) ? responseData : (Array.isArray(responseData?.breakdown) ? responseData.breakdown : []);
     
     if (salesBreakdown.length === 0) return <EmptyState message={t('reports.noSalesData')} />;
 
@@ -139,9 +140,11 @@ export const ReportsPage: React.FC = () => {
   const renderOutstandingCustomers = () => {
     if (outstandingLoading) return <Loading isOpen={true} />;
     
-    // Backend returns { summary: {...}, customers: [...] }
-    const customers = Array.isArray(outstandingData?.data?.customers) ? outstandingData.data.customers : [];
-    const summary = outstandingData?.data?.summary || { 
+    // Backend returns ApiResponse with data array or { summary: {...}, customers: [...] }
+    const responseData: any = outstandingData?.data;
+    const customers = Array.isArray(responseData) ? responseData : (Array.isArray(responseData?.customers) ? responseData.customers : []);
+    const summary = (responseData && !Array.isArray(responseData)) ? responseData.summary : null;
+    const finalSummary = summary || { 
       total: customers.reduce((sum: number, c: any) => sum + (c.outstanding_balance || 0), 0),
       total_customers: customers.length,
       total_outstanding: customers.reduce((sum: number, c: any) => sum + (c.outstanding_balance || 0), 0)
@@ -151,11 +154,11 @@ export const ReportsPage: React.FC = () => {
 
     return (
       <div>
-        {summary && (
+        {finalSummary && (
           <IonCard>
             <IonCardHeader>
               <IonCardTitle>
-                Total Outstanding: {formatCurrency(summary.total_outstanding)}
+                Total Outstanding: {formatCurrency(finalSummary.total_outstanding)}
               </IonCardTitle>
             </IonCardHeader>
           </IonCard>
@@ -181,9 +184,11 @@ export const ReportsPage: React.FC = () => {
   const renderInventorySummary = () => {
     if (inventoryLoading) return <Loading isOpen={true} />;
     
-    // Backend returns { summary: {...}, items: [...] }
-    const inventory = Array.isArray(inventoryData?.data?.items) ? inventoryData.data.items : [];
-    const summary = inventoryData?.data?.summary || {
+    // Backend returns ApiResponse with data array or { summary: {...}, items: [...] }
+    const responseData: any = inventoryData?.data;
+    const inventory = Array.isArray(responseData) ? responseData : (Array.isArray(responseData?.items) ? responseData.items : []);
+    const summary = (responseData && !Array.isArray(responseData)) ? responseData.summary : null;
+    const finalSummary = summary || {
       total_items: inventory.length,
       low_stock_items: inventory.filter((item: any) => item.is_low_stock).length,
       out_of_stock_items: inventory.filter((item: any) => item.quantity === 0).length,
@@ -196,7 +201,7 @@ export const ReportsPage: React.FC = () => {
 
     return (
       <div>
-        {summary && (
+        {finalSummary && (
           <IonCard>
             <IonCardHeader>
               <IonCardTitle>{t('reports.inventorySummary')}</IonCardTitle>
@@ -254,8 +259,8 @@ export const ReportsPage: React.FC = () => {
   const renderCashbook = () => {
     if (cashbookLoading) return <Loading isOpen={true} />;
     
-    // Backend returns { date, summary: {...}, breakdown: [...] }
-    const cashbook = cashbookData?.data;
+    // Backend returns ApiResponse with data object
+    const cashbook: any = cashbookData?.data;
     if (!cashbook) return <EmptyState message={t('reports.noCashbookData')} />;
 
     const breakdown = Array.isArray(cashbook?.breakdown) ? cashbook.breakdown : [];
@@ -304,8 +309,9 @@ export const ReportsPage: React.FC = () => {
   const renderTopSelling = () => {
     if (topSellingLoading) return <Loading isOpen={true} />;
     
-    // Backend returns { products: [...] }
-    const products = Array.isArray(topSellingData?.data?.products) ? topSellingData.data.products : [];
+    // Backend returns ApiResponse with data array or { products: [...] }
+    const responseData: any = topSellingData?.data;
+    const products = Array.isArray(responseData) ? responseData : (Array.isArray(responseData?.products) ? responseData.products : []);
     if (products.length === 0) return <EmptyState message="No sales data" />;
 
     return (

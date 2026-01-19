@@ -36,13 +36,10 @@ export const LoginPage: React.FC = () => {
   };
 
   const handleLogin = async () => {
-    console.log('=== handleLogin CALLED ===');
     setError('');
     setSuccess('');
 
-    console.log('emailOrPhone:', emailOrPhone, 'password:', password);
     if (!emailOrPhone || !password) {
-      console.log('Missing fields');
       setError(t('auth.fillAllFields') || 'Please fill in all fields');
       return;
     }
@@ -54,28 +51,16 @@ export const LoginPage: React.FC = () => {
         ? { phone: emailOrPhone, password }
         : { email: emailOrPhone, password };
 
-      console.log('Attempting login with:', credentials);
       const response = await login(credentials).unwrap();
-      console.log('Login response:', response);
       
       if (response.success && response.data) {
-        console.log('Dispatching credentials:', response.data);
         setSuccess(t('auth.loginSuccess') || 'Login successful!');
         dispatch(setCredentials(response.data));
-        console.log('Credentials dispatched');
         
-        // Check localStorage immediately
-        const token = localStorage.getItem('access_token');
-        console.log('Token in localStorage:', token);
-        
-        console.log('About to navigate to /dashboard');
-        // Force navigation using window.location
         setTimeout(() => {
-          console.log('Executing navigation NOW');
           window.location.href = '/dashboard';
         }, 1000);
       } else {
-        console.error('Login response not successful:', response);
         setError(response.message || t('auth.loginError') || 'Login failed');
       }
     } catch (err: any) {

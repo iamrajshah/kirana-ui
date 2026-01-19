@@ -67,8 +67,6 @@ export const ProfilePage: React.FC = () => {
   }, [user]);
 
   const handleUpdateProfile = async () => {
-    console.log('💾 Updating profile...', { name, phone, email });
-
     if (!name.trim() && !phone.trim() && !email.trim()) {
       setErrorMessage('At least one field must be provided');
       setShowError(true);
@@ -89,7 +87,6 @@ export const ProfilePage: React.FC = () => {
 
       await updateProfile(updateData).unwrap();
 
-      console.log('✅ Profile updated successfully');
       setShowSuccess(true);
       
       // Redirect to dashboard after 1 second

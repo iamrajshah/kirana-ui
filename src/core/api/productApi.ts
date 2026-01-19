@@ -1,5 +1,5 @@
 import { apiSlice } from './apiSlice';
-import type { ApiResponse, PaginatedApiResponse, Product, ProductVariant } from '../types';
+import type { ApiResponse, PaginatedApiResponse, Product, ProductVariant, BarcodeScanResponse, BarcodeLookupResponse, CreateProductFromBarcodeRequest, BarcodeProductResponse } from '../types';
 
 interface CreateProductRequest {
   name: string;
@@ -90,6 +90,27 @@ export const productApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Product'],
     }),
+    // Barcode endpoints
+    // Lookup barcode (local + external - preferred)
+    lookupBarcode: builder.query<BarcodeLookupResponse, string>({
+      query: (barcode) => `/products/barcode/${barcode}/lookup`,
+    }),
+    // Scan barcode (local only - legacy)
+    scanBarcode: builder.query<BarcodeScanResponse, string>({
+      query: (barcode) => `/products/barcode/${barcode}`,
+      providesTags: ['Product'],
+    }),
+    createProductFromBarcode: builder.mutation<
+      ApiResponse<BarcodeProductResponse>,
+      CreateProductFromBarcodeRequest
+    >({
+      query: (body) => ({
+        url: '/products/barcode',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Product', 'Inventory'],
+    }),
   }),
 });
 
@@ -102,4 +123,9 @@ export const {
   useCreateVariantMutation,
   useUpdateProductMutation,
   useUpdateVariantMutation,
+  useLookupBarcodeQuery,
+  useLazyLookupBarcodeQuery,
+  useScanBarcodeQuery,
+  useLazyScanBarcodeQuery,
+  useCreateProductFromBarcodeMutation,
 } = productApi;

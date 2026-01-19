@@ -61,8 +61,6 @@ export const UsersPage: React.FC = () => {
   };
 
   const handleCreateUser = async () => {
-    console.log('👤 Creating user...', { name, phone, email, role });
-
     if (!name.trim()) {
       setErrorMessage(t('users.nameRequired'));
       setShowError(true);
@@ -90,7 +88,6 @@ export const UsersPage: React.FC = () => {
         role,
       }).unwrap();
 
-      console.log('✅ User created successfully');
       setShowSuccess(true);
       setShowModal(false);
       resetForm();
@@ -107,7 +104,6 @@ export const UsersPage: React.FC = () => {
         id: userId,
         is_active: !currentStatus,
       }).unwrap();
-      console.log('✅ User status updated');
     } catch (error) {
       console.error('❌ Error updating user status:', error);
       setErrorMessage(error?.data?.message || t('users.failedToUpdateUserStatus'));
@@ -176,10 +172,7 @@ export const UsersPage: React.FC = () => {
 
         <IonButton
           expand="block"
-          onClick={() => {
-            console.log('➕ Add user button clicked');
-            setShowModal(true);
-          }}
+          onClick={() => setShowModal(true)}
           style={{ marginTop: '20px' }}
         >
           <IonIcon icon={add} slot="start" />
@@ -189,10 +182,7 @@ export const UsersPage: React.FC = () => {
         {showModal && (
           <IonModal
             isOpen={true}
-            onDidDismiss={() => {
-              console.log('🚪 User modal dismissed');
-              setShowModal(false);
-            }}
+            onDidDismiss={() => setShowModal(false)}
           >
             <IonPage>
               <IonHeader>
@@ -252,16 +242,11 @@ export const UsersPage: React.FC = () => {
                   {t('users.passwordRequirement')}
                 </p>
                 <IonButton
-                  onClick={() => {
-                    console.log('💾 Save user button clicked');
-                    handleCreateUser();
-                  }}
+                  onClick={handleCreateUser}
                   disabled={creating}
                   expand="block"
                   style={{ marginTop: '20px' }}
-                >
-                  {creating ? t('common.creating') : t('users.createUser')}
-                </IonButton>
+                >\n                  {creating ? t('common.creating') : t('users.createUser')}\n                </IonButton>
               </IonContent>
             </IonPage>
           </IonModal>

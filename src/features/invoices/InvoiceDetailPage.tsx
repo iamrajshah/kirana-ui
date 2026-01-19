@@ -56,8 +56,6 @@ const InvoiceDetailPage: React.FC = () => {
   const [showErrorToast, setShowErrorToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
-  console.log('showPaymentModal state:', showPaymentModal);
-
   const invoice = data?.data;
 
   const getStatusColor = (status: string) => {
@@ -106,20 +104,16 @@ const InvoiceDetailPage: React.FC = () => {
   };
 
   const handlePayment = async (amount: number, mode: PaymentMode, reference?: string) => {
-    console.log('DEBUG handlePayment called:', { amount, mode, reference, invoice });
     if (!invoice?.customer) {
       console.error('No customer found on invoice');
       return;
     }
 
     try {
-      // Finalize invoice if it's in DRAFT status
       if (invoice.status === 'DRAFT') {
-        console.log('Finalizing draft invoice...');
         await finalizeInvoice(id).unwrap();
       }
 
-      console.log('Creating payment...');
       await createPayment({
         customer_id: invoice.customer.id,
         invoice_id: id,
@@ -128,8 +122,6 @@ const InvoiceDetailPage: React.FC = () => {
         reference_note: reference,
         idempotency_key: generateIdempotencyKey(),
       }).unwrap();
-
-      console.log('Payment successful');
       setToastMessage(t('invoiceDetail.paymentRecordedSuccess'));
       setShowSuccessToast(true);
       setShowPaymentModal(false);
@@ -188,9 +180,6 @@ const InvoiceDetailPage: React.FC = () => {
       </IonPage>
     );
   }
-
-  console.log('Invoice Detail Page - Invoice:', invoice);
-  console.log('Invoice Status:', invoice.status);
 
   return (
     <IonPage>
@@ -354,10 +343,7 @@ const InvoiceDetailPage: React.FC = () => {
               
               <IonButton
                 expand="block"
-                onClick={() => {
-                  console.log('Finalize & Collect Payment button clicked');
-                  setShowPaymentModal(true);
-                }}
+                onClick={() => setShowPaymentModal(true)}
                 disabled={finalizing}
                 color="primary"
               >
@@ -381,10 +367,7 @@ const InvoiceDetailPage: React.FC = () => {
           {invoice.status === 'DRAFT' && (
             <IonButton
               expand="block"
-              onClick={() => {
-                console.log('Cancel Invoice button clicked');
-                setShowCancelAlert(true);
-              }}
+              onClick={() => setShowCancelAlert(true)}
               disabled={cancelling}
               color="danger"
               fill="outline"
@@ -397,20 +380,14 @@ const InvoiceDetailPage: React.FC = () => {
 
         {/* Payment Modal */}
         {invoice && (
-          <>
-            {console.log('Rendering PaymentModal with isOpen:', showPaymentModal)}
-            <PaymentModal
-              isOpen={showPaymentModal}
-              onClose={() => {
-                console.log('PaymentModal onClose called');
-                setShowPaymentModal(false);
-              }}
-              onPayment={handlePayment}
-              invoiceAmount={Number(invoice.total_amount) || 0}
-              paidAmount={Number(invoice.paid_amount) || 0}
-              isLoading={isCreatingPayment || finalizing}
-            />
-          </>
+          <PaymentModal
+            isOpen={showPaymentModal}
+            onClose={() => setShowPaymentModal(false)}
+            onPayment={handlePayment}
+            invoiceAmount={Number(invoice.total_amount) || 0}
+            paidAmount={Number(invoice.paid_amount) || 0}
+            isLoading={isCreatingPayment || finalizing}
+          />
         )}
 
         {/* Cancel Alert */}

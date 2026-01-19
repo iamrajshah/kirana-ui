@@ -91,11 +91,9 @@ export const BillingPage: React.FC = () => {
         }>;  
       };
       
-      console.log('DEBUG useEffect loading invoice:', invoice);
       setLoadedInvoiceData(invoice);
       
       const custId = invoice.customer?.id?.toString() || '';
-      console.log('DEBUG setting selectedCustomerId:', custId);
       setSelectedCustomerId(custId);
       
       if (invoice.customer) {
@@ -275,12 +273,6 @@ export const BillingPage: React.FC = () => {
     }
 
     const customerId = selectedCustomerId || loadedInvoiceData?.customer?.id?.toString() || '';
-    console.log('DEBUG handleSaveAndCollectPayment:', {
-      selectedCustomerId,
-      loadedInvoiceData,
-      customerId,
-      editInvoiceId
-    });
     
     if (!customerId) {
       notificationService.error(t('billing.pleaseSelectCustomer'));
@@ -323,13 +315,6 @@ export const BillingPage: React.FC = () => {
 
   const handlePayment = async (amount: number, mode: PaymentMode, reference?: string) => {
     const customerId = selectedCustomerId || loadedInvoiceData?.customer?.id?.toString() || '';
-    console.log('DEBUG handlePayment:', {
-      amount,
-      mode,
-      reference,
-      customerId,
-      pendingInvoiceId
-    });
     
     if (!pendingInvoiceId || !customerId) {
       notificationService.error(t('billing.missingCustomerOrInvoice'));
@@ -346,7 +331,6 @@ export const BillingPage: React.FC = () => {
         idempotency_key: generateIdempotencyKey(),
       }).unwrap();
 
-      console.log('Payment result:', result);
       notificationService.success(t('billing.paymentRecordedSuccessfully'));
       setShowPaymentModal(false);
       setPendingInvoiceId(null);

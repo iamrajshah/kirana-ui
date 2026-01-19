@@ -8,3 +8,5 @@ export { ErrorAlert } from './ErrorAlert';
 export { EmptyState } from './EmptyState';
 export { SideMenu } from './SideMenu';
 export { PaymentModal } from './PaymentModal';
+export { BarcodeScannerComponent } from './BarcodeScanner';
+export { ProductPreviewCard } from './ProductPreviewCard';

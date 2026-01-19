@@ -23,6 +23,7 @@ export const ROUTES = {
   PURCHASES: '/purchases',
   PURCHASE_CREATE: '/purchases/create',
   PRODUCTS: '/products',
+  PRODUCT_BARCODE: '/products/barcode/add',
   INVENTORY: '/inventory',
   INVOICES: '/invoices',
   PAYMENTS: '/payments',

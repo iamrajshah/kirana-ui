@@ -12,6 +12,7 @@ import { ProfilePage } from '@features/profile/ProfilePage';
 import { ChangePasswordPage } from '@features/profile/ChangePasswordPage';
 import { CustomerLedgerPage } from '@features/customers/CustomerLedgerPage';
 import { ProductDetailPage } from '@features/products/ProductDetailPage';
+import { AddProductBarcodePage } from '@features/products/AddProductBarcodePage';
 import InvoiceDetailPage from '@features/invoices/InvoiceDetailPage';
 import SuppliersPage from '@features/suppliers/SuppliersPage';
 import SupplierLedgerPage from '@features/suppliers/SupplierLedgerPage';
@@ -72,6 +73,7 @@ const App: React.FC = () => {
             <Route exact path={ROUTES.CHANGE_PASSWORD} render={() => <PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
             <Route exact path="/customers/:id/ledger" render={() => <PrivateRoute><CustomerLedgerPage /></PrivateRoute>} />
             <Route exact path="/products/:id" render={() => <PrivateRoute><ProductDetailPage /></PrivateRoute>} />
+            <Route exact path={ROUTES.PRODUCT_BARCODE} render={() => <PrivateRoute><AddProductBarcodePage /></PrivateRoute>} />
             <Route exact path="/suppliers/:id/ledger" render={() => <PrivateRoute><SupplierLedgerPage /></PrivateRoute>} />
             <Route exact path="/invoices/:id" render={() => <PrivateRoute><InvoiceDetailPage /></PrivateRoute>} />
             <Route exact path="/purchases/:id" render={() => <PrivateRoute><PurchaseDetailPage /></PrivateRoute>} />

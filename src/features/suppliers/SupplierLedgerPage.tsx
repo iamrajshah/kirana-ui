@@ -64,11 +64,6 @@ const SupplierLedgerPage: React.FC = () => {
   const hasUpdatePermission = hasPermission(userRoles, 'SUPPLIER_UPDATE');
   const hasManagePermission = hasPermission(userRoles, 'SUPPLIER_MANAGE');
   
-  // Debug permission check
-  console.log('DEBUG - User:', user);
-  console.log('DEBUG - User Roles:', userRoles);
-  console.log('DEBUG - Has Manage Permission:', hasManagePermission);
-  
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Bank account modals
@@ -97,10 +92,6 @@ const SupplierLedgerPage: React.FC = () => {
   const bankAccounts = bankAccountsData?.data || [];
   const primaryBankAccount = bankAccounts.find((acc) => acc.is_primary) || null;
 
-  console.log('DEBUG - showBankAccountsModal:', showBankAccountsModal);
-  console.log('DEBUG - showBankAccountFormModal:', showBankAccountFormModal);
-  console.log('DEBUG - bankAccounts:', bankAccounts);
-
   const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
     await refetch();
     event.detail.complete();
@@ -113,14 +104,12 @@ const SupplierLedgerPage: React.FC = () => {
 
   // Bank account handlers
   const handleAddBankAccount = () => {
-    console.log('DEBUG - handleAddBankAccount called');
     setEditingBankAccount(null);
     setShowBankAccountsModal(false);
     setShowBankAccountFormModal(true);
   };
 
   const handleEditBankAccount = (account: BankAccount) => {
-    console.log('DEBUG - handleEditBankAccount called', account);
     setEditingBankAccount(account);
     setShowBankAccountsModal(false);
     setShowBankAccountFormModal(true);
@@ -158,13 +147,8 @@ const SupplierLedgerPage: React.FC = () => {
   };
 
   const handleBankAccountFormSubmit = async (formData: BankAccountFormData) => {
-    console.log('DEBUG - handleBankAccountFormSubmit called with:', formData);
-    console.log('DEBUG - supplierId:', id);
-    console.log('DEBUG - editingBankAccount:', editingBankAccount);
-    
     try {
       if (editingBankAccount) {
-        console.log('DEBUG - Calling updateBankAccount API');
         await updateBankAccount({
           supplierId: id!,
           bankAccountId: editingBankAccount.id,
@@ -172,19 +156,16 @@ const SupplierLedgerPage: React.FC = () => {
         }).unwrap();
         notificationService.success('Bank account updated successfully');
       } else {
-        console.log('DEBUG - Calling createBankAccount API');
-        const result = await createBankAccount({
+        await createBankAccount({
           supplierId: id!,
           ...formData,
         }).unwrap();
-        console.log('DEBUG - createBankAccount result:', result);
         notificationService.success('Bank account added successfully');
       }
       setShowBankAccountFormModal(false);
       setEditingBankAccount(null);
       setShowBankAccountsModal(true);
     } catch (error) {
-      console.error('DEBUG - API error:', error);
       notificationService.handleApiError(error);
     }
   };

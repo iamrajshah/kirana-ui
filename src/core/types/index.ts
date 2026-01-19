@@ -182,3 +182,77 @@ export interface ApiError {
   message: string;
   errors?: Record<string, string[]>;
 }
+
+// Barcode types
+export interface BarcodeInfo {
+  id: string;
+  barcode: string;
+  is_active: boolean;
+}
+
+export interface BarcodeProductData {
+  barcode: BarcodeInfo;
+  product: Product;
+  variant: ProductVariant;
+  inventory: Inventory | null;
+}
+
+export interface BarcodeScanResponse {
+  success: boolean;
+  found: boolean;
+  data?: BarcodeProductData;
+}
+
+export interface BarcodeLookupData {
+  name: string | null;
+  brand: string | null;
+  image_url: string | null;
+  quantity: string | null;
+  category_hint: string | null;
+  barcode: string;
+  // Local data fields (only if source is LOCAL)
+  product_master_id?: number;
+  category_id?: number;
+  mrp?: number;
+  selling_price?: number;
+}
+
+export interface BarcodeLookupResponse {
+  success: boolean;
+  message: string;
+  data: {
+    source: 'LOCAL' | 'EXTERNAL' | 'NONE';
+    found: boolean;
+    data?: BarcodeLookupData;
+  };
+}
+
+export interface CreateProductFromBarcodeRequest {
+  barcode: string;
+  productMaster: {
+    name: string;
+    brand?: string | null;
+    categoryName?: string | null;
+  };
+  product: {
+    name: string;
+    categoryId?: number | null;
+  };
+  variant: {
+    sku?: string | null;
+    mrp: number;
+    sellingPrice: number;
+    unit?: string | null;
+    unitValue?: number | null;
+  };
+  inventory: {
+    quantity: number;
+  };
+}
+
+export interface BarcodeProductResponse {
+  barcode: BarcodeInfo;
+  product: Product;
+  variant: ProductVariant;
+  inventory: Inventory;
+}
