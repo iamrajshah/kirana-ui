@@ -147,7 +147,7 @@ export const AddProductBarcodePage: React.FC = () => {
     }
 
     try {
-      const result = await createProduct({
+      const payload = {
         barcode,
         productMaster: {
           name: productMasterName,
@@ -164,11 +164,14 @@ export const AddProductBarcodePage: React.FC = () => {
           sellingPrice: parseFloat(sellingPrice),
           unit: unit || null,
           unitValue: unitValue ? parseFloat(unitValue) : null,
+          imageUrl: foundProduct?.image_url || null,
         },
         inventory: {
           quantity: parseInt(quantity),
         },
-      }).unwrap();
+      };
+      
+      const result = await createProduct(payload).unwrap();
 
       setShowSuccess(true);
       

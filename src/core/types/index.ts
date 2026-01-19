@@ -244,6 +244,7 @@ export interface CreateProductFromBarcodeRequest {
     sellingPrice: number;
     unit?: string | null;
     unitValue?: number | null;
+    imageUrl?: string | null;
   };
   inventory: {
     quantity: number;
