@@ -42,7 +42,7 @@ export const Select: React.FC<SelectProps> = ({
           onIonChange={handleChange}
           placeholder={placeholder}
           disabled={disabled}
-          interface="popover"
+          interface="alert"
           className="text-base"
         >
           {options.map((option) => (

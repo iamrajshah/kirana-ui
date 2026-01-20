@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useHistory } from 'react-router';
 import {
   IonContent,
@@ -17,7 +17,7 @@ import {
   IonCardTitle,
   isPlatform,
 } from '@ionic/react';
-import { checkmarkCircle, search } from 'ionicons/icons';
+import { checkmarkCircle, search, add } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import {
   useLazyLookupBarcodeQuery,
@@ -27,10 +27,10 @@ import { useGetCategoriesQuery } from '@core/api/categoryApi';
 import {
   Input,
   Select,
-  Button,
   Loading,
   BarcodeScannerComponent,
   ProductPreviewCard,
+  AddCategoryModal,
 } from '@components';
 import type { BarcodeLookupData } from '@core/types';
 
@@ -63,10 +63,13 @@ export const AddProductBarcodePage: React.FC = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Category modal
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+
   // API
   const [lookupBarcode, { isLoading: scanning }] = useLazyLookupBarcodeQuery();
   const [createProduct, { isLoading: creating }] = useCreateProductFromBarcodeMutation();
-  const { data: categoriesData } = useGetCategoriesQuery();
+  const { data: categoriesData, isLoading: loadingCategories } = useGetCategoriesQuery();
 
   const categories = categoriesData?.data || [];
 
@@ -136,6 +139,11 @@ export const AddProductBarcodePage: React.FC = () => {
   const handleEditProduct = () => {
     // Navigate to products page
     history.push(`/products`);
+  };
+
+  const handleCategoryCreated = (newCategory: any) => {
+    // Auto-select the newly created category
+    setCategoryId(newCategory.id);
   };
 
   const handleSubmit = async () => {
@@ -368,20 +376,44 @@ export const AddProductBarcodePage: React.FC = () => {
                         onChange={(value) => setProductName(value)}
                         placeholder="e.g., Parle-G Gold 200g"
                       />
-                      <Select
-                        label="Category"
-                        value={categoryId?.toString() || ''}
-                        onChange={(value) => {
-                          setCategoryId(value ? parseInt(value) : null);
-                        }}
-                        options={[
-                          { value: '', label: 'Select Category' },
-                          ...categories.map((cat: any) => ({
-                            value: cat.id,
-                            label: cat.name,
-                          })),
-                        ]}
-                      />
+                      
+                      <div className="space-y-2">
+                        <Select
+                          label="Category *"
+                          value={categoryId?.toString() || ''}
+                          onChange={(value) => {
+                            console.log('Category selected:', value);
+                            if (value === 'ADD_NEW') {
+                              console.log('Opening category modal');
+                              setShowCategoryModal(true);
+                              // Don't update categoryId state
+                            } else {
+                              setCategoryId(value ? parseInt(value) : null);
+                            }
+                          }}
+                          options={[
+                            { value: '', label: 'Select Category' },
+                            ...categories
+                              .filter((cat) => cat.is_active)
+                              .map((cat) => ({
+                                value: cat.id.toString(),
+                                label: cat.name,
+                              })),
+                          ]}
+                        />
+                        <IonButton 
+                          expand="block" 
+                          fill="outline" 
+                          size="small"
+                          onClick={() => {
+                            console.log('Add category button clicked');
+                            setShowCategoryModal(true);
+                          }}
+                        >
+                          <IonIcon slot="start" icon={add} />
+                          Add New Category
+                        </IonButton>
+                      </div>
                     </div>
 
                     {/* Variant Section */}
@@ -484,6 +516,13 @@ export const AddProductBarcodePage: React.FC = () => {
           message={errorMessage}
           duration={3000}
           color="danger"
+        />
+
+        {/* Add Category Modal */}
+        <AddCategoryModal
+          isOpen={showCategoryModal}
+          onDidDismiss={() => setShowCategoryModal(false)}
+          onCategoryCreated={handleCategoryCreated}
         />
       </IonContent>
     </IonPage>

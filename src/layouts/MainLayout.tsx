@@ -24,6 +24,7 @@ import { PaymentsPage } from '@features/payments/PaymentsPage';
 import { ReportsPage } from '@features/reports/ReportsPage';
 import { UsersPage } from '@features/users/UsersPage';
 import { ImportExportPage } from '@features/import-export/ImportExportPage';
+import { CategoriesPage } from '@features/categories/CategoriesPage';
 import SuppliersPage from '@features/suppliers/SuppliersPage';
 import PurchasesPage from '@features/purchases/PurchasesPage';
 
@@ -51,6 +52,7 @@ export const MainLayout: React.FC = () => {
           <Route exact path={ROUTES.INVOICES} component={InvoicesPage} />
           <Route exact path={ROUTES.REPORTS} component={ReportsPage} />
           <Route exact path={ROUTES.USERS} component={UsersPage} />
+          <Route exact path={ROUTES.CATEGORIES} component={CategoriesPage} />
           <Route exact path={ROUTES.IMPORT_EXPORT} component={ImportExportPage} />
         </IonRouterOutlet>
 

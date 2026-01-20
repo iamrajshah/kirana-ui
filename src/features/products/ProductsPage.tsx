@@ -27,7 +27,7 @@ import { add, close, barcodeOutline } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import { useGetProductsQuery, useCreateProductMutation, useCreateVariantMutation } from '@core/api/productApi';
 import { useGetCategoriesQuery } from '@core/api/categoryApi';
-import { SearchBar, Loading, EmptyState, Input, Select, Button } from '@components';
+import { SearchBar, Loading, EmptyState, Input, Select, Button, AddCategoryModal } from '@components';
 import { formatCurrency } from '@utils/helpers';
 import { ROUTES } from '@core/constants';
 
@@ -45,11 +45,13 @@ export const ProductsPage: React.FC = () => {
   const [createVariant, { isLoading: creatingVariant }] = useCreateVariantMutation();
 
   const PACKAGING_OPTIONS = [
-    { value: 'PACKET', label: t('products.packagingPacket') },
-    { value: 'BOX', label: t('products.packagingBox') },
+    { value: 'POUCH', label: t('products.packagingPouch') },
     { value: 'BOTTLE', label: t('products.packagingBottle') },
+    { value: 'CAN', label: t('products.packagingCan') },
+    { value: 'BOX', label: t('products.packagingBox') },
+    { value: 'PACKET', label: t('products.packagingPacket') },
+    { value: 'JAR', label: t('products.packagingJar') },
     { value: 'LOOSE', label: t('products.packagingLoose') },
-    { value: 'KG', label: t('products.packagingKG') },
   ];
 
   useEffect(() => {
@@ -76,6 +78,7 @@ export const ProductsPage: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
 
   const [productName, setProductName] = useState('');
   const [categoryId, setCategoryId] = useState<number | null>(null);
@@ -176,6 +179,10 @@ export const ProductsPage: React.FC = () => {
 
   const handleProductClick = (productId: string) => {
     history.push(`/products/${productId}`);
+  };
+
+  const handleCategoryCreated = (newCategory: any) => {
+    setCategoryId(newCategory.id);
   };
 
   return (
@@ -313,10 +320,28 @@ export const ProductsPage: React.FC = () => {
                 <Select
                   label={t('products.categoryLabel')}
                   value={categoryId?.toString() || ''}
-                  onChange={(value) => setCategoryId(value ? parseInt(value) : null)}
-                  options={categoryOptions}
+                  onChange={(value) => {
+                    setCategoryId(value ? parseInt(value) : null);
+                  }}
+                  options={[
+                    { value: '', label: t('products.selectCategoryPlaceholder2') },
+                    ...categories
+                      .filter((cat) => cat.is_active)
+                      .map((cat) => ({ value: cat.id.toString(), label: cat.name })),
+                  ]}
                   placeholder={t('products.selectCategoryPlaceholder2')}
                 />
+                
+                <IonButton 
+                  expand="block" 
+                  fill="outline" 
+                  size="small"
+                  onClick={() => setShowCategoryModal(true)}
+                  style={{ marginTop: '8px' }}
+                >
+                  <IonIcon slot="start" icon={add} />
+                  {t('products.addNewCategory') || 'Add New Category'}
+                </IonButton>
 
                 <h3 style={{ fontSize: '16px', fontWeight: '600', marginTop: '24px', marginBottom: '8px' }}>{t('products.variantDetailsHeading')}</h3>
 
@@ -348,6 +373,13 @@ export const ProductsPage: React.FC = () => {
             </IonContent>
           </IonModal>
         )}
+
+        {/* Add Category Modal */}
+        <AddCategoryModal
+          isOpen={showCategoryModal}
+          onDidDismiss={() => setShowCategoryModal(false)}
+          onCategoryCreated={handleCategoryCreated}
+        />
       </IonContent>
     </IonPage>
   );

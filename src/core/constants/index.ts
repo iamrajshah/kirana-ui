@@ -29,6 +29,7 @@ export const ROUTES = {
   PAYMENTS: '/payments',
   REPORTS: '/reports',
   USERS: '/users',
+  CATEGORIES: '/categories',
   IMPORT_EXPORT: '/import-export',
   PROFILE: '/profile',
   CHANGE_PASSWORD: '/change-password',

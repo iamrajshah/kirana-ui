@@ -89,6 +89,7 @@ const App: React.FC = () => {
             <Route exact path={ROUTES.PAYMENTS} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
             <Route exact path={ROUTES.REPORTS} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
             <Route exact path={ROUTES.USERS} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
+            <Route exact path={ROUTES.CATEGORIES} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
             <Route exact path={ROUTES.IMPORT_EXPORT} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
           </IonRouterOutlet>
         </IonReactRouter>

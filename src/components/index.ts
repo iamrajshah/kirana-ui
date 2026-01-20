@@ -10,3 +10,4 @@ export { SideMenu } from './SideMenu';
 export { PaymentModal } from './PaymentModal';
 export { BarcodeScannerComponent } from './BarcodeScanner';
 export { ProductPreviewCard } from './ProductPreviewCard';
+export { AddCategoryModal } from './AddCategoryModal';

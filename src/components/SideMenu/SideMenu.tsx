@@ -24,6 +24,7 @@ import {
   cube,
   layers,
   cash,
+  pricetags,
 } from 'ionicons/icons';
 import { useHistory } from 'react-router';
 import { useTranslation } from 'react-i18next';
@@ -149,6 +150,15 @@ export const SideMenu: React.FC = () => {
               <IonItem button onClick={() => handleNavigation(ROUTES.USERS)}>
                 <IonIcon icon={personAdd} slot="start" />
                 <IonLabel>{t('users.title')}</IonLabel>
+              </IonItem>
+            </IonMenuToggle>
+          )}
+
+          {hasAccessToTab(userRoles, 'products') && (
+            <IonMenuToggle>
+              <IonItem button onClick={() => handleNavigation(ROUTES.CATEGORIES)}>
+                <IonIcon icon={pricetags} slot="start" />
+                <IonLabel>Categories</IonLabel>
               </IonItem>
             </IonMenuToggle>
           )}
