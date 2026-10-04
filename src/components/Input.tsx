@@ -45,11 +45,12 @@ export const Input: React.FC<InputProps> = ({
           errorText={error}
         />
         {isPasswordField && (
-          <div
+          <button
+            type="button"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
             onClick={(e) => {
-              e.preventDefault();
               e.stopPropagation();
-              setShowPassword(!showPassword);
+              setShowPassword((isVisible) => !isVisible);
             }}
             style={{
               position: 'absolute',
@@ -59,17 +60,19 @@ export const Input: React.FC<InputProps> = ({
               cursor: 'pointer',
               zIndex: 10,
               padding: '4px',
+              border: 0,
+              background: 'transparent',
             }}
           >
             <IonIcon
-              icon={showPassword ? eyeOff : eye}
+              icon={showPassword ? eye : eyeOff}
               style={{ 
                 fontSize: '22px',
                 color: 'var(--ion-color-medium)',
                 pointerEvents: 'none',
               }}
             />
-          </div>
+          </button>
         )}
       </div>
     </div>
