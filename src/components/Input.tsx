@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { IonInput, IonIcon } from '@ionic/react';
+import { IonInput } from '@ionic/react';
 import { eye, eyeOff } from 'ionicons/icons';
 
 interface InputProps {
@@ -64,11 +64,16 @@ export const Input: React.FC<InputProps> = ({
               background: 'transparent',
             }}
           >
-            <IonIcon
-              icon={showPassword ? eye : eyeOff}
-              style={{ 
-                fontSize: '22px',
-                color: 'var(--ion-color-medium)',
+            {/* IonIcon can retain its previous shadow-DOM SVG when its icon prop changes. */}
+            <img
+              src={showPassword ? eye : eyeOff}
+              alt=""
+              aria-hidden="true"
+              style={{
+                width: '22px',
+                height: '22px',
+                display: 'block',
+                opacity: 0.55,
                 pointerEvents: 'none',
               }}
             />
