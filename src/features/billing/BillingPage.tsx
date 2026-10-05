@@ -368,7 +368,7 @@ export const BillingPage: React.FC = () => {
         <div className="max-w-2xl mx-auto">
           {/* Customer Selection */}
           <div className="mb-2">
-            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--ion-text-color)' }}>{t('billing.customerLabel')}</label>
+            <label className="block text-base font-medium mb-1" style={{ color: 'var(--ion-text-color)' }}>{t('billing.customerLabel')}</label>
             {selectedCustomerId ? (
               <div className="flex items-center justify-between px-3 py-2 bg-green-50 rounded-lg border border-green-300">
                 <span className="text-sm font-medium text-green-900">{selectedCustomerName}</span>
