@@ -43,7 +43,7 @@ export const CategoriesPage: React.FC = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const { data: categoriesResponse, isLoading } = useGetCategoriesQuery();
+  const { data: categoriesResponse, isLoading } = useGetCategoriesQuery({ includeInactive: true });
   const [createCategory, { isLoading: creating }] = useCreateCategoryMutation();
   const [updateCategoryStatus] = useUpdateCategoryStatusMutation();
 

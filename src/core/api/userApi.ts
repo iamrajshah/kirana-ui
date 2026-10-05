@@ -37,8 +37,11 @@ export interface UpdateUserStatusRequest {
 
 export const userApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getUsers: builder.query<ApiResponse<User[]>, void>({
-      query: () => '/users',
+    getUsers: builder.query<ApiResponse<User[]>, { includeInactive?: boolean } | void>({
+      query: (params) => ({
+        url: '/users',
+        params: params || {},
+      }),
       providesTags: ['User'],
     }),
     createUser: builder.mutation<ApiResponse<User>, CreateUserRequest>({
