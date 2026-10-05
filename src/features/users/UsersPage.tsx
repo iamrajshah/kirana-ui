@@ -46,7 +46,7 @@ export const UsersPage: React.FC = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const { data: usersResponse, isLoading } = useGetUsersQuery();
+  const { data: usersResponse, isLoading } = useGetUsersQuery({ includeInactive: true });
   const [createUser, { isLoading: creating }] = useCreateUserMutation();
   const [updateUserStatus] = useUpdateUserStatusMutation();
 
@@ -150,6 +150,9 @@ export const UsersPage: React.FC = () => {
                       <IonBadge color={getRoleBadgeColor(user.roles)}>
                         <IonIcon icon={shield} style={{ marginRight: '4px' }} />
                         {user.roles[0] || 'USER'}
+                      </IonBadge>
+                      <IonBadge color={user.is_active ? 'success' : 'medium'}>
+                        {user.is_active ? t('common.active') : t('common.inactive')}
                       </IonBadge>
                       <IonToggle
                         checked={user.is_active}
