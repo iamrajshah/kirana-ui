@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { SupplierLedgerEntry } from '../../core/api/supplierApi';
 import {
   IonPage,
   IonHeader,
@@ -95,7 +96,7 @@ const SupplierLedgerPage: React.FC = () => {
     await refetch();
     event.detail.complete();
   };
-  const handlePurchaseClick = (entry: any) => {
+  const handlePurchaseClick = (entry: SupplierLedgerEntry) => {
     if (entry.ref_type === 'PURCHASE' && entry.ref_id) {
       history.push(`/purchases/${entry.ref_id}`);
     }

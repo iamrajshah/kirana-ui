@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiErrorMessage } from '@core/services/notificationService';
 import {
   IonPage,
   IonContent,
@@ -108,9 +109,9 @@ export const ChangePasswordPage: React.FC = () => {
       setTimeout(() => {
         history.push(ROUTES.DASHBOARD);
       }, 1500);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error changing password:', error);
-      setErrorMessage(error?.data?.message || 'Failed to change password');
+      setErrorMessage(apiErrorMessage(error, 'Failed to change password'));
       setShowError(true);
     }
   };

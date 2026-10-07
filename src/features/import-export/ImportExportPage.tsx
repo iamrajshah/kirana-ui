@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiErrorMessage } from '@core/services/notificationService';
 import { useTranslation } from 'react-i18next';
 import {
   IonPage,
@@ -103,9 +104,9 @@ export const ImportExportPage: React.FC = () => {
       // Reset file input
       const fileInput = document.getElementById('file-upload') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error uploading file:', error);
-      setErrorMessage(error?.data?.message || t('importExport.uploadFailed'));
+      setErrorMessage(apiErrorMessage(error, t('importExport.uploadFailed')));
       setShowError(true);
     }
   };
@@ -116,9 +117,9 @@ export const ImportExportPage: React.FC = () => {
     try {
       await commitJob(jobId).unwrap();
       setShowSuccess(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error committing job:', error);
-      setErrorMessage(error?.data?.message || t('importExport.commitFailed'));
+      setErrorMessage(apiErrorMessage(error, t('importExport.commitFailed')));
       setShowError(true);
     }
   };
@@ -151,9 +152,9 @@ export const ImportExportPage: React.FC = () => {
       URL.revokeObjectURL(url);
       
       setShowSuccess(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error exporting:', error);
-      setErrorMessage(error?.message || 'Failed to export data');
+      setErrorMessage(apiErrorMessage(error, 'Failed to export data', true));
       setShowError(true);
     }
   };

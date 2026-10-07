@@ -154,6 +154,7 @@ export const InvoicesPage: React.FC = () => {
           ) : (
             <>
               <IonList className="ion-no-padding">
+                <>
                 {filteredInvoices.reduce((acc: React.ReactNode[], invoice, index) => {
                   const inv = invoice as {
                     id: string;
@@ -248,7 +249,8 @@ export const InvoicesPage: React.FC = () => {
                   );
                   
                   return acc;
-                }, []) as any}
+                }, [] as React.ReactNode[])}
+                </>
               </IonList>
 
             <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>

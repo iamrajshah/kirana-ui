@@ -8,7 +8,7 @@ import { setCredentials } from '@core/auth/authSlice';
 import { Button, Input } from '@components';
 import { APP_NAME } from '@core/constants';
 import { isValidEmail, isValidPhone } from '@utils/helpers';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useTheme } from '../../contexts/useTheme';
 
 export const LoginPage: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -61,18 +61,21 @@ export const LoginPage: React.FC = () => {
       } else {
         setError(response.message || t('auth.loginError') || 'Login failed');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Login error:', err);
       // Handle different error types
       let errorMessage = t('auth.loginError') || 'Login failed';
+      const details = err && typeof err === 'object'
+        ? err as { data?: { message?: unknown }; message?: unknown; status?: unknown }
+        : null;
       
-      if (err?.data?.message) {
-        errorMessage = err.data.message;
-      } else if (err?.message) {
-        errorMessage = err.message;
-      } else if (err?.status === 401) {
+      if (typeof details?.data?.message === 'string' && details.data.message) {
+        errorMessage = details.data.message;
+      } else if (typeof details?.message === 'string' && details.message) {
+        errorMessage = details.message;
+      } else if (details?.status === 401) {
         errorMessage = t('auth.invalidCredentials') || 'Invalid email/phone or password';
-      } else if (err?.status === 500) {
+      } else if (details?.status === 500) {
         errorMessage = t('auth.serverError') || 'Server error. Please try again later.';
       } else if (!navigator.onLine) {
         errorMessage = t('auth.networkError') || 'Network error. Please check your connection.';

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { apiErrorMessage } from '@core/services/notificationService';
+import type { Category } from '@core/api/categoryApi';
 import {
   IonModal,
   IonHeader,
@@ -18,7 +20,7 @@ import { useCreateCategoryMutation } from '@core/api/categoryApi';
 interface AddCategoryModalProps {
   isOpen: boolean;
   onDidDismiss: () => void;
-  onCategoryCreated?: (category: any) => void;
+  onCategoryCreated?: (category: Category) => void;
 }
 
 export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
@@ -61,9 +63,9 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
 
       // Close modal
       onDidDismiss();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating category:', error);
-      setErrorMessage(error?.data?.message || 'Failed to create category');
+      setErrorMessage(apiErrorMessage(error, 'Failed to create category'));
       setShowError(true);
     }
   };

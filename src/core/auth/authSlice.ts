@@ -8,6 +8,21 @@ interface AuthState {
   refreshToken: string | null;
 }
 
+interface CredentialsPayload {
+  user: User;
+  tenant?: User['tenant'];
+  tokens?: {
+    access_token?: string;
+    accessToken?: string;
+    access?: string;
+    refresh_token?: string;
+    refreshToken?: string;
+    refresh?: string;
+  };
+  access_token?: string;
+  refresh_token?: string;
+}
+
 const initialState: AuthState = {
   user: JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || 'null'),
   accessToken: localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN),
@@ -20,7 +35,7 @@ const authSlice = createSlice({
   reducers: {
     setCredentials: (
       state,
-      action: PayloadAction<any>
+      action: PayloadAction<CredentialsPayload>
     ) => {
       const payload = action.payload;
       console.log('setCredentials reducer called with:', payload);

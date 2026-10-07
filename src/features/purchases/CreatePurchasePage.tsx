@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { ProductVariant } from '@core/types';
 import {
   IonPage,
   IonHeader,
@@ -69,7 +70,7 @@ const CreatePurchasePage: React.FC = () => {
     }
   }, 300);
 
-  const addToCart = (variant: any) => {
+  const addToCart = (variant: ProductVariant & { product_name?: string }) => {
     const existing = cart.find((item) => item.variant_id === variant.id);
     if (existing) {
       updateQuantity(variant.id, existing.quantity + 1);
@@ -157,7 +158,7 @@ const CreatePurchasePage: React.FC = () => {
       setSearchTerm('');
       
       setTimeout(() => history.push('/purchases'), 1000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       notificationService.handleApiError(error);
     }
   };
@@ -220,7 +221,7 @@ const CreatePurchasePage: React.FC = () => {
 
             {searchTerm.length >= 2 && variants.length > 0 && (
               <IonList>
-                {variants.map((variant: any) => (
+                {variants.map((variant: ProductVariant & { product_name?: string }) => (
                   <IonItem key={variant.id} button onClick={() => addToCart(variant)}>
                     <IonLabel>
                       <h3>{variant.product_name}</h3>

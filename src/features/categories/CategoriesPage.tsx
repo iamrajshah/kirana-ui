@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiErrorMessage } from '@core/services/notificationService';
 import {
   IonPage,
   IonContent,
@@ -67,9 +68,9 @@ export const CategoriesPage: React.FC = () => {
       setShowSuccess(true);
       setShowModal(false);
       resetForm();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating category:', error);
-      setErrorMessage(error?.data?.message || 'Failed to create category');
+      setErrorMessage(apiErrorMessage(error, 'Failed to create category'));
       setShowError(true);
     }
   };
@@ -80,9 +81,9 @@ export const CategoriesPage: React.FC = () => {
         id: categoryId,
         is_active: !currentStatus,
       }).unwrap();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating category status:', error);
-      setErrorMessage(error?.data?.message || 'Failed to update category status');
+      setErrorMessage(apiErrorMessage(error, 'Failed to update category status'));
       setShowError(true);
     }
   };

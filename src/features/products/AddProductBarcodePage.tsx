@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import type { Category } from '@core/api/categoryApi';
+import { apiErrorMessage } from '@core/services/notificationService';
 import { useHistory } from 'react-router';
 import {
   IonContent,
@@ -119,8 +121,8 @@ export const AddProductBarcodePage: React.FC = () => {
         setProductSource('NONE');
         setShowForm(true);
       }
-    } catch (error: any) {
-      setErrorMessage(error?.data?.message || 'Failed to check barcode');
+    } catch (error: unknown) {
+      setErrorMessage(apiErrorMessage(error, 'Failed to check barcode'));
       setShowError(true);
     }
   };
@@ -139,7 +141,7 @@ export const AddProductBarcodePage: React.FC = () => {
     history.push(`/products`);
   };
 
-  const handleCategoryCreated = (newCategory: any) => {
+  const handleCategoryCreated = (newCategory: Category) => {
     // Auto-select the newly created category
     setCategoryId(newCategory.id);
   };
@@ -185,8 +187,8 @@ export const AddProductBarcodePage: React.FC = () => {
       setTimeout(() => {
         history.goBack();
       }, 1500);
-    } catch (error: any) {
-      setErrorMessage(error?.data?.message || 'Failed to create product');
+    } catch (error: unknown) {
+      setErrorMessage(apiErrorMessage(error, 'Failed to create product'));
       setShowError(true);
     }
   };

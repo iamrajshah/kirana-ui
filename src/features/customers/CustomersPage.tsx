@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import type { Customer } from '@core/types';
 import {
   IonContent,
   IonPage,
@@ -43,7 +44,7 @@ export const CustomersPage: React.FC = () => {
   
   const [search, setSearch] = useState('');
   const [skip, setSkip] = useState(0);
-  const [allCustomers, setAllCustomers] = useState<any[]>([]);
+  const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
   const take = 50;
   
   const { data, isLoading, isFetching } = useGetCustomersQuery({ search, skip, take });
@@ -64,7 +65,7 @@ export const CustomersPage: React.FC = () => {
       } else {
         setAllCustomers(prev => {
           const existingIds = new Set(prev.map(c => c.id));
-          const newCustomers = data.data.filter((c: any) => !existingIds.has(c.id));
+          const newCustomers = data.data.filter((c) => !existingIds.has(c.id));
           return [...prev, ...newCustomers];
         });
       }
@@ -72,7 +73,7 @@ export const CustomersPage: React.FC = () => {
   }, [data, skip]);
 
   const [showModal, setShowModal] = useState(false);
-  const [editingCustomer, setEditingCustomer] = useState<any>(null);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -102,12 +103,12 @@ export const CustomersPage: React.FC = () => {
       setShowModal(false);
       resetForm();
       setSkip(0);
-    } catch (error: any) {
+    } catch (error: unknown) {
       notificationService.handleApiError(error);
     }
   };
 
-  const handleEditCustomer = (customer: any) => {
+  const handleEditCustomer = (customer: Customer) => {
     setEditingCustomer(customer);
     setName(customer.name);
     setPhone(customer.phone || '');

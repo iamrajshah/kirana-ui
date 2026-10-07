@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import type { InvoiceItem } from '@core/types';
+import { apiErrorMessage } from '@core/services/notificationService';
 import {
   IonContent,
   IonPage,
@@ -78,8 +80,8 @@ const InvoiceDetailPage: React.FC = () => {
       setShowCancelAlert(false);
       setCancelReason('');
       refetch();
-    } catch (error: any) {
-      setToastMessage(error?.data?.message || t('invoiceDetail.failedToCancelInvoice'));
+    } catch (error: unknown) {
+      setToastMessage(apiErrorMessage(error, t('invoiceDetail.failedToCancelInvoice')));
       setShowErrorToast(true);
     }
   };
@@ -107,9 +109,9 @@ const InvoiceDetailPage: React.FC = () => {
       setShowSuccessToast(true);
       setShowPaymentModal(false);
       refetch();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Payment error:', error);
-      setToastMessage(error?.data?.message || t('invoiceDetail.paymentFailed'));
+      setToastMessage(apiErrorMessage(error, t('invoiceDetail.paymentFailed')));
       setShowErrorToast(true);
       throw error;
     }
@@ -224,7 +226,7 @@ const InvoiceDetailPage: React.FC = () => {
           <IonCardContent>
             {invoice.items && invoice.items.length > 0 ? (
               <div className="space-y-2">
-                {invoice.items.map((item: any) => (
+                {invoice.items.map((item: InvoiceItem) => (
                   <div key={item.id} className="border-b pb-2 last:border-b-0">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">

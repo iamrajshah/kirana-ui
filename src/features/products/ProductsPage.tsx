@@ -1,4 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import type { Category } from '@core/api/categoryApi';
+import type { Product } from '@core/types';
+import type { Packaging } from '@core/api/productApi';
+import { apiErrorMessage } from '@core/services/notificationService';
 import { Navbar } from '@components/Navbar';
 import { useHistory } from 'react-router';
 import {
@@ -37,7 +41,7 @@ export const ProductsPage: React.FC = () => {
   const [present] = useIonActionSheet();
   const [search, setSearch] = useState('');
   const [skip, setSkip] = useState(0);
-  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const take = 50;
   const { data, isLoading, isFetching } = useGetProductsQuery({ search, skip, take });
   const { data: categoriesData } = useGetCategoriesQuery();
@@ -66,8 +70,8 @@ export const ProductsPage: React.FC = () => {
         setAllProducts(data.data);
       } else {
         setAllProducts(prev => {
-          const existingIds = new Set(prev.map((p: any) => p.id));
-          const newProducts = data.data.filter((p: any) => !existingIds.has(p.id));
+          const existingIds = new Set(prev.map((p) => p.id));
+          const newProducts = data.data.filter((p) => !existingIds.has(p.id));
           return [...prev, ...newProducts];
         });
       }
@@ -95,7 +99,7 @@ export const ProductsPage: React.FC = () => {
 
   // Group products by category
   const groupedProducts = useMemo(() => {
-    const groups: Record<string, any[]> = {};
+    const groups: Record<string, Product[]> = {};
     
     allProducts.forEach((product) => {
       const categoryName = product.category?.name || 'Uncategorized';
@@ -157,7 +161,7 @@ export const ProductsPage: React.FC = () => {
         variant: {
           brand: brand || null,
           size: size || null,
-          packaging: (packaging as any) || null,
+          packaging: (packaging as Packaging | null) || null,
           price: parseFloat(price),
           gst_percent: gstPercent ? parseFloat(gstPercent) : null,
           sku: sku || null,
@@ -167,8 +171,8 @@ export const ProductsPage: React.FC = () => {
       setShowSuccess(true);
       setShowModal(false);
       resetForm();
-    } catch (error: any) {
-      setErrorMessage(error?.data?.message || t('products.failedToCreateProduct'));
+    } catch (error: unknown) {
+      setErrorMessage(apiErrorMessage(error, t('products.failedToCreateProduct')));
       setShowError(true);
     }
   };
@@ -177,7 +181,7 @@ export const ProductsPage: React.FC = () => {
     history.push(`/products/${productId}`);
   };
 
-  const handleCategoryCreated = (newCategory: any) => {
+  const handleCategoryCreated = (newCategory: Category) => {
     setCategoryId(newCategory.id);
   };
 

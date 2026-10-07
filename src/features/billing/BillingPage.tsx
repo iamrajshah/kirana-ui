@@ -56,7 +56,7 @@ export const BillingPage: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [selectedCustomerName, setSelectedCustomerName] = useState('');
-  const [loadedInvoiceData, setLoadedInvoiceData] = useState<any>(null);
+  const [loadedInvoiceData, setLoadedInvoiceData] = useState<{ customer?: { id?: string } } | null>(null);
   const [gstAmount, setGstAmount] = useState(0);
   const [billDiscount, setBillDiscount] = useState(0);
   const [billDiscountType, setBillDiscountType] = useState<DiscountType>('amount');
