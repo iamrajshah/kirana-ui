@@ -33,6 +33,7 @@ export const ROUTES = {
   IMPORT_EXPORT: '/import-export',
   PROFILE: '/profile',
   CHANGE_PASSWORD: '/change-password',
+  ABOUT: '/about',
 } as const;
 
 // Storage Keys
