@@ -1,21 +1,19 @@
 import React, { useState } from 'react';
 import { IonContent, IonPage, IonToast, IonSelect, IonSelectOption, IonIcon, IonToggle } from '@ionic/react';
-import { useHistory } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { language as languageIcon, contrast } from 'ionicons/icons';
 import { useLoginMutation } from '@core/api/authApi';
 import { useAppDispatch } from '@hooks/useAppDispatch';
 import { setCredentials } from '@core/auth/authSlice';
 import { Button, Input } from '@components';
-import { ROUTES, APP_NAME } from '@core/constants';
+import { APP_NAME } from '@core/constants';
 import { isValidEmail, isValidPhone } from '@utils/helpers';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export const LoginPage: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const history = useHistory();
   const dispatch = useAppDispatch();
-  const [login, { isLoading }] = useLoginMutation();
+  const [login] = useLoginMutation();
   const { theme, toggleTheme } = useTheme();
 
   const [emailOrPhone, setEmailOrPhone] = useState('');

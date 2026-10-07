@@ -22,7 +22,6 @@ import {
   IonSpinner,
 } from '@ionic/react';
 import { add, close } from 'ionicons/icons';
-import { useTranslation } from 'react-i18next';
 import { Navbar } from '@components/Navbar';
 import { Input } from '@components/Input';
 import {
@@ -33,8 +32,6 @@ import {
 import './CategoriesPage.css';
 
 export const CategoriesPage: React.FC = () => {
-  const { t } = useTranslation();
-
   const [showModal, setShowModal] = useState(false);
   const [categoryName, setCategoryName] = useState('');
   const [categoryDescription, setCategoryDescription] = useState('');

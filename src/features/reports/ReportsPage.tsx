@@ -640,9 +640,6 @@ export const ReportsPage: React.FC = () => {
     
     if (!data) return <EmptyState message="No profit/loss data available" />;
 
-    const totalRevenue = data.revenue?.net_revenue || 0;
-    const totalCost = 0; // Backend doesn't provide cost data currently
-    const grossProfit = totalRevenue - totalCost;
     const cashInHand = data.summary?.cash_in_hand || 0;
     const receivables = data.summary?.receivables || 0;
 

@@ -21,7 +21,7 @@ import {
   IonInfiniteScroll,
   IonInfiniteScrollContent,
 } from '@ionic/react';
-import { add, close, pencil, trash } from 'ionicons/icons';
+import { add, close, pencil } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router';
 import { useGetCustomersQuery, useCreateCustomerMutation, useUpdateCustomerMutation } from '@core/api/customerApi';

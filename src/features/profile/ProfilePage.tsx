@@ -44,7 +44,7 @@ export const ProfilePage: React.FC = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const [updateProfile, { isLoading: updating }] = useUpdateProfileMutation();
+  const [updateProfile] = useUpdateProfileMutation();
 
   const languages = [
     { code: 'en', name: 'English' },

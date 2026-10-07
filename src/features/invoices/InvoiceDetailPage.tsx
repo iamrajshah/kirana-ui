@@ -11,13 +11,7 @@ import {
   IonCardHeader,
   IonCardTitle,
   IonCardContent,
-  IonList,
-  IonItem,
-  IonLabel,
   IonBadge,
-  IonGrid,
-  IonRow,
-  IonCol,
   IonButton,
   IonIcon,
   IonSpinner,
@@ -25,7 +19,7 @@ import {
   IonToast,
 } from '@ionic/react';
 import { useParams, useHistory } from 'react-router-dom';
-import { downloadOutline, cash, closeCircle, checkmarkCircle, create } from 'ionicons/icons';
+import { cash, closeCircle, checkmarkCircle, create } from 'ionicons/icons';
 import { 
   useGetInvoiceByIdQuery, 
   useFinalizeInvoiceMutation,
@@ -36,7 +30,6 @@ import { useTranslation } from 'react-i18next';
 import { useCreatePaymentMutation } from '@core/api/paymentApi';
 import { PaymentModal } from '@components';
 import { formatDateTime, formatCurrency, generateIdempotencyKey } from '@utils/helpers';
-import notificationService from '@core/services/notificationService';
 import type { PaymentMode } from '@core/types';
 import './InvoiceDetailPage.css';
 
@@ -74,18 +67,6 @@ const InvoiceDetailPage: React.FC = () => {
         return 'dark';
       default:
         return 'medium';
-    }
-  };
-
-  const handleFinalizeInvoice = async () => {
-    try {
-      await finalizeInvoice(id).unwrap();
-      setToastMessage(t('invoiceDetail.invoiceFinalizedSuccess'));
-      setShowSuccessToast(true);
-      refetch();
-    } catch (error: any) {
-      setToastMessage(error?.data?.message || t('invoiceDetail.failedToFinalizeInvoice'));
-      setShowErrorToast(true);
     }
   };
 

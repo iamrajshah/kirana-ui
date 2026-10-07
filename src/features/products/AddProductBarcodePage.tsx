@@ -18,7 +18,6 @@ import {
   isPlatform,
 } from '@ionic/react';
 import { checkmarkCircle, search, add } from 'ionicons/icons';
-import { useTranslation } from 'react-i18next';
 import {
   useLazyLookupBarcodeQuery,
   useCreateProductFromBarcodeMutation,
@@ -35,7 +34,6 @@ import {
 import type { BarcodeLookupData } from '@core/types';
 
 export const AddProductBarcodePage: React.FC = () => {
-  const { t } = useTranslation();
   const history = useHistory();
   const isMobile = isPlatform('capacitor');
 
@@ -69,7 +67,7 @@ export const AddProductBarcodePage: React.FC = () => {
   // API
   const [lookupBarcode, { isLoading: scanning }] = useLazyLookupBarcodeQuery();
   const [createProduct, { isLoading: creating }] = useCreateProductFromBarcodeMutation();
-  const { data: categoriesData, isLoading: loadingCategories } = useGetCategoriesQuery();
+  const { data: categoriesData } = useGetCategoriesQuery();
 
   const categories = categoriesData?.data || [];
 
@@ -179,7 +177,7 @@ export const AddProductBarcodePage: React.FC = () => {
         },
       };
       
-      const result = await createProduct(payload).unwrap();
+      await createProduct(payload).unwrap();
 
       setShowSuccess(true);
       

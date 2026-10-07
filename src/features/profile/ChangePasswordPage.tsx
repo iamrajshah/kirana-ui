@@ -21,13 +21,11 @@ import {
 import { save, lockClosed, checkmarkCircle } from 'ionicons/icons';
 import { Input } from '@components/Input';
 import { useChangePasswordMutation } from '@core/api/userApi';
-import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router';
 import { ROUTES } from '@core/constants';
 import './ChangePasswordPage.css';
 
 export const ChangePasswordPage: React.FC = () => {
-  const { t } = useTranslation();
   const history = useHistory();
   
   const [currentPassword, setCurrentPassword] = useState('');
@@ -38,7 +36,7 @@ export const ChangePasswordPage: React.FC = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const [changePassword, { isLoading: changing }] = useChangePasswordMutation();
+  const [changePassword] = useChangePasswordMutation();
 
   const validatePassword = (password: string) => {
     const hasUpperCase = /[A-Z]/.test(password);

@@ -322,7 +322,7 @@ export const BillingPage: React.FC = () => {
     }
 
     try {
-      const result = await createPayment({
+      await createPayment({
         customer_id: customerId,
         invoice_id: pendingInvoiceId,
         amount,

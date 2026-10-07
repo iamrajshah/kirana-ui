@@ -6,7 +6,6 @@ import {
   IonTitle,
   IonContent,
   IonButtons,
-  IonBackButton,
   IonCard,
   IonCardHeader,
   IonCardTitle,
@@ -30,7 +29,7 @@ import { Navbar } from '@components/Navbar';
 import { useGetSuppliersQuery } from '../../core/api/supplierApi';
 import { useCreatePurchaseMutation } from '../../core/api/purchaseApi';
 import { useLazySearchVariantsQuery } from '../../core/api/productApi';
-import { SearchBar, Input, Button, Select, EmptyState } from '../../components';
+import { SearchBar, Input, Button, EmptyState } from '../../components';
 import { formatCurrency, debounce } from '@utils/helpers';
 import notificationService from '@core/services/notificationService';
 

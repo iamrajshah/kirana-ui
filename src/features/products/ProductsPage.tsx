@@ -122,10 +122,6 @@ export const ProductsPage: React.FC = () => {
   };
   const categories = categoriesData?.data || [];
 
-  const categoryOptions = useMemo(() => {
-    return categories.map((cat) => ({ value: cat.id.toString(), label: cat.name }));
-  }, [categories]);
-
   const resetForm = () => {
     setProductName('');
     setCategoryId(null);

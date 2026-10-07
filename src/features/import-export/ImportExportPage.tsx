@@ -51,14 +51,8 @@ export const ImportExportPage: React.FC = () => {
 
   const { data: importJobsResponse, isLoading: loadingJobs } = useGetImportJobsQuery({});
   const [uploadFile, { isLoading: uploading }] = useUploadImportFileMutation();
-  const [commitJob, { isLoading: committing }] = useCommitImportJobMutation();
+  const [commitJob] = useCommitImportJobMutation();
   
-  const [exportingCustomers, setExportingCustomers] = useState(false);
-  const [exportingProducts, setExportingProducts] = useState(false);
-  const [exportingInventory, setExportingInventory] = useState(false);
-  const [exportingCategories, setExportingCategories] = useState(false);
-  const [exportingInvoices, setExportingInvoices] = useState(false);
-  const [exportingLedger, setExportingLedger] = useState(false);
 
   const importJobs = importJobsResponse?.data || [];
   
@@ -132,28 +126,6 @@ export const ImportExportPage: React.FC = () => {
   const handleExport = async (type: ExportType, format: 'CSV' | 'EXCEL' = 'CSV') => {
     console.log('⬇️ Exporting:', type, 'Format:', format);
 
-    // Set loading state
-    switch (type) {
-      case 'customers':
-        setExportingCustomers(true);
-        break;
-      case 'products':
-        setExportingProducts(true);
-        break;
-      case 'inventory':
-        setExportingInventory(true);
-        break;
-      case 'categories':
-        setExportingCategories(true);
-        break;
-      case 'invoices':
-        setExportingInvoices(true);
-        break;
-      case 'ledger':
-        setExportingLedger(true);
-        break;
-    }
-
     try {
       const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
       const response = await fetch(`${API_BASE_URL}/import/export/${type}?format=${format}`, {
@@ -183,14 +155,6 @@ export const ImportExportPage: React.FC = () => {
       console.error('❌ Error exporting:', error);
       setErrorMessage(error?.message || 'Failed to export data');
       setShowError(true);
-    } finally {
-      // Clear loading state
-      setExportingCustomers(false);
-      setExportingProducts(false);
-      setExportingInventory(false);
-      setExportingCategories(false);
-      setExportingInvoices(false);
-      setExportingLedger(false);
     }
   };
 

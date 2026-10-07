@@ -14,7 +14,6 @@ import {
   IonList,
   IonItem,
   IonLabel,
-  IonText,
   IonSpinner,
   IonRefresher,
   IonRefresherContent,
@@ -79,12 +78,12 @@ const SupplierLedgerPage: React.FC = () => {
 
   const { data: supplierData, isLoading: loadingSupplier } = useGetSupplierByIdQuery(id!);
   const { data: ledgerData, isLoading: loadingLedger, refetch } = useGetSupplierLedgerQuery({ id: id!, page: 1, limit: 50 });
-  const { data: bankAccountsData, isLoading: loadingBankAccounts } = useGetBankAccountsQuery(id!);
+  const { data: bankAccountsData } = useGetBankAccountsQuery(id!);
   const [makePayment, { isLoading: processingPayment }] = useMakeSupplierPaymentMutation();
   const [createBankAccount, { isLoading: creatingBankAccount }] = useCreateBankAccountMutation();
   const [updateBankAccount, { isLoading: updatingBankAccount }] = useUpdateBankAccountMutation();
-  const [deleteBankAccount, { isLoading: deletingAccount }] = useDeleteBankAccountMutation();
-  const [setPrimaryBankAccount, { isLoading: settingPrimary }] = useSetPrimaryBankAccountMutation();
+  const [deleteBankAccount] = useDeleteBankAccountMutation();
+  const [setPrimaryBankAccount] = useSetPrimaryBankAccountMutation();
 
   const supplier = supplierData?.data;
   const entries = ledgerData?.data?.entries || [];
