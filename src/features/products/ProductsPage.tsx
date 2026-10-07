@@ -20,25 +20,21 @@ import {
   IonTitle,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
+  IonListHeader,
+  useIonActionSheet,
 } from '@ionic/react';
-import { add, close } from 'ionicons/icons';
+import { add, close, barcodeOutline } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import { useGetProductsQuery, useCreateProductMutation, useCreateVariantMutation } from '@core/api/productApi';
 import { useGetCategoriesQuery } from '@core/api/categoryApi';
-import { SearchBar, Loading, EmptyState, Input, Select, Button } from '@components';
+import { SearchBar, Loading, EmptyState, Input, Select, Button, AddCategoryModal } from '@components';
 import { formatCurrency } from '@utils/helpers';
-
-const PACKAGING_OPTIONS = [
-  { value: 'PACKET', label: 'Packet' },
-  { value: 'BOX', label: 'Box' },
-  { value: 'BOTTLE', label: 'Bottle' },
-  { value: 'LOOSE', label: 'Loose' },
-  { value: 'KG', label: 'KG' },
-];
+import { ROUTES } from '@core/constants';
 
 export const ProductsPage: React.FC = () => {
   const { t } = useTranslation();
   const history = useHistory();
+  const [present] = useIonActionSheet();
   const [search, setSearch] = useState('');
   const [skip, setSkip] = useState(0);
   const [allProducts, setAllProducts] = useState<any[]>([]);
@@ -47,6 +43,16 @@ export const ProductsPage: React.FC = () => {
   const { data: categoriesData } = useGetCategoriesQuery();
   const [createProduct, { isLoading: creating }] = useCreateProductMutation();
   const [createVariant, { isLoading: creatingVariant }] = useCreateVariantMutation();
+
+  const PACKAGING_OPTIONS = [
+    { value: 'POUCH', label: t('products.packagingPouch') },
+    { value: 'BOTTLE', label: t('products.packagingBottle') },
+    { value: 'CAN', label: t('products.packagingCan') },
+    { value: 'BOX', label: t('products.packagingBox') },
+    { value: 'PACKET', label: t('products.packagingPacket') },
+    { value: 'JAR', label: t('products.packagingJar') },
+    { value: 'LOOSE', label: t('products.packagingLoose') },
+  ];
 
   useEffect(() => {
     setSkip(0);
@@ -72,6 +78,7 @@ export const ProductsPage: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
 
   const [productName, setProductName] = useState('');
   const [categoryId, setCategoryId] = useState<number | null>(null);
@@ -85,6 +92,25 @@ export const ProductsPage: React.FC = () => {
   const total = data?.meta?.total || 0;
   const currentBatchSize = data?.data?.length || 0;
   const hasMore = allProducts.length < total && currentBatchSize === take;
+
+  // Group products by category
+  const groupedProducts = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    
+    allProducts.forEach((product) => {
+      const categoryName = product.category?.name || 'Uncategorized';
+      if (!groups[categoryName]) {
+        groups[categoryName] = [];
+      }
+      groups[categoryName].push(product);
+    });
+    
+    return groups;
+  }, [allProducts]);
+
+  const categoryNames = useMemo(() => {
+    return Object.keys(groupedProducts).sort();
+  }, [groupedProducts]);
 
   const loadMore = async (e: CustomEvent) => {
     if (hasMore && !isFetching) {
@@ -114,13 +140,13 @@ export const ProductsPage: React.FC = () => {
   const handleCreateProduct = async () => {
     try {
       if (!productName.trim()) {
-        setErrorMessage('Product name is required');
+        setErrorMessage(t('products.productNameRequired'));
         setShowError(true);
         return;
       }
 
       if (!price || parseFloat(price) <= 0) {
-        setErrorMessage('Valid price is required');
+        setErrorMessage(t('products.validPriceRequired'));
         setShowError(true);
         return;
       }
@@ -146,13 +172,17 @@ export const ProductsPage: React.FC = () => {
       setShowModal(false);
       resetForm();
     } catch (error: any) {
-      setErrorMessage(error?.data?.message || 'Failed to create product');
+      setErrorMessage(error?.data?.message || t('products.failedToCreateProduct'));
       setShowError(true);
     }
   };
 
   const handleProductClick = (productId: string) => {
     history.push(`/products/${productId}`);
+  };
+
+  const handleCategoryCreated = (newCategory: any) => {
+    setCategoryId(newCategory.id);
   };
 
   return (
@@ -165,32 +195,53 @@ export const ProductsPage: React.FC = () => {
           {isLoading && allProducts.length === 0 ? (
             <Loading isOpen={isLoading} />
           ) : allProducts.length === 0 ? (
-            <EmptyState message="No products found" />
+            <EmptyState message={t('products.noProductsFound')} />
           ) : (
             <>
-              <IonList>
-                {allProducts.map((product) => (
-                  <IonItem key={product.id} button onClick={() => handleProductClick(product.id)}>
-                    <IonLabel>
-                      <h2 style={{ fontWeight: '600', fontSize: '16px' }}>{product.name}</h2>
-                      <p>{product.category?.name}</p>
-                      {product.variants && product.variants.length > 0 && (
-                        <div style={{ marginTop: '8px' }}>
-                          {product.variants.map((variant) => (
-                            <div key={variant.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', paddingTop: '4px', paddingBottom: '4px' }}>
-                              <span>SKU: {variant.sku}</span>
-                              <span style={{ fontWeight: '500' }}>{formatCurrency(variant.price)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </IonLabel>
-                    <IonBadge slot="end" color={product.is_active ? 'success' : 'medium'}>
-                      {product.is_active ? t('common.active') : t('common.inactive')}
+              {categoryNames.map((categoryName) => (
+                <div key={categoryName} style={{ marginBottom: '16px' }}>
+                  <IonListHeader style={{ 
+                    fontSize: '16px', 
+                    fontWeight: '700', 
+                    color: 'var(--ion-color-primary)',
+                    padding: '8px 16px',
+                    background: 'var(--ion-color-light)',
+                    borderRadius: '8px',
+                    marginBottom: '8px'
+                  }}>
+                    {categoryName}
+                    <IonBadge 
+                      color="primary" 
+                      style={{ marginLeft: '8px' }}
+                    >
+                      {groupedProducts[categoryName].length}
                     </IonBadge>
-                  </IonItem>
-                ))}
-              </IonList>
+                  </IonListHeader>
+                  
+                  <IonList>
+                    {groupedProducts[categoryName].map((product) => (
+                      <IonItem key={product.id} button onClick={() => handleProductClick(product.id)}>
+                        <IonLabel>
+                          <h2 style={{ fontWeight: '600', fontSize: '16px' }}>{product.name}</h2>
+                          {product.variants && product.variants.length > 0 && (
+                            <div style={{ marginTop: '8px' }}>
+                              {product.variants.map((variant) => (
+                                <div key={variant.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', paddingTop: '4px', paddingBottom: '4px' }}>
+                                  <span>SKU: {variant.sku}</span>
+                                  <span style={{ fontWeight: '500' }}>{formatCurrency(variant.price)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </IonLabel>
+                        <IonBadge slot="end" color={product.is_active ? 'success' : 'medium'}>
+                          {product.is_active ? t('common.active') : t('common.inactive')}
+                        </IonBadge>
+                      </IonItem>
+                    ))}
+                  </IonList>
+                </div>
+              ))}
               
               <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
                 <IonInfiniteScrollContent loadingText="Loading more products..." />
@@ -200,14 +251,38 @@ export const ProductsPage: React.FC = () => {
         </div>
 
         <IonFab vertical="bottom" horizontal="end" slot="fixed">
-          <IonFabButton onClick={() => setShowModal(true)}>
+          <IonFabButton onClick={() => {
+            present({
+              header: 'Add Product',
+              buttons: [
+                {
+                  text: 'Scan Barcode',
+                  icon: barcodeOutline,
+                  handler: () => {
+                    history.push(ROUTES.PRODUCT_BARCODE);
+                  },
+                },
+                {
+                  text: 'Add Manually',
+                  icon: add,
+                  handler: () => {
+                    setShowModal(true);
+                  },
+                },
+                {
+                  text: 'Cancel',
+                  role: 'cancel',
+                },
+              ],
+            });
+          }}>
             <IonIcon icon={add} />
           </IonFabButton>
         </IonFab>
 
         <IonToast
           isOpen={showSuccess}
-          message="Product created successfully"
+          message={t('products.productCreatedSuccessfully')}
           duration={2000}
           color="success"
           onDidDismiss={() => setShowSuccess(false)}
@@ -225,7 +300,7 @@ export const ProductsPage: React.FC = () => {
           <IonModal isOpen={showModal} onDidDismiss={() => setShowModal(false)}>
             <IonHeader>
               <IonToolbar>
-                <IonTitle>Create Product</IonTitle>
+                <IonTitle>{t('products.createProductTitle')}</IonTitle>
                 <IonButtons slot="end">
                   <IonButton onClick={() => setShowModal(false)}>
                     <IonIcon icon={close} />
@@ -236,36 +311,54 @@ export const ProductsPage: React.FC = () => {
             <IonContent>
               <div style={{ padding: '16px' }}>
                 <Input
-                  label="Product Name *"
+                  label={t('products.productNameLabel')}
                   value={productName}
                   onChange={setProductName}
-                  placeholder="Enter product name"
+                  placeholder={t('products.enterProductNamePlaceholder')}
                 />
 
                 <Select
-                  label="Category"
+                  label={t('products.categoryLabel')}
                   value={categoryId?.toString() || ''}
-                  onChange={(value) => setCategoryId(value ? parseInt(value) : null)}
-                  options={categoryOptions}
-                  placeholder="Select category"
+                  onChange={(value) => {
+                    setCategoryId(value ? parseInt(value) : null);
+                  }}
+                  options={[
+                    { value: '', label: t('products.selectCategoryPlaceholder2') },
+                    ...categories
+                      .filter((cat) => cat.is_active)
+                      .map((cat) => ({ value: cat.id.toString(), label: cat.name })),
+                  ]}
+                  placeholder={t('products.selectCategoryPlaceholder2')}
                 />
+                
+                <IonButton 
+                  expand="block" 
+                  fill="outline" 
+                  size="small"
+                  onClick={() => setShowCategoryModal(true)}
+                  style={{ marginTop: '8px' }}
+                >
+                  <IonIcon slot="start" icon={add} />
+                  {t('products.addNewCategory') || 'Add New Category'}
+                </IonButton>
 
-                <h3 style={{ fontSize: '16px', fontWeight: '600', marginTop: '24px', marginBottom: '8px' }}>Variant Details</h3>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', marginTop: '24px', marginBottom: '8px' }}>{t('products.variantDetailsHeading')}</h3>
 
-                <Input label="Brand" value={brand} onChange={setBrand} placeholder="Enter brand" />
-                <Input label="Size" value={size} onChange={setSize} placeholder="e.g., 1L, 500g" />
+                <Input label={t('products.brandLabel')} value={brand} onChange={setBrand} placeholder={t('products.enterBrandPlaceholder')} />
+                <Input label={t('products.sizeLabel')} value={size} onChange={setSize} placeholder={t('products.sizePlaceholder')} />
 
                 <Select
-                  label="Packaging"
+                  label={t('products.packagingLabel')}
                   value={packaging || ''}
                   onChange={(value) => setPackaging(value || null)}
-                  placeholder="Select packaging"
+                  placeholder={t('products.selectPackagingPlaceholder')}
                   options={PACKAGING_OPTIONS}
                 />
 
-                <Input label="Price *" type="number" value={price} onChange={setPrice} placeholder="Enter price" />
-                <Input label="GST %" type="number" value={gstPercent} onChange={setGstPercent} placeholder="Enter GST percentage" />
-                <Input label="SKU" value={sku} onChange={setSku} placeholder="Enter SKU code" />
+                <Input label={t('products.priceLabel')} type="number" value={price} onChange={setPrice} placeholder={t('products.enterPricePlaceholder')} />
+                <Input label={t('products.gstLabel')} type="number" value={gstPercent} onChange={setGstPercent} placeholder={t('products.enterGSTPercentage')} />
+                <Input label={t('products.skuLabel')} value={sku} onChange={setSku} placeholder={t('products.enterSKUCode')} />
 
                 <div style={{ marginTop: '24px' }}>
                   <Button
@@ -273,13 +366,20 @@ export const ProductsPage: React.FC = () => {
                     disabled={creating || creatingVariant || !productName || !price}
                     loading={creating || creatingVariant}
                   >
-                    Create Product
+                    {t('products.createProductButton')}
                   </Button>
                 </div>
               </div>
             </IonContent>
           </IonModal>
         )}
+
+        {/* Add Category Modal */}
+        <AddCategoryModal
+          isOpen={showCategoryModal}
+          onDidDismiss={() => setShowCategoryModal(false)}
+          onCategoryCreated={handleCategoryCreated}
+        />
       </IonContent>
     </IonPage>
   );

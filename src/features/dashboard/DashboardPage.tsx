@@ -41,81 +41,93 @@ export const DashboardPage: React.FC = () => {
             <IonGrid>
               <IonRow>
                 <IonCol size="6">
-                  <Card className="bg-primary-50">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-primary-700">
-                        {formatCurrency(stats?.today_sales || 0)}
+                  <div style={{ backgroundColor: 'var(--ion-color-primary-tint)' }}>
+                    <Card>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold" style={{ color: 'var(--ion-color-primary)' }}>
+                          {formatCurrency(stats?.today_sales || 0)}
+                        </div>
+                        <div className="text-sm mt-2" style={{ color: 'var(--ion-text-color)' }}>
+                          {t('dashboard.todaySales')}
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-600 mt-2">
-                        {t('dashboard.todaySales')}
-                      </div>
-                    </div>
-                  </Card>
+                    </Card>
+                  </div>
                 </IonCol>
 
                 <IonCol size="6">
-                  <Card className="bg-warning-50">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-warning-700">
-                        {formatNumber(stats?.pending_invoices || 0)}
+                  <div style={{ backgroundColor: 'var(--ion-color-warning-tint)' }}>
+                    <Card>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold" style={{ color: 'var(--ion-color-warning)' }}>
+                          {formatNumber(stats?.pending_invoices || 0)}
+                        </div>
+                        <div className="text-sm mt-2" style={{ color: 'var(--ion-text-color)' }}>
+                          {t('dashboard.pendingInvoices')}
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-600 mt-2">
-                        {t('dashboard.pendingInvoices')}
-                      </div>
-                    </div>
-                  </Card>
+                    </Card>
+                  </div>
                 </IonCol>
 
                 <IonCol size="6">
-                  <Card className="bg-danger-50">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-danger-700">
-                        {formatNumber(stats?.low_stock_items || 0)}
+                  <div style={{ backgroundColor: 'var(--ion-color-danger-tint)' }}>
+                    <Card>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold" style={{ color: 'var(--ion-color-danger)' }}>
+                          {formatNumber(stats?.low_stock_items || 0)}
+                        </div>
+                        <div className="text-sm mt-2" style={{ color: 'var(--ion-text-color)' }}>
+                          {t('dashboard.lowStock')}
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-600 mt-2">
-                        {t('dashboard.lowStock')}
-                      </div>
-                    </div>
-                  </Card>
+                    </Card>
+                  </div>
                 </IonCol>
 
                 <IonCol size="6">
-                  <Card className="bg-success-50">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-success-700">
-                        {formatNumber(stats?.total_customers || 0)}
+                  <div style={{ backgroundColor: 'var(--ion-color-success-tint)' }}>
+                    <Card>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold" style={{ color: 'var(--ion-color-success)' }}>
+                          {formatNumber(stats?.total_customers || 0)}
+                        </div>
+                        <div className="text-sm mt-2" style={{ color: 'var(--ion-text-color)' }}>
+                          {t('dashboard.totalCustomers')}
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-600 mt-2">
-                        {t('dashboard.totalCustomers')}
-                      </div>
-                    </div>
-                  </Card>
+                    </Card>
+                  </div>
                 </IonCol>
 
                 <IonCol size="6">
-                  <Card className="bg-warning-50">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-danger-700">
-                        {formatCurrency(stats?.supplier_payables || 0)}
+                  <div style={{ backgroundColor: 'var(--ion-color-warning-tint)' }}>
+                    <Card>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold" style={{ color: 'var(--ion-color-danger)' }}>
+                          {formatCurrency(stats?.supplier_payables || 0)}
+                        </div>
+                        <div className="text-sm mt-2" style={{ color: 'var(--ion-text-color)' }}>
+                          {t('dashboard.supplierPayables')}
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-600 mt-2">
-                        {t('dashboard.supplierPayables')}
-                      </div>
-                    </div>
-                  </Card>
+                    </Card>
+                  </div>
                 </IonCol>
 
                 <IonCol size="6">
-                  <Card className="bg-success-50">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-success-700">
-                        {formatCurrency(stats?.customer_receivables || 0)}
+                  <div style={{ backgroundColor: 'var(--ion-color-success-tint)' }}>
+                    <Card>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold" style={{ color: 'var(--ion-color-success)' }}>
+                          {formatCurrency(stats?.customer_receivables || 0)}
+                        </div>
+                        <div className="text-sm mt-2" style={{ color: 'var(--ion-text-color)' }}>
+                          {t('dashboard.customerReceivables')}
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-600 mt-2">
-                        {t('dashboard.customerReceivables')}
-                      </div>
-                    </div>
-                  </Card>
+                    </Card>
+                  </div>
                 </IonCol>
               </IonRow>
             </IonGrid>

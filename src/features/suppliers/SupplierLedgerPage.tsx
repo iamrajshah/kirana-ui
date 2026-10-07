@@ -30,16 +30,22 @@ import {
   IonCol,
   IonSelect,
   IonSelectOption,
+  IonAlert,
 } from '@ionic/react';
 import { cash, close } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import { useParams, useHistory } from 'react-router';
-import { Navbar } from '@components/Navbar';
 
 import {
   useGetSupplierByIdQuery,
   useGetSupplierLedgerQuery,
   useMakeSupplierPaymentMutation,
+  useGetBankAccountsQuery,
+  useCreateBankAccountMutation,
+  useUpdateBankAccountMutation,
+  useDeleteBankAccountMutation,
+  useSetPrimaryBankAccountMutation,
+  BankAccount,
 } from '../../core/api/supplierApi';
 import { Input, Button, EmptyState } from '../../components';
 import { formatCurrency, formatDateTime } from '@utils/helpers';
@@ -47,6 +53,8 @@ import { useAppSelector } from '../../core/hooks';
 import { selectCurrentUser } from '../../core/auth/authSlice';
 import { hasPermission } from '../../core/permissions/permissions';
 import notificationService from '@core/services/notificationService';
+import { PrimaryBankAccountCard, BankAccountModal, BankAccountFormModal } from './components';
+import type { BankAccountFormData } from './components';
 import './SupplierLedgerPage.css';
 
 const SupplierLedgerPage: React.FC = () => {
@@ -54,7 +62,15 @@ const SupplierLedgerPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();  const history = useHistory();  const user = useAppSelector(selectCurrentUser);
   const userRoles = user?.roles || [];
   const hasUpdatePermission = hasPermission(userRoles, 'SUPPLIER_UPDATE');
+  const hasManagePermission = hasPermission(userRoles, 'SUPPLIER_MANAGE');
+  
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  // Bank account modals
+  const [showBankAccountsModal, setShowBankAccountsModal] = useState(false);
+  const [showBankAccountFormModal, setShowBankAccountFormModal] = useState(false);
+  const [editingBankAccount, setEditingBankAccount] = useState<BankAccount | null>(null);
+  const [deletingBankAccount, setDeletingBankAccount] = useState<BankAccount | null>(null);
 
   // Payment form state
   const [amount, setAmount] = useState('');
@@ -63,11 +79,18 @@ const SupplierLedgerPage: React.FC = () => {
 
   const { data: supplierData, isLoading: loadingSupplier } = useGetSupplierByIdQuery(id!);
   const { data: ledgerData, isLoading: loadingLedger, refetch } = useGetSupplierLedgerQuery({ id: id!, page: 1, limit: 50 });
+  const { data: bankAccountsData, isLoading: loadingBankAccounts } = useGetBankAccountsQuery(id!);
   const [makePayment, { isLoading: processingPayment }] = useMakeSupplierPaymentMutation();
+  const [createBankAccount, { isLoading: creatingBankAccount }] = useCreateBankAccountMutation();
+  const [updateBankAccount, { isLoading: updatingBankAccount }] = useUpdateBankAccountMutation();
+  const [deleteBankAccount, { isLoading: deletingAccount }] = useDeleteBankAccountMutation();
+  const [setPrimaryBankAccount, { isLoading: settingPrimary }] = useSetPrimaryBankAccountMutation();
 
   const supplier = supplierData?.data;
   const entries = ledgerData?.data?.entries || [];
   const balance = ledgerData?.data?.balance || 0;
+  const bankAccounts = bankAccountsData?.data || [];
+  const primaryBankAccount = bankAccounts.find((acc) => acc.is_primary) || null;
 
   const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
     await refetch();
@@ -78,9 +101,78 @@ const SupplierLedgerPage: React.FC = () => {
       history.push(`/purchases/${entry.ref_id}`);
     }
   };
+
+  // Bank account handlers
+  const handleAddBankAccount = () => {
+    setEditingBankAccount(null);
+    setShowBankAccountsModal(false);
+    setShowBankAccountFormModal(true);
+  };
+
+  const handleEditBankAccount = (account: BankAccount) => {
+    setEditingBankAccount(account);
+    setShowBankAccountsModal(false);
+    setShowBankAccountFormModal(true);
+  };
+
+  const handleDeleteBankAccount = (account: BankAccount) => {
+    setDeletingBankAccount(account);
+  };
+
+  const confirmDeleteBankAccount = async () => {
+    if (!deletingBankAccount) return;
+
+    try {
+      await deleteBankAccount({
+        supplierId: id!,
+        bankAccountId: deletingBankAccount.id,
+      }).unwrap();
+      notificationService.success('Bank account deactivated successfully');
+      setDeletingBankAccount(null);
+    } catch (error) {
+      notificationService.handleApiError(error);
+    }
+  };
+
+  const handleSetPrimary = async (account: BankAccount) => {
+    try {
+      await setPrimaryBankAccount({
+        supplierId: id!,
+        bankAccountId: account.id,
+      }).unwrap();
+      notificationService.success('Primary account updated successfully');
+    } catch (error) {
+      notificationService.handleApiError(error);
+    }
+  };
+
+  const handleBankAccountFormSubmit = async (formData: BankAccountFormData) => {
+    try {
+      if (editingBankAccount) {
+        await updateBankAccount({
+          supplierId: id!,
+          bankAccountId: editingBankAccount.id,
+          ...formData,
+        }).unwrap();
+        notificationService.success('Bank account updated successfully');
+      } else {
+        await createBankAccount({
+          supplierId: id!,
+          ...formData,
+        }).unwrap();
+        notificationService.success('Bank account added successfully');
+      }
+      setShowBankAccountFormModal(false);
+      setEditingBankAccount(null);
+      setShowBankAccountsModal(true);
+    } catch (error) {
+      notificationService.handleApiError(error);
+    }
+  };
+  
   const handleMakePayment = async () => {
     if (!amount || parseFloat(amount) <= 0) {
-      notificationService.warning('Please enter a valid amount');
+      notificationService.warning(t('suppliers.enterValidAmount'));
       return;
     }
 
@@ -97,7 +189,7 @@ const SupplierLedgerPage: React.FC = () => {
       setPaymentMode('CASH');
       setNotes('');
       setShowPaymentModal(false);
-      notificationService.success('Payment recorded successfully');
+      notificationService.success(t('suppliers.paymentRecordedSuccess'));
       refetch();
     } catch (error) {
       notificationService.handleApiError(error);
@@ -112,7 +204,7 @@ const SupplierLedgerPage: React.FC = () => {
             <IonButtons slot="start">
               <IonBackButton defaultHref="/suppliers" />
             </IonButtons>
-            <IonTitle>Supplier Ledger</IonTitle>
+            <IonTitle>{t('suppliers.ledger.title')}</IonTitle>
           </IonToolbar>
         </IonHeader>
         <IonContent>
@@ -132,11 +224,11 @@ const SupplierLedgerPage: React.FC = () => {
             <IonButtons slot="start">
               <IonBackButton defaultHref="/suppliers" />
             </IonButtons>
-            <IonTitle>Supplier Ledger</IonTitle>
+            <IonTitle>{t('suppliers.ledger.title')}</IonTitle>
           </IonToolbar>
         </IonHeader>
         <IonContent>
-          <EmptyState message="Supplier not found" />
+          <EmptyState message={t('suppliers.ledger.supplierNotFound')} />
         </IonContent>
       </IonPage>
     );
@@ -175,7 +267,14 @@ const SupplierLedgerPage: React.FC = () => {
 
   return (
     <IonPage>
-      <Navbar title="Supplier Ledger" />
+      <IonHeader>
+        <IonToolbar>
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/suppliers" />
+          </IonButtons>
+          <IonTitle>{t('suppliers.ledger.title')}</IonTitle>
+        </IonToolbar>
+      </IonHeader>
       <IonContent className="ion-padding">
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent />
@@ -188,16 +287,16 @@ const SupplierLedgerPage: React.FC = () => {
           </IonCardHeader>
           <IonCardContent>
             <div style={{ marginBottom: '12px' }}>
-              <strong>Phone:</strong> {supplier.phone}
+              <strong>{t('suppliers.ledger.phone')}</strong> {supplier.phone}
             </div>
             {supplier.email && (
               <div style={{ marginBottom: '12px' }}>
-                <strong>Email:</strong> {supplier.email}
+                <strong>{t('suppliers.ledger.email')}</strong> {supplier.email}
               </div>
             )}
             {supplier.address && (
               <div style={{ marginBottom: '12px' }}>
-                <strong>Address:</strong> {supplier.address}
+                <strong>{t('suppliers.ledger.address')}</strong> {supplier.address}
               </div>
             )}
 
@@ -207,10 +306,10 @@ const SupplierLedgerPage: React.FC = () => {
                 <IonRow>
                   <IonCol size="12">
                     <div className="summary-item">
-                      <div className="summary-label">Current Balance</div>
+                      <div className="summary-label">{t('suppliers.ledger.currentBalance')}</div>
                       <div className={`summary-value balance ${balance > 0 ? 'credit' : 'debit'}`}>
                         {formatCurrency(Math.abs(balance))}
-                        {balance > 0 ? ' (Payable)' : balance < 0 ? ' (Advance)' : ''}
+                        {balance > 0 ? ` ${t('suppliers.ledger.payable')}` : balance < 0 ? ` ${t('suppliers.ledger.advance')}` : ''}
                       </div>
                     </div>
                   </IonCol>
@@ -220,8 +319,20 @@ const SupplierLedgerPage: React.FC = () => {
           </IonCardContent>
         </IonCard>
 
+        {/* Primary Bank Account Card */}
+        <PrimaryBankAccountCard
+          bankAccount={primaryBankAccount}
+          onManageClick={() => {
+            console.log('DEBUG - onManageClick called, hasPermission:', hasManagePermission);
+            console.log('DEBUG - Setting showBankAccountsModal to true');
+            setShowBankAccountsModal(true);
+            console.log('DEBUG - After setState call');
+          }}
+          hasPermission={hasManagePermission}
+        />
+
         {entries.length === 0 ? (
-          <EmptyState message="No transactions found" />
+          <EmptyState message={t('suppliers.ledger.noTransactions')} />
         ) : (
           <IonGrid>
             <IonRow>
@@ -230,7 +341,7 @@ const SupplierLedgerPage: React.FC = () => {
                 <IonCard className="ledger-card credit-card">
                   <IonCardHeader>
                     <IonCardTitle>
-                      Credit (Purchases)
+                      {t('suppliers.ledger.creditPurchases')}
                       <IonBadge color="danger" style={{ marginLeft: '8px' }}>
                         {creditEntries.length}
                       </IonBadge>
@@ -238,7 +349,7 @@ const SupplierLedgerPage: React.FC = () => {
                   </IonCardHeader>
                   <IonCardContent>
                     {creditEntries.length === 0 ? (
-                      <EmptyState message="No purchase entries" />
+                      <EmptyState message={t('suppliers.ledger.noPurchaseEntries')} />
                     ) : (
                       <IonList>
                         {creditEntries.map((entry) => (
@@ -277,7 +388,7 @@ const SupplierLedgerPage: React.FC = () => {
                 <IonCard className="ledger-card debit-card">
                   <IonCardHeader>
                     <IonCardTitle>
-                      Debit (Payments Made)
+                      {t('suppliers.ledger.debitPayments')}
                       <IonBadge color="success" style={{ marginLeft: '8px' }}>
                         {debitEntries.length}
                       </IonBadge>
@@ -285,7 +396,7 @@ const SupplierLedgerPage: React.FC = () => {
                   </IonCardHeader>
                   <IonCardContent>
                     {debitEntries.length === 0 ? (
-                      <EmptyState message="No payment entries" />
+                      <EmptyState message={t('suppliers.ledger.noPaymentEntries')} />
                     ) : (
                       <IonList>
                         {debitEntries.map((entry) => (
@@ -336,7 +447,7 @@ const SupplierLedgerPage: React.FC = () => {
           <IonModal isOpen={true} onDidDismiss={() => setShowPaymentModal(false)}>
             <IonHeader>
               <IonToolbar>
-                <IonTitle>Make Payment</IonTitle>
+                <IonTitle>{t('suppliers.ledger.makePayment')}</IonTitle>
                 <IonButtons slot="end">
                   <IonButton onClick={() => setShowPaymentModal(false)}>
                     <IonIcon icon={close} />
@@ -356,7 +467,7 @@ const SupplierLedgerPage: React.FC = () => {
               <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
                 <div style={{ flex: 1 }}>
                   <Input
-                    label="Amount"
+                    label={t('suppliers.ledger.amount')}
                     value={amount}
                     onChange={setAmount}
                     type="number"
@@ -369,14 +480,14 @@ const SupplierLedgerPage: React.FC = () => {
                     onClick={() => setAmount(balance.toString())}
                     style={{ marginBottom: '0' }}
                   >
-                    Pay Full
+                    {t('suppliers.ledger.payFull')}
                   </IonButton>
                 )}
               </div>
 
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                  Payment Mode
+                  {t('suppliers.ledger.paymentMode')}
                 </label>
                 <IonSelect
                   value={paymentMode}
@@ -388,18 +499,18 @@ const SupplierLedgerPage: React.FC = () => {
                     padding: '8px'
                   }}
                 >
-                  <IonSelectOption value="CASH">Cash</IonSelectOption>
-                  <IonSelectOption value="UPI">UPI</IonSelectOption>
-                  <IonSelectOption value="CARD">Card</IonSelectOption>
-                  <IonSelectOption value="BANK_TRANSFER">Bank Transfer</IonSelectOption>
+                  <IonSelectOption value="CASH">{t('suppliers.ledger.cash')}</IonSelectOption>
+                  <IonSelectOption value="UPI">{t('suppliers.ledger.upi')}</IonSelectOption>
+                  <IonSelectOption value="CARD">{t('suppliers.ledger.card')}</IonSelectOption>
+                  <IonSelectOption value="BANK_TRANSFER">{t('suppliers.ledger.bankTransfer')}</IonSelectOption>
                 </IonSelect>
               </div>
 
               <Input
-                label="Notes (Optional)"
+                label={t('suppliers.ledger.notesOptional')}
                 value={notes}
                 onChange={setNotes}
-                placeholder="Add payment notes..."
+                placeholder={t('suppliers.ledger.addPaymentNotes')}
               />
 
               <Button
@@ -409,12 +520,63 @@ const SupplierLedgerPage: React.FC = () => {
                 fullWidth
                 size="large"
               >
-                Record Payment
+                {t('suppliers.ledger.recordPayment')}
               </Button>
             </IonContent>
           </IonModal>
         )}
       </IonContent>
+
+      {/* Bank Account Management Modal */}
+      {showBankAccountsModal && (
+        <BankAccountModal
+          isOpen={showBankAccountsModal}
+          onClose={() => {
+            console.log('DEBUG - BankAccountModal onClose called');
+            setShowBankAccountsModal(false);
+          }}
+          supplierId={id!}
+          bankAccounts={bankAccounts}
+          onAddClick={handleAddBankAccount}
+          onEditClick={handleEditBankAccount}
+          onDeleteClick={handleDeleteBankAccount}
+          onSetPrimaryClick={handleSetPrimary}
+        />
+      )}
+
+      {/* Bank Account Form Modal */}
+      {showBankAccountFormModal && (
+        <BankAccountFormModal
+          isOpen={showBankAccountFormModal}
+          onClose={() => {
+            setShowBankAccountFormModal(false);
+            setEditingBankAccount(null);
+          }}
+          onSubmit={handleBankAccountFormSubmit}
+          isLoading={creatingBankAccount || updatingBankAccount}
+          editingAccount={editingBankAccount}
+        />
+      )}
+
+      {/* Delete Confirmation Alert */}
+      <IonAlert
+        isOpen={!!deletingBankAccount}
+        onDidDismiss={() => setDeletingBankAccount(null)}
+        header="Deactivate Bank Account"
+        message={`Are you sure you want to deactivate the bank account at ${deletingBankAccount?.bank_name}? This action can be undone by adding the account again.`}
+        buttons={[
+          {
+            text: 'Cancel',
+            role: 'cancel',
+            handler: () => setDeletingBankAccount(null),
+          },
+          {
+            text: 'Deactivate',
+            role: 'destructive',
+            handler: confirmDeleteBankAccount,
+          },
+        ]}
+      />
     </IonPage>
   );
 };

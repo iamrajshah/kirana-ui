@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   IonPage,
   IonContent,
@@ -27,6 +28,7 @@ import { formatCurrency, formatDateTime } from '@utils/helpers';
 import './CustomerLedgerPage.css';
 
 export const CustomerLedgerPage: React.FC = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
   
@@ -61,11 +63,11 @@ export const CustomerLedgerPage: React.FC = () => {
             <IonButtons slot="start">
               <IonBackButton defaultHref="/customers" />
             </IonButtons>
-            <IonTitle>Customer Ledger</IonTitle>
+            <IonTitle>{t('customers.ledger.title')}</IonTitle>
           </IonToolbar>
         </IonHeader>
         <IonContent>
-          <EmptyState message="Customer not found" />
+          <EmptyState message={t('customers.ledger.customerNotFound')} />
         </IonContent>
       </IonPage>
     );
@@ -103,7 +105,7 @@ export const CustomerLedgerPage: React.FC = () => {
           <IonButtons slot="start">
             <IonBackButton defaultHref="/customers" />
           </IonButtons>
-          <IonTitle>Customer Ledger</IonTitle>
+          <IonTitle>{t('customers.ledger.title')}</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
@@ -114,11 +116,11 @@ export const CustomerLedgerPage: React.FC = () => {
           </IonCardHeader>
           <IonCardContent>
             <div style={{ marginBottom: '12px' }}>
-              <strong>Phone:</strong> {customer.phone}
+              <strong>{t('customers.ledger.phone')}</strong> {customer.phone}
             </div>
             {customer.email && (
               <div style={{ marginBottom: '12px' }}>
-                <strong>Email:</strong> {customer.email}
+                <strong>{t('customers.ledger.email')}</strong> {customer.email}
               </div>
             )}
             {summary && (
@@ -127,19 +129,19 @@ export const CustomerLedgerPage: React.FC = () => {
                   <IonRow>
                     <IonCol size="4">
                       <div className="summary-item">
-                        <div className="summary-label">Total Debit</div>
+                        <div className="summary-label">{t('customers.ledger.totalDebit')}</div>
                         <div className="summary-value debit">{formatCurrency(summary.totalDebit)}</div>
                       </div>
                     </IonCol>
                     <IonCol size="4">
                       <div className="summary-item">
-                        <div className="summary-label">Total Credit</div>
+                        <div className="summary-label">{t('customers.ledger.totalCredit')}</div>
                         <div className="summary-value credit">{formatCurrency(summary.totalCredit)}</div>
                       </div>
                     </IonCol>
                     <IonCol size="4">
                       <div className="summary-item">
-                        <div className="summary-label">Balance</div>
+                        <div className="summary-label">{t('customers.ledger.balance')}</div>
                         <div className={`summary-value balance ${summary.balance >= 0 ? 'debit' : 'credit'}`}>
                           {formatCurrency(Math.abs(summary.balance))}
                         </div>
@@ -153,7 +155,7 @@ export const CustomerLedgerPage: React.FC = () => {
         </IonCard>
 
         {ledger.length === 0 ? (
-          <EmptyState message="No transactions found" />
+          <EmptyState message={t('customers.ledger.noTransactions')} />
         ) : (
           <IonGrid>
             <IonRow>
@@ -162,7 +164,7 @@ export const CustomerLedgerPage: React.FC = () => {
                 <IonCard className="ledger-card debit-card">
                   <IonCardHeader>
                     <IonCardTitle>
-                      Debit (Credit Given)
+                      {t('customers.ledger.debitCreditGiven')}
                       <IonBadge color="danger" style={{ marginLeft: '8px' }}>
                         {formatCurrency(summary?.totalDebit || 0)}
                       </IonBadge>
@@ -170,7 +172,7 @@ export const CustomerLedgerPage: React.FC = () => {
                   </IonCardHeader>
                   <IonCardContent>
                     {debitEntries.length === 0 ? (
-                      <EmptyState message="No debit entries" />
+                      <EmptyState message={t('customers.ledger.noDebitEntries')} />
                     ) : (
                       <IonList>
                         {debitEntries.map((entry) => (
@@ -210,7 +212,7 @@ export const CustomerLedgerPage: React.FC = () => {
                 <IonCard className="ledger-card credit-card">
                   <IonCardHeader>
                     <IonCardTitle>
-                      Credit (Payments Received)
+                      {t('customers.ledger.creditPaymentsReceived')}
                       <IonBadge color="success" style={{ marginLeft: '8px' }}>
                         {formatCurrency(summary?.totalCredit || 0)}
                       </IonBadge>
@@ -218,7 +220,7 @@ export const CustomerLedgerPage: React.FC = () => {
                   </IonCardHeader>
                   <IonCardContent>
                     {creditEntries.length === 0 ? (
-                      <EmptyState message="No credit entries" />
+                      <EmptyState message={t('customers.ledger.noCreditEntries')} />
                     ) : (
                       <IonList>
                         {creditEntries.map((entry) => (

@@ -9,7 +9,7 @@ export const inventoryApi = apiSlice.injectEndpoints({
     >({
       query: (params = {}) => ({
         url: '/inventory',
-        params,
+        params: params || {},
       }),
       providesTags: ['Inventory'],
     }),

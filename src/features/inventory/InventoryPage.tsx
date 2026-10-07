@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Navbar } from '@components/Navbar';
 import {
   IonContent,
@@ -15,6 +15,7 @@ import {
   IonHeader,
   IonToolbar,
   IonTitle,
+  IonListHeader,
 } from '@ionic/react';
 import { create, close } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
@@ -39,6 +40,25 @@ export const InventoryPage: React.FC = () => {
 
   const inventory = data?.data || [];
 
+  // Group inventory by category
+  const groupedInventory = useMemo(() => {
+    const groups: Record<string, Inventory[]> = {};
+    
+    inventory.forEach((item) => {
+      const categoryName = item.variant?.product?.category?.name || 'Uncategorized';
+      if (!groups[categoryName]) {
+        groups[categoryName] = [];
+      }
+      groups[categoryName].push(item);
+    });
+    
+    return groups;
+  }, [inventory]);
+
+  const categoryNames = useMemo(() => {
+    return Object.keys(groupedInventory).sort();
+  }, [groupedInventory]);
+
   const handleEditClick = (item: Inventory) => {
     setSelectedItem(item);
     setQuantity(item.quantity.toString());
@@ -51,24 +71,16 @@ export const InventoryPage: React.FC = () => {
       if (!selectedItem) return;
 
       if (!quantity || parseFloat(quantity) < 0) {
-        setErrorMessage('Valid quantity is required');
+        setErrorMessage(t('inventory.validQuantityRequired'));
         setShowError(true);
         return;
       }
-
-      console.log('📦 Updating inventory:', {
-        variant_id: selectedItem.variant_id,
-        quantity: parseFloat(quantity),
-        low_stock_threshold: lowStockThreshold ? parseInt(lowStockThreshold) : undefined,
-      });
 
       await updateInventory({
         variant_id: selectedItem.variant_id,
         quantity: parseFloat(quantity),
         low_stock_threshold: lowStockThreshold ? parseInt(lowStockThreshold) : undefined,
       }).unwrap();
-
-      console.log('✅ Inventory updated successfully');
 
       setShowSuccess(true);
       setShowModal(false);
@@ -90,34 +102,58 @@ export const InventoryPage: React.FC = () => {
           {isLoading ? (
             <Loading isOpen={isLoading} />
           ) : inventory.length === 0 ? (
-            <EmptyState message="No inventory items found" />
+            <EmptyState message={t('inventory.noInventoryItems')} />
           ) : (
-            <IonList>
-              {inventory.map((item) => (
-                <IonItem key={item.variant_id}>
-                  <IonLabel>
-                    <h2 className="font-semibold">{item.variant?.product?.name}</h2>
-                    <p className="text-gray-600">SKU: {item.variant?.sku}</p>
-                    <p className="text-sm">
-                      {t('inventory.lowStockThreshold')}: {item.low_stock_threshold}
-                    </p>
-                  </IonLabel>
-                  <div slot="end" className="flex items-center gap-2">
-                    <div className="text-right">
-                      <IonBadge color={item.is_low_stock ? 'danger' : 'success'} className="text-lg">
-                        {formatNumber(item.quantity)}
-                      </IonBadge>
-                      {item.is_low_stock && (
-                        <p className="text-xs text-danger mt-1">{t('inventory.lowStockWarning')}</p>
-                      )}
-                    </div>
-                    <IonButton onClick={() => handleEditClick(item)} fill="clear">
-                      <IonIcon icon={create} />
-                    </IonButton>
-                  </div>
-                </IonItem>
+            <>
+              {categoryNames.map((categoryName) => (
+                <div key={categoryName} style={{ marginBottom: '16px' }}>
+                  <IonListHeader style={{ 
+                    fontSize: '16px', 
+                    fontWeight: '700', 
+                    color: 'var(--ion-color-primary)',
+                    padding: '8px 16px',
+                    background: 'var(--ion-color-light)',
+                    borderRadius: '8px',
+                    marginBottom: '8px'
+                  }}>
+                    {categoryName}
+                    <IonBadge 
+                      color="primary" 
+                      style={{ marginLeft: '8px' }}
+                    >
+                      {groupedInventory[categoryName].length}
+                    </IonBadge>
+                  </IonListHeader>
+                  
+                  <IonList>
+                    {groupedInventory[categoryName].map((item) => (
+                      <IonItem key={item.variant_id}>
+                        <IonLabel>
+                          <h2 className="font-semibold">{item.variant?.product?.name}</h2>
+                          <p className="text-gray-600">SKU: {item.variant?.sku}</p>
+                          <p className="text-sm">
+                            {t('inventory.lowStockThreshold')}: {item.low_stock_threshold}
+                          </p>
+                        </IonLabel>
+                        <div slot="end" className="flex items-center gap-2">
+                          <div className="text-right">
+                            <IonBadge color={item.is_low_stock ? 'danger' : 'success'} className="text-lg">
+                              {formatNumber(item.quantity)}
+                            </IonBadge>
+                            {item.is_low_stock && (
+                              <p className="text-xs text-danger mt-1">{t('inventory.lowStockWarning')}</p>
+                            )}
+                          </div>
+                          <IonButton onClick={() => handleEditClick(item)} fill="clear">
+                            <IonIcon icon={create} />
+                          </IonButton>
+                        </div>
+                      </IonItem>
+                    ))}
+                  </IonList>
+                </div>
               ))}
-            </IonList>
+            </>
           )}
         </div>
 
@@ -126,7 +162,7 @@ export const InventoryPage: React.FC = () => {
             <IonPage>
               <IonHeader>
                 <IonToolbar>
-                  <IonTitle>Update Inventory</IonTitle>
+                  <IonTitle>{t('inventory.updateInventoryTitle')}</IonTitle>
                   <IonButtons slot="end">
                     <IonButton onClick={() => setShowModal(false)}>
                       <IonIcon icon={close} />
@@ -142,28 +178,28 @@ export const InventoryPage: React.FC = () => {
                   </div>
 
                   <Input
-                    label="Quantity *"
+                    label={t('inventory.quantityRequired')}
                     type="number"
                     value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    placeholder="Enter quantity"
+                    onChange={setQuantity}
+                    placeholder={t('inventory.enterQuantityPlaceholder')}
                   />
 
                   <Input
-                    label="Low Stock Threshold"
+                    label={t('inventory.lowStockThresholdLabel')}
                     type="number"
                     value={lowStockThreshold}
-                    onChange={(e) => setLowStockThreshold(e.target.value)}
-                    placeholder="Enter low stock threshold"
+                    onChange={setLowStockThreshold}
+                    placeholder={t('inventory.enterLowStockPlaceholder')}
                   />
 
                   <div className="mt-6">
                     <Button
                       onClick={handleUpdateInventory}
                       disabled={updating || !quantity}
-                      isLoading={updating}
+                      loading={updating}
                     >
-                      Update Inventory
+                      {t('inventory.updateInventoryButton')}
                     </Button>
                   </div>
                 </div>
@@ -174,7 +210,7 @@ export const InventoryPage: React.FC = () => {
 
         <IonToast
           isOpen={showSuccess}
-          message="Inventory updated successfully"
+          message={t('inventory.inventoryUpdatedSuccess')}
           duration={2000}
           color="success"
           onDidDismiss={() => setShowSuccess(false)}

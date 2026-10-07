@@ -176,8 +176,8 @@ export const CustomersPage: React.FC = () => {
                             style={{ color: customer.credit_balance > 0 ? 'var(--ion-color-danger)' : 'var(--ion-color-success)' }}
                           >
                             {customer.credit_balance > 0 
-                              ? `${t('customers.creditBalance')}: ${formatCurrency(customer.credit_balance)}`
-                              : `You Owe: ${formatCurrency(Math.abs(customer.credit_balance))}`
+                              ? `${t('customers.owesYou')}: ${formatCurrency(customer.credit_balance)}`
+                              : `${t('customers.youOwe')}: ${formatCurrency(Math.abs(customer.credit_balance))}`
                             }
                           </p>
                         )}

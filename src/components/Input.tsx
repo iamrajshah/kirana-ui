@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { IonInput, IonIcon } from '@ionic/react';
+import { IonInput } from '@ionic/react';
 import { eye, eyeOff } from 'ionicons/icons';
 
 interface InputProps {
@@ -45,11 +45,12 @@ export const Input: React.FC<InputProps> = ({
           errorText={error}
         />
         {isPasswordField && (
-          <div
+          <button
+            type="button"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
             onClick={(e) => {
-              e.preventDefault();
               e.stopPropagation();
-              setShowPassword(!showPassword);
+              setShowPassword((isVisible) => !isVisible);
             }}
             style={{
               position: 'absolute',
@@ -59,17 +60,24 @@ export const Input: React.FC<InputProps> = ({
               cursor: 'pointer',
               zIndex: 10,
               padding: '4px',
+              border: 0,
+              background: 'transparent',
             }}
           >
-            <IonIcon
-              icon={showPassword ? eyeOff : eye}
-              style={{ 
-                fontSize: '22px',
-                color: '#666',
+            {/* IonIcon can retain its previous shadow-DOM SVG when its icon prop changes. */}
+            <img
+              src={showPassword ? eye : eyeOff}
+              alt=""
+              aria-hidden="true"
+              style={{
+                width: '22px',
+                height: '22px',
+                display: 'block',
+                opacity: 0.55,
                 pointerEvents: 'none',
               }}
             />
-          </div>
+          </button>
         )}
       </div>
     </div>

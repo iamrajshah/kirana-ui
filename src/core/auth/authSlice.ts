@@ -93,4 +93,4 @@ export default authSlice.reducer;
 // Selectors
 export const selectCurrentUser = (state: { auth: AuthState }) => state.auth.user;
 export const selectIsAuthenticated = (state: { auth: AuthState }) => !!state.auth.accessToken;
-export const selectUserRole = (state: { auth: AuthState }) => state.auth.user?.role;
+export const selectUserRole = (state: { auth: AuthState }) => state.auth.user?.roles?.[0];

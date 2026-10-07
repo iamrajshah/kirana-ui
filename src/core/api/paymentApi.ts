@@ -9,7 +9,7 @@ export const paymentApi = apiSlice.injectEndpoints({
     >({
       query: (params = {}) => ({
         url: '/payments',
-        params,
+        params: params || {},
       }),
       providesTags: ['Payment'],
     }),
