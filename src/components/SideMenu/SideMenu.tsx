@@ -25,6 +25,7 @@ import {
   layers,
   cash,
   pricetags,
+  informationCircleOutline,
 } from 'ionicons/icons';
 import { useHistory } from 'react-router';
 import { useTranslation } from 'react-i18next';
@@ -171,6 +172,13 @@ export const SideMenu: React.FC = () => {
               </IonItem>
             </IonMenuToggle>
           )}
+
+          <IonMenuToggle>
+            <IonItem button onClick={() => handleNavigation(ROUTES.ABOUT)}>
+              <IonIcon icon={informationCircleOutline} slot="start" />
+              <IonLabel>About</IonLabel>
+            </IonItem>
+          </IonMenuToggle>
         </IonList>
       </IonContent>
     </IonMenu>

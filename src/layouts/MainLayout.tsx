@@ -27,6 +27,7 @@ import { ImportExportPage } from '@features/import-export/ImportExportPage';
 import { CategoriesPage } from '@features/categories/CategoriesPage';
 import SuppliersPage from '@features/suppliers/SuppliersPage';
 import PurchasesPage from '@features/purchases/PurchasesPage';
+import { AboutPage } from '@features/about/AboutPage';
 
 export const MainLayout: React.FC = () => {
   const { t } = useTranslation();
@@ -54,6 +55,7 @@ export const MainLayout: React.FC = () => {
           <Route exact path={ROUTES.USERS} component={UsersPage} />
           <Route exact path={ROUTES.CATEGORIES} component={CategoriesPage} />
           <Route exact path={ROUTES.IMPORT_EXPORT} component={ImportExportPage} />
+          <Route exact path={ROUTES.ABOUT} component={AboutPage} />
         </IonRouterOutlet>
 
         <IonTabBar slot="bottom">

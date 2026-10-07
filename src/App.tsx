@@ -14,9 +14,7 @@ import { CustomerLedgerPage } from '@features/customers/CustomerLedgerPage';
 import { ProductDetailPage } from '@features/products/ProductDetailPage';
 import { AddProductBarcodePage } from '@features/products/AddProductBarcodePage';
 import InvoiceDetailPage from '@features/invoices/InvoiceDetailPage';
-import SuppliersPage from '@features/suppliers/SuppliersPage';
 import SupplierLedgerPage from '@features/suppliers/SupplierLedgerPage';
-import PurchasesPage from '@features/purchases/PurchasesPage';
 import CreatePurchasePage from '@features/purchases/CreatePurchasePage';
 import PurchaseDetailPage from '@features/purchases/PurchaseDetailPage';
 import ToastContainer from '@components/ToastContainer';
@@ -71,6 +69,7 @@ const App: React.FC = () => {
             <Route exact path="/" render={() => <Redirect to={ROUTES.LOGIN} />} />
             <Route exact path={ROUTES.PROFILE} render={() => <PrivateRoute><ProfilePage /></PrivateRoute>} />
             <Route exact path={ROUTES.CHANGE_PASSWORD} render={() => <PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
+            <Route exact path={ROUTES.ABOUT} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
             <Route exact path="/customers/:id/ledger" render={() => <PrivateRoute><CustomerLedgerPage /></PrivateRoute>} />
             <Route exact path="/products/:id" render={() => <PrivateRoute><ProductDetailPage /></PrivateRoute>} />
             <Route exact path={ROUTES.PRODUCT_BARCODE} render={() => <PrivateRoute><AddProductBarcodePage /></PrivateRoute>} />
