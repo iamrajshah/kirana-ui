@@ -8,6 +8,7 @@ import { setCredentials } from '@core/auth/authSlice';
 import { Button, Input } from '@components';
 import { APP_NAME } from '@core/constants';
 import { isValidEmail, isValidPhone } from '@utils/helpers';
+import { apiErrorMessage } from '@core/services/notificationService';
 import { useTheme } from '../../contexts/useTheme';
 
 export const LoginPage: React.FC = () => {
@@ -68,11 +69,10 @@ export const LoginPage: React.FC = () => {
       const details = err && typeof err === 'object'
         ? err as { data?: { message?: unknown }; message?: unknown; status?: unknown }
         : null;
+      const parsedMessage = details ? apiErrorMessage(details, '', true) : '';
       
-      if (typeof details?.data?.message === 'string' && details.data.message) {
-        errorMessage = details.data.message;
-      } else if (typeof details?.message === 'string' && details.message) {
-        errorMessage = details.message;
+      if (parsedMessage) {
+        errorMessage = parsedMessage;
       } else if (details?.status === 401) {
         errorMessage = t('auth.invalidCredentials') || 'Invalid email/phone or password';
       } else if (details?.status === 500) {
