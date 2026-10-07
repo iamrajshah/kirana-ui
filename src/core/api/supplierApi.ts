@@ -94,7 +94,7 @@ export const supplierApi = apiSlice.injectEndpoints({
       invalidatesTags: (_result, _error, { id }) => [{ type: 'Supplier', id }],
     }),
     addSupplierOpeningBalance: builder.mutation<
-      ApiResponse<any>,
+      ApiResponse<unknown>,
       { id: string; amount: number }
     >({
       query: ({ id, amount }) => ({
@@ -115,7 +115,7 @@ export const supplierApi = apiSlice.injectEndpoints({
       providesTags: (_result, _error, { id }) => [{ type: 'Supplier', id }],
     }),
     makeSupplierPayment: builder.mutation<
-      ApiResponse<any>,
+      ApiResponse<unknown>,
       { id: string; amount: number; payment_mode: 'CASH' | 'UPI' | 'CARD' | 'BANK'; description?: string }
     >({
       query: ({ id, ...body }) => ({

@@ -1,21 +1,20 @@
 import React, { useState } from 'react';
 import { IonContent, IonPage, IonToast, IonSelect, IonSelectOption, IonIcon, IonToggle } from '@ionic/react';
-import { useHistory } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { language as languageIcon, contrast } from 'ionicons/icons';
 import { useLoginMutation } from '@core/api/authApi';
 import { useAppDispatch } from '@hooks/useAppDispatch';
 import { setCredentials } from '@core/auth/authSlice';
 import { Button, Input } from '@components';
-import { ROUTES, APP_NAME } from '@core/constants';
+import { APP_NAME } from '@core/constants';
 import { isValidEmail, isValidPhone } from '@utils/helpers';
-import { useTheme } from '../../contexts/ThemeContext';
+import { apiErrorMessage } from '@core/services/notificationService';
+import { useTheme } from '../../contexts/useTheme';
 
 export const LoginPage: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const history = useHistory();
   const dispatch = useAppDispatch();
-  const [login, { isLoading }] = useLoginMutation();
+  const [login] = useLoginMutation();
   const { theme, toggleTheme } = useTheme();
 
   const [emailOrPhone, setEmailOrPhone] = useState('');
@@ -63,18 +62,20 @@ export const LoginPage: React.FC = () => {
       } else {
         setError(response.message || t('auth.loginError') || 'Login failed');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Login error:', err);
       // Handle different error types
       let errorMessage = t('auth.loginError') || 'Login failed';
+      const details = err && typeof err === 'object'
+        ? err as { data?: { message?: unknown }; message?: unknown; status?: unknown }
+        : null;
+      const parsedMessage = details ? apiErrorMessage(details, '', true) : '';
       
-      if (err?.data?.message) {
-        errorMessage = err.data.message;
-      } else if (err?.message) {
-        errorMessage = err.message;
-      } else if (err?.status === 401) {
+      if (parsedMessage) {
+        errorMessage = parsedMessage;
+      } else if (details?.status === 401) {
         errorMessage = t('auth.invalidCredentials') || 'Invalid email/phone or password';
-      } else if (err?.status === 500) {
+      } else if (details?.status === 500) {
         errorMessage = t('auth.serverError') || 'Server error. Please try again later.';
       } else if (!navigator.onLine) {
         errorMessage = t('auth.networkError') || 'Network error. Please check your connection.';

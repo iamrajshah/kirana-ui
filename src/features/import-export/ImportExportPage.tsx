@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiErrorMessage } from '@core/services/notificationService';
 import { useTranslation } from 'react-i18next';
 import {
   IonPage,
@@ -51,14 +52,8 @@ export const ImportExportPage: React.FC = () => {
 
   const { data: importJobsResponse, isLoading: loadingJobs } = useGetImportJobsQuery({});
   const [uploadFile, { isLoading: uploading }] = useUploadImportFileMutation();
-  const [commitJob, { isLoading: committing }] = useCommitImportJobMutation();
+  const [commitJob] = useCommitImportJobMutation();
   
-  const [exportingCustomers, setExportingCustomers] = useState(false);
-  const [exportingProducts, setExportingProducts] = useState(false);
-  const [exportingInventory, setExportingInventory] = useState(false);
-  const [exportingCategories, setExportingCategories] = useState(false);
-  const [exportingInvoices, setExportingInvoices] = useState(false);
-  const [exportingLedger, setExportingLedger] = useState(false);
 
   const importJobs = importJobsResponse?.data || [];
   
@@ -109,9 +104,9 @@ export const ImportExportPage: React.FC = () => {
       // Reset file input
       const fileInput = document.getElementById('file-upload') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error uploading file:', error);
-      setErrorMessage(error?.data?.message || t('importExport.uploadFailed'));
+      setErrorMessage(apiErrorMessage(error, t('importExport.uploadFailed')));
       setShowError(true);
     }
   };
@@ -122,37 +117,15 @@ export const ImportExportPage: React.FC = () => {
     try {
       await commitJob(jobId).unwrap();
       setShowSuccess(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error committing job:', error);
-      setErrorMessage(error?.data?.message || t('importExport.commitFailed'));
+      setErrorMessage(apiErrorMessage(error, t('importExport.commitFailed')));
       setShowError(true);
     }
   };
 
   const handleExport = async (type: ExportType, format: 'CSV' | 'EXCEL' = 'CSV') => {
     console.log('⬇️ Exporting:', type, 'Format:', format);
-
-    // Set loading state
-    switch (type) {
-      case 'customers':
-        setExportingCustomers(true);
-        break;
-      case 'products':
-        setExportingProducts(true);
-        break;
-      case 'inventory':
-        setExportingInventory(true);
-        break;
-      case 'categories':
-        setExportingCategories(true);
-        break;
-      case 'invoices':
-        setExportingInvoices(true);
-        break;
-      case 'ledger':
-        setExportingLedger(true);
-        break;
-    }
 
     try {
       const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
@@ -179,18 +152,10 @@ export const ImportExportPage: React.FC = () => {
       URL.revokeObjectURL(url);
       
       setShowSuccess(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error exporting:', error);
-      setErrorMessage(error?.message || 'Failed to export data');
+      setErrorMessage(apiErrorMessage(error, 'Failed to export data', true));
       setShowError(true);
-    } finally {
-      // Clear loading state
-      setExportingCustomers(false);
-      setExportingProducts(false);
-      setExportingInventory(false);
-      setExportingCategories(false);
-      setExportingInvoices(false);
-      setExportingLedger(false);
     }
   };
 

@@ -1,6 +1,8 @@
 import { apiSlice } from './apiSlice';
 import type { ApiResponse, PaginatedApiResponse, Product, ProductVariant, BarcodeScanResponse, BarcodeLookupResponse, CreateProductFromBarcodeRequest, BarcodeProductResponse } from '../types';
 
+export type Packaging = 'POUCH' | 'BOTTLE' | 'CAN' | 'BOX' | 'PACKET' | 'JAR' | 'LOOSE';
+
 interface CreateProductRequest {
   name: string;
   category_id?: number | null;
@@ -14,7 +16,7 @@ interface UpdateProductRequest {
 interface CreateVariantRequest {
   brand?: string | null;
   size?: string | null;
-  packaging?: 'PACKET' | 'BOX' | 'BOTTLE' | 'LOOSE' | 'KG' | null;
+  packaging?: Packaging | null;
   price: number;
   gst_percent?: number | null;
   sku?: string | null;

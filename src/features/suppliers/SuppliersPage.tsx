@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import type { Supplier } from '../../core/api/supplierApi';
 import {
   IonPage,
   IonContent,
@@ -55,12 +56,12 @@ const SuppliersPage: React.FC = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
-  const [allSuppliers, setAllSuppliers] = useState<any[]>([]);
+  const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
   const limit = 50;
   const [showModal, setShowModal] = useState(false);
-  const [editingSupplier, setEditingSupplier] = useState<any>(null);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentSupplier, setPaymentSupplier] = useState<any>(null);
+  const [paymentSupplier, setPaymentSupplier] = useState<Supplier | null>(null);
 
   // Form state
   const [name, setName] = useState('');
@@ -91,8 +92,8 @@ const SuppliersPage: React.FC = () => {
         setAllSuppliers(data.data);
       } else {
         setAllSuppliers(prev => {
-          const existingIds = new Set(prev.map((s: any) => s.id));
-          const newSuppliers = data.data.filter((s: any) => !existingIds.has(s.id));
+          const existingIds = new Set(prev.map((s) => s.id));
+          const newSuppliers = data.data.filter((s) => !existingIds.has(s.id));
           return [...prev, ...newSuppliers];
         });
       }
@@ -153,7 +154,7 @@ const SuppliersPage: React.FC = () => {
     }
   };
 
-  const handleEditSupplier = (supplier: any) => {
+  const handleEditSupplier = (supplier: Supplier) => {
     setEditingSupplier(supplier);
     setName(supplier.name);
     setPhone(supplier.phone || '');

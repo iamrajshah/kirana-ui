@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   IonModal,
   IonHeader,
@@ -12,8 +12,6 @@ import {
   IonItem,
   IonLabel,
   IonBadge,
-  IonAlert,
-  IonText,
   IonCard,
   IonCardContent,
 } from '@ionic/react';

@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import type { InvoiceItem } from '@core/types';
+import { apiErrorMessage } from '@core/services/notificationService';
 import {
   IonContent,
   IonPage,
@@ -11,13 +13,7 @@ import {
   IonCardHeader,
   IonCardTitle,
   IonCardContent,
-  IonList,
-  IonItem,
-  IonLabel,
   IonBadge,
-  IonGrid,
-  IonRow,
-  IonCol,
   IonButton,
   IonIcon,
   IonSpinner,
@@ -25,7 +21,7 @@ import {
   IonToast,
 } from '@ionic/react';
 import { useParams, useHistory } from 'react-router-dom';
-import { downloadOutline, cash, closeCircle, checkmarkCircle, create } from 'ionicons/icons';
+import { cash, closeCircle, checkmarkCircle, create } from 'ionicons/icons';
 import { 
   useGetInvoiceByIdQuery, 
   useFinalizeInvoiceMutation,
@@ -36,7 +32,6 @@ import { useTranslation } from 'react-i18next';
 import { useCreatePaymentMutation } from '@core/api/paymentApi';
 import { PaymentModal } from '@components';
 import { formatDateTime, formatCurrency, generateIdempotencyKey } from '@utils/helpers';
-import notificationService from '@core/services/notificationService';
 import type { PaymentMode } from '@core/types';
 import './InvoiceDetailPage.css';
 
@@ -77,18 +72,6 @@ const InvoiceDetailPage: React.FC = () => {
     }
   };
 
-  const handleFinalizeInvoice = async () => {
-    try {
-      await finalizeInvoice(id).unwrap();
-      setToastMessage(t('invoiceDetail.invoiceFinalizedSuccess'));
-      setShowSuccessToast(true);
-      refetch();
-    } catch (error: any) {
-      setToastMessage(error?.data?.message || t('invoiceDetail.failedToFinalizeInvoice'));
-      setShowErrorToast(true);
-    }
-  };
-
   const handleCancelInvoice = async () => {
     try {
       await cancelInvoice({ id, reason: cancelReason || 'Cancelled by user' }).unwrap();
@@ -97,8 +80,8 @@ const InvoiceDetailPage: React.FC = () => {
       setShowCancelAlert(false);
       setCancelReason('');
       refetch();
-    } catch (error: any) {
-      setToastMessage(error?.data?.message || t('invoiceDetail.failedToCancelInvoice'));
+    } catch (error: unknown) {
+      setToastMessage(apiErrorMessage(error, t('invoiceDetail.failedToCancelInvoice')));
       setShowErrorToast(true);
     }
   };
@@ -126,9 +109,9 @@ const InvoiceDetailPage: React.FC = () => {
       setShowSuccessToast(true);
       setShowPaymentModal(false);
       refetch();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Payment error:', error);
-      setToastMessage(error?.data?.message || t('invoiceDetail.paymentFailed'));
+      setToastMessage(apiErrorMessage(error, t('invoiceDetail.paymentFailed')));
       setShowErrorToast(true);
       throw error;
     }
@@ -243,7 +226,7 @@ const InvoiceDetailPage: React.FC = () => {
           <IonCardContent>
             {invoice.items && invoice.items.length > 0 ? (
               <div className="space-y-2">
-                {invoice.items.map((item: any) => (
+                {invoice.items.map((item: InvoiceItem) => (
                   <div key={item.id} className="border-b pb-2 last:border-b-0">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">

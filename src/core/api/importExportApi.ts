@@ -17,12 +17,12 @@ export interface ImportJob {
     invalid: number;
     imported: number;
   };
-  error_details?: any;
+  error_details?: unknown;
   updated_at?: string;
 }
 
 export interface ImportJobDetails extends ImportJob {
-  preview_data?: any[];
+  preview_data?: Record<string, unknown>[];
   errors?: Array<{
     row: number;
     field: string;

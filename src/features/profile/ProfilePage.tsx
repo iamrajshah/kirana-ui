@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiErrorMessage } from '@core/services/notificationService';
 import {
   IonPage,
   IonContent,
@@ -27,7 +28,7 @@ import { useAppSelector } from '@core/hooks';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router';
 import { ROUTES } from '@core/constants';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useTheme } from '../../contexts/useTheme';
 import './ProfilePage.css';
 
 export const ProfilePage: React.FC = () => {
@@ -44,7 +45,7 @@ export const ProfilePage: React.FC = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const [updateProfile, { isLoading: updating }] = useUpdateProfileMutation();
+  const [updateProfile] = useUpdateProfileMutation();
 
   const languages = [
     { code: 'en', name: 'English' },
@@ -74,7 +75,7 @@ export const ProfilePage: React.FC = () => {
     }
 
     try {
-      const updateData: any = {};
+      const updateData: { name?: string; phone?: string; email?: string } = {};
       if (name.trim() !== user?.name) updateData.name = name.trim();
       if (phone.trim() !== user?.phone) updateData.phone = phone.trim();
       if (email.trim() !== user?.email) updateData.email = email.trim();
@@ -93,9 +94,9 @@ export const ProfilePage: React.FC = () => {
       setTimeout(() => {
         history.push(ROUTES.DASHBOARD);
       }, 1000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error updating profile:', error);
-      setErrorMessage(error?.data?.message || 'Failed to update profile');
+      setErrorMessage(apiErrorMessage(error, 'Failed to update profile'));
       setShowError(true);
     }
   };
