@@ -1,4 +1,5 @@
 {
+  "workspace": { "sell": "विक्री", "stock": "साठा आणि खरेदी", "manage": "व्यवस्थापन", "more": "इतर", "categories": "श्रेणी" },
   "common": {
     "appName": "किराणा POS",
     "loading": "लोड होत आहे...",

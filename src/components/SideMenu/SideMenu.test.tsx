@@ -5,7 +5,7 @@ import { SideMenu } from './SideMenu';
 
 const push = vi.fn();
 
-vi.mock('react-router', () => ({ useHistory: () => ({ push }) }));
+vi.mock('react-router', () => ({ useHistory: () => ({ push }), useLocation: () => ({ pathname: '/dashboard' }) }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('@core/hooks', () => ({ useAppSelector: () => ({ roles: ['CASHIER'] }) }));
 vi.mock('@core/auth/authSlice', () => ({ selectCurrentUser: vi.fn() }));
@@ -30,7 +30,7 @@ vi.mock('@ionic/react', () => {
 describe('SideMenu', () => {
   it('lets an authenticated cashier open About', () => {
     render(<SideMenu />);
-    fireEvent.click(screen.getByRole('button', { name: 'About' }));
+    fireEvent.click(screen.getByRole('button', { name: 'about.title' }));
     expect(push).toHaveBeenCalledWith('/about');
   });
 });

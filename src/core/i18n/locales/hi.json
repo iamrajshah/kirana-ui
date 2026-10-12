@@ -1,4 +1,5 @@
 {
+  "workspace": { "sell": "बिक्री", "stock": "स्टॉक और खरीद", "manage": "प्रबंधन", "more": "अन्य", "categories": "श्रेणियाँ" },
   "common": {
     "appName": "किराना POS",
     "loading": "लोड हो रहा है...",

@@ -1,18 +1,11 @@
 import React from 'react';
-import { IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonRouterOutlet } from '@ionic/react';
+import { IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonRouterOutlet, IonSplitPane } from '@ionic/react';
 import { Route, Redirect } from 'react-router';
-import {
-  home,
-  cart,
-  people,
-  cube,
-  cash,
-} from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import { ROUTES } from '@core/constants';
 import { useAppSelector } from '../core/hooks';
 import { selectCurrentUser } from '@core/auth/authSlice';
-import { hasAccessToTab } from '@core/permissions/rolePermissions';
+import { getNavigationItems } from '@core/navigation/navigation';
 import { SideMenu } from '@components';
 import { DashboardPage } from '@features/dashboard/DashboardPage';
 import { BillingPage } from '@features/billing/BillingPage';
@@ -28,17 +21,20 @@ import { CategoriesPage } from '@features/categories/CategoriesPage';
 import SuppliersPage from '@features/suppliers/SuppliersPage';
 import PurchasesPage from '@features/purchases/PurchasesPage';
 import { AboutPage } from '@features/about/AboutPage';
+import '@components/Workspace/workspace.css';
 
 export const MainLayout: React.FC = () => {
   const { t } = useTranslation();
   const user = useAppSelector(selectCurrentUser);
   const userRoles = user?.roles || [];
+  const primaryItems = getNavigationItems(userRoles).filter((item) => item.primary);
 
   return (
-    <>
+    <IonSplitPane contentId="main-content" when="(min-width: 992px)" className="workspace-split-pane">
       <SideMenu />
-      <IonTabs>
-        <IonRouterOutlet id="main-content">
+      <div id="main-content" className="workspace-main">
+      <IonTabs className="workspace-tabs">
+        <IonRouterOutlet>
           <Route exact path="/">
             <Redirect to={ROUTES.DASHBOARD} />
           </Route>
@@ -58,43 +54,16 @@ export const MainLayout: React.FC = () => {
           <Route exact path={ROUTES.ABOUT} component={AboutPage} />
         </IonRouterOutlet>
 
-        <IonTabBar slot="bottom">
-          {hasAccessToTab(userRoles, 'dashboard') && (
-            <IonTabButton tab="dashboard" href={ROUTES.DASHBOARD}>
-              <IonIcon icon={home} />
-              <IonLabel>{t('dashboard.title')}</IonLabel>
+        <IonTabBar slot="bottom" className="workspace-bottom-tabs">
+          {primaryItems.map((item) => (
+            <IonTabButton key={item.id} tab={item.id} href={item.href}>
+              <IonIcon icon={item.icon} />
+              <IonLabel>{t(item.labelKey)}</IonLabel>
             </IonTabButton>
-          )}
-
-          {hasAccessToTab(userRoles, 'billing') && (
-            <IonTabButton tab="billing" href={ROUTES.BILLING}>
-              <IonIcon icon={cart} />
-              <IonLabel>{t('billing.title')}</IonLabel>
-            </IonTabButton>
-          )}
-
-          {hasAccessToTab(userRoles, 'customers') && (
-            <IonTabButton tab="customers" href={ROUTES.CUSTOMERS}>
-              <IonIcon icon={people} />
-              <IonLabel>{t('customers.title')}</IonLabel>
-            </IonTabButton>
-          )}
-
-          {hasAccessToTab(userRoles, 'products') && (
-            <IonTabButton tab="products" href={ROUTES.PRODUCTS}>
-              <IonIcon icon={cube} />
-              <IonLabel>{t('products.title')}</IonLabel>
-            </IonTabButton>
-          )}
-
-          {hasAccessToTab(userRoles, 'payments') && (
-            <IonTabButton tab="payments" href={ROUTES.PAYMENTS}>
-              <IonIcon icon={cash} />
-              <IonLabel>{t('payments.title')}</IonLabel>
-            </IonTabButton>
-          )}
+          ))}
         </IonTabBar>
       </IonTabs>
-    </>
+      </div>
+    </IonSplitPane>
   );
 };

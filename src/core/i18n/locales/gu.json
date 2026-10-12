@@ -1,4 +1,5 @@
 {
+  "workspace": { "sell": "વેચાણ", "stock": "સ્ટોક અને ખરીદી", "manage": "વ્યવસ્થાપન", "more": "વધુ", "categories": "શ્રેણીઓ" },
   "common": {
     "appName": "કિરાણા POS",
     "loading": "લોડ થઈ રહ્યું છે...",

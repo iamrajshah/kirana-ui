@@ -1,0 +1,39 @@
+import {
+  home, cart, people, cube, cash, layers, briefcase, cardOutline,
+  receipt, statsChart, personAdd, swapHorizontal, pricetags,
+  informationCircleOutline,
+} from 'ionicons/icons';
+import { ROUTES } from '@core/constants';
+import { hasAccessToTab } from '@core/permissions/rolePermissions';
+
+export type NavigationGroup = 'sell' | 'stock' | 'manage' | 'more';
+
+export interface NavigationItem {
+  id: string;
+  href: string;
+  labelKey: string;
+  icon: string;
+  group: NavigationGroup;
+  primary?: boolean;
+  permission?: string;
+}
+
+export const navigationItems: NavigationItem[] = [
+  { id: 'dashboard', href: ROUTES.DASHBOARD, labelKey: 'dashboard.title', icon: home, group: 'sell', primary: true, permission: 'dashboard' },
+  { id: 'billing', href: ROUTES.BILLING, labelKey: 'billing.title', icon: cart, group: 'sell', primary: true, permission: 'billing' },
+  { id: 'customers', href: ROUTES.CUSTOMERS, labelKey: 'customers.title', icon: people, group: 'sell', primary: true, permission: 'customers' },
+  { id: 'invoices', href: ROUTES.INVOICES, labelKey: 'invoices.title', icon: receipt, group: 'sell', permission: 'invoices' },
+  { id: 'payments', href: ROUTES.PAYMENTS, labelKey: 'payments.title', icon: cash, group: 'sell', primary: true, permission: 'payments' },
+  { id: 'products', href: ROUTES.PRODUCTS, labelKey: 'products.title', icon: cube, group: 'stock', primary: true, permission: 'products' },
+  { id: 'inventory', href: ROUTES.INVENTORY, labelKey: 'inventory.title', icon: layers, group: 'stock', permission: 'inventory' },
+  { id: 'categories', href: ROUTES.CATEGORIES, labelKey: 'workspace.categories', icon: pricetags, group: 'stock', permission: 'products' },
+  { id: 'suppliers', href: ROUTES.SUPPLIERS, labelKey: 'suppliers.title', icon: briefcase, group: 'stock', permission: 'suppliers' },
+  { id: 'purchases', href: ROUTES.PURCHASES, labelKey: 'purchases.title', icon: cardOutline, group: 'stock', permission: 'purchases' },
+  { id: 'reports', href: ROUTES.REPORTS, labelKey: 'reports.title', icon: statsChart, group: 'manage', permission: 'reports' },
+  { id: 'users', href: ROUTES.USERS, labelKey: 'users.title', icon: personAdd, group: 'manage', permission: 'users' },
+  { id: 'import-export', href: ROUTES.IMPORT_EXPORT, labelKey: 'importExport.title', icon: swapHorizontal, group: 'manage', permission: 'import-export' },
+  { id: 'about', href: ROUTES.ABOUT, labelKey: 'about.title', icon: informationCircleOutline, group: 'more' },
+];
+
+export const getNavigationItems = (roles: string[]) =>
+  navigationItems.filter((item) => !item.permission || hasAccessToTab(roles, item.permission));

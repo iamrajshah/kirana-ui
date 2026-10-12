@@ -1,4 +1,5 @@
 {
+  "workspace": { "sell": "Sales", "stock": "Stock & purchasing", "manage": "Manage", "more": "More", "categories": "Categories" },
   "common": {
     "appName": "Kirana POS",
     "loading": "Loading...",
