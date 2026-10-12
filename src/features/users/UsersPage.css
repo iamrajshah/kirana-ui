@@ -13,3 +13,12 @@
   align-items: center;
   min-height: 200px;
 }
+
+.workspace-grid ion-card {
+  margin: 0;
+}
+
+.workspace-grid ion-item::part(native) {
+  flex-wrap: wrap;
+  gap: 8px;
+}

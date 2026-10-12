@@ -87,7 +87,7 @@ afterEach(() => {
 
 describe.each([
   { label: 'users', Page: UsersPage, name: 'Test Manager', activeLabel: 'common.active', inactiveLabel: 'common.inactive' },
-  { label: 'categories', Page: CategoriesPage, name: 'Test Category', activeLabel: 'Active', inactiveLabel: 'Inactive' },
+  { label: 'categories', Page: CategoriesPage, name: 'Test Category', activeLabel: 'common.active', inactiveLabel: 'common.inactive' },
 ])('$label status management', ({ Page, name, activeLabel, inactiveLabel }) => {
   it('retains the record and synchronizes its status through deactivation and reactivation', async () => {
     render(<Provider store={makeStore()}><Page /></Provider>);

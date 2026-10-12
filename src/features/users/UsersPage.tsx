@@ -6,9 +6,6 @@ import {
   IonItem,
   IonLabel,
   IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardContent,
   IonButton,
   IonIcon,
   IonModal,
@@ -25,7 +22,11 @@ import { useTranslation } from 'react-i18next';
 import { Navbar } from '@components/Navbar';
 import { Input } from '@components/Input';
 import { Select } from '@components/Select';
-import { useGetUsersQuery, useCreateUserMutation, useUpdateUserStatusMutation } from '@core/api/userApi';
+import {
+  useGetUsersQuery,
+  useCreateUserMutation,
+  useUpdateUserStatusMutation,
+} from '@core/api/userApi';
 import './UsersPage.css';
 
 export const UsersPage: React.FC = () => {
@@ -34,19 +35,24 @@ export const UsersPage: React.FC = () => {
     { value: 'MANAGER', label: t('users.manager') },
     { value: 'CASHIER', label: t('users.cashier') },
   ];
-  
+
   const [showModal, setShowModal] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'MANAGER' | 'CASHIER'>('CASHIER');
-  
+
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const { data: usersResponse, isLoading } = useGetUsersQuery({ includeInactive: true });
+  const {
+    data: usersResponse,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetUsersQuery({ includeInactive: true });
   const [createUser, { isLoading: creating }] = useCreateUserMutation();
   const [updateUserStatus] = useUpdateUserStatusMutation();
 
@@ -74,7 +80,7 @@ export const UsersPage: React.FC = () => {
     }
 
     if (!password.trim() || password.length < 8) {
-      setErrorMessage('Password must be at least 8 characters');
+      setErrorMessage(t('users.passwordRequirement'));
       setShowError(true);
       return;
     }
@@ -120,156 +126,158 @@ export const UsersPage: React.FC = () => {
   return (
     <IonPage>
       <Navbar title={t('users.title')} />
-      <IonContent className="ion-padding">
-        {isLoading ? (
-          <div className="loading-container">
-            <p>Loading users...</p>
+      <IonContent>
+        <div className="workspace-page">
+          <div className="workspace-header">
+            <div>
+              <h1>{t('users.userManagement')}</h1>
+              <p>{t('users.managementDescription')}</p>
+            </div>
+            <div className="workspace-actions">
+              <IonButton onClick={() => setShowModal(true)}>
+                <IonIcon icon={add} slot="start" />
+                {t('users.addUser')}
+              </IonButton>
+            </div>
           </div>
-        ) : (
-          <>
-            <IonCard>
-              <IonCardHeader>
-                <IonCardTitle>User Management</IonCardTitle>
-              </IonCardHeader>
-              <IonCardContent>
-                <p>Manage users and their roles. Only OWNER can create new users.</p>
-              </IonCardContent>
-            </IonCard>
+          {isLoading ? (
+            <div className="loading-container">
+              <p>{t('common.loading')}</p>
+            </div>
+          ) : isError ? (
+            <div className="workspace-state">
+              <p>{t('users.loadFailed')}</p>
+              <IonButton onClick={() => refetch()}>{t('common.retry')}</IonButton>
+            </div>
+          ) : (
+            <>
+              <IonList className="workspace-grid">
+                {users.map((user) => (
+                  <IonCard key={user.id} className="workspace-record">
+                    <IonItem lines="none">
+                      <IonIcon icon={person} slot="start" />
+                      <IonLabel>
+                        <h2>{user.name}</h2>
+                        <p>{user.phone}</p>
+                        {user.email && <p>{user.email}</p>}
+                      </IonLabel>
+                      <div slot="end" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <IonBadge color={getRoleBadgeColor(user.roles)}>
+                          <IonIcon icon={shield} style={{ marginRight: '4px' }} />
+                          {user.roles[0] || 'USER'}
+                        </IonBadge>
+                        <IonBadge color={user.is_active ? 'success' : 'medium'}>
+                          {user.is_active ? t('common.active') : t('common.inactive')}
+                        </IonBadge>
+                        <IonToggle
+                          checked={user.is_active}
+                          onIonChange={() => handleToggleStatus(user.id, user.is_active)}
+                        />
+                      </div>
+                    </IonItem>
+                  </IonCard>
+                ))}
+              </IonList>
 
-            <IonList>
-              {users.map((user) => (
-                <IonCard key={user.id}>
-                  <IonItem lines="none">
-                    <IonIcon icon={person} slot="start" />
-                    <IonLabel>
-                      <h2>{user.name}</h2>
-                      <p>{user.phone}</p>
-                      {user.email && <p>{user.email}</p>}
-                    </IonLabel>
-                    <div slot="end" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <IonBadge color={getRoleBadgeColor(user.roles)}>
-                        <IonIcon icon={shield} style={{ marginRight: '4px' }} />
-                        {user.roles[0] || 'USER'}
-                      </IonBadge>
-                      <IonBadge color={user.is_active ? 'success' : 'medium'}>
-                        {user.is_active ? t('common.active') : t('common.inactive')}
-                      </IonBadge>
-                      <IonToggle
-                        checked={user.is_active}
-                        onIonChange={() => handleToggleStatus(user.id, user.is_active)}
-                      />
-                    </div>
-                  </IonItem>
-                </IonCard>
-              ))}
-            </IonList>
+              {users.length === 0 && (
+                <div className="empty-state">
+                  <IonIcon icon={person} style={{ fontSize: '64px', opacity: 0.3 }} />
+                  <p>{t('users.noUsers')}</p>
+                </div>
+              )}
+            </>
+          )}
 
-            {users.length === 0 && (
-              <div className="empty-state">
-                <IonIcon icon={person} style={{ fontSize: '64px', opacity: 0.3 }} />
-                <p>No users found</p>
-              </div>
-            )}
-          </>
-        )}
+          {showModal && (
+            <IonModal isOpen={true} onDidDismiss={() => setShowModal(false)}>
+              <IonPage>
+                <IonHeader>
+                  <IonToolbar>
+                    <IonTitle>{t('users.createNewUser')}</IonTitle>
+                    <IonButtons slot="end">
+                      <IonButton
+                        onClick={() => {
+                          console.log('❌ Close button clicked');
+                          setShowModal(false);
+                        }}
+                      >
+                        <IonIcon icon={close} />
+                      </IonButton>
+                    </IonButtons>
+                  </IonToolbar>
+                </IonHeader>
+                <IonContent className="ion-padding">
+                  <Input
+                    label={t('users.userName')}
+                    value={name}
+                    onChange={setName}
+                    placeholder={t('users.enterUserName')}
+                    required
+                  />
+                  <Input
+                    label={t('users.userPhone')}
+                    value={phone}
+                    onChange={setPhone}
+                    type="tel"
+                    placeholder={t('users.phonePlaceholder')}
+                    required
+                  />
+                  <Input
+                    label={t('users.userEmail')}
+                    value={email}
+                    onChange={setEmail}
+                    type="email"
+                    placeholder={t('users.emailPlaceholder')}
+                  />
+                  <Input
+                    label={t('users.password')}
+                    value={password}
+                    onChange={setPassword}
+                    type="password"
+                    placeholder={t('users.passwordPlaceholder')}
+                    required
+                  />
+                  <Select
+                    label={t('users.role')}
+                    value={role}
+                    onChange={(value) => setRole(value as 'MANAGER' | 'CASHIER')}
+                    options={ROLE_OPTIONS}
+                    required
+                  />
+                  <p
+                    style={{ fontSize: '12px', color: 'var(--ion-color-medium)', marginTop: '8px' }}
+                  >
+                    {t('users.passwordRequirement')}
+                  </p>
+                  <IonButton
+                    onClick={handleCreateUser}
+                    disabled={creating}
+                    expand="block"
+                    style={{ marginTop: '20px' }}
+                  >
+                    \n {creating ? t('common.creating') : t('users.createUser')}\n{' '}
+                  </IonButton>
+                </IonContent>
+              </IonPage>
+            </IonModal>
+          )}
 
-        <IonButton
-          expand="block"
-          onClick={() => setShowModal(true)}
-          style={{ marginTop: '20px' }}
-        >
-          <IonIcon icon={add} slot="start" />
-          Create User
-        </IonButton>
+          <IonToast
+            isOpen={showSuccess}
+            onDidDismiss={() => setShowSuccess(false)}
+            message={t('users.userCreated')}
+            duration={2000}
+            color="success"
+          />
 
-        {showModal && (
-          <IonModal
-            isOpen={true}
-            onDidDismiss={() => setShowModal(false)}
-          >
-            <IonPage>
-              <IonHeader>
-                <IonToolbar>
-                  <IonTitle>{t('users.createNewUser')}</IonTitle>
-                  <IonButtons slot="end">
-                    <IonButton
-                      onClick={() => {
-                        console.log('❌ Close button clicked');
-                        setShowModal(false);
-                      }}
-                    >
-                      <IonIcon icon={close} />
-                    </IonButton>
-                  </IonButtons>
-                </IonToolbar>
-              </IonHeader>
-              <IonContent className="ion-padding">
-                <Input
-                  label={t('users.userName')}
-                  value={name}
-                  onChange={setName}
-                  placeholder={t('users.enterUserName')}
-                  required
-                />
-                <Input
-                  label={t('users.userPhone')}
-                  value={phone}
-                  onChange={setPhone}
-                  type="tel"
-                  placeholder={t('users.phonePlaceholder')}
-                  required
-                />
-                <Input
-                  label={t('users.userEmail')}
-                  value={email}
-                  onChange={setEmail}
-                  type="email"
-                  placeholder={t('users.emailPlaceholder')}
-                />
-                <Input
-                  label={t('users.password')}
-                  value={password}
-                  onChange={setPassword}
-                  type="password"
-                  placeholder={t('users.passwordPlaceholder')}
-                  required
-                />
-                <Select
-                  label={t('users.role')}
-                  value={role}
-                  onChange={(value) => setRole(value as 'MANAGER' | 'CASHIER')}
-                  options={ROLE_OPTIONS}
-                  required
-                />
-                <p style={{ fontSize: '12px', color: 'var(--ion-color-medium)', marginTop: '8px' }}>
-                  {t('users.passwordRequirement')}
-                </p>
-                <IonButton
-                  onClick={handleCreateUser}
-                  disabled={creating}
-                  expand="block"
-                  style={{ marginTop: '20px' }}
-                >\n                  {creating ? t('common.creating') : t('users.createUser')}\n                </IonButton>
-              </IonContent>
-            </IonPage>
-          </IonModal>
-        )}
-
-        <IonToast
-          isOpen={showSuccess}
-          onDidDismiss={() => setShowSuccess(false)}
-          message="User created successfully"
-          duration={2000}
-          color="success"
-        />
-
-        <IonToast
-          isOpen={showError}
-          onDidDismiss={() => setShowError(false)}
-          message={errorMessage}
-          duration={3000}
-          color="danger"
-        />
+          <IonToast
+            isOpen={showError}
+            onDidDismiss={() => setShowError(false)}
+            message={errorMessage}
+            duration={3000}
+            color="danger"
+          />
+        </div>
       </IonContent>
     </IonPage>
   );

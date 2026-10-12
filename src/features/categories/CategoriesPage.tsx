@@ -7,9 +7,6 @@ import {
   IonItem,
   IonLabel,
   IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardContent,
   IonButton,
   IonIcon,
   IonModal,
@@ -24,6 +21,7 @@ import {
 } from '@ionic/react';
 import { add, close } from 'ionicons/icons';
 import { Navbar } from '@components/Navbar';
+import { useTranslation } from 'react-i18next';
 import { Input } from '@components/Input';
 import {
   useGetCategoriesQuery,
@@ -33,6 +31,7 @@ import {
 import './CategoriesPage.css';
 
 export const CategoriesPage: React.FC = () => {
+  const { t } = useTranslation();
   const [showModal, setShowModal] = useState(false);
   const [categoryName, setCategoryName] = useState('');
   const [categoryDescription, setCategoryDescription] = useState('');
@@ -41,7 +40,12 @@ export const CategoriesPage: React.FC = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const { data: categoriesResponse, isLoading } = useGetCategoriesQuery({ includeInactive: true });
+  const {
+    data: categoriesResponse,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetCategoriesQuery({ includeInactive: true });
   const [createCategory, { isLoading: creating }] = useCreateCategoryMutation();
   const [updateCategoryStatus] = useUpdateCategoryStatusMutation();
 
@@ -54,7 +58,7 @@ export const CategoriesPage: React.FC = () => {
 
   const handleCreateCategory = async () => {
     if (!categoryName.trim()) {
-      setErrorMessage('Category name is required');
+      setErrorMessage(t('categories.nameRequired'));
       setShowError(true);
       return;
     }
@@ -70,7 +74,7 @@ export const CategoriesPage: React.FC = () => {
       resetForm();
     } catch (error: unknown) {
       console.error('Error creating category:', error);
-      setErrorMessage(apiErrorMessage(error, 'Failed to create category'));
+      setErrorMessage(apiErrorMessage(error, t('categories.createFailed')));
       setShowError(true);
     }
   };
@@ -83,125 +87,130 @@ export const CategoriesPage: React.FC = () => {
       }).unwrap();
     } catch (error: unknown) {
       console.error('Error updating category status:', error);
-      setErrorMessage(apiErrorMessage(error, 'Failed to update category status'));
+      setErrorMessage(apiErrorMessage(error, t('categories.updateFailed')));
       setShowError(true);
     }
   };
 
   return (
     <IonPage>
-      <Navbar title="Categories" />
-      <IonContent className="ion-padding">
-        {isLoading ? (
-          <div className="loading-container">
-            <IonSpinner />
-            <p>Loading categories...</p>
+      <Navbar title={t('workspace.categories')} />
+      <IonContent>
+        <div className="workspace-page">
+          <div className="workspace-header">
+            <div>
+              <h1>{t('workspace.categories')}</h1>
+              <p>{t('categories.description')}</p>
+            </div>
+            <div className="workspace-actions">
+              <IonButton onClick={() => setShowModal(true)}>
+                <IonIcon slot="start" icon={add} />
+                {t('categories.add')}
+              </IonButton>
+            </div>
           </div>
-        ) : (
-          <>
-            <IonCard>
-              <IonCardHeader>
-                <IonCardTitle>Category Management</IonCardTitle>
-              </IonCardHeader>
-              <IonCardContent>
-                <p>Manage product categories. Categories help organize your inventory.</p>
-                <IonButton expand="block" onClick={() => setShowModal(true)}>
-                  <IonIcon slot="start" icon={add} />
-                  Add Category
-                </IonButton>
-              </IonCardContent>
-            </IonCard>
+          {isLoading ? (
+            <div className="loading-container">
+              <IonSpinner />
+              <p>{t('categories.loading')}</p>
+            </div>
+          ) : isError ? (
+            <div className="workspace-state">
+              <p>{t('categories.loadFailed')}</p>
+              <IonButton onClick={() => refetch()}>{t('dashboard.retry')}</IonButton>
+            </div>
+          ) : (
+            <>
+              {categories.length === 0 ? (
+                <div className="workspace-state">{t('categories.empty')}</div>
+              ) : (
+                <IonList className="workspace-grid">
+                  {categories.map((category) => (
+                    <IonCard key={category.id} className="workspace-record">
+                      <IonItem lines="none">
+                        <IonLabel>
+                          <h2>{category.name}</h2>
+                          {category.description && <p>{category.description}</p>}
+                        </IonLabel>
+                        <div
+                          slot="end"
+                          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                        >
+                          <IonBadge color={category.is_active ? 'success' : 'medium'}>
+                            {category.is_active ? t('common.active') : t('common.inactive')}
+                          </IonBadge>
+                          <IonToggle
+                            checked={category.is_active}
+                            onIonChange={() => handleToggleStatus(category.id, category.is_active)}
+                          />
+                        </div>
+                      </IonItem>
+                    </IonCard>
+                  ))}
+                </IonList>
+              )}
+            </>
+          )}
 
-            {categories.length === 0 ? (
-              <IonCard>
-                <IonCardContent className="ion-text-center">
-                  <p>No categories yet. Create your first category to get started.</p>
-                </IonCardContent>
-              </IonCard>
-            ) : (
-              <IonList>
-                {categories.map((category) => (
-                  <IonCard key={category.id}>
-                    <IonItem lines="none">
-                      <IonLabel>
-                        <h2>{category.name}</h2>
-                        {category.description && <p>{category.description}</p>}
-                      </IonLabel>
-                      <div slot="end" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <IonBadge color={category.is_active ? 'success' : 'medium'}>
-                          {category.is_active ? 'Active' : 'Inactive'}
-                        </IonBadge>
-                        <IonToggle
-                          checked={category.is_active}
-                          onIonChange={() => handleToggleStatus(category.id, category.is_active)}
-                        />
-                      </div>
-                    </IonItem>
-                  </IonCard>
-                ))}
-              </IonList>
-            )}
-          </>
-        )}
+          {/* Add Category Modal */}
+          {showModal && (
+            <IonModal isOpen={true} onDidDismiss={() => setShowModal(false)}>
+              <IonPage>
+                <IonHeader>
+                  <IonToolbar>
+                    <IonTitle>{t('categories.add')}</IonTitle>
+                    <IonButtons slot="end">
+                      <IonButton onClick={() => setShowModal(false)}>
+                        <IonIcon icon={close} />
+                      </IonButton>
+                    </IonButtons>
+                  </IonToolbar>
+                </IonHeader>
+                <IonContent className="ion-padding">
+                  <Input
+                    label={t('categories.name')}
+                    value={categoryName}
+                    onChange={setCategoryName}
+                    placeholder={t('categories.namePlaceholder')}
+                    required
+                  />
+                  <Input
+                    label={t('categories.optionalDescription')}
+                    value={categoryDescription}
+                    onChange={setCategoryDescription}
+                    placeholder={t('categories.descriptionPlaceholder')}
+                  />
+                  <IonButton
+                    expand="block"
+                    onClick={handleCreateCategory}
+                    disabled={creating || !categoryName.trim()}
+                    className="ion-margin-top"
+                  >
+                    {creating ? t('common.creating') : t('categories.create')}
+                  </IonButton>
+                </IonContent>
+              </IonPage>
+            </IonModal>
+          )}
 
-        {/* Add Category Modal */}
-        {showModal && (
-          <IonModal isOpen={true} onDidDismiss={() => setShowModal(false)}>
-            <IonPage>
-              <IonHeader>
-                <IonToolbar>
-                  <IonTitle>Add Category</IonTitle>
-                  <IonButtons slot="end">
-                    <IonButton onClick={() => setShowModal(false)}>
-                      <IonIcon icon={close} />
-                    </IonButton>
-                  </IonButtons>
-                </IonToolbar>
-              </IonHeader>
-              <IonContent className="ion-padding">
-                <Input
-                  label="Category Name"
-                  value={categoryName}
-                  onChange={setCategoryName}
-                  placeholder="Enter category name"
-                  required
-                />
-                <Input
-                  label="Description (Optional)"
-                  value={categoryDescription}
-                  onChange={setCategoryDescription}
-                  placeholder="Enter description"
-                />
-                <IonButton
-                  expand="block"
-                  onClick={handleCreateCategory}
-                  disabled={creating || !categoryName.trim()}
-                  className="ion-margin-top"
-                >
-                  {creating ? 'Creating...' : 'Create Category'}
-                </IonButton>
-              </IonContent>
-            </IonPage>
-          </IonModal>
-        )}
+          {/* Success Toast */}
+          <IonToast
+            isOpen={showSuccess}
+            onDidDismiss={() => setShowSuccess(false)}
+            message={t('categories.created')}
+            duration={2000}
+            color="success"
+          />
 
-        {/* Success Toast */}
-        <IonToast
-          isOpen={showSuccess}
-          onDidDismiss={() => setShowSuccess(false)}
-          message="Category created successfully!"
-          duration={2000}
-          color="success"
-        />
-
-        {/* Error Toast */}
-        <IonToast
-          isOpen={showError}
-          onDidDismiss={() => setShowError(false)}
-          message={errorMessage}
-          duration={3000}
-          color="danger"
-        />
+          {/* Error Toast */}
+          <IonToast
+            isOpen={showError}
+            onDidDismiss={() => setShowError(false)}
+            message={errorMessage}
+            duration={3000}
+            color="danger"
+          />
+        </div>
       </IonContent>
     </IonPage>
   );

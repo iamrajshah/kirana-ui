@@ -8,3 +8,20 @@
   flex-direction: column;
   gap: 12px;
 }
+
+.workspace-page ion-segment {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+@media (min-width: 768px) {
+  .export-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+
+  .import-section,
+  .export-section {
+    max-width: 1100px;
+  }
+}
