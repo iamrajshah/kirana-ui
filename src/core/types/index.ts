@@ -121,6 +121,30 @@ export interface Invoice {
   created_at: string;
   finalized_at?: string;
   cancelled_at?: string;
+  created_by?: string | null;
+  origin_counter?: string | null;
+  held_at?: string | null;
+  held_by?: string | null;
+  held_counter?: string | null;
+  lease_expires_at?: string | null;
+  version?: number;
+  updated_at?: string;
+}
+
+export type HeldBillLeaseState = 'active' | 'unclaimed' | 'expired';
+
+export interface HeldBillPerson {
+  id: string;
+  name: string;
+}
+
+export interface HeldBill extends Invoice {
+  held_at: string;
+  version: number;
+  item_count: number;
+  lease_state: HeldBillLeaseState;
+  creator?: HeldBillPerson | null;
+  holder?: HeldBillPerson | null;
 }
 
 export type PaymentMode = 'CASH' | 'UPI' | 'CARD' | 'BANK' | 'ADJUSTMENT';
@@ -151,6 +175,66 @@ export interface DashboardStats {
   total_customers: number;
   supplier_payables: number;
   customer_receivables: number;
+  decision_inbox?: DashboardDecisionInbox | null;
+}
+
+export interface DashboardDecisionGroup<T> {
+  available: boolean;
+  records: T[];
+}
+
+export interface CustomerCreditDecision {
+  type: 'CUSTOMER_CREDIT_DUE';
+  priority: number;
+  customer_id: string;
+  customer_name: string | null;
+  due_amount: number;
+  reason: { credit_balance: number };
+  destination: { kind: 'CUSTOMER'; customer_id: string };
+}
+
+export interface LowStockDecision {
+  type: 'LOW_STOCK';
+  priority: number;
+  variant_id: string;
+  product_id: string;
+  product_name: string | null;
+  sku: string | null;
+  brand: string | null;
+  size: string | null;
+  reason: {
+    quantity: number;
+    low_stock_threshold: number;
+    threshold_ratio: number;
+  };
+  destination: {
+    kind: 'PRODUCT_VARIANT';
+    product_id: string;
+    variant_id: string;
+  };
+}
+
+export interface HeldBillAttentionDecision {
+  type: 'HELD_BILL_ATTENTION';
+  priority: number;
+  invoice_id: string;
+  invoice_number: string | null;
+  total_amount: number;
+  item_count: number;
+  held_at: string;
+  lease_state: 'UNCLAIMED' | 'EXPIRED';
+  reason: {
+    held_at: string;
+    held_by: string | null;
+    lease_expires_at: string | null;
+  };
+  destination: { kind: 'HELD_BILL'; invoice_id: string };
+}
+
+export interface DashboardDecisionInbox {
+  money_to_collect: DashboardDecisionGroup<CustomerCreditDecision>;
+  low_stock: DashboardDecisionGroup<LowStockDecision>;
+  held_bills: DashboardDecisionGroup<HeldBillAttentionDecision>;
 }
 
 // API Response wrappers - Matches backend exactly

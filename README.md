@@ -13,14 +13,20 @@ Maintainer: [Rajesh Shah (@iamrajshah)](https://github.com/iamrajshah)
 - Optional customer attachment for credit history, partial payment, and reminders.
 - Touch-friendly cart editing with a sticky mobile payment bar and a persistent
   desktop/tablet bill summary.
+- Cross-counter held bills with claim, resume, release, manager takeover,
+  renewable leases, and conflict-safe recovery.
+- An owner/manager Decision Inbox for customer dues, low stock, and held bills
+  that need attention.
 - Customers, invoices, payments, products, categories, inventory, suppliers,
   purchases, reports, imports, users, profile, and barcode flows.
 - English, Hindi, Marathi, and Gujarati translation resources.
 - Ionic/Capacitor foundations for web and Android/iOS packaging.
 
-Offline billing queue, cross-counter held bills, cashier shift cash, smart reorder,
-and WhatsApp list-to-cart are planned product work. They are not production-ready
-features yet.
+Offline billing queue, optional cashier shift cash, smart reorder, and WhatsApp
+list-to-cart are planned product work. They are not production-ready features yet.
+
+Read [`HANDBOOK.md`](HANDBOOK.md) for the product reasoning, implemented
+workflows, safety invariants, and working rules for humans and AI agents.
 
 ## Cashier flow
 

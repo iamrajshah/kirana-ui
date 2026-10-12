@@ -1,0 +1,47 @@
+.held-bills-panel {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  background: var(--ion-background-color, #fff);
+}
+
+.held-bills-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding: max(1rem, env(safe-area-inset-top)) 1rem 1rem;
+}
+
+.held-bills-panel__header h2 { margin: 0.15rem 0; font-size: 1.25rem; font-weight: 800; }
+.held-bills-panel__eyebrow { margin: 0; color: #0369a1; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+.held-bills-panel__counter { margin: 0; color: #4b5563; font-size: 0.875rem; }
+.held-bills-panel__counter button { margin-left: 0.5rem; color: #0369a1; font-weight: 700; }
+.held-bills-panel__close { display: grid; min-height: 44px; min-width: 44px; place-items: center; border-radius: 0.75rem; }
+.held-bills-panel__body { min-height: 0; flex: 1; overflow-y: auto; padding: 1rem; }
+.held-bills-panel__state { display: grid; min-height: 14rem; place-content: center; gap: 0.5rem; text-align: center; color: #4b5563; }
+.held-bills-panel__list { display: grid; gap: 0.75rem; }
+.held-bill-card { border: 1px solid #e5e7eb; border-radius: 1rem; background: #fff; padding: 1rem; box-shadow: 0 1px 3px rgb(15 23 42 / 8%); }
+.held-bill-card[data-highlighted='true'] { border-color: var(--ion-color-primary, #0284c7); box-shadow: 0 0 0 3px rgb(14 165 233 / 18%); }
+.held-bill-card__topline { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.held-bill-card__topline strong { color: #075985; font-size: 1.125rem; }
+.held-bill-card__topline span { border-radius: 999px; background: #fef3c7; padding: 0.25rem 0.6rem; font-size: 0.75rem; font-weight: 700; }
+.held-bill-card__topline span[data-state='active'] { background: #dcfce7; color: #166534; }
+.held-bill-card__topline span[data-state='expired'] { background: #fee2e2; color: #991b1b; }
+.held-bill-card__meta, .held-bill-card__holder { margin: 0.5rem 0 0; color: #4b5563; font-size: 0.875rem; }
+.held-bill-card__actions { display: flex; min-height: 44px; align-items: center; gap: 0.5rem; margin-top: 0.75rem; }
+.held-bill-card__readonly { flex: 1; color: #6b7280; font-size: 0.875rem; font-weight: 700; }
+
+ion-modal.held-bills-modal { --height: 100%; --width: 100%; }
+
+@media (min-width: 768px) {
+  ion-modal.held-bills-modal {
+    --height: 100%;
+    --width: min(440px, 100vw);
+    --border-radius: 1.25rem 0 0 1.25rem;
+    align-items: flex-end;
+    justify-content: flex-end;
+  }
+}

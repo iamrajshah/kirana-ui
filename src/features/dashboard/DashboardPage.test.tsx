@@ -16,15 +16,79 @@ const mocks = vi.hoisted(() => ({
         total_customers: 40,
         supplier_payables: 500,
         customer_receivables: 300,
+        decision_inbox: {
+          money_to_collect: {
+            available: true,
+            records: [
+              {
+                type: 'CUSTOMER_CREDIT_DUE',
+                priority: 1,
+                customer_id: 'customer-1',
+                customer_name: 'Asha Stores',
+                due_amount: 1250,
+                reason: { credit_balance: 1250 },
+                destination: { kind: 'CUSTOMER', customer_id: 'customer-1' },
+              },
+            ],
+          },
+          low_stock: {
+            available: true,
+            records: [
+              {
+                type: 'LOW_STOCK',
+                priority: 1,
+                variant_id: 'variant-7',
+                product_id: 'product-7',
+                product_name: 'Basmati Rice',
+                sku: 'RICE-5KG',
+                brand: 'Fresh Farm',
+                size: '5 kg',
+                reason: { quantity: 1, low_stock_threshold: 5, threshold_ratio: 0.2 },
+                destination: {
+                  kind: 'PRODUCT_VARIANT',
+                  product_id: 'product-7',
+                  variant_id: 'variant-7',
+                },
+              },
+            ],
+          },
+          held_bills: {
+            available: true,
+            records: [
+              {
+                type: 'HELD_BILL_ATTENTION',
+                priority: 1,
+                invoice_id: 'invoice-9',
+                invoice_number: 'DRAFT-9',
+                total_amount: 340,
+                item_count: 2,
+                held_at: '2026-10-12T08:30:00.000Z',
+                lease_state: 'UNCLAIMED',
+                reason: {
+                  held_at: '2026-10-12T08:30:00.000Z',
+                  held_by: null,
+                  lease_expires_at: null,
+                },
+                destination: { kind: 'HELD_BILL', invoice_id: 'invoice-9' },
+              },
+            ],
+          },
+        },
       },
-    } as { data: Record<string, number> } | undefined,
+    } as { data: Record<string, unknown> } | undefined,
     isLoading: false,
     isError: false,
   },
 }));
 
 vi.mock('react-router-dom', () => ({ useHistory: () => ({ push: mocks.push }) }));
-vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: { heldAt?: string }) =>
+      options?.heldAt ? `${key}: ${options.heldAt}` : key,
+    i18n: { language: 'en-IN' },
+  }),
+}));
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('@components', () => ({
   Card: ({ children }: PropsWithChildren) => <div>{children}</div>,
@@ -43,10 +107,17 @@ vi.mock('@ionic/react', () => {
     IonGrid: Container,
     IonRow: Container,
     IonCol: Container,
-    IonRefresher: ({ children, onIonRefresh }: PropsWithChildren<{ onIonRefresh: (event: { detail: { complete: () => void } }) => void }>) => (
+    IonRefresher: ({
+      children,
+      onIonRefresh,
+    }: PropsWithChildren<{
+      onIonRefresh: (event: { detail: { complete: () => void } }) => void;
+    }>) => (
       <div>
         {children}
-        <button onClick={() => onIonRefresh({ detail: { complete: vi.fn() } })}>pull to refresh</button>
+        <button onClick={() => onIonRefresh({ detail: { complete: vi.fn() } })}>
+          pull to refresh
+        </button>
       </div>
     ),
     IonRefresherContent: () => null,
@@ -69,6 +140,64 @@ describe('DashboardPage', () => {
           total_customers: 40,
           supplier_payables: 500,
           customer_receivables: 300,
+          decision_inbox: {
+            money_to_collect: {
+              available: true,
+              records: [
+                {
+                  type: 'CUSTOMER_CREDIT_DUE',
+                  priority: 1,
+                  customer_id: 'customer-1',
+                  customer_name: 'Asha Stores',
+                  due_amount: 1250,
+                  reason: { credit_balance: 1250 },
+                  destination: { kind: 'CUSTOMER', customer_id: 'customer-1' },
+                },
+              ],
+            },
+            low_stock: {
+              available: true,
+              records: [
+                {
+                  type: 'LOW_STOCK',
+                  priority: 1,
+                  variant_id: 'variant-7',
+                  product_id: 'product-7',
+                  product_name: 'Basmati Rice',
+                  sku: 'RICE-5KG',
+                  brand: 'Fresh Farm',
+                  size: '5 kg',
+                  reason: { quantity: 1, low_stock_threshold: 5, threshold_ratio: 0.2 },
+                  destination: {
+                    kind: 'PRODUCT_VARIANT',
+                    product_id: 'product-7',
+                    variant_id: 'variant-7',
+                  },
+                },
+              ],
+            },
+            held_bills: {
+              available: true,
+              records: [
+                {
+                  type: 'HELD_BILL_ATTENTION',
+                  priority: 1,
+                  invoice_id: 'invoice-9',
+                  invoice_number: 'DRAFT-9',
+                  total_amount: 340,
+                  item_count: 2,
+                  held_at: '2026-10-12T08:30:00.000Z',
+                  lease_state: 'UNCLAIMED',
+                  reason: {
+                    held_at: '2026-10-12T08:30:00.000Z',
+                    held_by: null,
+                    lease_expires_at: null,
+                  },
+                  destination: { kind: 'HELD_BILL', invoice_id: 'invoice-9' },
+                },
+              ],
+            },
+          },
         },
       },
       isLoading: false,
@@ -89,7 +218,9 @@ describe('DashboardPage', () => {
     expect(screen.getByText('dashboard.customerReceivables')).toBeTruthy();
     const actions = screen.getByRole('region', { name: 'dashboard.quickActions' });
     const secondary = screen.getByRole('region', { name: 'dashboard.moreMetrics' });
-    expect(actions.compareDocumentPosition(secondary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      actions.compareDocumentPosition(secondary) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'billing.title' }));
     expect(mocks.push).toHaveBeenCalledWith('/billing');
@@ -97,6 +228,75 @@ describe('DashboardPage', () => {
     expect(mocks.push).toHaveBeenCalledWith('/invoices');
     fireEvent.click(screen.getByRole('button', { name: 'inventory.title' }));
     expect(mocks.push).toHaveBeenCalledWith('/inventory');
+  });
+
+  it('places the owner decision inbox before metrics and routes every primary action', () => {
+    render(<DashboardPage />);
+
+    const inbox = screen.getByRole('region', { name: 'dashboard.decisionInbox.title' });
+    const priorities = screen.getByTestId('dashboard-priorities');
+    expect(
+      inbox.compareDocumentPosition(priorities) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(within(inbox).getByText('Asha Stores')).toBeTruthy();
+    expect(within(inbox).getByText('Basmati Rice')).toBeTruthy();
+    expect(within(inbox).getByText('RICE-5KG')).toBeTruthy();
+    expect(within(inbox).getByText('DRAFT-9')).toBeTruthy();
+    expect(within(inbox).queryByText(/2026-10-12T08:30:00/)).toBeNull();
+    expect(within(inbox).getByText(/dashboard\.decisionInbox\.held\.reason:/)).toBeTruthy();
+    expect(within(inbox).getAllByRole('button')).toHaveLength(3);
+
+    fireEvent.click(
+      within(inbox).getByRole('button', { name: 'dashboard.decisionInbox.money.action' })
+    );
+    expect(mocks.push).toHaveBeenCalledWith('/customers/customer-1/ledger');
+    fireEvent.click(
+      within(inbox).getByRole('button', { name: 'dashboard.decisionInbox.stock.action' })
+    );
+    expect(mocks.push).toHaveBeenCalledWith('/products/product-7');
+    fireEvent.click(
+      within(inbox).getByRole('button', { name: 'dashboard.decisionInbox.held.action' })
+    );
+    expect(mocks.push).toHaveBeenCalledWith('/billing?held=invoice-9');
+  });
+
+  it('shows the decision inbox to managers but not cashiers', () => {
+    mocks.roles = ['MANAGER'];
+    const { rerender } = render(<DashboardPage />);
+    expect(screen.getByRole('region', { name: 'dashboard.decisionInbox.title' })).toBeTruthy();
+
+    mocks.roles = ['CASHIER'];
+    rerender(<DashboardPage />);
+    expect(screen.queryByRole('region', { name: 'dashboard.decisionInbox.title' })).toBeNull();
+    expect(screen.getByTestId('dashboard-priorities')).toBeTruthy();
+  });
+
+  it('degrades one unavailable decision group without hiding successful groups or totals', () => {
+    const dashboard = mocks.query.data?.data;
+    const decisionInbox = dashboard?.decision_inbox as {
+      low_stock: { available: boolean; records: unknown[] };
+    };
+    decisionInbox.low_stock = { available: false, records: [] };
+    render(<DashboardPage />);
+
+    expect(screen.getByText('Asha Stores')).toBeTruthy();
+    expect(screen.getByText('DRAFT-9')).toBeTruthy();
+    expect(screen.getByTestId('dashboard-priorities')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain(
+      'dashboard.decisionInbox.groupUnavailable'
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'dashboard.decisionInbox.stock.retry' }));
+    expect(mocks.refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps shortcuts and totals usable when the owner decision payload is missing', () => {
+    const dashboard = mocks.query.data?.data;
+    if (dashboard) delete dashboard.decision_inbox;
+    render(<DashboardPage />);
+
+    expect(screen.getByTestId('dashboard-priorities')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'billing.title' })).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain('dashboard.decisionInbox.unavailable');
   });
 
   it('omits shortcuts outside the cashier permissions', () => {
@@ -128,6 +328,11 @@ describe('DashboardPage', () => {
         total_customers: 0,
         supplier_payables: 0,
         customer_receivables: 0,
+        decision_inbox: {
+          money_to_collect: { available: true, records: [] },
+          low_stock: { available: true, records: [] },
+          held_bills: { available: true, records: [] },
+        },
       },
     };
     render(<DashboardPage />);

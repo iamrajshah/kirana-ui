@@ -9,10 +9,13 @@ const mocks = vi.hoisted(() => ({
   cancelInvoice: vi.fn(),
   updateInvoice: vi.fn(),
   finalizeInvoice: vi.fn(),
+  renewHeldBill: vi.fn(),
   createPayment: vi.fn(),
   scanBarcode: vi.fn(),
   notifyError: vi.fn(),
   notifySuccess: vi.fn(),
+  search: '?edit=edit-1',
+  invoice: {} as Record<string, unknown>,
 }));
 
 const apiTrigger = (operation: ReturnType<typeof vi.fn>) => (payload: unknown) => ({
@@ -38,7 +41,7 @@ const matchedBarcode = {
 
 vi.mock('react-router-dom', () => ({
   useHistory: () => ({ replace: mocks.historyReplace }),
-  useLocation: () => ({ search: '?edit=edit-1' }),
+  useLocation: () => ({ search: mocks.search }),
 }));
 
 vi.mock('react-i18next', () => ({
@@ -46,6 +49,24 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
+vi.mock('@core/hooks', () => ({
+  useAppSelector: () => ({ id: '7', name: 'Rajesh', roles: ['CASHIER'] }),
+}));
+vi.mock('@core/auth/authSlice', () => ({ selectCurrentUser: vi.fn() }));
+vi.mock('./HeldBillsPanel', () => ({
+  HeldBillsPanel: ({
+    focusBillId,
+    onReleased,
+  }: {
+    focusBillId?: string | null;
+    onReleased: (bill: { id: string }) => void;
+  }) => (
+    <div>
+      held bills panel {focusBillId}
+      <button onClick={() => onReleased({ id: 'edit-1' })}>release current mock</button>
+    </div>
+  ),
+}));
 
 vi.mock('@components', () => ({
   Loading: () => null,
@@ -78,25 +99,12 @@ vi.mock('@core/api/invoiceApi', () => ({
   useCancelInvoiceMutation: () => [apiTrigger(mocks.cancelInvoice), { isLoading: false }],
   useUpdateInvoiceMutation: () => [apiTrigger(mocks.updateInvoice), { isLoading: false }],
   useFinalizeInvoiceMutation: () => [apiTrigger(mocks.finalizeInvoice), { isLoading: false }],
+  useRenewHeldBillMutation: () => [apiTrigger(mocks.renewHeldBill), { isLoading: false }],
+  useGetHeldBillsQuery: () => ({ data: { success: true, data: [] } }),
   useGetInvoiceByIdQuery: () => ({
-    data: {
-      data: {
-        id: 'edit-1',
-        customer: null,
-        gst_amount: 0,
-        discount_amount: 0,
-        items: [
-          {
-            variant_id: 'variant-1',
-            quantity: 1,
-            unit_price: 100,
-            discount_amount: 0,
-            variant: { sku: 'RICE-1', product: { name: 'Rice' } },
-          },
-        ],
-      },
-    },
+    data: { data: mocks.invoice },
     isLoading: false,
+    refetch: vi.fn(),
   }),
 }));
 
@@ -147,13 +155,36 @@ vi.mock('@ionic/react', () => {
     IonCardContent: Container,
     IonLabel: Container,
     IonList: Container,
+    IonModal: ({ children, isOpen }: PropsWithChildren<{ isOpen: boolean }>) =>
+      isOpen ? <div>{children}</div> : null,
   };
 });
 
 beforeEach(() => {
   vi.clearAllMocks();
+  localStorage.clear();
+  mocks.search = '?edit=edit-1';
+  mocks.invoice = {
+    id: 'edit-1',
+    customer: null,
+    gst_amount: 0,
+    discount_amount: 0,
+    version: 3,
+    held_at: '2026-10-12T10:00:00.000Z',
+    held_by: '7',
+    items: [
+      {
+        variant_id: 'variant-1',
+        quantity: 1,
+        unit_price: 100,
+        discount_amount: 0,
+        variant: { sku: 'RICE-1', product: { name: 'Rice' } },
+      },
+    ],
+  };
   mocks.updateInvoice.mockResolvedValue({ data: { id: 'edit-1' } });
   mocks.finalizeInvoice.mockResolvedValue({ data: { id: 'edit-1' } });
+  mocks.renewHeldBill.mockResolvedValue({ data: { id: 'edit-1', version: 3 } });
   mocks.cancelInvoice.mockResolvedValue({ data: { id: 'edit-1' } });
   mocks.scanBarcode.mockResolvedValue(matchedBarcode);
 });
@@ -161,6 +192,144 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('BillingPage', () => {
+  describe('held bill continuity', () => {
+    it('opens the held-bill panel focused on a dashboard-linked bill', () => {
+      mocks.search = '?held=held-9';
+
+      render(<BillingPage />);
+
+      expect(screen.getByText('held bills panel held-9')).toBeTruthy();
+    });
+
+    it('clears the editor after releasing the currently open held bill', async () => {
+      mocks.search = '?edit=edit-1&held=edit-1';
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+
+      fireEvent.click(screen.getByRole('button', { name: 'release current mock' }));
+
+      expect(mocks.historyReplace).toHaveBeenCalledWith('/billing');
+      expect(screen.queryByText('Rice')).toBeNull();
+    });
+
+    it('clears a previous customer when the next opened bill is walk-in', async () => {
+      mocks.invoice = {
+        ...mocks.invoice,
+        customer: { id: '12', name: 'Anita', phone: '9999999999' },
+      };
+      const { rerender } = render(<BillingPage />);
+      expect(await screen.findByText('Anita (9999999999)')).toBeTruthy();
+
+      mocks.search = '?edit=edit-2';
+      mocks.invoice = { ...mocks.invoice, id: 'edit-2', customer: null };
+      rerender(<BillingPage />);
+
+      expect(await screen.findByText('billing.walkInCustomer')).toBeTruthy();
+      expect(screen.queryByText('Anita (9999999999)')).toBeNull();
+    });
+
+    it('holds a new bill with the saved counter and resets only after the server accepts it', async () => {
+      mocks.search = '';
+      let resolveHold: (value: { data: { id: string; version: number } }) => void = () => undefined;
+      mocks.createInvoice.mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveHold = resolve;
+        })
+      );
+      vi.spyOn(window, 'prompt').mockReturnValue(' Counter 4 ');
+
+      render(<BillingPage />);
+      fireEvent.click(screen.getByRole('button', { name: 'billing.scanBarcode' }));
+      fireEvent.click(screen.getByRole('button', { name: 'camera scan' }));
+      await screen.findByText('Tea');
+
+      fireEvent.click(screen.getByRole('button', { name: 'billing.holdBill' }));
+
+      await waitFor(() =>
+        expect(mocks.createInvoice).toHaveBeenCalledWith(
+          expect.objectContaining({ status: 'DRAFT', counter_label: 'Counter 4' })
+        )
+      );
+      expect(screen.getByText('Tea')).toBeTruthy();
+
+      resolveHold({ data: { id: 'held-1', version: 0 } });
+      await waitFor(() => expect(screen.queryByText('Tea')).toBeNull());
+      expect(localStorage.getItem('kirana_counter_label')).toBe('Counter 4');
+    });
+
+    it('updates and finalizes a claimed bill using consecutive server versions', async () => {
+      mocks.updateInvoice.mockResolvedValueOnce({ data: { id: 'edit-1', version: 4 } });
+      mocks.createPayment.mockResolvedValueOnce({ data: { id: 'payment-1' } });
+
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+      fireEvent.click(screen.getByRole('button', { name: 'billing.payCash' }));
+
+      await waitFor(() =>
+        expect(mocks.updateInvoice).toHaveBeenCalledWith({
+          id: 'edit-1',
+          data: expect.objectContaining({ expected_version: 3 }),
+        })
+      );
+      expect(mocks.finalizeInvoice).toHaveBeenCalledWith({
+        id: 'edit-1',
+        expected_version: 4,
+      });
+    });
+
+    it('preserves the cart and offers a reload when a held bill update conflicts', async () => {
+      mocks.updateInvoice.mockRejectedValueOnce({ status: 409 });
+
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+      fireEvent.click(screen.getByRole('button', { name: 'billing.update' }));
+
+      expect(await screen.findByRole('alert')).toBeTruthy();
+      expect(screen.getByText('Rice')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'billing.heldBills.reload' })).toBeTruthy();
+    });
+
+    it('keeps an updated held bill open so its active lease is not abandoned', async () => {
+      mocks.updateInvoice.mockResolvedValueOnce({ data: { id: 'edit-1', version: 4 } });
+
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+      fireEvent.click(screen.getByRole('button', { name: 'billing.update' }));
+
+      await waitFor(() =>
+        expect(mocks.updateInvoice).toHaveBeenCalledWith({
+          id: 'edit-1',
+          data: expect.objectContaining({ expected_version: 3 }),
+        })
+      );
+      expect(screen.getByText('Rice')).toBeTruthy();
+      expect(mocks.historyReplace).not.toHaveBeenCalled();
+      expect(mocks.notifySuccess).toHaveBeenCalledWith('billing.draftSaved');
+    });
+
+    it('ignores a stale heartbeat conflict after the local save advances the bill version', async () => {
+      let rejectRenewal: (reason: unknown) => void = () => undefined;
+      mocks.renewHeldBill.mockReturnValueOnce(
+        new Promise((_resolve, reject) => {
+          rejectRenewal = reject;
+        })
+      );
+      mocks.updateInvoice.mockResolvedValueOnce({ data: { id: 'edit-1', version: 4 } });
+      Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
+
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+      document.dispatchEvent(new Event('visibilitychange'));
+      await waitFor(() => expect(mocks.renewHeldBill).toHaveBeenCalled());
+
+      fireEvent.click(screen.getByRole('button', { name: 'billing.update' }));
+      await waitFor(() => expect(mocks.updateInvoice).toHaveBeenCalled());
+      rejectRenewal({ status: 409 });
+
+      await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+    });
+  });
+
   describe('barcode entry', () => {
     it('adds a locally matched product after a camera barcode scan', async () => {
       render(<BillingPage />);
