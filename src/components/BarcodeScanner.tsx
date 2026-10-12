@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { IonButton, IonIcon, isPlatform } from '@ionic/react';
 import { camera } from 'ionicons/icons';
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
@@ -15,30 +15,48 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
 }) => {
   const { t } = useTranslation();
   const [isScanning, setIsScanning] = useState(false);
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [permissionBlocked, setPermissionBlocked] = useState(false);
+  const isMountedRef = useRef(true);
+  const scanActiveRef = useRef(false);
   const isMobile = isPlatform('capacitor');
 
-  useEffect(() => {
-    if (isMobile) {
-      checkPermission();
-    }
-    return () => {
-      if (isScanning) {
-        stopScan();
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const checkPermission = async () => {
+  const checkPermission = useCallback(async () => {
     try {
       const status = await BarcodeScanner.checkPermission({ force: false });
-      setHasPermission(status.granted);
+      if (isMountedRef.current) {
+        setPermissionBlocked(Boolean(status.denied || status.restricted || status.unknown));
+      }
     } catch (error) {
       console.error('Error checking camera permission:', error);
-      setHasPermission(false);
+      if (isMountedRef.current) setPermissionBlocked(true);
     }
-  };
+  }, []);
+
+  const stopScan = useCallback(async () => {
+    if (!scanActiveRef.current) {
+      if (isMountedRef.current) setIsScanning(false);
+      return;
+    }
+    scanActiveRef.current = false;
+    document.body.classList.remove('scanner-active');
+    try {
+      await BarcodeScanner.showBackground();
+      await BarcodeScanner.stopScan();
+    } catch (error) {
+      console.error('Error stopping scan:', error);
+    } finally {
+      if (isMountedRef.current) setIsScanning(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    if (isMobile) void checkPermission();
+    return () => {
+      isMountedRef.current = false;
+      if (scanActiveRef.current) void stopScan();
+    };
+  }, [checkPermission, isMobile, stopScan]);
 
   const startScan = async () => {
     if (!isMobile) {
@@ -49,63 +67,57 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
     try {
       // Always request permission explicitly before scanning
       const permissionStatus = await BarcodeScanner.checkPermission({ force: true });
-      
+
       if (!permissionStatus.granted) {
         if (permissionStatus.denied) {
           onError?.(t('foundation.barcode.permissionDenied'));
         } else {
           onError?.(t('foundation.barcode.permissionRequired'));
         }
-        setHasPermission(false);
+        if (isMountedRef.current) {
+          setPermissionBlocked(
+            Boolean(
+              permissionStatus.denied || permissionStatus.restricted || permissionStatus.unknown
+            )
+          );
+        }
         return;
       }
 
-      setHasPermission(true);
+      if (!isMountedRef.current) return;
+      setPermissionBlocked(false);
+      scanActiveRef.current = true;
       setIsScanning(true);
-      
+
       // Prepare scanner
       await BarcodeScanner.prepare();
-      
+
       // Make background of WebView transparent
       await BarcodeScanner.hideBackground();
-      
+
       // Add scanning class to body for styling
       document.body.classList.add('scanner-active');
-      
+
       // Start scanning
       const result = await BarcodeScanner.startScan();
-      
-      if (result.hasContent) {
+
+      if (isMountedRef.current && result.hasContent) {
         onScan(result.content || '');
       }
     } catch (error) {
       console.error('Error scanning barcode:', error);
       const err = error as Error;
-      onError?.(err?.message || t('foundation.barcode.scanFailed'));
+      if (isMountedRef.current) {
+        onError?.(err?.message || t('foundation.barcode.scanFailed'));
+      }
     } finally {
-      stopScan();
-    }
-  };
-
-  const stopScan = async () => {
-    try {
-      document.body.classList.remove('scanner-active');
-      await BarcodeScanner.showBackground();
-      await BarcodeScanner.stopScan();
-    } catch (error) {
-      console.error('Error stopping scan:', error);
-    } finally {
-      setIsScanning(false);
+      await stopScan();
     }
   };
 
   if (!isMobile) {
     return (
-      <IonButton
-        expand="block"
-        color="medium"
-        disabled
-      >
+      <IonButton expand="block" color="medium" disabled>
         <IonIcon slot="start" icon={camera} />
         {t('foundation.barcode.mobileOnly')}
       </IonButton>
@@ -125,19 +137,14 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
             </p>
           </div>
         </div>
-        
+
         {/* Scanning frame with bright border */}
-        <div 
-          className="w-64 h-64 border-4 border-green-400 rounded-lg shadow-lg" 
+        <div
+          className="w-64 h-64 border-4 border-green-400 rounded-lg shadow-lg"
           style={{ borderStyle: 'dashed' }}
         />
-        
-        <IonButton
-          expand="block"
-          color="danger"
-          onClick={stopScan}
-          className="w-full max-w-md"
-        >
+
+        <IonButton expand="block" color="danger" onClick={stopScan} className="w-full max-w-md">
           {t('foundation.barcode.cancelScan')}
         </IonButton>
       </div>
@@ -145,13 +152,11 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
   }
 
   return (
-    <IonButton
-      expand="block"
-      onClick={startScan}
-      disabled={hasPermission === false}
-    >
+    <IonButton expand="block" onClick={startScan} disabled={permissionBlocked}>
       <IonIcon slot="start" icon={camera} />
-      {hasPermission === false ? t('foundation.barcode.cameraPermissionRequired') : t('products.scanBarcode')}
+      {permissionBlocked
+        ? t('foundation.barcode.cameraPermissionRequired')
+        : t('products.scanBarcode')}
     </IonButton>
   );
 };

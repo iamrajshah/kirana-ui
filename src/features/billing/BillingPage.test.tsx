@@ -10,13 +10,31 @@ const mocks = vi.hoisted(() => ({
   updateInvoice: vi.fn(),
   finalizeInvoice: vi.fn(),
   createPayment: vi.fn(),
+  scanBarcode: vi.fn(),
   notifyError: vi.fn(),
   notifySuccess: vi.fn(),
 }));
 
-const mutation = (operation: ReturnType<typeof vi.fn>) => (payload: unknown) => ({
+const apiTrigger = (operation: ReturnType<typeof vi.fn>) => (payload: unknown) => ({
   unwrap: () => operation(payload),
 });
+
+const matchedBarcode = {
+  success: true,
+  found: true,
+  data: {
+    product: { id: 'product-2', name: 'Tea', is_active: true },
+    variant: {
+      id: 'variant-2',
+      product_id: 'product-2',
+      sku: 'TEA-1',
+      selling_price: 75,
+      price: 75,
+      is_active: true,
+    },
+    inventory: { variant_id: 'variant-2', quantity: 12, low_stock_threshold: 2 },
+  },
+};
 
 vi.mock('react-router-dom', () => ({
   useHistory: () => ({ replace: mocks.historyReplace }),
@@ -32,6 +50,9 @@ vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('@components', () => ({
   Loading: () => null,
   SearchBar: () => null,
+  BarcodeScannerComponent: ({ onScan }: { onScan: (barcode: string) => void }) => (
+    <button onClick={() => onScan('8901234567890')}>camera scan</button>
+  ),
 }));
 
 vi.mock('@components/PaymentModal', () => ({
@@ -53,10 +74,10 @@ vi.mock('@components/PaymentModal', () => ({
 }));
 
 vi.mock('@core/api/invoiceApi', () => ({
-  useCreateInvoiceMutation: () => [mutation(mocks.createInvoice), { isLoading: false }],
-  useCancelInvoiceMutation: () => [mutation(mocks.cancelInvoice), { isLoading: false }],
-  useUpdateInvoiceMutation: () => [mutation(mocks.updateInvoice), { isLoading: false }],
-  useFinalizeInvoiceMutation: () => [mutation(mocks.finalizeInvoice), { isLoading: false }],
+  useCreateInvoiceMutation: () => [apiTrigger(mocks.createInvoice), { isLoading: false }],
+  useCancelInvoiceMutation: () => [apiTrigger(mocks.cancelInvoice), { isLoading: false }],
+  useUpdateInvoiceMutation: () => [apiTrigger(mocks.updateInvoice), { isLoading: false }],
+  useFinalizeInvoiceMutation: () => [apiTrigger(mocks.finalizeInvoice), { isLoading: false }],
   useGetInvoiceByIdQuery: () => ({
     data: {
       data: {
@@ -80,7 +101,7 @@ vi.mock('@core/api/invoiceApi', () => ({
 }));
 
 vi.mock('@core/api/paymentApi', () => ({
-  useCreatePaymentMutation: () => [mutation(mocks.createPayment), { isLoading: false }],
+  useCreatePaymentMutation: () => [apiTrigger(mocks.createPayment), { isLoading: false }],
 }));
 
 vi.mock('@core/api/customerApi', () => ({
@@ -89,6 +110,7 @@ vi.mock('@core/api/customerApi', () => ({
 
 vi.mock('@core/api/productApi', () => ({
   useLazySearchVariantsQuery: () => [vi.fn(), { data: undefined, isLoading: false }],
+  useLazyScanBarcodeQuery: () => [apiTrigger(mocks.scanBarcode), { isFetching: false }],
 }));
 
 vi.mock('@core/services/notificationService', () => ({
@@ -109,10 +131,8 @@ vi.mock('ionicons/icons', () => ({
 
 vi.mock('@ionic/react', () => {
   const Container = ({ children }: PropsWithChildren) => <div>{children}</div>;
-  const IonButton = ({ children, onClick, disabled }: ButtonHTMLAttributes<HTMLButtonElement>) => (
-    <button onClick={onClick} disabled={disabled}>
-      {children}
-    </button>
+  const IonButton = ({ children, ...props }: ButtonHTMLAttributes<HTMLButtonElement>) => (
+    <button {...props}>{children}</button>
   );
   const IonItem = ({ children, onClick }: { children: ReactNode; onClick?: () => void }) => (
     <button onClick={onClick}>{children}</button>
@@ -135,58 +155,211 @@ beforeEach(() => {
   mocks.updateInvoice.mockResolvedValue({ data: { id: 'edit-1' } });
   mocks.finalizeInvoice.mockResolvedValue({ data: { id: 'edit-1' } });
   mocks.cancelInvoice.mockResolvedValue({ data: { id: 'edit-1' } });
+  mocks.scanBarcode.mockResolvedValue(matchedBarcode);
 });
 
 afterEach(cleanup);
 
-describe('BillingPage checkout recovery', () => {
-  it('opens recovery after quick payment fails and completes the same invoice on retry', async () => {
-    mocks.createPayment
-      .mockRejectedValueOnce(new Error('payment unavailable'))
-      .mockResolvedValueOnce({ data: { id: 'payment-1' } });
+describe('BillingPage', () => {
+  describe('barcode entry', () => {
+    it('adds a locally matched product after a camera barcode scan', async () => {
+      render(<BillingPage />);
+      await screen.findByText('Rice');
 
-    render(<BillingPage />);
-    await screen.findByText('Rice');
+      fireEvent.click(screen.getByRole('button', { name: 'billing.scanBarcode' }));
+      fireEvent.click(screen.getByRole('button', { name: 'camera scan' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'billing.payCash' }));
+      await waitFor(() => expect(mocks.scanBarcode).toHaveBeenCalledWith('8901234567890'));
+      expect(await screen.findByText('Tea')).toBeTruthy();
+    });
 
-    await screen.findByLabelText('payment-recovery');
-    expect(mocks.createPayment).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({ invoice_id: 'edit-1', amount: 100, payment_mode: 'CASH' })
-    );
+    it('keeps the bill open and explains an unknown barcode', async () => {
+      mocks.scanBarcode.mockResolvedValueOnce({ success: true, found: false });
 
-    fireEvent.click(screen.getByRole('button', { name: 'retry payment' }));
+      render(<BillingPage />);
+      await screen.findByText('Rice');
 
-    await waitFor(() => expect(mocks.createPayment).toHaveBeenCalledTimes(2));
-    expect(mocks.createPayment).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({ invoice_id: 'edit-1', amount: 100, payment_mode: 'CASH' })
-    );
-    await waitFor(() => expect(screen.queryByLabelText('payment-recovery')).toBeNull());
-    expect(mocks.historyReplace).toHaveBeenCalledWith('/billing');
+      fireEvent.click(screen.getByRole('button', { name: 'billing.scanBarcode' }));
+      fireEvent.click(screen.getByRole('button', { name: 'camera scan' }));
+
+      await waitFor(() =>
+        expect(mocks.notifyError).toHaveBeenCalledWith('billing.barcodeNotFound')
+      );
+      expect(screen.getByText('Rice')).toBeTruthy();
+    });
+
+    it('accepts barcode input from a desktop counter scanner', async () => {
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+
+      fireEvent.click(screen.getByRole('button', { name: 'billing.scanBarcode' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'foundation.barcode.barcode' }), {
+        target: { value: '8901234567890' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'common.add' }));
+
+      await waitFor(() => expect(mocks.scanBarcode).toHaveBeenCalledWith('8901234567890'));
+      expect(await screen.findByText('Tea')).toBeTruthy();
+    });
+
+    it('queues rapid scans and prevents checkout until all lookups finish', async () => {
+      let resolveFirstLookup: (value: typeof matchedBarcode) => void = () => undefined;
+      const firstLookup = new Promise<typeof matchedBarcode>((resolve) => {
+        resolveFirstLookup = resolve;
+      });
+      mocks.scanBarcode.mockReturnValueOnce(firstLookup);
+
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+
+      fireEvent.click(screen.getByRole('button', { name: 'billing.scanBarcode' }));
+      const cameraScan = screen.getByRole('button', { name: 'camera scan' });
+      fireEvent.click(cameraScan);
+      fireEvent.click(cameraScan);
+
+      expect(
+        (screen.getByRole('button', { name: 'billing.payCash' }) as HTMLButtonElement).disabled
+      ).toBe(true);
+      expect(mocks.scanBarcode).toHaveBeenCalledTimes(1);
+
+      resolveFirstLookup(matchedBarcode);
+
+      await waitFor(() => expect(mocks.scanBarcode).toHaveBeenCalledTimes(2));
+      expect(await screen.findByDisplayValue(2)).toBeTruthy();
+      await waitFor(() =>
+        expect(
+          (screen.getByRole('button', { name: 'billing.payCash' }) as HTMLButtonElement).disabled
+        ).toBe(false)
+      );
+    });
+
+    it('keeps the bill open when barcode lookup fails', async () => {
+      mocks.scanBarcode.mockRejectedValueOnce(new Error('network unavailable'));
+
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+
+      fireEvent.click(screen.getByRole('button', { name: 'billing.scanBarcode' }));
+      fireEvent.click(screen.getByRole('button', { name: 'camera scan' }));
+
+      await waitFor(() =>
+        expect(mocks.notifyError).toHaveBeenCalledWith('billing.barcodeLookupFailed')
+      );
+      expect(screen.getByText('Rice')).toBeTruthy();
+    });
+
+    it('continues with the next queued scan when the first lookup fails', async () => {
+      let rejectFirstLookup: (reason?: unknown) => void = () => undefined;
+      const firstLookup = new Promise<never>((_resolve, reject) => {
+        rejectFirstLookup = reject;
+      });
+      mocks.scanBarcode.mockReturnValueOnce(firstLookup);
+
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+
+      fireEvent.click(screen.getByRole('button', { name: 'billing.scanBarcode' }));
+      const cameraScan = screen.getByRole('button', { name: 'camera scan' });
+      fireEvent.click(cameraScan);
+      fireEvent.click(cameraScan);
+      rejectFirstLookup(new Error('network unavailable'));
+
+      await waitFor(() => expect(mocks.scanBarcode).toHaveBeenCalledTimes(2));
+      expect(await screen.findByText('Tea')).toBeTruthy();
+      expect(mocks.notifyError).toHaveBeenCalledWith('billing.barcodeLookupFailed');
+    });
+
+    it('rejects a barcode linked to an inactive product', async () => {
+      mocks.scanBarcode.mockResolvedValueOnce({
+        ...matchedBarcode,
+        data: {
+          ...matchedBarcode.data,
+          product: { ...matchedBarcode.data.product, is_active: false },
+        },
+      });
+
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+
+      fireEvent.click(screen.getByRole('button', { name: 'billing.scanBarcode' }));
+      fireEvent.click(screen.getByRole('button', { name: 'camera scan' }));
+
+      await waitFor(() =>
+        expect(mocks.notifyError).toHaveBeenCalledWith('billing.barcodeUnavailable')
+      );
+      expect(screen.queryByText('Tea')).toBeNull();
+    });
+
+    it('closes barcode tools when a completed bill resets', async () => {
+      mocks.scanBarcode.mockResolvedValueOnce({ success: true, found: false });
+      mocks.createPayment.mockResolvedValueOnce({ data: { id: 'payment-1' } });
+
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+
+      fireEvent.click(screen.getByRole('button', { name: 'billing.scanBarcode' }));
+      fireEvent.click(screen.getByRole('button', { name: 'camera scan' }));
+      await waitFor(() =>
+        expect(mocks.notifyError).toHaveBeenCalledWith('billing.barcodeNotFound')
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'billing.payCash' }));
+
+      await waitFor(() =>
+        expect(screen.queryByRole('textbox', { name: 'foundation.barcode.barcode' })).toBeNull()
+      );
+    });
   });
 
-  it('keeps recovery available after cancellation fails and clears the edit route after retry', async () => {
-    mocks.createPayment.mockRejectedValueOnce(new Error('payment unavailable'));
-    mocks.cancelInvoice
-      .mockRejectedValueOnce(new Error('cancel unavailable'))
-      .mockResolvedValueOnce({ data: { id: 'edit-1' } });
+  describe('checkout recovery', () => {
+    it('opens recovery after quick payment fails and completes the same invoice on retry', async () => {
+      mocks.createPayment
+        .mockRejectedValueOnce(new Error('payment unavailable'))
+        .mockResolvedValueOnce({ data: { id: 'payment-1' } });
 
-    render(<BillingPage />);
-    await screen.findByText('Rice');
-    fireEvent.click(screen.getByRole('button', { name: 'billing.payCash' }));
-    await screen.findByLabelText('payment-recovery');
+      render(<BillingPage />);
+      await screen.findByText('Rice');
 
-    fireEvent.click(screen.getByRole('button', { name: 'cancel checkout' }));
-    await waitFor(() => expect(mocks.cancelInvoice).toHaveBeenCalledTimes(1));
-    expect(screen.getByLabelText('payment-recovery')).toBeTruthy();
-    expect(mocks.historyReplace).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole('button', { name: 'billing.payCash' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'cancel checkout' }));
+      await screen.findByLabelText('payment-recovery');
+      expect(mocks.createPayment).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ invoice_id: 'edit-1', amount: 100, payment_mode: 'CASH' })
+      );
 
-    await waitFor(() => expect(mocks.cancelInvoice).toHaveBeenCalledTimes(2));
-    await waitFor(() => expect(screen.queryByLabelText('payment-recovery')).toBeNull());
-    expect(mocks.historyReplace).toHaveBeenCalledWith('/billing');
+      fireEvent.click(screen.getByRole('button', { name: 'retry payment' }));
+
+      await waitFor(() => expect(mocks.createPayment).toHaveBeenCalledTimes(2));
+      expect(mocks.createPayment).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ invoice_id: 'edit-1', amount: 100, payment_mode: 'CASH' })
+      );
+      await waitFor(() => expect(screen.queryByLabelText('payment-recovery')).toBeNull());
+      expect(mocks.historyReplace).toHaveBeenCalledWith('/billing');
+    });
+
+    it('keeps recovery available after cancellation fails and clears the edit route after retry', async () => {
+      mocks.createPayment.mockRejectedValueOnce(new Error('payment unavailable'));
+      mocks.cancelInvoice
+        .mockRejectedValueOnce(new Error('cancel unavailable'))
+        .mockResolvedValueOnce({ data: { id: 'edit-1' } });
+
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+      fireEvent.click(screen.getByRole('button', { name: 'billing.payCash' }));
+      await screen.findByLabelText('payment-recovery');
+
+      fireEvent.click(screen.getByRole('button', { name: 'cancel checkout' }));
+      await waitFor(() => expect(mocks.cancelInvoice).toHaveBeenCalledTimes(1));
+      expect(screen.getByLabelText('payment-recovery')).toBeTruthy();
+      expect(mocks.historyReplace).not.toHaveBeenCalled();
+
+      fireEvent.click(screen.getByRole('button', { name: 'cancel checkout' }));
+
+      await waitFor(() => expect(mocks.cancelInvoice).toHaveBeenCalledTimes(2));
+      await waitFor(() => expect(screen.queryByLabelText('payment-recovery')).toBeNull());
+      expect(mocks.historyReplace).toHaveBeenCalledWith('/billing');
+    });
   });
 });
