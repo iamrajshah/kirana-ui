@@ -4,9 +4,9 @@
 
 /* Custom styles */
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--ion-text-color);
@@ -48,6 +48,15 @@ body.dark .text-gray-600 {
 body.dark .bg-gray-100,
 body.dark .bg-gray-50 {
   background-color: var(--ion-card-background) !important;
+}
+
+.billing-customer-banner {
+  background: linear-gradient(90deg, #f0f9ff, #ecfdf5);
+}
+
+body.dark .billing-customer-banner {
+  background: var(--ion-card-background);
+  border-color: var(--ion-border-color) !important;
 }
 
 body.dark .border-gray-200,
@@ -139,22 +148,22 @@ body.dark .ion-color-light {
 }
 
 /* Fix native input elements in dark mode */
-body.dark input[type="text"],
-body.dark input[type="number"],
-body.dark input[type="email"],
-body.dark input[type="password"],
-body.dark input[type="tel"],
+body.dark input[type='text'],
+body.dark input[type='number'],
+body.dark input[type='email'],
+body.dark input[type='password'],
+body.dark input[type='tel'],
 body.dark textarea {
   background-color: var(--ion-item-background) !important;
   color: var(--ion-text-color) !important;
   border-color: var(--ion-border-color) !important;
 }
 
-body.dark input[type="text"]::placeholder,
-body.dark input[type="number"]::placeholder,
-body.dark input[type="email"]::placeholder,
-body.dark input[type="password"]::placeholder,
-body.dark input[type="tel"]::placeholder,
+body.dark input[type='text']::placeholder,
+body.dark input[type='number']::placeholder,
+body.dark input[type='email']::placeholder,
+body.dark input[type='password']::placeholder,
+body.dark input[type='tel']::placeholder,
 body.dark textarea::placeholder {
   color: var(--ion-color-medium) !important;
 }

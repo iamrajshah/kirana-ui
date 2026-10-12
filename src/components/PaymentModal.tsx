@@ -25,6 +25,7 @@ interface PaymentModalProps {
   invoiceAmount: number;
   paidAmount?: number;
   isLoading?: boolean;
+  allowPartial?: boolean;
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -34,6 +35,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   invoiceAmount,
   paidAmount = 0,
   isLoading = false,
+  allowPartial = true,
 }) => {
   const { t } = useTranslation();
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('CASH');
@@ -42,10 +44,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [paymentType, setPaymentType] = useState<'full' | 'partial'>('full');
 
   const balanceAmount = invoiceAmount - paidAmount;
+  const effectivePaymentType = allowPartial ? paymentType : 'full';
 
   const handleSubmit = async () => {
-    const payAmount = paymentType === 'full' ? balanceAmount : parseFloat(amount) || 0;
-    
+    const payAmount = effectivePaymentType === 'full' ? balanceAmount : parseFloat(amount) || 0;
+
     if (payAmount <= 0) {
       return;
     }
@@ -56,15 +59,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
     try {
       await onPayment(payAmount, paymentMode, reference || undefined);
-      
+
       // Reset form
       setAmount('');
       setReference('');
       setPaymentType('full');
       setPaymentMode('CASH');
-      
-      // Close modal on success
-      onClose();
     } catch (error) {
       // Error will be handled by parent component
       console.error('Payment error:', error);
@@ -79,12 +79,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   ];
 
   return (
-    <IonModal isOpen={isOpen} onDidDismiss={onClose}>
+    <IonModal isOpen={isOpen} backdropDismiss={false}>
       <IonHeader>
         <IonToolbar color="primary">
           <IonTitle>{t('payment.collectPayment')}</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={onClose}>
+            <IonButton onClick={onClose} disabled={isLoading} aria-label={t('common.cancel')}>
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>
@@ -106,7 +106,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 </span>
               </div>
             )}
-            <div className="flex justify-between font-bold border-t pt-2" style={{ borderColor: '#ddd' }}>
+            <div
+              className="flex justify-between font-bold border-t pt-2"
+              style={{ borderColor: '#ddd' }}
+            >
               <span>{t('payment.balanceAmount')}</span>
               <span style={{ color: '#3880ff' }}>{formatCurrency(balanceAmount)}</span>
             </div>
@@ -114,24 +117,26 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         </div>
 
         {/* Payment Type Selector */}
-        <div className="mb-4">
-          <IonSegment
-            key={paymentType}
-            value={paymentType}
-            onIonChange={(e) => setPaymentType(e.detail.value as 'full' | 'partial')}
-            color="primary"
-          >
-            <IonSegmentButton value="full">
-              <IonLabel>{t('payment.fullPayment')}</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="partial">
-              <IonLabel>{t('payment.partialPayment')}</IonLabel>
-            </IonSegmentButton>
-          </IonSegment>
-        </div>
+        {allowPartial && (
+          <div className="mb-4">
+            <IonSegment
+              key={paymentType}
+              value={paymentType}
+              onIonChange={(e) => setPaymentType(e.detail.value as 'full' | 'partial')}
+              color="primary"
+            >
+              <IonSegmentButton value="full">
+                <IonLabel>{t('payment.fullPayment')}</IonLabel>
+              </IonSegmentButton>
+              <IonSegmentButton value="partial">
+                <IonLabel>{t('payment.partialPayment')}</IonLabel>
+              </IonSegmentButton>
+            </IonSegment>
+          </div>
+        )}
 
         {/* Payment Amount */}
-        {paymentType === 'full' ? (
+        {effectivePaymentType === 'full' ? (
           <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: '#e3f2fd' }}>
             <p className="text-sm mb-1" style={{ color: '#666' }}>
               {t('payment.payingFull')}
@@ -179,8 +184,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 paymentMode === 'UPI'
                   ? t('payment.upiTransactionId')
                   : paymentMode === 'CARD'
-                  ? t('payment.last4DigitsOrApproval')
-                  : t('payment.bankReferenceNumber')
+                    ? t('payment.last4DigitsOrApproval')
+                    : t('payment.bankReferenceNumber')
               }
             />
           </div>
@@ -188,12 +193,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
         {/* Action Buttons */}
         <div className="flex gap-2 mt-6">
-          <Button
-            fullWidth
-            variant="outline"
-            onClick={onClose}
-            disabled={isLoading}
-          >
+          <Button fullWidth variant="outline" onClick={onClose} disabled={isLoading}>
             {t('common.cancel')}
           </Button>
           <Button
@@ -201,8 +201,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             onClick={handleSubmit}
             disabled={
               isLoading ||
-              (paymentType === 'partial' && (!amount || parseFloat(amount) <= 0)) ||
-              (paymentType === 'partial' && parseFloat(amount) > balanceAmount)
+              (effectivePaymentType === 'partial' && (!amount || parseFloat(amount) <= 0)) ||
+              (effectivePaymentType === 'partial' && parseFloat(amount) > balanceAmount)
             }
             loading={isLoading}
           >

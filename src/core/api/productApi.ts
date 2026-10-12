@@ -1,5 +1,28 @@
 import { apiSlice } from './apiSlice';
-import type { ApiResponse, PaginatedApiResponse, Product, ProductVariant, BarcodeScanResponse, BarcodeLookupResponse, CreateProductFromBarcodeRequest, BarcodeProductResponse } from '../types';
+import type {
+  ApiResponse,
+  PaginatedApiResponse,
+  Product,
+  ProductVariant,
+  BarcodeScanResponse,
+  BarcodeLookupResponse,
+  CreateProductFromBarcodeRequest,
+  BarcodeProductResponse,
+} from '../types';
+
+export interface BillingSearchVariant {
+  id: string;
+  product_id: string;
+  product_name: string | null;
+  brand?: string | null;
+  size?: string | null;
+  packaging?: Packaging | null;
+  price: number;
+  gst_percent?: number | null;
+  sku: string;
+  available_quantity: number;
+  low_stock_threshold: number;
+}
 
 export type Packaging = 'POUCH' | 'BOTTLE' | 'CAN' | 'BOX' | 'PACKET' | 'JAR' | 'LOOSE';
 
@@ -38,20 +61,14 @@ export const productApi = apiSlice.injectEndpoints({
       query: (id) => `/products/${id}`,
       providesTags: (result, error, id) => [{ type: 'Product', id }],
     }),
-    searchVariants: builder.query<
-      ApiResponse<ProductVariant[]>,
-      { search: string }
-    >({
+    searchVariants: builder.query<ApiResponse<BillingSearchVariant[]>, { search: string }>({
       query: ({ search }) => ({
         url: '/products/search',
         params: { q: search },
       }),
       providesTags: ['Product'],
     }),
-    createProduct: builder.mutation<
-      ApiResponse<Product>,
-      CreateProductRequest
-    >({
+    createProduct: builder.mutation<ApiResponse<Product>, CreateProductRequest>({
       query: (body) => ({
         url: '/products',
         method: 'POST',

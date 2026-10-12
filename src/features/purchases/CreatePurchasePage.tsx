@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { ProductVariant } from '@core/types';
+import type { BillingSearchVariant } from '@core/api/productApi';
 import {
   IonPage,
   IonHeader,
@@ -46,7 +46,8 @@ const CreatePurchasePage: React.FC = () => {
   const { t } = useTranslation();
   const history = useHistory();
 
-  const [searchVariants, { data: variantsData, isLoading: searchLoading }] = useLazySearchVariantsQuery();
+  const [searchVariants, { data: variantsData, isLoading: searchLoading }] =
+    useLazySearchVariantsQuery();
   const { data: suppliersData } = useGetSuppliersQuery({});
   const [createPurchase, { isLoading: creating }] = useCreatePurchaseMutation();
 
@@ -70,7 +71,7 @@ const CreatePurchasePage: React.FC = () => {
     }
   }, 300);
 
-  const addToCart = (variant: ProductVariant & { product_name?: string }) => {
+  const addToCart = (variant: BillingSearchVariant) => {
     const existing = cart.find((item) => item.variant_id === variant.id);
     if (existing) {
       updateQuantity(variant.id, existing.quantity + 1);
@@ -150,13 +151,13 @@ const CreatePurchasePage: React.FC = () => {
       }).unwrap();
 
       notificationService.success(t('purchases.purchaseCreated'));
-      
+
       // Reset form
       setCart([]);
       setInvoiceNumber('');
       setPaymentAmount('');
       setSearchTerm('');
-      
+
       setTimeout(() => history.push('/purchases'), 1000);
     } catch (error: unknown) {
       notificationService.handleApiError(error);
@@ -177,12 +178,9 @@ const CreatePurchasePage: React.FC = () => {
         <IonCard>
           <IonCardContent>
             <div style={{ marginBottom: '16px' }}>
-              <Button 
-                onClick={() => setShowSupplierModal(true)}
-                fullWidth
-              >
-                {selectedSupplierId 
-                  ? `${t('purchases.selectSupplierSelected')} ${suppliers.find(s => s.id === selectedSupplierId)?.name}`
+              <Button onClick={() => setShowSupplierModal(true)} fullWidth>
+                {selectedSupplierId
+                  ? `${t('purchases.selectSupplierSelected')} ${suppliers.find((s) => s.id === selectedSupplierId)?.name}`
                   : t('purchases.selectSupplierButton')}
               </Button>
             </div>
@@ -217,11 +215,15 @@ const CreatePurchasePage: React.FC = () => {
               placeholder={t('purchases.searchProductsAdd')}
             />
 
-            {searchLoading && <IonText color="medium"><p>{t('purchases.searching')}</p></IonText>}
+            {searchLoading && (
+              <IonText color="medium">
+                <p>{t('purchases.searching')}</p>
+              </IonText>
+            )}
 
             {searchTerm.length >= 2 && variants.length > 0 && (
               <IonList>
-                {variants.map((variant: ProductVariant & { product_name?: string }) => (
+                {variants.map((variant) => (
                   <IonItem key={variant.id} button onClick={() => addToCart(variant)}>
                     <IonLabel>
                       <h3>{variant.product_name}</h3>
@@ -254,14 +256,31 @@ const CreatePurchasePage: React.FC = () => {
                     <IonLabel>
                       <h3>{item.product_name}</h3>
                       <p>{item.sku}</p>
-                      
-                      <div style={{ display: 'flex', gap: '12px', marginTop: '8px', alignItems: 'center' }}>
+
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: '12px',
+                          marginTop: '8px',
+                          alignItems: 'center',
+                        }}
+                      >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <IonButton size="small" fill="clear" onClick={() => updateQuantity(item.variant_id, item.quantity - 1)}>
+                          <IonButton
+                            size="small"
+                            fill="clear"
+                            onClick={() => updateQuantity(item.variant_id, item.quantity - 1)}
+                          >
                             <IonIcon icon={remove} />
                           </IonButton>
-                          <IonText><strong>{item.quantity}</strong></IonText>
-                          <IonButton size="small" fill="clear" onClick={() => updateQuantity(item.variant_id, item.quantity + 1)}>
+                          <IonText>
+                            <strong>{item.quantity}</strong>
+                          </IonText>
+                          <IonButton
+                            size="small"
+                            fill="clear"
+                            onClick={() => updateQuantity(item.variant_id, item.quantity + 1)}
+                          >
                             <IonIcon icon={add} />
                           </IonButton>
                         </div>
@@ -270,7 +289,9 @@ const CreatePurchasePage: React.FC = () => {
                           <input
                             type="number"
                             value={item.unit_price}
-                            onChange={(e) => updatePrice(item.variant_id, parseFloat(e.target.value) || 0)}
+                            onChange={(e) =>
+                              updatePrice(item.variant_id, parseFloat(e.target.value) || 0)
+                            }
                             style={{
                               width: '100%',
                               padding: '8px',
@@ -287,7 +308,11 @@ const CreatePurchasePage: React.FC = () => {
                       </p>
                     </IonLabel>
 
-                    <IonButton fill="clear" slot="end" onClick={() => removeFromCart(item.variant_id)}>
+                    <IonButton
+                      fill="clear"
+                      slot="end"
+                      onClick={() => removeFromCart(item.variant_id)}
+                    >
                       <IonIcon icon={trash} color="danger" />
                     </IonButton>
                   </IonItem>
@@ -305,15 +330,26 @@ const CreatePurchasePage: React.FC = () => {
             </IonCardHeader>
             <IonCardContent>
               <div style={{ marginBottom: '16px' }}>
-                <IonText color="medium"><p>{t('purchases.subtotal')}</p></IonText>
-                <IonText><h2 style={{ margin: 0 }}>{formatCurrency(subtotal)}</h2></IonText>
+                <IonText color="medium">
+                  <p>{t('purchases.subtotal')}</p>
+                </IonText>
+                <IonText>
+                  <h2 style={{ margin: 0 }}>{formatCurrency(subtotal)}</h2>
+                </IonText>
               </div>
 
               <div style={{ marginBottom: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '8px',
+                  }}
+                >
                   <label style={{ fontWeight: '500' }}>{t('purchases.paymentAmountLabel')}</label>
-                  <IonButton 
-                    size="small" 
+                  <IonButton
+                    size="small"
                     fill="outline"
                     onClick={() => setPaymentAmount(subtotal.toString())}
                   >
@@ -337,16 +373,18 @@ const CreatePurchasePage: React.FC = () => {
                   value={paymentMode}
                   onIonChange={(e) => setPaymentMode(e.detail.value)}
                   interface="popover"
-                  style={{ 
+                  style={{
                     border: '1px solid var(--ion-color-medium)',
                     borderRadius: '8px',
-                    padding: '8px'
+                    padding: '8px',
                   }}
                 >
                   <IonSelectOption value="CASH">{t('purchases.cash')}</IonSelectOption>
                   <IonSelectOption value="UPI">{t('purchases.upi')}</IonSelectOption>
                   <IonSelectOption value="CARD">{t('purchases.card')}</IonSelectOption>
-                  <IonSelectOption value="BANK_TRANSFER">{t('purchases.bankTransferOption')}</IonSelectOption>
+                  <IonSelectOption value="BANK_TRANSFER">
+                    {t('purchases.bankTransferOption')}
+                  </IonSelectOption>
                 </IonSelect>
               </div>
 
@@ -360,7 +398,9 @@ const CreatePurchasePage: React.FC = () => {
                   }}
                 >
                   <IonText color="danger">
-                    <p style={{ margin: 0 }}>{t('purchases.pendingAmountLabel')} <strong>{formatCurrency(pending)}</strong></p>
+                    <p style={{ margin: 0 }}>
+                      {t('purchases.pendingAmountLabel')} <strong>{formatCurrency(pending)}</strong>
+                    </p>
                   </IonText>
                 </div>
               )}
@@ -380,10 +420,7 @@ const CreatePurchasePage: React.FC = () => {
         )}
 
         {cart.length === 0 && (
-          <EmptyState 
-            message={t('purchases.addProductsMessage')} 
-            icon="cart"
-          />
+          <EmptyState message={t('purchases.addProductsMessage')} icon="cart" />
         )}
 
         {/* Supplier Selection Modal */}
@@ -393,7 +430,9 @@ const CreatePurchasePage: React.FC = () => {
               <IonToolbar>
                 <IonTitle>{t('purchases.selectSupplierTitle')}</IonTitle>
                 <IonButtons slot="end">
-                  <IonButton onClick={() => setShowSupplierModal(false)}>{t('purchases.close')}</IonButton>
+                  <IonButton onClick={() => setShowSupplierModal(false)}>
+                    {t('purchases.close')}
+                  </IonButton>
                 </IonButtons>
               </IonToolbar>
             </IonHeader>

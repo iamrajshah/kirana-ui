@@ -123,7 +123,32 @@
     "missingCustomerOrInvoice": "Missing customer or invoice information",
     "paymentRecordedSuccessfully": "Payment recorded successfully!",
     "paymentFailed": "Payment failed",
-    "failedToCreateInvoice": "Failed to create invoice"
+    "failedToCreateInvoice": "Failed to create invoice",
+    "fastBilling": "Fast Billing",
+    "saleFor": "Sale for",
+    "walkInCustomer": "Walk-in customer",
+    "walkInHint": "No customer setup needed for immediate payment",
+    "customerCreditAvailable": "Credit and payment reminders are available",
+    "attachCustomer": "Attach customer",
+    "changeCustomer": "Change customer",
+    "useWalkInInstead": "Continue as walk-in customer",
+    "scanBarcode": "Scan barcode",
+    "unknownProduct": "Unknown product",
+    "clearCart": "Clear cart",
+    "emptyCartHint": "Search or scan an item to start this bill",
+    "billSummary": "Bill summary",
+    "amountToCollect": "Amount to collect",
+    "walkInFullPaymentOnly": "Walk-in bills must be paid in full. Attach a customer to offer credit.",
+    "payCash": "Pay cash",
+    "cash": "Cash",
+    "otherPayment": "Card / other",
+    "holdBill": "Hold bill",
+    "draftSaved": "Bill held successfully",
+    "processingBill": "Processing bill...",
+    "missingInvoice": "Invoice information is missing",
+    "paymentNotCompleted": "Payment was not completed",
+    "checkoutCancelled": "Unpaid checkout cancelled",
+    "failedToCancelCheckout": "Could not cancel the unpaid checkout"
   },
   "customers": {
     "title": "Customers",
@@ -617,7 +642,9 @@
     "theme": "Theme",
     "lightMode": "Light Mode",
     "darkMode": "Dark Mode",
-    "selectLanguage": "Select Language"
+    "selectLanguage": "Select Language",
+    "accountMenu": "Account menu",
+    "changePassword": "Change Password"
   },
   "invoice": {
     "invoiceNumber": "Invoice #",
@@ -655,6 +682,11 @@
     "cancelReasonPlaceholder": "Reason for cancellation (optional)",
     "no": "No",
     "yesCancelInvoice": "Yes, Cancel"
+  },
+  "about": {
+    "title": "About",
+    "version": "Version {{version}}",
+    "builtBy": "Built and maintained by"
   },
   "payment": {
     "collectPayment": "Collect Payment",

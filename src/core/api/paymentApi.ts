@@ -16,7 +16,7 @@ export const paymentApi = apiSlice.injectEndpoints({
     createPayment: builder.mutation<
       ApiResponse<Payment>,
       {
-        customer_id: string;
+        customer_id?: string;
         amount: number;
         payment_mode: PaymentMode;
         invoice_id?: string;
@@ -29,16 +29,16 @@ export const paymentApi = apiSlice.injectEndpoints({
         url: '/payments',
         method: 'POST',
         body,
-        headers: body.idempotency_key
-          ? { 'idempotency-key': body.idempotency_key }
-          : {},
+        headers: body.idempotency_key ? { 'idempotency-key': body.idempotency_key } : {},
       }),
-      invalidatesTags: ['Payment', 'Invoice', 'Dashboard', 'Customer'],
+      invalidatesTags: (result, error, body) => [
+        'Payment',
+        'Invoice',
+        'Dashboard',
+        ...(body.customer_id ? (['Customer'] as const) : []),
+      ],
     }),
   }),
 });
 
-export const {
-  useGetPaymentsQuery,
-  useCreatePaymentMutation,
-} = paymentApi;
+export const { useGetPaymentsQuery, useCreatePaymentMutation } = paymentApi;
