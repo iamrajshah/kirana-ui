@@ -33,10 +33,9 @@ export const CustomerLedgerPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
   
-  console.log('CustomerLedgerPage - Customer ID:', id);
   
-  const { data: customerData, isLoading: loadingCustomer, error: customerError } = useGetCustomerByIdQuery(id);
-  const { data: ledgerData, isLoading: loadingLedger, error: ledgerError } = useGetCustomerLedgerQuery({ id });
+  const { data: customerData, isLoading: loadingCustomer } = useGetCustomerByIdQuery(id);
+  const { data: ledgerData, isLoading: loadingLedger } = useGetCustomerLedgerQuery({ id });
 
   const handleInvoiceClick = (entry: LedgerEntry) => {
     if (entry.entry_type === 'INVOICE' && entry.reference_id) {
@@ -44,9 +43,6 @@ export const CustomerLedgerPage: React.FC = () => {
     }
   };
 
-  console.log('Customer Data:', customerData);
-  console.log('Ledger Data:', ledgerData);
-  console.log('Errors:', { customerError, ledgerError });
 
   const customer = customerData?.data;
   const ledger = ledgerData?.data?.ledger || [];
@@ -193,7 +189,9 @@ export const CustomerLedgerPage: React.FC = () => {
                               <p className="entry-description">{entry.description}</p>
                               {entry.reference_id && (
                                 <p className="entry-reference" style={{ color: 'var(--ion-color-primary)', fontWeight: '500' }}>
-                                  {entry.entry_type === 'INVOICE' ? '📄 Invoice #' : 'Ref: #'}{entry.reference_id}
+                                  {entry.entry_type === 'INVOICE'
+                                    ? t('customers.ledger.invoiceReference')
+                                    : t('customers.ledger.reference')}{entry.reference_id}
                                 </p>
                               )}
                             </IonLabel>
@@ -241,7 +239,9 @@ export const CustomerLedgerPage: React.FC = () => {
                               <p className="entry-description">{entry.description}</p>
                               {entry.reference_id && (
                                 <p className="entry-reference" style={{ color: 'var(--ion-color-primary)', fontWeight: '500' }}>
-                                  {entry.entry_type === 'INVOICE' ? '📄 Invoice #' : 'Ref: #'}{entry.reference_id}
+                                  {entry.entry_type === 'INVOICE'
+                                    ? t('customers.ledger.invoiceReference')
+                                    : t('customers.ledger.reference')}{entry.reference_id}
                                 </p>
                               )}
                             </IonLabel>

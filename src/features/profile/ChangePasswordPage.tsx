@@ -23,11 +23,13 @@ import { save, lockClosed, checkmarkCircle } from 'ionicons/icons';
 import { Input } from '@components/Input';
 import { useChangePasswordMutation } from '@core/api/userApi';
 import { useHistory } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { ROUTES } from '@core/constants';
 import './ChangePasswordPage.css';
 
 export const ChangePasswordPage: React.FC = () => {
   const history = useHistory();
+  const { t } = useTranslation();
   
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -63,34 +65,32 @@ export const ChangePasswordPage: React.FC = () => {
   };
 
   const handleChangePassword = async () => {
-    console.log('🔒 Changing password...');
-
     if (!currentPassword.trim()) {
-      setErrorMessage('Current password is required');
+      setErrorMessage(t('foundation.password.currentRequired'));
       setShowError(true);
       return;
     }
 
     if (!newPassword.trim()) {
-      setErrorMessage('New password is required');
+      setErrorMessage(t('foundation.password.newRequired'));
       setShowError(true);
       return;
     }
 
     if (!passwordValidation.isValid) {
-      setErrorMessage('New password does not meet requirements');
+      setErrorMessage(t('foundation.password.requirementsFailed'));
       setShowError(true);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setErrorMessage('New password and confirmation do not match');
+      setErrorMessage(t('foundation.password.mismatch'));
       setShowError(true);
       return;
     }
 
     if (currentPassword === newPassword) {
-      setErrorMessage('New password must be different from current password');
+      setErrorMessage(t('foundation.password.different'));
       setShowError(true);
       return;
     }
@@ -101,7 +101,6 @@ export const ChangePasswordPage: React.FC = () => {
         newPassword,
       }).unwrap();
 
-      console.log('✅ Password changed successfully');
       setShowSuccess(true);
       resetForm();
       
@@ -111,7 +110,7 @@ export const ChangePasswordPage: React.FC = () => {
       }, 1500);
     } catch (error: unknown) {
       console.error('❌ Error changing password:', error);
-      setErrorMessage(apiErrorMessage(error, 'Failed to change password'));
+      setErrorMessage(apiErrorMessage(error, t('foundation.password.changeFailed')));
       setShowError(true);
     }
   };
@@ -123,7 +122,7 @@ export const ChangePasswordPage: React.FC = () => {
           <IonButtons slot="start">
             <IonBackButton defaultHref="/dashboard" />
           </IonButtons>
-          <IonTitle>Change Password</IonTitle>
+          <IonTitle>{t('profile.changePassword')}</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
@@ -131,32 +130,32 @@ export const ChangePasswordPage: React.FC = () => {
           <IonCardHeader>
             <IonCardTitle>
               <IonIcon icon={lockClosed} style={{ marginRight: '8px' }} />
-              Update Your Password
+              {t('foundation.password.updateTitle')}
             </IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
             <Input
-              label="Current Password"
+              label={t('profile.currentPasswordLabel')}
               value={currentPassword}
               onChange={setCurrentPassword}
               type="password"
-              placeholder="Enter current password"
+              placeholder={t('profile.currentPasswordPlaceholder')}
               required
             />
             <Input
-              label="New Password"
+              label={t('profile.newPasswordLabel')}
               value={newPassword}
               onChange={setNewPassword}
               type="password"
-              placeholder="Enter new password"
+              placeholder={t('profile.newPasswordPlaceholder')}
               required
             />
             <Input
-              label="Confirm New Password"
+              label={t('profile.confirmPasswordLabel')}
               value={confirmPassword}
               onChange={setConfirmPassword}
               type="password"
-              placeholder="Confirm new password"
+              placeholder={t('profile.confirmPasswordPlaceholder')}
               required
             />
             
@@ -168,14 +167,14 @@ export const ChangePasswordPage: React.FC = () => {
               disabled={!passwordValidation.isValid || newPassword !== confirmPassword}
             >
               <IonIcon icon={save} slot="start" />
-              Change Password
+              {t('profile.changePassword')}
             </IonButton>
           </IonCardContent>
         </IonCard>
 
         <IonCard>
           <IonCardHeader>
-            <IonCardTitle>Password Requirements</IonCardTitle>
+            <IonCardTitle>{t('profile.passwordRequirements')}</IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
             <IonList lines="none">
@@ -185,7 +184,7 @@ export const ChangePasswordPage: React.FC = () => {
                   slot="start"
                   color={passwordValidation.isLongEnough ? 'success' : 'medium'}
                 />
-                <IonLabel>At least 8 characters</IonLabel>
+                <IonLabel>{t('foundation.password.minimumLength')}</IonLabel>
               </IonItem>
               <IonItem className={passwordValidation.hasUpperCase ? 'valid' : 'invalid'}>
                 <IonIcon
@@ -193,7 +192,7 @@ export const ChangePasswordPage: React.FC = () => {
                   slot="start"
                   color={passwordValidation.hasUpperCase ? 'success' : 'medium'}
                 />
-                <IonLabel>One uppercase letter</IonLabel>
+                <IonLabel>{t('foundation.password.uppercase')}</IonLabel>
               </IonItem>
               <IonItem className={passwordValidation.hasLowerCase ? 'valid' : 'invalid'}>
                 <IonIcon
@@ -201,7 +200,7 @@ export const ChangePasswordPage: React.FC = () => {
                   slot="start"
                   color={passwordValidation.hasLowerCase ? 'success' : 'medium'}
                 />
-                <IonLabel>One lowercase letter</IonLabel>
+                <IonLabel>{t('foundation.password.lowercase')}</IonLabel>
               </IonItem>
               <IonItem className={passwordValidation.hasNumber ? 'valid' : 'invalid'}>
                 <IonIcon
@@ -209,7 +208,7 @@ export const ChangePasswordPage: React.FC = () => {
                   slot="start"
                   color={passwordValidation.hasNumber ? 'success' : 'medium'}
                 />
-                <IonLabel>One number</IonLabel>
+                <IonLabel>{t('foundation.password.number')}</IonLabel>
               </IonItem>
             </IonList>
           </IonCardContent>
@@ -218,7 +217,7 @@ export const ChangePasswordPage: React.FC = () => {
         <IonToast
           isOpen={showSuccess}
           onDidDismiss={() => setShowSuccess(false)}
-          message="Password changed successfully"
+          message={t('foundation.password.success')}
           duration={2000}
           color="success"
         />

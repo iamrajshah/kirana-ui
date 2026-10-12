@@ -13,7 +13,8 @@ import {
 import { add, bookmark, card, cash, personAdd, remove, scan, trash } from 'ionicons/icons';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Loading, PaymentModal, SearchBar } from '@components';
+import { Loading, SearchBar } from '@components';
+import { PaymentModal } from '@components/PaymentModal';
 import { Navbar } from '@components/Navbar';
 import {
   useCreateInvoiceMutation,
@@ -609,7 +610,7 @@ export const BillingPage: React.FC = () => {
                       disabled={!cartItems.length || isBusy}
                       onClick={() => handleCheckout('UPI')}
                     >
-                      UPI
+                      {t('payment.upi')}
                     </IonButton>
                     <IonButton
                       fill="outline"
@@ -649,7 +650,7 @@ export const BillingPage: React.FC = () => {
                 {t('billing.cash')}
               </IonButton>
               <IonButton disabled={isBusy} onClick={() => handleCheckout('UPI')}>
-                UPI
+                {t('payment.upi')}
               </IonButton>
               <IonButton fill="outline" disabled={isBusy} onClick={() => handleCheckout()}>
                 <IonIcon icon={card} slot="icon-only" />

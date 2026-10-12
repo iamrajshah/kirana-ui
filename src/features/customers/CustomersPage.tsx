@@ -231,7 +231,7 @@ export const CustomersPage: React.FC = () => {
               </IonList>
               
               <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
-                <IonInfiniteScrollContent loadingText="Loading more customers..." />
+                <IonInfiniteScrollContent loadingText={t('customers.loadingMore')} />
               </IonInfiniteScroll>
             </>
           )}

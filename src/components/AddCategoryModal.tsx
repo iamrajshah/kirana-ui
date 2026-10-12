@@ -16,6 +16,7 @@ import {
 import { close } from 'ionicons/icons';
 import { Input } from '@components/Input';
 import { useCreateCategoryMutation } from '@core/api/categoryApi';
+import { useTranslation } from 'react-i18next';
 
 interface AddCategoryModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   onDidDismiss,
   onCategoryCreated,
 }) => {
+  const { t } = useTranslation();
   const [categoryName, setCategoryName] = useState('');
   const [categoryDescription, setCategoryDescription] = useState('');
   const [showError, setShowError] = useState(false);
@@ -45,7 +47,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
 
   const handleCreateCategory = async () => {
     if (!categoryName.trim()) {
-      setErrorMessage('Category name is required');
+      setErrorMessage(t('categories.nameRequired'));
       setShowError(true);
       return;
     }
@@ -65,7 +67,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
       onDidDismiss();
     } catch (error: unknown) {
       console.error('Error creating category:', error);
-      setErrorMessage(apiErrorMessage(error, 'Failed to create category'));
+      setErrorMessage(apiErrorMessage(error, t('categories.createFailed')));
       setShowError(true);
     }
   };
@@ -77,7 +79,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
           <IonPage>
             <IonHeader>
               <IonToolbar>
-                <IonTitle>Add Category</IonTitle>
+                <IonTitle>{t('categories.add')}</IonTitle>
                 <IonButtons slot="end">
                   <IonButton onClick={onDidDismiss}>
                     <IonIcon icon={close} />
@@ -87,17 +89,17 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
             </IonHeader>
             <IonContent className="ion-padding">
               <Input
-                label="Category Name"
+                label={t('categories.name')}
                 value={categoryName}
                 onChange={setCategoryName}
-                placeholder="Enter category name"
+                placeholder={t('categories.namePlaceholder')}
                 required
               />
               <Input
-                label="Description (Optional)"
+                label={t('categories.optionalDescription')}
                 value={categoryDescription}
                 onChange={setCategoryDescription}
-                placeholder="Enter description"
+                placeholder={t('categories.descriptionPlaceholder')}
               />
               <IonButton
                 expand="block"
@@ -105,7 +107,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
                 disabled={creating || !categoryName.trim()}
                 className="ion-margin-top"
               >
-                {creating ? 'Creating...' : 'Create Category'}
+                {creating ? t('common.creating') : t('categories.create')}
               </IonButton>
             </IonContent>
           </IonPage>

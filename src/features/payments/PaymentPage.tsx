@@ -55,10 +55,10 @@ export const PaymentPage: React.FC = () => {
   })) || [];
 
   const paymentModeOptions = [
-    { value: 'CASH' as PaymentMode, label: 'Cash' },
-    { value: 'UPI' as PaymentMode, label: 'UPI' },
-    { value: 'CARD' as PaymentMode, label: 'Card' },
-    { value: 'BANK' as PaymentMode, label: 'Bank Transfer' },
+    { value: 'CASH' as PaymentMode, label: t('payment.cash') },
+    { value: 'UPI' as PaymentMode, label: t('payment.upi') },
+    { value: 'CARD' as PaymentMode, label: t('payment.card') },
+    { value: 'BANK' as PaymentMode, label: t('payment.bankTransfer') },
   ];
 
   // Load pending invoices when customer is selected
@@ -124,20 +124,20 @@ export const PaymentPage: React.FC = () => {
     const paymentAmount = parseFloat(totalPaymentAmount) || 0;
 
     if (!selectedCustomerId) {
-      setToastMessage('Please select a customer');
+      setToastMessage(t('payments.selectCustomerError'));
       setShowErrorToast(true);
       return;
     }
 
     if (paymentAmount <= 0) {
-      setToastMessage('Payment amount must be greater than zero');
+      setToastMessage(t('payments.invalidAmount'));
       setShowErrorToast(true);
       return;
     }
 
     const totalAllocated = getTotalAllocated();
     if (totalAllocated > paymentAmount) {
-      setToastMessage('Total allocated amount exceeds payment amount');
+      setToastMessage(t('foundation.payments.allocationExceedsPayment'));
       setShowErrorToast(true);
       return;
     }
@@ -168,7 +168,7 @@ export const PaymentPage: React.FC = () => {
 
       await createPayment(payload).unwrap();
 
-      setToastMessage('Payment recorded successfully!');
+      setToastMessage(t('payments.paymentRecorded'));
       setShowSuccessToast(true);
 
       // Reset form
@@ -179,7 +179,7 @@ export const PaymentPage: React.FC = () => {
       setPaymentMode('CASH');
     } catch (error: unknown) {
       const err = error as { data?: { message?: string } };
-      setToastMessage(err?.data?.message || 'Payment failed');
+      setToastMessage(err?.data?.message || t('payments.saveError'));
       setShowErrorToast(true);
     }
   };
@@ -195,15 +195,15 @@ export const PaymentPage: React.FC = () => {
           {/* Customer Selection */}
           <IonCard>
             <IonCardHeader>
-              <IonCardTitle>Customer Selection</IonCardTitle>
+              <IonCardTitle>{t('payments.customerSelection')}</IonCardTitle>
             </IonCardHeader>
             <IonCardContent>
               <Select
-                label="Select Customer *"
+                label={`${t('payments.selectCustomerLabel')} *`}
                 value={selectedCustomerId}
                 onChange={setSelectedCustomerId}
                 options={customers}
-                placeholder="Choose customer"
+                placeholder={t('common.placeholders.chooseCustomer')}
                 required
               />
             </IonCardContent>
@@ -214,15 +214,15 @@ export const PaymentPage: React.FC = () => {
             <IonCard>
               <IonCardHeader>
                 <IonCardTitle>
-                  Pending Invoices ({pendingInvoices.length})
+                  {t('payments.pendingInvoices')} ({pendingInvoices.length})
                 </IonCardTitle>
               </IonCardHeader>
               <IonCardContent>
                 {loadingInvoices ? (
-                  <p className="text-center text-gray-500">Loading invoices...</p>
+                  <p className="text-center text-gray-500">{t('payments.loadingInvoices')}</p>
                 ) : pendingInvoices.length === 0 ? (
                   <p className="text-center text-gray-500">
-                    No pending invoices for this customer
+                    {t('foundation.payments.noPendingInvoices')}
                   </p>
                 ) : (
                   <IonList>
@@ -241,7 +241,7 @@ export const PaymentPage: React.FC = () => {
                             {formatDateTime(invoice.created_at)}
                           </p>
                           <p className="text-sm mt-1">
-                            Balance: {formatCurrency(invoice.balance_amount || 0)}
+                            {t('foundation.payments.balance')} {formatCurrency(invoice.balance_amount || 0)}
                           </p>
                         </IonLabel>
                         <IonBadge
@@ -261,12 +261,12 @@ export const PaymentPage: React.FC = () => {
           {/* Payment Details */}
           <IonCard>
             <IonCardHeader>
-              <IonCardTitle>Payment Details</IonCardTitle>
+              <IonCardTitle>{t('payments.paymentDetails')}</IonCardTitle>
             </IonCardHeader>
             <IonCardContent>
               <div className="space-y-3">
                 <Input
-                  label="Total Payment Amount *"
+                  label={`${t('payments.totalPaymentAmountLabel')} *`}
                   type="number"
                   value={totalPaymentAmount}
                   onChange={setTotalPaymentAmount}
@@ -275,7 +275,7 @@ export const PaymentPage: React.FC = () => {
                 />
 
                 <Select
-                  label="Payment Mode *"
+                  label={`${t('payments.paymentModeLabel')} *`}
                   value={paymentMode}
                   onChange={(val) => setPaymentMode(val as PaymentMode)}
                   options={paymentModeOptions}
@@ -285,15 +285,15 @@ export const PaymentPage: React.FC = () => {
                   paymentMode === 'CARD' ||
                   paymentMode === 'BANK') && (
                   <Input
-                    label="Reference Number"
+                    label={t('payments.referenceNumberLabel')}
                     value={reference}
                     onChange={setReference}
                     placeholder={
                       paymentMode === 'UPI'
-                        ? 'UPI Transaction ID'
+                        ? t('payment.upiTransactionId')
                         : paymentMode === 'CARD'
-                        ? 'Last 4 digits / Approval Code'
-                        : 'Bank Reference Number'
+                        ? t('payment.last4DigitsOrApproval')
+                        : t('payment.bankReferenceNumber')
                     }
                   />
                 )}
@@ -306,9 +306,9 @@ export const PaymentPage: React.FC = () => {
             <IonCard>
               <IonCardHeader>
                 <div className="flex justify-between items-center">
-                  <IonCardTitle>Allocate Payment to Invoices</IonCardTitle>
+                  <IonCardTitle>{t('payments.allocatePayment')}</IonCardTitle>
                   <IonButton size="small" fill="outline" onClick={handleAutoAllocate}>
-                    Auto Allocate
+                    {t('payments.autoAllocate')}
                   </IonButton>
                 </div>
               </IonCardHeader>
@@ -325,11 +325,11 @@ export const PaymentPage: React.FC = () => {
                           {allocation.invoice_number}
                         </span>
                         <span className="text-xs text-gray-500">
-                          Balance: {formatCurrency(allocation.balance_amount)}
+                          {t('foundation.payments.balance')} {formatCurrency(allocation.balance_amount)}
                         </span>
                       </div>
                       <Input
-                        label="Allocated Amount"
+                        label={t('payments.allocatedAmountLabel')}
                         type="number"
                         value={allocation.allocated_amount.toString()}
                         onChange={(val) =>
@@ -342,15 +342,15 @@ export const PaymentPage: React.FC = () => {
 
                   <div className="border-t pt-3 mt-3" style={{ borderColor: '#ddd' }}>
                     <div className="flex justify-between font-semibold">
-                      <span>Total Allocated:</span>
+                      <span>{t('foundation.payments.totalAllocated')}</span>
                       <span>{formatCurrency(getTotalAllocated())}</span>
                     </div>
                     <div className="flex justify-between text-sm mt-1 text-gray-600">
-                      <span>Payment Amount:</span>
+                      <span>{t('foundation.payments.paymentAmount')}</span>
                       <span>{formatCurrency(parseFloat(totalPaymentAmount) || 0)}</span>
                     </div>
                     <div className="flex justify-between text-sm mt-1 font-medium" style={{ color: getTotalAllocated() > (parseFloat(totalPaymentAmount) || 0) ? '#eb445a' : '#2dd36f' }}>
-                      <span>Remaining:</span>
+                      <span>{t('foundation.payments.remaining')}</span>
                       <span>
                         {formatCurrency(
                           (parseFloat(totalPaymentAmount) || 0) - getTotalAllocated()
@@ -372,7 +372,7 @@ export const PaymentPage: React.FC = () => {
               color="success"
             >
               <IonIcon icon={cash} slot="start" />
-              Record Payment
+              {t('payments.recordPayment')}
             </IonButton>
           </div>
         </div>

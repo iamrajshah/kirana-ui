@@ -74,7 +74,7 @@ export const Navbar: React.FC<NavbarProps> = ({ title, backHref }) => {
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
               <div style={{ fontWeight: 600, fontSize: '14px' }}>
-                {user.tenant?.name || 'Store'}
+                {user.tenant?.name || t('common.store')}
               </div>
               <div
                 style={{

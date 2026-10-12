@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { IonButton, IonIcon, isPlatform } from '@ionic/react';
 import { camera } from 'ionicons/icons';
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
+import { useTranslation } from 'react-i18next';
 
 interface BarcodeScannerComponentProps {
   onScan: (barcode: string) => void;
@@ -12,6 +13,7 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
   onScan,
   onError,
 }) => {
+  const { t } = useTranslation();
   const [isScanning, setIsScanning] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const isMobile = isPlatform('capacitor');
@@ -40,7 +42,7 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
 
   const startScan = async () => {
     if (!isMobile) {
-      onError?.('Barcode scanning is only available on mobile devices');
+      onError?.(t('foundation.barcode.mobileOnlyError'));
       return;
     }
 
@@ -50,9 +52,9 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
       
       if (!permissionStatus.granted) {
         if (permissionStatus.denied) {
-          onError?.('Camera permission denied. Please enable it in app settings.');
+          onError?.(t('foundation.barcode.permissionDenied'));
         } else {
-          onError?.('Camera permission is required to scan barcodes');
+          onError?.(t('foundation.barcode.permissionRequired'));
         }
         setHasPermission(false);
         return;
@@ -79,7 +81,7 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
     } catch (error) {
       console.error('Error scanning barcode:', error);
       const err = error as Error;
-      onError?.(err?.message || 'Failed to scan barcode');
+      onError?.(err?.message || t('foundation.barcode.scanFailed'));
     } finally {
       stopScan();
     }
@@ -105,7 +107,7 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
         disabled
       >
         <IonIcon slot="start" icon={camera} />
-        Camera Scanner (Mobile Only)
+        {t('foundation.barcode.mobileOnly')}
       </IonButton>
     );
   }
@@ -116,10 +118,10 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
         <div className="w-full max-w-md mt-20">
           <div className="bg-black bg-opacity-70 rounded-lg p-4 shadow-lg">
             <p className="text-center text-white font-medium mb-2">
-              Point camera at barcode
+              {t('foundation.barcode.pointCamera')}
             </p>
             <p className="text-center text-gray-300 text-xs">
-              Note: Emulators may not show camera. Use a real device for best results.
+              {t('foundation.barcode.emulatorNote')}
             </p>
           </div>
         </div>
@@ -136,7 +138,7 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
           onClick={stopScan}
           className="w-full max-w-md"
         >
-          Cancel Scan
+          {t('foundation.barcode.cancelScan')}
         </IonButton>
       </div>
     );
@@ -149,7 +151,7 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
       disabled={hasPermission === false}
     >
       <IonIcon slot="start" icon={camera} />
-      {hasPermission === false ? 'Camera Permission Required' : 'Scan Barcode'}
+      {hasPermission === false ? t('foundation.barcode.cameraPermissionRequired') : t('products.scanBarcode')}
     </IonButton>
   );
 };

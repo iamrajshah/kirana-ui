@@ -38,11 +38,7 @@ const authSlice = createSlice({
       action: PayloadAction<CredentialsPayload>
     ) => {
       const payload = action.payload;
-      console.log('setCredentials reducer called with:', payload);
-      console.log('payload.tokens:', payload.tokens);
-      console.log('payload.tokens type:', typeof payload.tokens);
-      console.log('payload.tokens keys:', payload.tokens ? Object.keys(payload.tokens) : 'no tokens');
-      
+
       let user: User;
       let access_token: string;
       let refresh_token: string;
@@ -57,8 +53,6 @@ const authSlice = createSlice({
         // Try different possible property names
         access_token = payload.tokens.access_token || payload.tokens.accessToken || payload.tokens.access || '';
         refresh_token = payload.tokens.refresh_token || payload.tokens.refreshToken || payload.tokens.refresh || '';
-        
-        console.log('Extracted tokens:', { access_token, refresh_token });
       } 
       // Handle format: {user, access_token, refresh_token}
       else if (payload.access_token) {
@@ -67,17 +61,12 @@ const authSlice = createSlice({
         refresh_token = payload.refresh_token;
       }
       else {
-        console.error('Invalid credentials format:', payload);
         return;
       }
 
       if (!access_token || !refresh_token) {
-        console.error('Tokens are empty! access_token:', access_token, 'refresh_token:', refresh_token);
-        console.error('Full payload:', JSON.stringify(payload, null, 2));
         return;
       }
-
-      console.log('Saving to state and localStorage:', { user, access_token, refresh_token });
 
       state.user = user;
       state.accessToken = access_token;
@@ -86,9 +75,6 @@ const authSlice = createSlice({
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
       localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, access_token);
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
-      
-      console.log('Saved to localStorage, verifying...');
-      console.log('Verification - token from localStorage:', localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN));
     },
     logout: (state) => {
       state.user = null;

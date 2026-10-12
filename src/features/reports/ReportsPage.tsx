@@ -742,7 +742,7 @@ export const ReportsPage: React.FC = () => {
               <IonLabel>
                 <h2 className="font-semibold">{ledger.supplier_name}</h2>
                 <p className="text-sm text-gray-600">{ledger.supplier_phone}</p>
-                <p className="text-xs text-gray-500">{ledger.transaction_count} transaction(s)</p>
+                <p className="text-xs text-gray-500">{ledger.transaction_count} {t('reports.transactions')}</p>
               </IonLabel>
               <div slot="end" className="text-right">
                 <div className="text-sm text-gray-600">

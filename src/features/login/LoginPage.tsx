@@ -39,7 +39,7 @@ export const LoginPage: React.FC = () => {
     setSuccess('');
 
     if (!emailOrPhone || !password) {
-      setError(t('auth.fillAllFields') || 'Please fill in all fields');
+      setError(t('auth.fillAllFields'));
       return;
     }
 
@@ -53,19 +53,18 @@ export const LoginPage: React.FC = () => {
       const response = await login(credentials).unwrap();
       
       if (response.success && response.data) {
-        setSuccess(t('auth.loginSuccess') || 'Login successful!');
+        setSuccess(t('auth.loginSuccess'));
         dispatch(setCredentials(response.data));
         
         setTimeout(() => {
           window.location.href = '/dashboard';
         }, 1000);
       } else {
-        setError(response.message || t('auth.loginError') || 'Login failed');
+        setError(response.message || t('auth.loginError'));
       }
     } catch (err: unknown) {
-      console.error('Login error:', err);
       // Handle different error types
-      let errorMessage = t('auth.loginError') || 'Login failed';
+      let errorMessage = t('auth.loginError');
       const details = err && typeof err === 'object'
         ? err as { data?: { message?: unknown }; message?: unknown; status?: unknown }
         : null;
@@ -74,11 +73,11 @@ export const LoginPage: React.FC = () => {
       if (parsedMessage) {
         errorMessage = parsedMessage;
       } else if (details?.status === 401) {
-        errorMessage = t('auth.invalidCredentials') || 'Invalid email/phone or password';
+        errorMessage = t('auth.invalidCredentials');
       } else if (details?.status === 500) {
-        errorMessage = t('auth.serverError') || 'Server error. Please try again later.';
+        errorMessage = t('auth.serverError');
       } else if (!navigator.onLine) {
-        errorMessage = t('auth.networkError') || 'Network error. Please check your connection.';
+        errorMessage = t('auth.networkError');
       }
       
       setError(errorMessage);
@@ -104,7 +103,7 @@ export const LoginPage: React.FC = () => {
                 onIonChange={(e) => handleLanguageChange(e.detail.value)}
                 interface="action-sheet"
                 interfaceOptions={{
-                  header: 'Select Language',
+                  header: t('foundation.login.selectLanguage'),
                   cssClass: 'language-selector-sheet'
                 }}
                 className="w-full"
@@ -170,7 +169,15 @@ export const LoginPage: React.FC = () => {
 
             {/* Version Info */}
             <div className="text-center mt-8 text-sm" style={{ color: 'var(--ion-color-medium)' }}>
-              Version {import.meta.env.VITE_APP_VERSION}
+              <p>{t('foundation.login.version', { version: import.meta.env.VITE_APP_VERSION || 'dev' })}</p>
+              <a
+                href="https://github.com/iamrajshah"
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1 inline-block"
+              >
+                {t('foundation.login.builtBy')}
+              </a>
             </div>
           </div>
         </div>

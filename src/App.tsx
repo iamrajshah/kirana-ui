@@ -1,22 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { Route, Redirect } from 'react-router';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Provider } from 'react-redux';
 import { store } from '@core/store';
 import { ROUTES } from '@core/constants';
+import {
+  protectedMainLayoutRoutes,
+  protectedPageRoutes,
+  type ProtectedPageRouteId,
+} from '@core/navigation/protectedRoutes';
 import { PrivateRoute } from '@layouts/PrivateRoute';
-import { MainLayout } from '@layouts/MainLayout';
-import { LoginPage } from '@features/login/LoginPage';
-import { ProfilePage } from '@features/profile/ProfilePage';
-import { ChangePasswordPage } from '@features/profile/ChangePasswordPage';
-import { CustomerLedgerPage } from '@features/customers/CustomerLedgerPage';
-import { ProductDetailPage } from '@features/products/ProductDetailPage';
-import { AddProductBarcodePage } from '@features/products/AddProductBarcodePage';
-import InvoiceDetailPage from '@features/invoices/InvoiceDetailPage';
-import SupplierLedgerPage from '@features/suppliers/SupplierLedgerPage';
-import CreatePurchasePage from '@features/purchases/CreatePurchasePage';
-import PurchaseDetailPage from '@features/purchases/PurchaseDetailPage';
 import ToastContainer from '@components/ToastContainer';
 import { ThemeProvider } from './contexts/ThemeContext';
 import i18n from './core/i18n';
@@ -50,6 +44,28 @@ setupIonicReact({
   mode: 'md', // Material Design mode for consistency
 });
 
+const MainLayout = lazy(() => import('@layouts/MainLayout').then((module) => ({ default: module.MainLayout })));
+const LoginPage = lazy(() => import('@features/login/LoginPage').then((module) => ({ default: module.LoginPage })));
+const ProfilePage = lazy(() => import('@features/profile/ProfilePage').then((module) => ({ default: module.ProfilePage })));
+const ChangePasswordPage = lazy(() => import('@features/profile/ChangePasswordPage').then((module) => ({ default: module.ChangePasswordPage })));
+const CustomerLedgerPage = lazy(() => import('@features/customers/CustomerLedgerPage').then((module) => ({ default: module.CustomerLedgerPage })));
+const ProductDetailPage = lazy(() => import('@features/products/ProductDetailPage').then((module) => ({ default: module.ProductDetailPage })));
+const AddProductBarcodePage = lazy(() => import('@features/products/AddProductBarcodePage').then((module) => ({ default: module.AddProductBarcodePage })));
+const InvoiceDetailPage = lazy(() => import('@features/invoices/InvoiceDetailPage'));
+const SupplierLedgerPage = lazy(() => import('@features/suppliers/SupplierLedgerPage'));
+const CreatePurchasePage = lazy(() => import('@features/purchases/CreatePurchasePage'));
+const PurchaseDetailPage = lazy(() => import('@features/purchases/PurchaseDetailPage'));
+
+const protectedPageComponents: Record<ProtectedPageRouteId, React.ComponentType> = {
+  'customer-ledger': CustomerLedgerPage,
+  'product-detail': ProductDetailPage,
+  'product-barcode': AddProductBarcodePage,
+  'supplier-ledger': SupplierLedgerPage,
+  'invoice-detail': InvoiceDetailPage,
+  'purchase-detail': PurchaseDetailPage,
+  'purchase-create': CreatePurchasePage,
+};
+
 const App: React.FC = () => {
   useEffect(() => {
     // Load saved language from localStorage
@@ -63,6 +79,7 @@ const App: React.FC = () => {
     <Provider store={store}>
       <ThemeProvider>
         <IonApp>
+        <Suspense fallback={<div className="workspace-state" role="status">{i18n.t('common.loading')}</div>}>
         <IonReactRouter>
           <IonRouterOutlet>
             <Route exact path={ROUTES.LOGIN} component={LoginPage} />
@@ -70,28 +87,16 @@ const App: React.FC = () => {
             <Route exact path={ROUTES.PROFILE} render={() => <PrivateRoute><ProfilePage /></PrivateRoute>} />
             <Route exact path={ROUTES.CHANGE_PASSWORD} render={() => <PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
             <Route exact path={ROUTES.ABOUT} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route exact path="/customers/:id/ledger" render={() => <PrivateRoute><CustomerLedgerPage /></PrivateRoute>} />
-            <Route exact path="/products/:id" render={() => <PrivateRoute><ProductDetailPage /></PrivateRoute>} />
-            <Route exact path={ROUTES.PRODUCT_BARCODE} render={() => <PrivateRoute><AddProductBarcodePage /></PrivateRoute>} />
-            <Route exact path="/suppliers/:id/ledger" render={() => <PrivateRoute><SupplierLedgerPage /></PrivateRoute>} />
-            <Route exact path="/invoices/:id" render={() => <PrivateRoute><InvoiceDetailPage /></PrivateRoute>} />
-            <Route exact path="/purchases/:id" render={() => <PrivateRoute><PurchaseDetailPage /></PrivateRoute>} />
-            <Route exact path={ROUTES.PURCHASE_CREATE} render={() => <PrivateRoute><CreatePurchasePage /></PrivateRoute>} />
-            <Route exact path={ROUTES.DASHBOARD} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.BILLING} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.CUSTOMERS} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.SUPPLIERS} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.PURCHASES} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.PRODUCTS} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.INVENTORY} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.INVOICES} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.PAYMENTS} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.REPORTS} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.USERS} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.CATEGORIES} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.IMPORT_EXPORT} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
+            {protectedPageRoutes.map(({ id, path, permission }) => {
+              const Component = protectedPageComponents[id];
+              return <Route key={id} exact path={path} render={() => <PrivateRoute permission={permission}><Component /></PrivateRoute>} />;
+            })}
+            {protectedMainLayoutRoutes.map(({ path, permission }) => (
+              <Route key={path} exact path={path} render={() => <PrivateRoute permission={permission}><MainLayout /></PrivateRoute>} />
+            ))}
           </IonRouterOutlet>
         </IonReactRouter>
+        </Suspense>
         <ToastContainer />
       </IonApp>
       </ThemeProvider>

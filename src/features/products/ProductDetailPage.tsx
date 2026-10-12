@@ -230,7 +230,7 @@ export const ProductDetailPage: React.FC = () => {
                       )}
                       {variant.gst_percent && (
                         <IonItem>
-                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>GST</IonLabel>
+                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>{t('products.gstLabel')}</IonLabel>
                           <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>{variant.gst_percent}%</IonLabel>
                         </IonItem>
                       )}
@@ -251,7 +251,7 @@ export const ProductDetailPage: React.FC = () => {
                                 : 'success'
                             }
                           >
-                            {variant.inventory.quantity || 0} units
+                            {variant.inventory.quantity || 0} {t('foundation.product.units')}
                           </IonBadge>
                         </IonItem>
                       )}
@@ -356,7 +356,7 @@ export const ProductDetailPage: React.FC = () => {
                     {editingVariant.brand || t('products.variant')} - {editingVariant.size || ''}
                   </p>
                   <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#999' }}>
-                    {t('products.sku')}: {editingVariant.sku || 'N/A'}
+                    {t('products.sku')}: {editingVariant.sku || t('common.notAvailable')}
                   </p>
                 </div>
 

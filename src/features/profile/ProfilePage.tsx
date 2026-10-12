@@ -69,7 +69,7 @@ export const ProfilePage: React.FC = () => {
 
   const handleUpdateProfile = async () => {
     if (!name.trim() && !phone.trim() && !email.trim()) {
-      setErrorMessage('At least one field must be provided');
+      setErrorMessage(t('foundation.profile.oneFieldRequired'));
       setShowError(true);
       return;
     }
@@ -81,7 +81,7 @@ export const ProfilePage: React.FC = () => {
       if (email.trim() !== user?.email) updateData.email = email.trim();
 
       if (Object.keys(updateData).length === 0) {
-        setErrorMessage('No changes detected');
+        setErrorMessage(t('foundation.profile.noChanges'));
         setShowError(true);
         return;
       }
@@ -96,7 +96,7 @@ export const ProfilePage: React.FC = () => {
       }, 1000);
     } catch (error: unknown) {
       console.error('❌ Error updating profile:', error);
-      setErrorMessage(apiErrorMessage(error, 'Failed to update profile'));
+      setErrorMessage(apiErrorMessage(error, t('foundation.profile.updateFailed')));
       setShowError(true);
     }
   };
@@ -132,7 +132,7 @@ export const ProfilePage: React.FC = () => {
               value={phone}
               onChange={setPhone}
               type="tel"
-              placeholder="+1234567890"
+              placeholder={t('foundation.profile.phoneExample')}
               required
             />
             <Input
@@ -140,7 +140,7 @@ export const ProfilePage: React.FC = () => {
               value={email}
               onChange={setEmail}
               type="email"
-              placeholder="your.email@example.com"
+              placeholder={t('profile.emailPlaceholder')}
             />
             
             <IonButton
@@ -201,11 +201,11 @@ export const ProfilePage: React.FC = () => {
             </div>
             <div className="info-row">
               <span className="info-label">{t('profile.role')}:</span>
-              <span className="info-value">{user?.roles?.[0] || 'USER'}</span>
+              <span className="info-value">{user?.roles?.[0] || t('common.defaultUserRole')}</span>
             </div>
             <div className="info-row">
               <span className="info-label">{t('profile.company')}:</span>
-              <span className="info-value">{user?.tenant?.name || 'N/A'}</span>
+              <span className="info-value">{user?.tenant?.name || t('common.notAvailable')}</span>
             </div>
           </IonCardContent>
         </IonCard>
@@ -213,7 +213,7 @@ export const ProfilePage: React.FC = () => {
         <IonToast
           isOpen={showSuccess}
           onDidDismiss={() => setShowSuccess(false)}
-          message="Profile updated successfully"
+          message={t('profile.updatedSuccess')}
           duration={2000}
           color="success"
         />

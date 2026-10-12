@@ -87,7 +87,6 @@ export const ImportExportPage: React.FC = () => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
-      console.log('📁 File selected:', file.name);
     }
   };
 
@@ -98,7 +97,6 @@ export const ImportExportPage: React.FC = () => {
       return;
     }
 
-    console.log('⬆️ Uploading file:', selectedFile.name, 'Type:', selectedImportType);
 
     try {
       await uploadFile({
@@ -119,7 +117,6 @@ export const ImportExportPage: React.FC = () => {
   };
 
   const handleCommit = async (jobId: string) => {
-    console.log('✅ Committing import job:', jobId);
 
     try {
       await commitJob(jobId).unwrap();
@@ -132,7 +129,6 @@ export const ImportExportPage: React.FC = () => {
   };
 
   const handleExport = async (type: ExportType, format: 'CSV' | 'EXCEL' = 'CSV') => {
-    console.log('⬇️ Exporting:', type, 'Format:', format);
 
     try {
       const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
@@ -161,7 +157,7 @@ export const ImportExportPage: React.FC = () => {
       setShowSuccess(true);
     } catch (error: unknown) {
       console.error('❌ Error exporting:', error);
-      setErrorMessage(apiErrorMessage(error, 'Failed to export data', true));
+      setErrorMessage(apiErrorMessage(error, t('importExport.exportError'), true));
       setShowError(true);
     }
   };

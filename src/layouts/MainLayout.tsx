@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy } from 'react';
 import { IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonRouterOutlet, IonSplitPane } from '@ionic/react';
 import { Route, Redirect } from 'react-router';
 import { useTranslation } from 'react-i18next';
@@ -7,21 +7,22 @@ import { useAppSelector } from '../core/hooks';
 import { selectCurrentUser } from '@core/auth/authSlice';
 import { getNavigationItems } from '@core/navigation/navigation';
 import { SideMenu } from '@components';
-import { DashboardPage } from '@features/dashboard/DashboardPage';
-import { BillingPage } from '@features/billing/BillingPage';
-import { CustomersPage } from '@features/customers/CustomersPage';
-import { ProductsPage } from '@features/products/ProductsPage';
-import { InventoryPage } from '@features/inventory/InventoryPage';
-import { InvoicesPage } from '@features/invoices/InvoicesPage';
-import { PaymentsPage } from '@features/payments/PaymentsPage';
-import { ReportsPage } from '@features/reports/ReportsPage';
-import { UsersPage } from '@features/users/UsersPage';
-import { ImportExportPage } from '@features/import-export/ImportExportPage';
-import { CategoriesPage } from '@features/categories/CategoriesPage';
-import SuppliersPage from '@features/suppliers/SuppliersPage';
-import PurchasesPage from '@features/purchases/PurchasesPage';
-import { AboutPage } from '@features/about/AboutPage';
 import '@components/Workspace/workspace.css';
+
+const DashboardPage = lazy(() => import('@features/dashboard/DashboardPage').then((module) => ({ default: module.DashboardPage })));
+const BillingPage = lazy(() => import('@features/billing/BillingPage').then((module) => ({ default: module.BillingPage })));
+const CustomersPage = lazy(() => import('@features/customers/CustomersPage').then((module) => ({ default: module.CustomersPage })));
+const ProductsPage = lazy(() => import('@features/products/ProductsPage').then((module) => ({ default: module.ProductsPage })));
+const InventoryPage = lazy(() => import('@features/inventory/InventoryPage').then((module) => ({ default: module.InventoryPage })));
+const InvoicesPage = lazy(() => import('@features/invoices/InvoicesPage').then((module) => ({ default: module.InvoicesPage })));
+const PaymentsPage = lazy(() => import('@features/payments/PaymentsPage').then((module) => ({ default: module.PaymentsPage })));
+const ReportsPage = lazy(() => import('@features/reports/ReportsPage').then((module) => ({ default: module.ReportsPage })));
+const UsersPage = lazy(() => import('@features/users/UsersPage').then((module) => ({ default: module.UsersPage })));
+const ImportExportPage = lazy(() => import('@features/import-export/ImportExportPage').then((module) => ({ default: module.ImportExportPage })));
+const CategoriesPage = lazy(() => import('@features/categories/CategoriesPage').then((module) => ({ default: module.CategoriesPage })));
+const SuppliersPage = lazy(() => import('@features/suppliers/SuppliersPage'));
+const PurchasesPage = lazy(() => import('@features/purchases/PurchasesPage'));
+const AboutPage = lazy(() => import('@features/about/AboutPage').then((module) => ({ default: module.AboutPage })));
 
 export const MainLayout: React.FC = () => {
   const { t } = useTranslation();

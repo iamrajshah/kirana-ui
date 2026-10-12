@@ -85,7 +85,7 @@ export const InventoryPage: React.FC = () => {
       setSelectedItem(null);
     } catch (error: unknown) {
       console.error('❌ Error updating inventory:', error);
-      setErrorMessage(apiErrorMessage(error, 'Failed to update inventory'));
+      setErrorMessage(apiErrorMessage(error, t('inventory.failedToUpdate')));
       setShowError(true);
     }
   };

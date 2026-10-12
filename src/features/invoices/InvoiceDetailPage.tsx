@@ -30,7 +30,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import { useCreatePaymentMutation } from '@core/api/paymentApi';
-import { PaymentModal } from '@components';
+import { PaymentModal } from '@components/PaymentModal';
 import { formatDateTime, formatCurrency, generateIdempotencyKey } from '@utils/helpers';
 import type { PaymentMode } from '@core/types';
 import './InvoiceDetailPage.css';
@@ -130,7 +130,7 @@ const InvoiceDetailPage: React.FC = () => {
             <IonButtons slot="start">
               <IonBackButton defaultHref="/invoices" />
             </IonButtons>
-            <IonTitle>Invoice Details</IonTitle>
+            <IonTitle>{t('invoiceDetail.title')}</IonTitle>
           </IonToolbar>
         </IonHeader>
         <IonContent className="ion-padding">
@@ -234,7 +234,7 @@ const InvoiceDetailPage: React.FC = () => {
                           {item.variant?.product?.name || t('invoiceDetail.unknownProduct')}
                         </p>
                         {item.variant?.sku && (
-                          <p className="text-xs text-gray-500">SKU: {item.variant.sku}</p>
+                          <p className="text-xs text-gray-500">{t('products.sku')}: {item.variant.sku}</p>
                         )}
                       </div>
                       <div className="text-right">
@@ -246,12 +246,12 @@ const InvoiceDetailPage: React.FC = () => {
                     <div className="flex justify-between text-xs text-gray-600 mt-1">
                       <span>{item.quantity} × {formatCurrency(item.unit_price || item.price)}</span>
                       {item.discount_amount > 0 && (
-                        <span className="text-danger">Disc: -{formatCurrency(item.discount_amount)}</span>
+                        <span className="text-danger">{t('invoiceDetail.discount')} -{formatCurrency(item.discount_amount)}</span>
                       )}
                     </div>
                     {item.final_price && (
                       <div className="text-xs text-right font-semibold text-primary">
-                        Final: {formatCurrency(item.final_price)}
+                        {t('foundation.invoice.finalAmount')} {formatCurrency(item.final_price)}
                       </div>
                     )}
                   </div>

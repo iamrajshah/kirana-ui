@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { IonToast } from '@ionic/react';
 import { notificationService, ToastMessage } from '../core/services/notificationService';
 import { checkmarkCircle, closeCircle, informationCircle, warning } from 'ionicons/icons';
+import { useTranslation } from 'react-i18next';
 
 const ToastContainer: React.FC = () => {
+  const { t } = useTranslation();
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   useEffect(() => {
@@ -62,7 +64,7 @@ const ToastContainer: React.FC = () => {
           onDidDismiss={() => handleDismiss(toast.id)}
           buttons={[
             {
-              text: 'Dismiss',
+              text: t('common.dismiss'),
               role: 'cancel',
             },
           ]}

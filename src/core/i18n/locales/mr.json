@@ -52,6 +52,12 @@
     "inactive": "निष्क्रिय",
     "customer": "ग्राहक",
     "close": "बंद करा",
+    "dismiss": "बंद करा",
+    "showPassword": "पासवर्ड दाखवा",
+    "hidePassword": "पासवर्ड लपवा",
+    "store": "दुकान",
+    "notAvailable": "उपलब्ध नाही",
+    "defaultUserRole": "वापरकर्ता",
     "update": "अपडेट करा",
     "create": "तयार करा",
     "creating": "तयार करत आहे...",
@@ -97,7 +103,12 @@
     "emailOrPhone": "ईमेल किंवा फोन",
     "loginButton": "साइन इन",
     "loginError": "अवैध क्रेडेंशियल्स",
-    "logoutConfirm": "तुम्हाला खात्री आहे की तुम्ही लॉगआउट करू इच्छिता?"
+    "logoutConfirm": "तुम्हाला खात्री आहे की तुम्ही लॉगआउट करू इच्छिता?",
+    "fillAllFields": "कृपया सर्व फील्ड भरा",
+    "loginSuccess": "लॉगिन यशस्वी झाले!",
+    "invalidCredentials": "ईमेल/फोन किंवा पासवर्ड चुकीचा आहे",
+    "serverError": "सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.",
+    "networkError": "नेटवर्क त्रुटी. कृपया तुमचे कनेक्शन तपासा."
   },
   "dashboard": {
     "title": "डॅशबोर्ड",
@@ -188,6 +199,7 @@
     "loadError": "ग्राहक लोड झाले नाहीत.",
     "noCustomers": "अजून ग्राहक नाहीत.",
     "noCustomersSearch": "या शोधात ग्राहक सापडले नाहीत.",
+    "loadingMore": "आणखी ग्राहक लोड होत आहेत...",
     "debitCreditGiven": "डेबिट (उधार दिलेले)",
     "creditPaymentsReceived": "क्रेडिट (पेमेंट मिळाले)",
     "addCustomer": "ग्राहक जोडा",
@@ -215,7 +227,9 @@
       "debitCreditGiven": "डेबिट (उधार दिलेले)",
       "creditPaymentsReceived": "क्रेडिट (पेमेंट मिळाले)",
       "noDebitEntries": "कोणत्याही डेबिट नोंदी नाहीत",
-      "noCreditEntries": "कोणत्याही क्रेडिट नोंदी नाहीत"
+      "noCreditEntries": "कोणत्याही क्रेडिट नोंदी नाहीत",
+      "invoiceReference": "📄 चलन #",
+      "reference": "संदर्भ: #"
     }
   },
   "products": {
@@ -381,12 +395,21 @@
       "notesOptional": "नोंदी (ऐच्छिक)",
       "addPaymentNotes": "पेमेंट नोंदी जोडा...",
       "payFull": "संपूर्ण भरा",
-      "recordPayment": "पेमेंट नोंदवा"
+      "recordPayment": "पेमेंट नोंदवा",
+      "purchaseReference": "📦 खरेदी #",
+      "reference": "संदर्भ: #"
     },
     "advance": "अग्रिम",
     "supplierCreated": "पुरवठादार यशस्वीरित्या तयार केला गेला",
     "supplierUpdated": "पुरवठादार यशस्वीरित्या अपडेट केला गेला",
-    "fillRequiredFields": "कृपया सर्व आवश्यक फील्ड भरा"
+    "fillRequiredFields": "कृपया सर्व आवश्यक फील्ड भरा",
+    "bankAccountDeactivated": "बँक खाते यशस्वीपणे निष्क्रिय केले",
+    "primaryAccountUpdated": "प्राथमिक खाते यशस्वीपणे अपडेट केले",
+    "bankAccountUpdated": "बँक खाते यशस्वीपणे अपडेट केले",
+    "bankAccountAdded": "बँक खाते यशस्वीपणे जोडले",
+    "deactivateBankAccount": "बँक खाते निष्क्रिय करा",
+    "deactivateBankAccountMessage": "तुम्हाला {{bankName}} येथील बँक खाते निष्क्रिय करायचे आहे का? खाते पुन्हा जोडून ही कृती पूर्ववत करता येईल.",
+    "deactivate": "निष्क्रिय करा"
   },
   "purchases": {
     "title": "खरेदी",
@@ -727,7 +750,8 @@
     "darkMode": "डार्क मोड",
     "selectLanguage": "भाषा निवडा",
     "accountMenu": "खाते मेनू",
-    "changePassword": "पासवर्ड बदला"
+    "changePassword": "पासवर्ड बदला",
+    "updatedSuccess": "प्रोफाइल यशस्वीपणे अपडेट झाले"
   },
   "invoice": {
     "invoiceNumber": "इनव्हॉइस #",
@@ -790,5 +814,132 @@
     "upi": "UPI",
     "card": "कार्ड",
     "bankTransfer": "बँक ट्रान्सफर"
+  },
+  "foundation": {
+    "login": {
+      "selectLanguage": "भाषा निवडा",
+      "version": "आवृत्ती {{version}}",
+      "builtBy": "राजेश शाह (@iamrajshah) यांनी तयार केले"
+    },
+    "payments": {
+      "allocationExceedsPayment": "वाटप केलेली रक्कम पेमेंट रकमेपेक्षा जास्त असू शकत नाही",
+      "noPendingInvoices": "या ग्राहकासाठी कोणतीही प्रलंबित बिले नाहीत",
+      "balance": "बाकी:",
+      "totalAllocated": "एकूण वाटप:",
+      "paymentAmount": "पेमेंट रक्कम:",
+      "remaining": "उर्वरित:"
+    },
+    "password": {
+      "currentRequired": "सध्याचा पासवर्ड आवश्यक आहे",
+      "newRequired": "नवीन पासवर्ड आवश्यक आहे",
+      "requirementsFailed": "नवीन पासवर्ड आवश्यकता पूर्ण करत नाही",
+      "mismatch": "नवीन पासवर्ड आणि पुष्टी जुळत नाहीत",
+      "different": "नवीन पासवर्ड सध्याच्या पासवर्डपेक्षा वेगळा असावा",
+      "changeFailed": "पासवर्ड बदलण्यात अयशस्वी",
+      "updateTitle": "तुमचा पासवर्ड अपडेट करा",
+      "minimumLength": "किमान 8 अक्षरे",
+      "uppercase": "एक मोठे अक्षर",
+      "lowercase": "एक लहान अक्षर",
+      "number": "एक अंक",
+      "success": "पासवर्ड यशस्वीरित्या बदलला"
+    },
+    "profile": {
+      "oneFieldRequired": "प्रोफाइलमधील किमान एक माहिती भरा",
+      "noChanges": "कोणताही बदल आढळला नाही",
+      "updateFailed": "प्रोफाइल अपडेट करण्यात अयशस्वी",
+      "phoneExample": "+91 98765 43210"
+    },
+    "barcode": {
+      "pageTitle": "बारकोडने उत्पादन जोडा",
+      "scanOrEnter": "बारकोड स्कॅन करा किंवा टाका",
+      "manualHint": "किंवा खाली बारकोड हाताने टाका",
+      "barcode": "बारकोड",
+      "enterBarcode": "बारकोड क्रमांक टाका",
+      "pleaseEnter": "कृपया बारकोड टाका",
+      "checking": "तपासत आहे...",
+      "check": "बारकोड तपासा",
+      "foundLocal": "उत्पादन तुमच्या दुकानात सापडले",
+      "scanAnother": "दुसरा बारकोड स्कॅन करा",
+      "foundExternal": "उत्पादनाची माहिती ऑनलाइन सापडली",
+      "externalReview": "स्टॉकमध्ये जोडण्यापूर्वी माहिती तपासून पूर्ण करा.",
+      "notFound": "उत्पादन सापडले नाही",
+      "notFoundHint": "हे उत्पादन जोडण्यासाठी खाली माहिती भरा.",
+      "completeDetails": "उत्पादनाची माहिती पूर्ण करा",
+      "createNew": "नवीन उत्पादन तयार करा",
+      "createWithBarcode": "या बारकोडसह उत्पादन तयार करा:",
+      "imageAlt": "उत्पादन",
+      "masterInfo": "मुख्य उत्पादन माहिती",
+      "masterName": "मुख्य उत्पादन नाव",
+      "masterExample": "उदा. पारले-जी गोल्ड",
+      "brandExample": "उदा. पारले",
+      "categoryName": "वर्गाचे नाव",
+      "categoryExample": "उदा. बिस्किटे",
+      "productExample": "उदा. पारले-जी गोल्ड 200 ग्रॅम",
+      "selectCategory": "वर्ग निवडा",
+      "skuExample": "उदा. PG-GOLD-200",
+      "mrp": "एमआरपी",
+      "unit": "एकक",
+      "unitExample": "ग्रॅम, मिली, किलो इ.",
+      "unitValue": "एकक मूल्य",
+      "initialQuantity": "सुरुवातीचे प्रमाण",
+      "lookupFailed": "बारकोड तपासण्यात अयशस्वी",
+      "fillRequired": "कृपया सर्व आवश्यक माहिती भरा",
+      "createFailed": "उत्पादन तयार करण्यात अयशस्वी",
+      "foundTitle": "उत्पादन सापडले",
+      "notAvailable": "उपलब्ध नाही",
+      "quantitySize": "प्रमाण / आकार",
+      "updateInventory": "स्टॉक अपडेट करा",
+      "mobileOnlyError": "बारकोड स्कॅन फक्त मोबाइलवर उपलब्ध आहे",
+      "permissionDenied": "कॅमेरा परवानगी नाकारली. अॅप सेटिंगमध्ये ती सुरू करा.",
+      "permissionRequired": "बारकोड स्कॅन करण्यासाठी कॅमेरा परवानगी आवश्यक आहे",
+      "scanFailed": "बारकोड स्कॅन करण्यात अयशस्वी",
+      "mobileOnly": "कॅमेरा स्कॅनर (फक्त मोबाइल)",
+      "pointCamera": "कॅमेरा बारकोडकडे धरा",
+      "emulatorNote": "एम्युलेटरमध्ये कॅमेरा दिसणार नाही. उत्तम परिणामासाठी प्रत्यक्ष डिवाइस वापरा.",
+      "cancelScan": "स्कॅन रद्द करा",
+      "cameraPermissionRequired": "कॅमेरा परवानगी आवश्यक आहे"
+    },
+    "bank": {
+      "manageAccounts": "बँक खाती व्यवस्थापित करा",
+      "noneAdded": "अजून कोणतेही बँक खाते जोडलेले नाही",
+      "addAccount": "बँक खाते जोडा",
+      "primaryAccount": "मुख्य बँक खाते",
+      "primary": "मुख्य",
+      "otherAccounts": "इतर खाती",
+      "ifscCode": "IFSC कोड",
+      "setPrimary": "मुख्य करा",
+      "deactivate": "निष्क्रिय करा",
+      "addAnother": "दुसरे खाते जोडा",
+      "editAccount": "बँक खाते संपादित करा",
+      "accountHolder": "खातेदार",
+      "bankName": "बँकेचे नाव",
+      "accountNumber": "खाते क्रमांक",
+      "accountNumberKeep": "खाते क्रमांक (जुना ठेवण्यासाठी रिकामा सोडा)",
+      "accountNumberPlaceholder": "नवीन खाते क्रमांक टाका किंवा रिकामा सोडा",
+      "ifscExample": "उदा. SBIN0001234",
+      "branchOptional": "शाखेचे नाव (ऐच्छिक)",
+      "typeOptional": "खात्याचा प्रकार (ऐच्छिक)",
+      "selectType": "प्रकार निवडा",
+      "savings": "बचत",
+      "current": "चालू",
+      "setAsPrimary": "मुख्य खाते म्हणून ठेवा",
+      "defaultHint": "हे या पुरवठादारासाठी डीफॉल्ट खाते असेल",
+      "updateAccount": "खाते अपडेट करा",
+      "holderRequired": "खातेदाराचे नाव आवश्यक आहे",
+      "bankRequired": "बँकेचे नाव आवश्यक आहे",
+      "numberRequired": "खाते क्रमांक आवश्यक आहे",
+      "ifscRequired": "IFSC कोड आवश्यक आहे",
+      "ifscInvalid": "वैध IFSC कोड टाका",
+      "branch": "शाखा",
+      "noDetails": "अजून बँक तपशील जोडलेले नाहीत",
+      "manage": "व्यवस्थापित करा",
+      "contactManager": "बँक तपशील जोडण्यासाठी व्यवस्थापकाशी संपर्क साधा"
+    },
+    "invoice": {
+      "finalAmount": "अंतिम:"
+    },
+    "product": {
+      "units": "एकके"
+    }
   }
 }

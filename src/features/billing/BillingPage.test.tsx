@@ -32,6 +32,9 @@ vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('@components', () => ({
   Loading: () => null,
   SearchBar: () => null,
+}));
+
+vi.mock('@components/PaymentModal', () => ({
   PaymentModal: ({
     isOpen,
     onClose,

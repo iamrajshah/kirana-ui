@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { IonInput } from '@ionic/react';
 import { eye, eyeOff } from 'ionicons/icons';
+import { useTranslation } from 'react-i18next';
 
 interface InputProps {
   label: string;
@@ -24,6 +25,7 @@ export const Input: React.FC<InputProps> = ({
   error,
   maxLength,
 }) => {
+  const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
   const isPasswordField = type === 'password';
   const inputType = isPasswordField && showPassword ? 'text' : type;
@@ -46,7 +48,7 @@ export const Input: React.FC<InputProps> = ({
         {isPasswordField && (
           <button
             type="button"
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            aria-label={showPassword ? t('common.hidePassword') : t('common.showPassword')}
             onClick={(e) => {
               e.stopPropagation();
               setShowPassword((isVisible) => !isVisible);
