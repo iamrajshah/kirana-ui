@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kirana POS — Next-phase ideation</title>
+  <style>
+    :root {
+      --ink: #17211b;
+      --muted: #5f6e65;
+      --paper: #f4f7f2;
+      --card: #ffffff;
+      --line: #dbe4dc;
+      --green: #176b47;
+      --green-soft: #e3f4e9;
+      --gold: #8a5b08;
+      --gold-soft: #fff1cd;
+      --blue: #245a82;
+      --blue-soft: #e5f2fb;
+      --red: #9a3e32;
+      --red-soft: #fae8e4;
+      --shadow: 0 16px 42px rgba(37, 62, 46, .08);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 15px/1.65 Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main, footer { width: min(940px, calc(100% - 32px)); margin-inline: auto; }
+    header {
+      padding: 64px 0 34px;
+      background: linear-gradient(135deg, #133b2c, #176b47 60%, #258a60);
+      color: white;
+    }
+    header .inner { width: min(940px, calc(100% - 32px)); margin-inline: auto; }
+    .eyebrow { margin: 0 0 8px; text-transform: uppercase; letter-spacing: .14em; font-size: 12px; font-weight: 800; }
+    h1 { margin: 0; font-size: clamp(34px, 6vw, 58px); line-height: 1.04; letter-spacing: -.04em; max-width: 15ch; }
+    .lede { max-width: 68ch; margin: 18px 0 0; color: #e8f5ed; font-size: 17px; }
+    .metadata, .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+    .pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 7px 11px; font-size: 12px; font-weight: 750; }
+    header .pill { color: white; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.25); }
+    nav { margin: 26px 0 8px; padding: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+    nav a { display: inline-block; margin: 5px 12px 5px 0; color: var(--green); font-weight: 750; text-decoration: none; }
+    section { margin: 46px 0; }
+    h2 { margin: 0 0 14px; font-size: 26px; line-height: 1.2; letter-spacing: -.02em; }
+    h3 { margin: 0; font-size: 21px; line-height: 1.25; }
+    p { max-width: 74ch; }
+    .stats { margin: -18px 0 42px; }
+    .stats .pill { background: var(--card); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 8px 22px rgba(37,62,46,.06); }
+    .grounding, .axes, .idea, .callout, .sequence { background: var(--card); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+    .grounding, .callout, .sequence { padding: 22px; }
+    .grounding-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .grounding-grid article { padding: 16px; border-radius: 14px; background: #f8faf7; }
+    .grounding-grid h3 { font-size: 16px; margin-bottom: 6px; }
+    .grounding-grid p { margin: 0; color: var(--muted); }
+    .axes { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); overflow: hidden; }
+    .axis { padding: 18px 14px; border-right: 1px solid var(--line); text-align: center; font-weight: 800; }
+    .axis:last-child { border-right: 0; }
+    .idea-nav { margin: 0 0 22px; padding: 16px 20px 16px 38px; background: var(--green-soft); border-radius: 15px; columns: 2; }
+    .idea-nav li { break-inside: avoid; margin: 5px 0; }
+    .idea-nav a { color: var(--green); font-weight: 750; text-decoration: none; }
+    .idea { padding: 24px; margin: 16px 0; scroll-margin-top: 16px; }
+    .idea-head { display: flex; gap: 14px; align-items: flex-start; justify-content: space-between; }
+    .rank { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px; background: var(--green); color: white; display: grid; place-items: center; font-weight: 900; }
+    .title-wrap { flex: 1; }
+    .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+    .chip { border-radius: 999px; padding: 5px 9px; font-size: 11px; font-weight: 800; background: var(--green-soft); color: #14583c; }
+    .chip.cx { background: var(--gold-soft); color: var(--gold); }
+    .chip.conf { background: var(--blue-soft); color: var(--blue); }
+    .idea dl { display: grid; grid-template-columns: 120px 1fr; gap: 9px 16px; margin: 20px 0 0; }
+    .idea dt { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+    .idea dd { margin: 0; }
+    .sequence { overflow-x: auto; }
+    .sequence svg { display: block; width: 100%; min-width: 720px; height: auto; }
+    table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); }
+    th, td { padding: 13px 14px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { background: #e9efe9; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+    tr:last-child td { border-bottom: 0; }
+    .now { background: var(--green-soft); }
+    .later { background: var(--gold-soft); }
+    .warning { background: var(--red-soft); color: #733028; }
+    .references a { color: var(--green); }
+    .composition-signal { margin-top: 56px; padding: 24px 0 38px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); }
+    strong { color: inherit; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .92em; }
+    @media (max-width: 760px) {
+      header { padding-top: 42px; }
+      .grounding-grid { grid-template-columns: 1fr; }
+      .axes { grid-template-columns: 1fr; }
+      .axis { border-right: 0; border-bottom: 1px solid var(--line); text-align: left; }
+      .axis:last-child { border-bottom: 0; }
+      .idea-nav { columns: 1; }
+      .idea-head { flex-wrap: wrap; }
+      .idea dl { grid-template-columns: 1fr; gap: 3px; }
+      .idea dd { margin-bottom: 9px; }
+      table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="inner">
+      <p class="eyebrow">Compound Engineering · Ideation</p>
+      <h1>What Kirana should do next</h1>
+      <p class="lede">A ranked, evidence-backed set of directions after the foundation and fast walk-in billing work. The goal is an owner-first product that remains quick at the counter and credible on mobile and web.</p>
+      <div class="metadata" aria-label="Document metadata">
+        <span class="pill">Date · <time datetime="2026-10-12">2026-10-12</time></span>
+        <span class="pill">Topic · kirana-next-phase</span>
+        <span class="pill">Mode · repo-grounded</span>
+        <span class="pill">Focus · post-foundation product direction</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="stats" aria-label="Ideation statistics">
+      <span class="pill">38 generated</span>
+      <span class="pill">12 distinct after dedupe</span>
+      <span class="pill">7 survived critique</span>
+      <span class="pill">5 product axes covered</span>
+    </div>
+
+    <nav aria-label="Document navigation">
+      <a href="#grounding-context">Grounding Context</a>
+      <a href="#topic-axes">Topic Axes</a>
+      <a href="#ranked-ideas">Ranked Ideas</a>
+      <a href="#sequence">Suggested Sequence</a>
+      <a href="#rejection-summary">Rejection Summary</a>
+      <a href="#references">References</a>
+    </nav>
+
+    <section id="grounding-context">
+      <p class="eyebrow">Evidence before opinion</p>
+      <h2>Grounding Context</h2>
+      <div class="grounding">
+        <div class="grounding-grid">
+          <article><h3>Already strong</h3><p>Responsive Ionic shell, role protection, lazy loading, four-language coverage, walk-in billing, Cash/UPI quick checkout, idempotency, draft invoices and payment recovery.</p></article>
+          <article><h3>Visible friction</h3><p>The owner dashboard is aggregate-only, the Billing scan affordance is disconnected, and draft resumption is buried in Invoices.</p></article>
+          <article><h3>Reusable substrate</h3><p>Stock movements, suppliers, purchases, customer contacts, orders, ledger records and draft invoices reduce the cost of the strongest next ideas.</p></article>
+          <article><h3>Important constraint</h3><p>Railway/MySQL remain stopped. Contract and UI work can use mocks, but database-backed features need a disposable migrated MySQL environment before end-to-end claims.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="topic-axes">
+      <p class="eyebrow">Coverage</p>
+      <h2>Topic Axes</h2>
+      <div class="axes">
+        <div class="axis">Owner decisions<br>and exceptions</div>
+        <div class="axis">Checkout throughput<br>and continuity</div>
+        <div class="axis">Cash and shift<br>accountability</div>
+        <div class="axis">Inventory replenishment<br>decisions</div>
+        <div class="axis">WhatsApp and<br>assisted orders</div>
+      </div>
+    </section>
+
+    <section id="ranked-ideas">
+      <p class="eyebrow">Survivors</p>
+      <h2>Ranked Ideas</h2>
+      <ol class="idea-nav">
+        <li><a href="#i1">I1. Owner Decision Inbox</a></li>
+        <li><a href="#i2">I2. Ambient Scan-to-Catalog</a></li>
+        <li><a href="#i3">I3. Held-Bill Relay</a></li>
+        <li><a href="#i4">I4. 90-Second Shift Close</a></li>
+        <li><a href="#i5">I5. Reorder Confidence Queue</a></li>
+        <li><a href="#i6">I6. WhatsApp List Compiler</a></li>
+        <li><a href="#i7">I7. Bounded Emergency Offline Mode</a></li>
+      </ol>
+
+      <article class="idea" id="i1">
+        <div class="idea-head"><span class="rank">1</span><div class="title-wrap"><h3>I1. Owner Decision Inbox</h3><div class="chips"><span class="chip">Owner decisions</span><span class="chip conf">Confidence 94%</span><span class="chip cx">Complexity Medium</span></div></div></div>
+        <dl>
+          <dt>Description</dt><dd>Replace aggregate-only owner oversight with three ranked, record-linked decisions: money to collect, stock likely to run out, and counter activity needing review. Every item explains why it matters now and provides one primary action plus snooze, assign, or dismiss-with-reason.</dd>
+          <dt>Basis</dt><dd><strong>direct:</strong> the current dashboard service returns six aggregate values with no invoice, customer, supplier, product, or staff identifiers. The existing owner demo already frames Today as the three things needing attention.</dd>
+          <dt>Rationale</dt><dd>This changes Kirana from software containing reports into a daily operating assistant. It also gives future shifts, reorders, held bills and collections one owner-facing destination instead of separate dashboards.</dd>
+          <dt>Downsides</dt><dd>Requires new exception contracts and careful ranking. Poor recommendations will erode trust, so early rules must be explainable and owner feedback must be captured.</dd>
+        </dl>
+      </article>
+
+      <article class="idea" id="i2">
+        <div class="idea-head"><span class="rank">2</span><div class="title-wrap"><h3>I2. Ambient Scan-to-Catalog</h3><div class="chips"><span class="chip">Checkout</span><span class="chip conf">Confidence 96%</span><span class="chip cx">Complexity Small–Medium</span></div></div></div>
+        <dl>
+          <dt>Description</dt><dd>Connect camera, keyboard-wedge, manual-code and search input to one Billing lookup path. Known products add instantly; unknown barcodes become a small non-blocking resolution card that an OWNER or MANAGER can approve, improving the tenant catalog for the next scan.</dd>
+          <dt>Basis</dt><dd><strong>direct:</strong> Billing renders a scan button without a handler, while a working Capacitor scanner and local-first barcode lookup already exist. Barcode creation is already limited to OWNER/MANAGER.</dd>
+          <dt>Rationale</dt><dd>This is the clearest immediate counter win and turns a current dead affordance into a compounding catalog-quality loop.</dd>
+          <dt>Downsides</dt><dd>Desktop scanner focus and unknown-product permissions need explicit behavior. External barcode matches remain suggestions, never automatic product truth.</dd>
+        </dl>
+      </article>
+
+      <article class="idea" id="i3">
+        <div class="idea-head"><span class="rank">3</span><div class="title-wrap"><h3>I3. Held-Bill Relay</h3><div class="chips"><span class="chip">Checkout</span><span class="chip conf">Confidence 93%</span><span class="chip cx">Complexity Medium</span></div></div></div>
+        <dl>
+          <dt>Description</dt><dd>Promote DRAFT invoices into visible cashier work packets with customer cue, amount, item count, age, source, counter, holder and version. A short edit lease provides read-only visibility elsewhere and an explicit manager takeover instead of silent last-write-wins behavior.</dd>
+          <dt>Basis</dt><dd><strong>direct:</strong> drafts can already be saved, updated, resumed and finalized, but resumption is buried under invoice filters and the model has no ownership or collision semantics.</dd>
+          <dt>Rationale</dt><dd>The same relay can later receive interrupted sales, WhatsApp lists and customer-app orders, making it a reusable continuity primitive rather than another cart store.</dd>
+          <dt>Downsides</dt><dd>Requires durable actor/version metadata and lease expiry rules. Cross-counter concurrency must be tested against real MySQL before claiming production readiness.</dd>
+        </dl>
+      </article>
+
+      <article class="idea" id="i4">
+        <div class="idea-head"><span class="rank">4</span><div class="title-wrap"><h3>I4. 90-Second Shift Close</h3><div class="chips"><span class="chip">Cash accountability</span><span class="chip conf">Confidence 92%</span><span class="chip cx">Complexity High</span></div></div></div>
+        <dl>
+          <dt>Description</dt><dd>Model cash as custody: opening float, named shift, cash sales/refunds, paid-in/out events, blind closing count, expected-versus-actual variance, explanation and owner approval. UPI/Card/Bank remain visible for reconciliation but never inflate physical drawer cash.</dd>
+          <dt>Basis</dt><dd><strong>direct + external:</strong> Kirana already groups daily payments by mode but lacks shifts and durable payment actor attribution. Bank-teller session patterns map directly to expected cash, blind count, variance and supervisory sign-off.</dd>
+          <dt>Rationale</dt><dd>This gives the owner an end-of-day proof rather than another sales report and creates the trustworthy attribution required for staff performance.</dd>
+          <dt>Downsides</dt><dd>Needs new server models and migration. The experience must adapt for a solo owner so opening/closing ceremony does not become enterprise-style busywork.</dd>
+        </dl>
+      </article>
+
+      <article class="idea" id="i5">
+        <div class="idea-head"><span class="rank">5</span><div class="title-wrap"><h3>I5. Reorder Confidence Queue</h3><div class="chips"><span class="chip">Replenishment</span><span class="chip conf">Confidence 88%</span><span class="chip cx">Complexity Medium–High</span></div></div></div>
+        <dl>
+          <dt>Description</dt><dd>Rank reviewable replenishment suggestions by on-hand quantity, sales movement, last purchase, supplier history, urgency and confidence. Approved lines become editable supplier-grouped purchase drafts; the system never places an order autonomously.</dd>
+          <dt>Basis</dt><dd><strong>direct:</strong> thresholds, stock movements, top-selling quantities, suppliers, purchase history and purchase-cart creation already exist. The missing data—lead time, pack size, preferred supplier—can be shown as confidence limits.</dd>
+          <dt>Rationale</dt><dd>It changes low-stock warnings into decisions about scarce cash while keeping the shopkeeper in control and making every suggestion explainable.</dd>
+          <dt>Downsides</dt><dd>Early recommendations will be approximate. Seasonal demand, informal supplier terms and missing purchase history must reduce confidence rather than be guessed.</dd>
+        </dl>
+      </article>
+
+      <article class="idea" id="i6">
+        <div class="idea-head"><span class="rank">6</span><div class="title-wrap"><h3>I6. WhatsApp List Compiler</h3><div class="chips"><span class="chip">Assisted orders</span><span class="chip conf">Confidence 82%</span><span class="chip cx">Complexity High</span></div></div></div>
+        <dl>
+          <dt>Description</dt><dd>Preserve the incoming text or photo, propose product/variant matches, flag uncertain quantities and substitutions, and require staff review before producing one held bill. Start with paste/import or a structured link; full WhatsApp API transport can follow after the workflow proves useful.</dd>
+          <dt>Basis</dt><dd><strong>direct + external:</strong> tenant-scoped customer phones and customer cart → order → draft-invoice conversion already exist. WhatsApp commerce is common in India, but Kirana currently has no transport, consent, template or message log.</dd>
+          <dt>Rationale</dt><dd>The valuable automation is eliminating retyping without letting unstructured chat bypass stock, customer, invoice or tenant controls.</dd>
+          <dt>Downsides</dt><dd>Staff-side order creation and matching require new contracts. Full outbound reminders need consent, approved templates, delivery logs and provider cost analysis.</dd>
+        </dl>
+      </article>
+
+      <article class="idea" id="i7">
+        <div class="idea-head"><span class="rank">7</span><div class="title-wrap"><h3>I7. Bounded Emergency Offline Mode</h3><div class="chips"><span class="chip">Checkout continuity</span><span class="chip conf">Confidence 86%</span><span class="chip cx">Complexity Very High</span></div></div></div>
+        <dl>
+          <dt>Description</dt><dd>Permit only clearly safe offline actions—paid-in-full walk-in sales against a local catalog snapshot—and show every local envelope as queued, syncing, conflicted or completed. Reconnect replays through stable idempotency identities; credit, returns and stock-sensitive administration remain unavailable.</dd>
+          <dt>Basis</dt><dd><strong>direct + external:</strong> invoice/payment idempotency exists, while network failure currently becomes a generic notification and no local queue exists. Mature offline POS systems expose constrained modes and visible unsynced work.</dd>
+          <dt>Rationale</dt><dd>This preserves the revenue path during outages without pretending the full POS and ledgers can safely operate offline.</dd>
+          <dt>Downsides</dt><dd>Requires secure local storage, device identity, catalog snapshots, transactional outbox semantics, conflict handling and substantial reconnection testing. It should follow—not precede—the simpler operational primitives.</dd>
+        </dl>
+      </article>
+    </section>
+
+    <section id="sequence">
+      <p class="eyebrow">Direction, not implementation plan</p>
+      <h2>Suggested Sequence</h2>
+      <div class="sequence">
+        <svg viewBox="0 0 880 210" role="img" aria-label="Suggested sequence from quick counter win to owner system and later infrastructure">
+          <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#176b47"/></marker></defs>
+          <rect x="18" y="52" width="175" height="104" rx="16" fill="#e3f4e9" stroke="#176b47"/>
+          <text x="105" y="83" text-anchor="middle" font-weight="800" fill="#14583c">Quick counter win</text>
+          <text x="105" y="111" text-anchor="middle" fill="#17211b">Ambient scan</text>
+          <text x="105" y="134" text-anchor="middle" fill="#17211b">+ catalog resolution</text>
+          <path d="M 201 104 H 244" stroke="#176b47" stroke-width="3" marker-end="url(#arrow)"/>
+          <rect x="254" y="34" width="210" height="140" rx="16" fill="#e5f2fb" stroke="#245a82"/>
+          <text x="359" y="66" text-anchor="middle" font-weight="800" fill="#245a82">Next product move</text>
+          <text x="359" y="96" text-anchor="middle" fill="#17211b">Owner decision inbox</text>
+          <text x="359" y="121" text-anchor="middle" fill="#17211b">+ held-bill relay</text>
+          <text x="359" y="146" text-anchor="middle" fill="#17211b">+ role-aware priorities</text>
+          <path d="M 472 104 H 515" stroke="#176b47" stroke-width="3" marker-end="url(#arrow)"/>
+          <rect x="525" y="34" width="160" height="140" rx="16" fill="#fff1cd" stroke="#8a5b08"/>
+          <text x="605" y="66" text-anchor="middle" font-weight="800" fill="#8a5b08">Owner operations</text>
+          <text x="605" y="98" text-anchor="middle" fill="#17211b">Shift close</text>
+          <text x="605" y="123" text-anchor="middle" fill="#17211b">Reorder queue</text>
+          <text x="605" y="148" text-anchor="middle" fill="#17211b">Assisted orders</text>
+          <path d="M 693 104 H 736" stroke="#176b47" stroke-width="3" marker-end="url(#arrow)"/>
+          <rect x="746" y="52" width="116" height="104" rx="16" fill="#fae8e4" stroke="#9a3e32"/>
+          <text x="804" y="83" text-anchor="middle" font-weight="800" fill="#9a3e32">Later</text>
+          <text x="804" y="112" text-anchor="middle" fill="#17211b">Bounded</text>
+          <text x="804" y="135" text-anchor="middle" fill="#17211b">offline mode</text>
+        </svg>
+        <p>Directional only — this shows sequencing logic, not committed scope or an implementation specification. The quick scan fix can land independently; the Owner Decision Inbox is the strongest next product conversation.</p>
+      </div>
+    </section>
+
+    <section id="rejection-summary">
+      <p class="eyebrow">What was cut</p>
+      <h2>Rejection Summary</h2>
+      <table>
+        <thead><tr><th>#</th><th>Idea</th><th>Reason rejected</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Transaction provenance spine</td><td>Useful substrate, but actor/device/shift/origin/sync were bundled beyond current evidence. Required fields should emerge from Held Bills, Shifts and Offline contracts.</td></tr>
+          <tr><td>2</td><td>Role-and-time-horizon home</td><td>Overlaps Owner Decision Inbox; retained as a design principle inside it rather than a separate initiative.</td></tr>
+          <tr><td>3</td><td>Payment secondary-inspection lane</td><td>Failed-payment recovery is grounded, but ambiguous-payment attempts require a model that does not yet exist.</td></tr>
+          <tr><td>4</td><td>Receipt-to-repeat loop</td><td>Too bundled and prerequisite-heavy; keep as a later extension of the WhatsApp List Compiler.</td></tr>
+          <tr><td>5</td><td>Automatic cart parking</td><td>A tactical Held-Bill Relay variant without a defensible abandonment trigger, expiry or deduplication contract.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="references" class="references">
+      <p class="eyebrow">External grounding</p>
+      <h2>References</h2>
+      <div class="callout">
+        <p><a href="https://squareup.com/help/us/en/article/5618-get-started-with-the-square-dashboard-app">Square Dashboard</a> · <a href="https://squareup.com/help/us/en/article/8344-start-and-end-a-cash-drawer-session">Square cash sessions</a> · <a href="https://www.shopify.com/pos/features">Shopify POS</a> · <a href="https://help.shopify.com/en/manual/sell-in-person/shopify-pos/selling-offline/offline-checkout">Shopify offline checkout</a> · <a href="https://x-series-support.lightspeedhq.com/hc/en-us/articles/25534272395163-Selling-in-offline-mode">Lightspeed offline selling</a> · <a href="https://www.zoho.com/us/inventory/help/items/replenishments.html">Zoho replenishment</a> · <a href="https://about.fb.com/news/2023/09/whatsapp-new-experiences-for-people-and-businesses/">Meta WhatsApp commerce</a> · <a href="https://www.pib.gov.in/PressReleasePage.aspx?PRID=2228651&amp;lang=1&amp;reg=3">India small-merchant UPI study</a>.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="composition-signal">Composed 2026-10-12T17:20+05:30 by <code>ce-ideate</code> from the Kirana POS repositories, current conversation context, five evidence dossiers, and external product research.</footer>
+</body>
+</html>
