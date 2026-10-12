@@ -260,7 +260,7 @@ export const ImportExportPage: React.FC = () => {
                   <IonButton
                     onClick={handleUpload}
                     expand="block"
-                    disabled={!selectedFile || uploading}
+                    disabled={true}
                     style={{ marginTop: '20px' }}
                   >
                     {uploading ? (

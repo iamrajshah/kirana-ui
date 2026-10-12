@@ -4,7 +4,7 @@ import {
   informationCircleOutline,
 } from 'ionicons/icons';
 import { ROUTES } from '@core/constants';
-import { hasAccessToTab } from '@core/permissions/rolePermissions';
+import { hasAccessToTab, type TabPermission } from '@core/permissions/rolePermissions';
 
 export type NavigationGroup = 'sell' | 'stock' | 'manage' | 'more';
 
@@ -15,10 +15,10 @@ export interface NavigationItem {
   icon: string;
   group: NavigationGroup;
   primary?: boolean;
-  permission?: string;
+  permission?: TabPermission;
 }
 
-export const navigationItems: NavigationItem[] = [
+export const navigationItems: readonly NavigationItem[] = [
   { id: 'dashboard', href: ROUTES.DASHBOARD, labelKey: 'dashboard.title', icon: home, group: 'sell', primary: true, permission: 'dashboard' },
   { id: 'billing', href: ROUTES.BILLING, labelKey: 'billing.title', icon: cart, group: 'sell', primary: true, permission: 'billing' },
   { id: 'customers', href: ROUTES.CUSTOMERS, labelKey: 'customers.title', icon: people, group: 'sell', primary: true, permission: 'customers' },

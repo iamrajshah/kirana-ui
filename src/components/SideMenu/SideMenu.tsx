@@ -7,10 +7,8 @@ import { useHistory, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useAppSelector } from '@core/hooks';
 import { selectCurrentUser } from '@core/auth/authSlice';
-import { getNavigationItems, type NavigationGroup } from '@core/navigation/navigation';
+import { getNavigationItems } from '@core/navigation/navigation';
 import './SideMenu.css';
-
-const groups: NavigationGroup[] = ['sell', 'stock', 'manage', 'more'];
 
 export const SideMenu: React.FC = () => {
   const { t } = useTranslation();
@@ -18,6 +16,7 @@ export const SideMenu: React.FC = () => {
   const location = useLocation();
   const user = useAppSelector(selectCurrentUser);
   const items = getNavigationItems(user?.roles || []);
+  const groups = Array.from(new Set(items.map((item) => item.group)));
 
   return (
     <IonMenu contentId="main-content" type="overlay" className="workspace-menu">

@@ -87,6 +87,9 @@ describe('DashboardPage', () => {
     expect(screen.getByText('dashboard.totalCustomers')).toBeTruthy();
     expect(screen.getByText('dashboard.supplierPayables')).toBeTruthy();
     expect(screen.getByText('dashboard.customerReceivables')).toBeTruthy();
+    const actions = screen.getByRole('region', { name: 'dashboard.quickActions' });
+    const secondary = screen.getByRole('region', { name: 'dashboard.moreMetrics' });
+    expect(actions.compareDocumentPosition(secondary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'billing.title' }));
     expect(mocks.push).toHaveBeenCalledWith('/billing');

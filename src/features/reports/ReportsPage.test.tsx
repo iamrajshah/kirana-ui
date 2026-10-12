@@ -5,35 +5,62 @@ import { ReportsPage } from './ReportsPage';
 
 const inventoryPayload = vi.hoisted(() => ({ value: null as unknown }));
 const purchasePayload = vi.hoisted(() => ({ value: [] as unknown[] }));
-const salesRequest = vi.hoisted(() => ({ isError: false, refetch: vi.fn() }));
+const reportRequests = vi.hoisted(() => Object.fromEntries([
+  'sales',
+  'outstanding',
+  'inventory',
+  'cashbook',
+  'profitLoss',
+  'topSelling',
+  'supplierOutstanding',
+  'purchaseRegister',
+  'topPayables',
+  'supplierLedger',
+  'purchaseTrend',
+].map((id) => [id, { isError: false, refetch: vi.fn() }])) as Record<
+  string,
+  { isError: boolean; refetch: ReturnType<typeof vi.fn> }
+>);
+const querySkips = vi.hoisted(() => ({ sales: [] as boolean[], inventory: [] as boolean[] }));
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('@components', () => ({ Loading: () => null, EmptyState: () => <div>empty</div> }));
 vi.mock('@core/api/reportsApi', () => {
-  const emptyReport = () => ({ data: undefined, isLoading: false });
+  const emptyReport = (id: string) => () => ({
+    data: undefined,
+    isLoading: false,
+    ...reportRequests[id],
+  });
   return {
-    useGetSalesReportQuery: () => ({
-      ...emptyReport(),
-      isError: salesRequest.isError,
-      refetch: salesRequest.refetch,
-    }),
-    useGetOutstandingCustomersQuery: emptyReport,
-    useGetInventorySummaryQuery: () => ({
-      data: { data: inventoryPayload.value },
-      isLoading: false,
-    }),
-    useGetDailyCashbookQuery: emptyReport,
-    useGetProfitLossQuery: emptyReport,
-    useGetTopSellingQuery: emptyReport,
-    useGetSupplierOutstandingQuery: emptyReport,
+    useGetSalesReportQuery: (_arg: unknown, options?: { skip?: boolean }) => {
+      querySkips.sales.push(Boolean(options?.skip));
+      return {
+        ...emptyReport('sales')(),
+        ...reportRequests.sales,
+      };
+    },
+    useGetOutstandingCustomersQuery: emptyReport('outstanding'),
+    useGetInventorySummaryQuery: (_arg: unknown, options?: { skip?: boolean }) => {
+      querySkips.inventory.push(Boolean(options?.skip));
+      return {
+        data: { data: inventoryPayload.value },
+        isLoading: false,
+        ...reportRequests.inventory,
+      };
+    },
+    useGetDailyCashbookQuery: emptyReport('cashbook'),
+    useGetProfitLossQuery: emptyReport('profitLoss'),
+    useGetTopSellingQuery: emptyReport('topSelling'),
+    useGetSupplierOutstandingQuery: emptyReport('supplierOutstanding'),
     useGetPurchaseRegisterQuery: () => ({
       data: { data: purchasePayload.value },
       isLoading: false,
+      ...reportRequests.purchaseRegister,
     }),
-    useGetTopPayablesQuery: emptyReport,
-    useGetSupplierLedgerSummaryQuery: emptyReport,
-    useGetPurchaseTrendQuery: emptyReport,
+    useGetTopPayablesQuery: emptyReport('topPayables'),
+    useGetSupplierLedgerSummaryQuery: emptyReport('supplierLedger'),
+    useGetPurchaseTrendQuery: emptyReport('purchaseTrend'),
   };
 });
 vi.mock('@ionic/react', () => {
@@ -88,8 +115,12 @@ const item = {
 beforeEach(() => {
   inventoryPayload.value = null;
   purchasePayload.value = [];
-  salesRequest.isError = false;
-  salesRequest.refetch.mockClear();
+  Object.values(reportRequests).forEach((request) => {
+    request.isError = false;
+    request.refetch.mockClear();
+  });
+  querySkips.sales.length = 0;
+  querySkips.inventory.length = 0;
 });
 
 afterEach(cleanup);
@@ -102,6 +133,16 @@ it('renders an inventory array using its computed summary', () => {
   expect(screen.getByText('Rice')).toBeTruthy();
   expect(screen.getByText('reports.totalItems').nextElementSibling?.textContent).toBe('1');
   expect(screen.getByText('reports.lowStock').nextElementSibling?.textContent).toBe('1');
+});
+
+it('only activates the query for the selected report', () => {
+  render(<ReportsPage />);
+  expect(querySkips.sales[querySkips.sales.length - 1]).toBe(false);
+  expect(querySkips.inventory[querySkips.inventory.length - 1]).toBe(true);
+
+  fireEvent.click(screen.getByText('inventory report'));
+  expect(querySkips.sales[querySkips.sales.length - 1]).toBe(true);
+  expect(querySkips.inventory[querySkips.inventory.length - 1]).toBe(false);
 });
 
 it('uses a supplied summary for an inventory object response', () => {
@@ -146,9 +187,33 @@ it('opens the registered purchase detail route from the purchase register', asyn
 });
 
 it('keeps a failed report separate from an empty report and retries it', () => {
-  salesRequest.isError = true;
+  reportRequests.sales.isError = true;
   render(<ReportsPage />);
   expect(screen.getByText('reports.loadFailed')).toBeTruthy();
   fireEvent.click(screen.getByText('common.retry'));
-  expect(salesRequest.refetch).toHaveBeenCalledOnce();
+  expect(reportRequests.sales.refetch).toHaveBeenCalledOnce();
+});
+
+it.each([
+  ['outstanding', 'reports.outstandingCustomers'],
+  ['inventory', 'reports.inventorySummaryReport'],
+  ['cashbook', 'reports.dailyCashbook'],
+  ['profitLoss', 'reports.profitAndLoss'],
+  ['topSelling', 'reports.topSellingProducts'],
+  ['supplierOutstanding', 'reports.supplierOutstandingReport'],
+  ['purchaseRegister', 'reports.purchaseRegisterReport'],
+  ['topPayables', 'reports.topPayablesReport'],
+  ['supplierLedger', 'reports.supplierLedgerSummary'],
+  ['purchaseTrend', 'reports.purchaseTrendReport'],
+])('keeps the %s failure and retry bound to its selected query', (id, label) => {
+  reportRequests[id].isError = true;
+  render(<ReportsPage />);
+  fireEvent.click(screen.getByRole('button', { name: label }));
+
+  expect(screen.getByText('reports.loadFailed')).toBeTruthy();
+  fireEvent.click(screen.getByText('common.retry'));
+  expect(reportRequests[id].refetch).toHaveBeenCalledOnce();
+  Object.entries(reportRequests)
+    .filter(([requestId]) => requestId !== id)
+    .forEach(([, request]) => expect(request.refetch).not.toHaveBeenCalled());
 });

@@ -452,6 +452,7 @@
     "title": "Payments",
     "pageHint": "Record payments against customer accounts.",
     "loadError": "Couldn't load payments.",
+    "refreshWarning": "Showing saved payment records. The latest refresh failed.",
     "noPayments": "No payments recorded yet.",
     "selectCustomerError": "Select a customer first.",
     "invalidAmount": "Enter a valid amount.",

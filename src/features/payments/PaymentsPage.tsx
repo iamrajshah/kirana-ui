@@ -96,7 +96,6 @@ export const PaymentsPage: React.FC = () => {
       setShowSuccess(true);
       setShowModal(false);
       resetForm();
-      refetch();
     } catch (err) {
       const error = err as { status?: number; data?: { message?: string }; message?: string };
       const errMsg = error?.data?.message || error?.message || t('payments.saveError');
@@ -162,7 +161,7 @@ export const PaymentsPage: React.FC = () => {
           </div>
           {isLoading ? (
             <Loading isOpen={isLoading} />
-          ) : isError ? (
+          ) : isError && payments.length === 0 ? (
             <div className="workspace-state">
               <p>{t('payments.loadError')}</p>
               <Button onClick={() => refetch()} variant="outline">{t('common.retry')}</Button>
@@ -178,35 +177,45 @@ export const PaymentsPage: React.FC = () => {
               }
             />
           ) : (
-            <IonList className="payments-list">
-              {Object.entries(groupedPayments).map(([date, datePayments]) => (
-                <IonItemGroup key={date} className="payments-day">
-                  <IonItemDivider color="light" sticky>
-                    <IonLabel>
-                      <h2 style={{ fontWeight: '600' }}>{date}</h2>
-                    </IonLabel>
-                  </IonItemDivider>
-                  <div className="workspace-grid payments-grid">
-                    {datePayments.map((payment) => (
-                      <IonItem key={payment.id} className="workspace-record payment-record">
-                        <IonLabel>
-                          <div className="payment-record-body">
-                            <div>
-                              <h2>{payment.customer?.name || t('common.customer')}</h2>
-                              <p>{new Date(payment.created_at).toLocaleString(i18n?.language || 'en-IN', {
-                                dateStyle: 'medium', timeStyle: 'short',
-                              })}</p>
-                              <p>{paymentModeLabels[payment.payment_mode] || payment.payment_mode}</p>
+            <>
+              {isError && (
+                <div className="payments-stale-warning" role="status">
+                  <span>{t('payments.refreshWarning')}</span>
+                  <Button onClick={() => refetch()} variant="outline">
+                    {t('common.retry')}
+                  </Button>
+                </div>
+              )}
+              <IonList className="payments-list">
+                {Object.entries(groupedPayments).map(([date, datePayments]) => (
+                  <IonItemGroup key={date} className="payments-day">
+                    <IonItemDivider color="light" sticky>
+                      <IonLabel>
+                        <h2 style={{ fontWeight: '600' }}>{date}</h2>
+                      </IonLabel>
+                    </IonItemDivider>
+                    <div className="workspace-grid payments-grid">
+                      {datePayments.map((payment) => (
+                        <IonItem key={payment.id} className="workspace-record payment-record">
+                          <IonLabel>
+                            <div className="payment-record-body">
+                              <div>
+                                <h2>{payment.customer?.name || t('common.customer')}</h2>
+                                <p>{new Date(payment.created_at).toLocaleString(i18n?.language || 'en-IN', {
+                                  dateStyle: 'medium', timeStyle: 'short',
+                                })}</p>
+                                <p>{paymentModeLabels[payment.payment_mode] || payment.payment_mode}</p>
+                              </div>
+                              <strong>{formatCurrency(payment.amount)}</strong>
                             </div>
-                            <strong>{formatCurrency(payment.amount)}</strong>
-                          </div>
-                        </IonLabel>
-                      </IonItem>
-                    ))}
-                  </div>
-                </IonItemGroup>
-              ))}
-            </IonList>
+                          </IonLabel>
+                        </IonItem>
+                      ))}
+                    </div>
+                  </IonItemGroup>
+                ))}
+              </IonList>
+            </>
           )}
         </div>
 

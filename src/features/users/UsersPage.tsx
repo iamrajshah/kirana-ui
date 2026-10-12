@@ -255,7 +255,7 @@ export const UsersPage: React.FC = () => {
                     expand="block"
                     style={{ marginTop: '20px' }}
                   >
-                    \n {creating ? t('common.creating') : t('users.createUser')}\n{' '}
+                    {creating ? t('common.creating') : t('users.createUser')}
                   </IonButton>
                 </IonContent>
               </IonPage>

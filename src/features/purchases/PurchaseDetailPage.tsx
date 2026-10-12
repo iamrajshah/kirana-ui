@@ -21,6 +21,7 @@ import { Navbar } from '@components/Navbar';
 import { useGetPurchaseByIdQuery } from '../../core/api/purchaseApi';
 import { formatDateTime, formatCurrency } from '@utils/helpers';
 import { EmptyState } from '@components';
+import { ROUTES } from '@core/constants';
 import './PurchaseDetailPage.css';
 
 const PurchaseDetailPage: React.FC = () => {
@@ -46,8 +47,8 @@ const PurchaseDetailPage: React.FC = () => {
   if (isLoading) {
     return (
       <IonPage>
-        <Navbar title={t('purchases.purchaseDetails')} />
-        <IonContent className="ion-padding">
+        <Navbar title={t('purchases.purchaseDetails')} backHref={ROUTES.PURCHASES} />
+        <IonContent className="detail-workspace">
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '50px' }}>
             <IonSpinner />
           </div>
@@ -59,9 +60,9 @@ const PurchaseDetailPage: React.FC = () => {
   if (error || !purchase) {
     return (
       <IonPage>
-        <Navbar title={t('purchases.purchaseDetails')} />
-        <IonContent className="ion-padding">
-          <EmptyState message="Purchase not found or error loading details" />
+        <Navbar title={t('purchases.purchaseDetails')} backHref={ROUTES.PURCHASES} />
+        <IonContent className="detail-workspace">
+          <EmptyState message={t('purchases.purchaseNotFound')} />
         </IonContent>
       </IonPage>
     );
@@ -69,14 +70,14 @@ const PurchaseDetailPage: React.FC = () => {
 
   return (
     <IonPage>
-      <Navbar title={t('purchases.purchaseDetails')} />
-      <IonContent className="ion-padding">
+      <Navbar title={t('purchases.purchaseDetails')} backHref={ROUTES.PURCHASES} />
+      <IonContent className="detail-workspace">
         {/* Purchase Header */}
         <IonCard>
           <IonCardHeader>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <IonCardTitle>Invoice #{purchase.invoice_number}</IonCardTitle>
+                <IonCardTitle>{t('purchases.invoiceHash')}{purchase.invoice_number}</IonCardTitle>
                 <p style={{ color: 'var(--ion-color-medium)', margin: '4px 0 0 0' }}>
                   {formatDateTime(purchase.invoice_date || purchase.created_at)}
                 </p>
@@ -90,7 +91,7 @@ const PurchaseDetailPage: React.FC = () => {
         {purchase.supplier && (
           <IonCard>
             <IonCardHeader>
-              <IonCardTitle>Supplier Information</IonCardTitle>
+              <IonCardTitle>{t('purchases.supplierInformation')}</IonCardTitle>
             </IonCardHeader>
             <IonCardContent>
               <IonList>
@@ -108,7 +109,7 @@ const PurchaseDetailPage: React.FC = () => {
         {/* Items */}
         <IonCard>
           <IonCardHeader>
-            <IonCardTitle>Items</IonCardTitle>
+            <IonCardTitle>{t('purchases.items')}</IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
             <IonList>
@@ -116,23 +117,23 @@ const PurchaseDetailPage: React.FC = () => {
                 purchase.items.map((item, index: number) => (
                   <IonItem key={index}>
                     <IonLabel>
-                      <h3>{item.product_name || 'Unknown Product'}</h3>
-                      {item.sku && <p className="text-gray-600">SKU: {item.sku}</p>}
+                      <h3>{item.product_name || t('invoiceDetail.unknownProduct')}</h3>
+                      {item.sku && <p className="text-gray-600">{t('reports.skuLabel')} {item.sku}</p>}
                       {(item.brand || item.size) && (
                         <p className="text-gray-600">
-                          {item.brand && `Brand: ${item.brand}`}
+                          {item.brand && `${t('products.brand')}: ${item.brand}`}
                           {item.brand && item.size && ' | '}
-                          {item.size && `Size: ${item.size}`}
+                          {item.size && `${t('products.size')}: ${item.size}`}
                         </p>
                       )}
                       <p className="font-medium">
-                        Qty: {item.quantity} × {formatCurrency(item.purchase_price)} = {formatCurrency(item.quantity * item.purchase_price)}
+                        {t('purchases.quantity')}: {item.quantity} × {formatCurrency(item.purchase_price)} = {formatCurrency(item.quantity * item.purchase_price)}
                       </p>
                     </IonLabel>
                   </IonItem>
                 ))
               ) : (
-                <EmptyState message="No items found" />
+                <EmptyState message={t('invoiceDetail.noItemsFound')} />
               )}
             </IonList>
           </IonCardContent>
@@ -141,26 +142,26 @@ const PurchaseDetailPage: React.FC = () => {
         {/* Amount Summary */}
         <IonCard>
           <IonCardHeader>
-            <IonCardTitle>Payment Summary</IonCardTitle>
+            <IonCardTitle>{t('purchases.paymentSummary')}</IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
             <IonGrid>
               <IonRow>
                 <IonCol size="6">
-                  <strong>Total Amount:</strong>
+                  <strong>{t('purchases.totalAmount')}:</strong>
                 </IonCol>
                 <IonCol size="6" className="ion-text-end">
                   <strong>{formatCurrency(purchase.total_amount)}</strong>
                 </IonCol>
               </IonRow>
               <IonRow>
-                <IonCol size="6">Paid Amount:</IonCol>
+                <IonCol size="6">{t('purchases.paidAmount')}:</IonCol>
                 <IonCol size="6" className="ion-text-end" style={{ color: 'var(--ion-color-success)' }}>
                   {formatCurrency(purchase.paid_amount)}
                 </IonCol>
               </IonRow>
               <IonRow>
-                <IonCol size="6">Pending Amount:</IonCol>
+                <IonCol size="6">{t('purchases.pendingAmount')}:</IonCol>
                 <IonCol size="6" className="ion-text-end" style={{ color: 'var(--ion-color-danger)' }}>
                   {formatCurrency(purchase.total_amount - purchase.paid_amount)}
                 </IonCol>

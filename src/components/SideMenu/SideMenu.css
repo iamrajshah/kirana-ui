@@ -40,9 +40,27 @@
 }
 
 @media (min-width: 992px) {
+  .workspace-split-pane {
+    --side-width: 248px;
+    --side-min-width: 248px;
+    --side-max-width: 248px;
+  }
+
   .workspace-menu {
     --width: 248px;
     border-right: 1px solid var(--ion-border-color, #e5e7eb);
+  }
+
+  /*
+   * The authenticated menu mounts after the split pane has already emitted its
+   * initial visibility event. Keep the desktop container visible even when
+   * Ionic misses that first event; mobile menus still use the normal overlay.
+   */
+  .workspace-menu::part(container) {
+    inset: 0;
+    width: auto;
+    transform: none;
+    box-shadow: none;
   }
 
   .workspace-bottom-tabs,

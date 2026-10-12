@@ -275,7 +275,7 @@ const SupplierLedgerPage: React.FC = () => {
           <IonTitle>{t('suppliers.ledger.title')}</IonTitle>
         </IonToolbar>
       </IonHeader>
-      <IonContent className="ion-padding">
+      <IonContent className="detail-workspace">
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent />
         </IonRefresher>

@@ -109,7 +109,7 @@ export const CustomerLedgerPage: React.FC = () => {
           <IonTitle>{t('customers.ledger.title')}</IonTitle>
         </IonToolbar>
       </IonHeader>
-      <IonContent className="ion-padding">
+      <IonContent className="detail-workspace">
         {/* Customer Info Card */}
         <IonCard>
           <IonCardHeader>

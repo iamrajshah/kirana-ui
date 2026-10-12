@@ -28,6 +28,7 @@ import { formatCurrency, formatDate } from '@utils/helpers';
 import { useAppSelector } from '../../core/hooks';
 import { selectCurrentUser } from '../../core/auth/authSlice';
 import { hasPermission } from '../../core/permissions/permissions';
+import { ROUTES } from '@core/constants';
 import '../products/stock-workspace.css';
 
 const PurchasesPage: React.FC = () => {
@@ -77,7 +78,7 @@ const PurchasesPage: React.FC = () => {
             <h1>{t('purchases.title')}</h1>
             {hasCreatePermission && (
               <div className="workspace-actions stock-primary-actions">
-                <IonButton onClick={() => history.push('/purchases/create')}>
+                <IonButton onClick={() => history.push(ROUTES.PURCHASE_CREATE)}>
                   <IonIcon slot="start" icon={add} />
                   {t('purchases.createPurchase')}
                 </IonButton>
@@ -172,7 +173,7 @@ const PurchasesPage: React.FC = () => {
         {/* Create Purchase FAB */}
         {hasCreatePermission && <IonFab vertical="bottom" horizontal="end" slot="fixed" className="stock-fab">
           <IonFabButton 
-            onClick={() => history.push('/purchases/create')}
+            onClick={() => history.push(ROUTES.PURCHASE_CREATE)}
             aria-label={t('purchases.createPurchase')}
           >
             <IonIcon icon={add} />

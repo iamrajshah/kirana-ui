@@ -82,6 +82,19 @@ export const DashboardPage: React.FC = () => {
             </div>
           </header>
 
+          {shortcuts.length > 0 && (
+            <section className="dashboard-actions" aria-labelledby="dashboard-actions-title">
+              <h2 id="dashboard-actions-title">{t('dashboard.quickActions')}</h2>
+              <div className="workspace-actions dashboard-shortcuts">
+                {shortcuts.map((item) => (
+                  <button key={item.id} type="button" onClick={() => history.push(item.href)}>
+                    {t(item.labelKey)}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
           {isError && stats && (
             <div className="workspace-state dashboard-error dashboard-stale-warning" role="alert">
               <p>{t('dashboard.statsUnavailable')}</p>
@@ -110,18 +123,6 @@ export const DashboardPage: React.FC = () => {
             </>
           )}
 
-          {shortcuts.length > 0 && (
-            <section className="dashboard-actions" aria-labelledby="dashboard-actions-title">
-              <h2 id="dashboard-actions-title">{t('dashboard.quickActions')}</h2>
-              <div className="workspace-actions dashboard-shortcuts">
-                {shortcuts.map((item) => (
-                  <button key={item.id} type="button" onClick={() => history.push(item.href)}>
-                    {t(item.labelKey)}
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
         </main>
       </IonContent>
     </IonPage>

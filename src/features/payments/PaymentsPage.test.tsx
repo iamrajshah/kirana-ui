@@ -45,6 +45,26 @@ it('distinguishes failed payment history from no collections and can retry', () 
   expect(query.refetch).toHaveBeenCalledTimes(1);
 });
 
+it('keeps cached collections visible when their refresh fails', () => {
+  query.data = {
+    data: [{
+      id: 'payment-1',
+      amount: 250,
+      payment_mode: 'CASH',
+      created_at: '2026-10-12T08:00:00.000Z',
+      customer: { name: 'Asha Stores' },
+    }],
+  };
+  query.isError = true;
+
+  render(<PaymentsPage />);
+
+  expect(screen.getByText('Asha Stores')).toBeTruthy();
+  expect(screen.getByText('payments.refreshWarning')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'common.retry' }));
+  expect(query.refetch).toHaveBeenCalledTimes(1);
+});
+
 it('identifies this screen as customer collections rather than walk-in billing', () => {
   query.data = { data: [] };
   render(<PaymentsPage />);

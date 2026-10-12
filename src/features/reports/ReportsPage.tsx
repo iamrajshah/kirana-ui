@@ -56,9 +56,11 @@ const reportOptions = [
   ['purchaseTrend', 'reports.purchaseTrendReport'],
 ] as const;
 
+type ReportId = (typeof reportOptions)[number][0];
+
 export const ReportsPage: React.FC = () => {
   const { t } = useTranslation();
-  const [selectedReport, setSelectedReport] = useState<string>('sales');
+  const [selectedReport, setSelectedReport] = useState<ReportId>('sales');
 
   // Pagination state
   const [supplierOutstandingPage, setSupplierOutstandingPage] = useState(1);
@@ -70,15 +72,22 @@ export const ReportsPage: React.FC = () => {
   const [allPurchaseRegister, setAllPurchaseRegister] = useState<PurchaseRegister[]>([]);
   const [allSupplierLedger, setAllSupplierLedger] = useState<SupplierLedgerSummary[]>([]);
 
-  // Reset pagination when report changes
-  useEffect(() => {
-    setSupplierOutstandingPage(1);
-    setPurchaseRegisterPage(1);
-    setSupplierLedgerPage(1);
-    setAllSupplierOutstanding([]);
-    setAllPurchaseRegister([]);
-    setAllSupplierLedger([]);
-  }, [selectedReport]);
+  const selectReport = (report: ReportId) => {
+    if (report === selectedReport) return;
+
+    if (report === 'supplierOutstanding') {
+      setSupplierOutstandingPage(1);
+      setAllSupplierOutstanding([]);
+    } else if (report === 'purchaseRegister') {
+      setPurchaseRegisterPage(1);
+      setAllPurchaseRegister([]);
+    } else if (report === 'supplierLedger') {
+      setSupplierLedgerPage(1);
+      setAllSupplierLedger([]);
+    }
+
+    setSelectedReport(report);
+  };
 
   // All Reports Data
   const {
@@ -86,37 +95,51 @@ export const ReportsPage: React.FC = () => {
     isLoading: salesLoading,
     isError: salesError,
     refetch: refetchSales,
-  } = useGetSalesReportQuery({ groupBy: 'day' });
+  } = useGetSalesReportQuery(
+    { groupBy: 'day' },
+    { skip: selectedReport !== 'sales' }
+  );
   const {
     data: outstandingData,
     isLoading: outstandingLoading,
     isError: outstandingError,
     refetch: refetchOutstanding,
-  } = useGetOutstandingCustomersQuery();
+  } = useGetOutstandingCustomersQuery(undefined, {
+    skip: selectedReport !== 'outstanding',
+  });
   const {
     data: inventoryData,
     isLoading: inventoryLoading,
     isError: inventoryError,
     refetch: refetchInventory,
-  } = useGetInventorySummaryQuery();
+  } = useGetInventorySummaryQuery(undefined, {
+    skip: selectedReport !== 'inventory',
+  });
   const {
     data: cashbookData,
     isLoading: cashbookLoading,
     isError: cashbookError,
     refetch: refetchCashbook,
-  } = useGetDailyCashbookQuery();
+  } = useGetDailyCashbookQuery(undefined, {
+    skip: selectedReport !== 'cashbook',
+  });
   const {
     data: profitLossData,
     isLoading: profitLossLoading,
     isError: profitLossError,
     refetch: refetchProfitLoss,
-  } = useGetProfitLossQuery();
+  } = useGetProfitLossQuery(undefined, {
+    skip: selectedReport !== 'profitLoss',
+  });
   const {
     data: topSellingData,
     isLoading: topSellingLoading,
     isError: topSellingError,
     refetch: refetchTopSelling,
-  } = useGetTopSellingQuery({ limit: 20 });
+  } = useGetTopSellingQuery(
+    { limit: 20 },
+    { skip: selectedReport !== 'topSelling' }
+  );
 
   const {
     data: supplierOutstandingData,
@@ -141,7 +164,10 @@ export const ReportsPage: React.FC = () => {
     isLoading: topPayablesLoading,
     isError: topPayablesError,
     refetch: refetchTopPayables,
-  } = useGetTopPayablesQuery({ limit: 10 });
+  } = useGetTopPayablesQuery(
+    { limit: 10 },
+    { skip: selectedReport !== 'topPayables' }
+  );
   const {
     data: supplierLedgerData,
     isLoading: supplierLedgerLoading,
@@ -156,9 +182,12 @@ export const ReportsPage: React.FC = () => {
     isLoading: purchaseTrendLoading,
     isError: purchaseTrendError,
     refetch: refetchPurchaseTrend,
-  } = useGetPurchaseTrendQuery({ months: 12 });
+  } = useGetPurchaseTrendQuery(
+    { months: 12 },
+    { skip: selectedReport !== 'purchaseTrend' }
+  );
 
-  const reportRequests: Record<string, { isError?: boolean; refetch?: () => unknown }> = {
+  const reportRequests: Record<ReportId, { isError?: boolean; refetch?: () => unknown }> = {
     sales: { isError: salesError, refetch: refetchSales },
     outstanding: { isError: outstandingError, refetch: refetchOutstanding },
     inventory: { isError: inventoryError, refetch: refetchInventory },
@@ -884,6 +913,20 @@ export const ReportsPage: React.FC = () => {
     );
   };
 
+  const reportRenderers: Record<ReportId, () => React.ReactNode> = {
+    sales: renderSalesReport,
+    outstanding: renderOutstandingCustomers,
+    inventory: renderInventorySummary,
+    cashbook: renderCashbook,
+    profitLoss: renderProfitLoss,
+    topSelling: renderTopSelling,
+    supplierOutstanding: renderSupplierOutstanding,
+    purchaseRegister: renderPurchaseRegister,
+    topPayables: renderTopPayables,
+    supplierLedger: renderSupplierLedgerSummary,
+    purchaseTrend: renderPurchaseTrend,
+  };
+
   return (
     <IonPage>
       <Navbar title={t('reports.title')} />
@@ -903,40 +946,18 @@ export const ReportsPage: React.FC = () => {
                 <IonSelect
                   value={selectedReport}
                   placeholder={t('reports.selectReport')}
-                  onIonChange={(e) => setSelectedReport(e.detail.value)}
+                  onIonChange={(e) => selectReport(e.detail.value as ReportId)}
                   interface="action-sheet"
                   interfaceOptions={{
                     header: t('reports.selectReportType'),
                     subHeader: t('reports.chooseReport'),
                   }}
                 >
-                  <IonSelectOption value="sales">{t('reports.salesReport')}</IonSelectOption>
-                  <IonSelectOption value="outstanding">
-                    {t('reports.outstandingCustomers')}
-                  </IonSelectOption>
-                  <IonSelectOption value="inventory">
-                    {t('reports.inventorySummaryReport')}
-                  </IonSelectOption>
-                  <IonSelectOption value="cashbook">{t('reports.dailyCashbook')}</IonSelectOption>
-                  <IonSelectOption value="profitLoss">{t('reports.profitAndLoss')}</IonSelectOption>
-                  <IonSelectOption value="topSelling">
-                    {t('reports.topSellingProducts')}
-                  </IonSelectOption>
-                  <IonSelectOption value="supplierOutstanding">
-                    {t('reports.supplierOutstandingReport')}
-                  </IonSelectOption>
-                  <IonSelectOption value="purchaseRegister">
-                    {t('reports.purchaseRegisterReport')}
-                  </IonSelectOption>
-                  <IonSelectOption value="topPayables">
-                    {t('reports.topPayablesReport')}
-                  </IonSelectOption>
-                  <IonSelectOption value="supplierLedger">
-                    {t('reports.supplierLedgerSummary')}
-                  </IonSelectOption>
-                  <IonSelectOption value="purchaseTrend">
-                    {t('reports.purchaseTrendReport')}
-                  </IonSelectOption>
+                  {reportOptions.map(([id, labelKey]) => (
+                    <IonSelectOption key={id} value={id}>
+                      {t(labelKey)}
+                    </IonSelectOption>
+                  ))}
                 </IonSelect>
               </IonItem>
             </IonCardContent>
@@ -951,7 +972,7 @@ export const ReportsPage: React.FC = () => {
                   selectedReport === id ? 'report-choice report-choice-active' : 'report-choice'
                 }
                 aria-current={selectedReport === id ? 'page' : undefined}
-                onClick={() => setSelectedReport(id)}
+                onClick={() => selectReport(id)}
               >
                 {t(labelKey)}
               </button>
@@ -968,19 +989,7 @@ export const ReportsPage: React.FC = () => {
                 </IonButton>
               </div>
             ) : (
-              <>
-                {selectedReport === 'sales' && renderSalesReport()}
-                {selectedReport === 'outstanding' && renderOutstandingCustomers()}
-                {selectedReport === 'inventory' && renderInventorySummary()}
-                {selectedReport === 'cashbook' && renderCashbook()}
-                {selectedReport === 'profitLoss' && renderProfitLoss()}
-                {selectedReport === 'topSelling' && renderTopSelling()}
-                {selectedReport === 'supplierOutstanding' && renderSupplierOutstanding()}
-                {selectedReport === 'purchaseRegister' && renderPurchaseRegister()}
-                {selectedReport === 'topPayables' && renderTopPayables()}
-                {selectedReport === 'supplierLedger' && renderSupplierLedgerSummary()}
-                {selectedReport === 'purchaseTrend' && renderPurchaseTrend()}
-              </>
+              reportRenderers[selectedReport]()
             )}
           </div>
         </div>

@@ -60,9 +60,19 @@
   text-align: center;
 }
 
+ion-content.detail-workspace::part(scroll) {
+  width: min(100%, 1200px);
+  margin-inline: auto;
+  padding: 16px 12px 32px;
+}
+
 @media (min-width: 768px) {
   .workspace-page {
     padding: 28px 28px 40px;
+  }
+
+  ion-content.detail-workspace::part(scroll) {
+    padding: 28px 24px 40px;
   }
 }
 
