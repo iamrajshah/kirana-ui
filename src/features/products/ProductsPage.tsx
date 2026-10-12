@@ -8,9 +8,6 @@ import { useHistory } from 'react-router';
 import {
   IonContent,
   IonPage,
-  IonList,
-  IonItem,
-  IonLabel,
   IonBadge,
   IonFab,
   IonFabButton,
@@ -24,7 +21,6 @@ import {
   IonTitle,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
-  IonListHeader,
   useIonActionSheet,
 } from '@ionic/react';
 import { add, close, barcodeOutline } from 'ionicons/icons';
@@ -34,6 +30,7 @@ import { useGetCategoriesQuery } from '@core/api/categoryApi';
 import { SearchBar, Loading, EmptyState, Input, Select, Button, AddCategoryModal } from '@components';
 import { formatCurrency } from '@utils/helpers';
 import { ROUTES } from '@core/constants';
+import './stock-workspace.css';
 
 export const ProductsPage: React.FC = () => {
   const { t } = useTranslation();
@@ -43,7 +40,7 @@ export const ProductsPage: React.FC = () => {
   const [skip, setSkip] = useState(0);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const take = 50;
-  const { data, isLoading, isFetching } = useGetProductsQuery({ search, skip, take });
+  const { data, isLoading, isFetching, isError, refetch } = useGetProductsQuery({ search, skip, take });
   const { data: categoriesData } = useGetCategoriesQuery();
   const [createProduct, { isLoading: creating }] = useCreateProductMutation();
   const [createVariant, { isLoading: creatingVariant }] = useCreateVariantMutation();
@@ -102,7 +99,7 @@ export const ProductsPage: React.FC = () => {
     const groups: Record<string, Product[]> = {};
     
     allProducts.forEach((product) => {
-      const categoryName = product.category?.name || 'Uncategorized';
+      const categoryName = product.category?.name || t('products.uncategorized');
       if (!groups[categoryName]) {
         groups[categoryName] = [];
       }
@@ -110,7 +107,7 @@ export const ProductsPage: React.FC = () => {
     });
     
     return groups;
-  }, [allProducts]);
+  }, [allProducts, t]);
 
   const categoryNames = useMemo(() => {
     return Object.keys(groupedProducts).sort();
@@ -189,88 +186,96 @@ export const ProductsPage: React.FC = () => {
     <IonPage>
       <Navbar title={t('products.title')} />
       <IonContent>
-        <div style={{ padding: '16px' }}>
-          <SearchBar value={search} onChange={setSearch} placeholder={t('common.search')} />
+        <div className="workspace-page stock-page">
+          <div className="workspace-header">
+            <h1>{t('products.title')}</h1>
+            <div className="workspace-actions stock-primary-actions">
+              <IonButton fill="outline" onClick={() => history.push(ROUTES.PRODUCT_BARCODE)}>
+                <IonIcon slot="start" icon={barcodeOutline} />
+                {t('products.scanBarcode')}
+              </IonButton>
+              <IonButton onClick={() => setShowModal(true)}>
+                <IonIcon slot="start" icon={add} />
+                {t('products.addManually')}
+              </IonButton>
+            </div>
+          </div>
+          <div className="stock-toolbar">
+            <SearchBar value={search} onChange={setSearch} placeholder={t('common.search')} />
+          </div>
 
           {isLoading && allProducts.length === 0 ? (
             <Loading isOpen={isLoading} />
+          ) : isError && allProducts.length === 0 ? (
+            <div className="workspace-state" role="alert">
+              <p>{t('products.loadError')}</p>
+              <Button onClick={() => refetch()}>{t('common.retry')}</Button>
+            </div>
           ) : allProducts.length === 0 ? (
             <EmptyState message={t('products.noProductsFound')} />
           ) : (
             <>
               {categoryNames.map((categoryName) => (
-                <div key={categoryName} style={{ marginBottom: '16px' }}>
-                  <IonListHeader style={{ 
-                    fontSize: '16px', 
-                    fontWeight: '700', 
-                    color: 'var(--ion-color-primary)',
-                    padding: '8px 16px',
-                    background: 'var(--ion-color-light)',
-                    borderRadius: '8px',
-                    marginBottom: '8px'
-                  }}>
+                <section key={categoryName} className="stock-category">
+                  <h2 className="stock-category-heading">
                     {categoryName}
-                    <IonBadge 
-                      color="primary" 
-                      style={{ marginLeft: '8px' }}
-                    >
+                    <IonBadge color="primary">
                       {groupedProducts[categoryName].length}
                     </IonBadge>
-                  </IonListHeader>
-                  
-                  <IonList>
+                  </h2>
+                  <div className="stock-card-grid">
                     {groupedProducts[categoryName].map((product) => (
-                      <IonItem key={product.id} button onClick={() => handleProductClick(product.id)}>
-                        <IonLabel>
-                          <h2 style={{ fontWeight: '600', fontSize: '16px' }}>{product.name}</h2>
-                          {product.variants && product.variants.length > 0 && (
-                            <div style={{ marginTop: '8px' }}>
-                              {product.variants.map((variant) => (
-                                <div key={variant.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', paddingTop: '4px', paddingBottom: '4px' }}>
-                                  <span>SKU: {variant.sku}</span>
-                                  <span style={{ fontWeight: '500' }}>{formatCurrency(variant.price)}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </IonLabel>
-                        <IonBadge slot="end" color={product.is_active ? 'success' : 'medium'}>
-                          {product.is_active ? t('common.active') : t('common.inactive')}
-                        </IonBadge>
-                      </IonItem>
+                      <button key={product.id} type="button" className="workspace-record stock-card stock-card-button" onClick={() => handleProductClick(product.id)}>
+                        <div className="stock-card-top">
+                          <h2>{product.name}</h2>
+                          <IonBadge color={product.is_active ? 'success' : 'medium'}>
+                            {product.is_active ? t('common.active') : t('common.inactive')}
+                          </IonBadge>
+                        </div>
+                        {product.variants && product.variants.length > 0 && (
+                          <div className="stock-variant-list">
+                            {product.variants.map((variant) => (
+                              <div key={variant.id} className="stock-variant">
+                                <span>{t('products.sku')}: {variant.sku}</span>
+                                <strong>{formatCurrency(variant.price)}</strong>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </button>
                     ))}
-                  </IonList>
-                </div>
+                  </div>
+                </section>
               ))}
               
               <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
-                <IonInfiniteScrollContent loadingText="Loading more products..." />
+                <IonInfiniteScrollContent loadingText={t('products.loadingMore')} />
               </IonInfiniteScroll>
             </>
           )}
         </div>
 
-        <IonFab vertical="bottom" horizontal="end" slot="fixed">
-          <IonFabButton onClick={() => {
+        <IonFab vertical="bottom" horizontal="end" slot="fixed" className="stock-fab">
+          <IonFabButton aria-label={t('products.addProduct')} onClick={() => {
             present({
-              header: 'Add Product',
+              header: t('products.addProduct'),
               buttons: [
                 {
-                  text: 'Scan Barcode',
+                  text: t('products.scanBarcode'),
                   icon: barcodeOutline,
                   handler: () => {
                     history.push(ROUTES.PRODUCT_BARCODE);
                   },
                 },
                 {
-                  text: 'Add Manually',
+                  text: t('products.addManually'),
                   icon: add,
                   handler: () => {
                     setShowModal(true);
                   },
                 },
                 {
-                  text: 'Cancel',
+                  text: t('common.cancel'),
                   role: 'cancel',
                 },
               ],
@@ -340,7 +345,7 @@ export const ProductsPage: React.FC = () => {
                   style={{ marginTop: '8px' }}
                 >
                   <IonIcon slot="start" icon={add} />
-                  {t('products.addNewCategory') || 'Add New Category'}
+                  {t('products.addNewCategory')}
                 </IonButton>
 
                 <h3 style={{ fontSize: '16px', fontWeight: '600', marginTop: '24px', marginBottom: '8px' }}>{t('products.variantDetailsHeading')}</h3>
