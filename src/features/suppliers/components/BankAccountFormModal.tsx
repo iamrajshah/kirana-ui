@@ -15,6 +15,7 @@ import {
 import { close } from 'ionicons/icons';
 import { Input, Button, Select } from '../../../components';
 import { BankAccount } from '../../../core/api/supplierApi';
+import { useTranslation } from 'react-i18next';
 
 interface BankAccountFormModalProps {
   isOpen: boolean;
@@ -41,8 +42,7 @@ export const BankAccountFormModal: React.FC<BankAccountFormModalProps> = ({
   isLoading,
   editingAccount,
 }) => {
-  console.log('BankAccountFormModal render - isOpen:', isOpen);
-  
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<BankAccountFormData>({
     account_holder_name: '',
     bank_name: '',
@@ -88,18 +88,18 @@ export const BankAccountFormModal: React.FC<BankAccountFormModalProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!formData.account_holder_name.trim()) {
-      newErrors.account_holder_name = 'Account holder name is required';
+      newErrors.account_holder_name = t('foundation.bank.holderRequired');
     }
     if (!formData.bank_name.trim()) {
-      newErrors.bank_name = 'Bank name is required';
+      newErrors.bank_name = t('foundation.bank.bankRequired');
     }
     if (!editingAccount && !formData.account_number.trim()) {
-      newErrors.account_number = 'Account number is required';
+      newErrors.account_number = t('foundation.bank.numberRequired');
     }
     if (!formData.ifsc_code.trim()) {
-      newErrors.ifsc_code = 'IFSC code is required';
+      newErrors.ifsc_code = t('foundation.bank.ifscRequired');
     } else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(formData.ifsc_code.toUpperCase())) {
-      newErrors.ifsc_code = 'Invalid IFSC code format';
+      newErrors.ifsc_code = t('foundation.bank.ifscInvalid');
     }
 
     setErrors(newErrors);
@@ -107,20 +107,13 @@ export const BankAccountFormModal: React.FC<BankAccountFormModalProps> = ({
   };
 
   const handleSubmit = () => {
-    console.log('DEBUG - BankAccountFormModal handleSubmit called');
-    console.log('DEBUG - formData:', formData);
-    
     if (validateForm()) {
-      console.log('DEBUG - Form validation passed');
       const submitData = { ...formData };
       // Remove account_number if editing and it's empty (keep existing)
       if (editingAccount && !submitData.account_number.trim()) {
         delete (submitData as Partial<BankAccountFormData>).account_number;
       }
-      console.log('DEBUG - Calling onSubmit with:', submitData);
       onSubmit(submitData);
-    } else {
-      console.log('DEBUG - Form validation failed');
     }
   };
 
@@ -133,7 +126,7 @@ export const BankAccountFormModal: React.FC<BankAccountFormModalProps> = ({
     <IonModal isOpen={isOpen} onDidDismiss={handleClose}>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>{editingAccount ? 'Edit Bank Account' : 'Add Bank Account'}</IonTitle>
+          <IonTitle>{editingAccount ? t('foundation.bank.editAccount') : t('foundation.bank.addAccount')}</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={handleClose}>
               <IonIcon icon={close} />
@@ -143,7 +136,7 @@ export const BankAccountFormModal: React.FC<BankAccountFormModalProps> = ({
       </IonHeader>
       <IonContent className="ion-padding">
         <Input
-          label="Account Holder Name"
+          label={t('foundation.bank.accountHolder')}
           value={formData.account_holder_name}
           onChange={(value) => setFormData({ ...formData, account_holder_name: value })}
           required
@@ -152,7 +145,7 @@ export const BankAccountFormModal: React.FC<BankAccountFormModalProps> = ({
         />
 
         <Input
-          label="Bank Name"
+          label={t('foundation.bank.bankName')}
           value={formData.bank_name}
           onChange={(value) => setFormData({ ...formData, bank_name: value })}
           required
@@ -161,40 +154,40 @@ export const BankAccountFormModal: React.FC<BankAccountFormModalProps> = ({
         />
 
         <Input
-          label={editingAccount ? 'Account Number (leave empty to keep existing)' : 'Account Number'}
+          label={editingAccount ? t('foundation.bank.accountNumberKeep') : t('foundation.bank.accountNumber')}
           value={formData.account_number}
           onChange={(value) => setFormData({ ...formData, account_number: value })}
           required={!editingAccount}
           error={errors.account_number}
           maxLength={50}
-          placeholder={editingAccount ? 'Enter new account number or leave empty' : ''}
+          placeholder={editingAccount ? t('foundation.bank.accountNumberPlaceholder') : ''}
         />
 
         <Input
-          label="IFSC Code"
+          label={t('foundation.bank.ifscCode')}
           value={formData.ifsc_code}
           onChange={(value) => setFormData({ ...formData, ifsc_code: value.toUpperCase() })}
           required
           error={errors.ifsc_code}
           maxLength={11}
-          placeholder="e.g., SBIN0001234"
+          placeholder={t('foundation.bank.ifscExample')}
         />
 
         <Input
-          label="Branch Name (Optional)"
+          label={t('foundation.bank.branchOptional')}
           value={formData.branch_name}
           onChange={(value) => setFormData({ ...formData, branch_name: value })}
           maxLength={150}
         />
 
         <Select
-          label="Account Type (Optional)"
+          label={t('foundation.bank.typeOptional')}
           value={formData.account_type}
           onChange={(value) => setFormData({ ...formData, account_type: value })}
           options={[
-            { value: '', label: 'Select Type' },
-            { value: 'SAVINGS', label: 'Savings' },
-            { value: 'CURRENT', label: 'Current' },
+            { value: '', label: t('foundation.bank.selectType') },
+            { value: 'SAVINGS', label: t('foundation.bank.savings') },
+            { value: 'CURRENT', label: t('foundation.bank.current') },
           ]}
         />
 
@@ -205,17 +198,17 @@ export const BankAccountFormModal: React.FC<BankAccountFormModalProps> = ({
             onIonChange={(e) => setFormData({ ...formData, is_primary: e.detail.checked })}
           />
           <IonLabel>
-            <h3>Set as Primary Account</h3>
+            <h3>{t('foundation.bank.setAsPrimary')}</h3>
             {formData.is_primary && (
               <p style={{ fontSize: '12px', color: 'var(--ion-color-medium)' }}>
-                This will be the default account for this supplier
+                {t('foundation.bank.defaultHint')}
               </p>
             )}
           </IonLabel>
         </IonItem>
 
         <Button onClick={handleSubmit} loading={isLoading} fullWidth size="large">
-          {editingAccount ? 'Update Account' : 'Add Account'}
+          {editingAccount ? t('foundation.bank.updateAccount') : t('foundation.bank.addAccount')}
         </Button>
       </IonContent>
     </IonModal>

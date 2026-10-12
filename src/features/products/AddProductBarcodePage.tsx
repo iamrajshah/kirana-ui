@@ -34,9 +34,11 @@ import {
   AddCategoryModal,
 } from '@components';
 import type { BarcodeLookupData } from '@core/types';
+import { useTranslation } from 'react-i18next';
 
 export const AddProductBarcodePage: React.FC = () => {
   const history = useHistory();
+  const { t } = useTranslation();
   const isMobile = isPlatform('capacitor');
 
   // State
@@ -81,7 +83,7 @@ export const AddProductBarcodePage: React.FC = () => {
 
   const checkBarcode = async (barcodeValue: string) => {
     if (!barcodeValue.trim()) {
-      setErrorMessage('Please enter a barcode');
+      setErrorMessage(t('foundation.barcode.pleaseEnter'));
       setShowError(true);
       return;
     }
@@ -122,7 +124,7 @@ export const AddProductBarcodePage: React.FC = () => {
         setShowForm(true);
       }
     } catch (error: unknown) {
-      setErrorMessage(apiErrorMessage(error, 'Failed to check barcode'));
+      setErrorMessage(apiErrorMessage(error, t('foundation.barcode.lookupFailed')));
       setShowError(true);
     }
   };
@@ -149,7 +151,7 @@ export const AddProductBarcodePage: React.FC = () => {
   const handleSubmit = async () => {
     // Validate
     if (!barcode || !productMasterName || !productName || !mrp || !sellingPrice || !quantity) {
-      setErrorMessage('Please fill in all required fields');
+      setErrorMessage(t('foundation.barcode.fillRequired'));
       setShowError(true);
       return;
     }
@@ -188,7 +190,7 @@ export const AddProductBarcodePage: React.FC = () => {
         history.goBack();
       }, 1500);
     } catch (error: unknown) {
-      setErrorMessage(apiErrorMessage(error, 'Failed to create product'));
+      setErrorMessage(apiErrorMessage(error, t('foundation.barcode.createFailed')));
       setShowError(true);
     }
   };
@@ -217,7 +219,7 @@ export const AddProductBarcodePage: React.FC = () => {
           <IonButtons slot="start">
             <IonBackButton defaultHref="/products" />
           </IonButtons>
-          <IonTitle>Add Product via Barcode</IonTitle>
+          <IonTitle>{t('foundation.barcode.pageTitle')}</IonTitle>
         </IonToolbar>
       </IonHeader>
 
@@ -227,7 +229,7 @@ export const AddProductBarcodePage: React.FC = () => {
           {!foundProduct && !showForm && (
             <IonCard>
               <IonCardHeader>
-                <IonCardTitle>Scan or Enter Barcode</IonCardTitle>
+                <IonCardTitle>{t('foundation.barcode.scanOrEnter')}</IonCardTitle>
               </IonCardHeader>
               <IonCardContent>
                 <div className="space-y-4">
@@ -243,17 +245,17 @@ export const AddProductBarcodePage: React.FC = () => {
                   {/* Show manual input help text on mobile */}
                   {isMobile && (
                     <div className="text-center text-sm text-gray-500 my-2">
-                      or enter barcode manually below
+                      {t('foundation.barcode.manualHint')}
                     </div>
                   )}
 
                   {/* Manual barcode input */}
                   <div>
                     <Input
-                      label="Barcode"
+                      label={t('foundation.barcode.barcode')}
                       value={barcode}
                       onChange={(value) => setBarcode(value)}
-                      placeholder="Enter barcode number"
+                      placeholder={t('foundation.barcode.enterBarcode')}
                       type="text"
                       disabled={scanning}
                     />
@@ -265,7 +267,7 @@ export const AddProductBarcodePage: React.FC = () => {
                     disabled={!barcode || scanning}
                   >
                     <IonIcon slot="start" icon={search} />
-                    {scanning ? 'Checking...' : 'Check Barcode'}
+                    {scanning ? t('foundation.barcode.checking') : t('foundation.barcode.check')}
                   </IonButton>
                 </div>
               </IonCardContent>
@@ -277,7 +279,7 @@ export const AddProductBarcodePage: React.FC = () => {
             <div>
               <IonCard color="success">
                 <IonCardContent>
-                  <p className="text-sm font-medium">✓ Product found in your database</p>
+                  <p className="text-sm font-medium">✓ {t('foundation.barcode.foundLocal')}</p>
                 </IonCardContent>
               </IonCard>
               <ProductPreviewCard
@@ -291,7 +293,7 @@ export const AddProductBarcodePage: React.FC = () => {
                 onClick={resetForm}
                 className="mt-4"
               >
-                Scan Another Barcode
+                {t('foundation.barcode.scanAnother')}
               </IonButton>
             </div>
           )}
@@ -300,8 +302,8 @@ export const AddProductBarcodePage: React.FC = () => {
           {foundProduct && productSource === 'EXTERNAL' && showForm && (
             <IonCard color="tertiary">
               <IonCardContent>
-                <p className="text-sm font-medium">📦 Product found in Open Food Facts</p>
-                <p className="text-xs mt-1">Review and complete the details below to add it to your inventory</p>
+                <p className="text-sm font-medium">📦 {t('foundation.barcode.foundExternal')}</p>
+                <p className="text-xs mt-1">{t('foundation.barcode.externalReview')}</p>
               </IonCardContent>
             </IonCard>
           )}
@@ -310,8 +312,8 @@ export const AddProductBarcodePage: React.FC = () => {
           {productSource === 'NONE' && showForm && (
             <IonCard color="warning">
               <IonCardContent>
-                <p className="text-sm font-medium">ℹ️ Product not found</p>
-                <p className="text-xs mt-1">Fill in the details below to add this new product</p>
+                <p className="text-sm font-medium">ℹ️ {t('foundation.barcode.notFound')}</p>
+                <p className="text-xs mt-1">{t('foundation.barcode.notFoundHint')}</p>
               </IonCardContent>
             </IonCard>
           )}
@@ -322,13 +324,13 @@ export const AddProductBarcodePage: React.FC = () => {
               <IonCard>
                 <IonCardHeader>
                   <IonCardTitle>
-                    {productSource === 'EXTERNAL' ? 'Complete Product Details' : 'Create New Product'}
+                    {productSource === 'EXTERNAL' ? t('foundation.barcode.completeDetails') : t('foundation.barcode.createNew')}
                   </IonCardTitle>
                 </IonCardHeader>
                 <IonCardContent>
                   {productSource === 'NONE' && (
                     <p className="text-sm text-gray-600 mb-4">
-                      Create a new product with barcode: <strong>{barcode}</strong>
+                      {t('foundation.barcode.createWithBarcode')} <strong>{barcode}</strong>
                     </p>
                   )}
 
@@ -337,7 +339,7 @@ export const AddProductBarcodePage: React.FC = () => {
                     <div className="flex justify-center mb-4">
                       <img 
                         src={foundProduct.image_url} 
-                        alt={foundProduct.name || 'Product'}
+                        alt={foundProduct.name || t('foundation.barcode.imageAlt')}
                         className="h-40 w-40 object-contain rounded border"
                       />
                     </div>
@@ -346,45 +348,43 @@ export const AddProductBarcodePage: React.FC = () => {
                   <div className="space-y-4">
                     {/* Product Master Section */}
                     <div className="border-b pb-4">
-                      <h3 className="font-semibold mb-3">Product Master Info</h3>
+                      <h3 className="font-semibold mb-3">{t('foundation.barcode.masterInfo')}</h3>
                       <Input
-                        label="Product Master Name *"
+                        label={`${t('foundation.barcode.masterName')} *`}
                         value={productMasterName}
                         onChange={(value) => setProductMasterName(value)}
-                        placeholder="e.g., Parle-G Gold"
+                        placeholder={t('foundation.barcode.masterExample')}
                       />
                       <Input
-                        label="Brand"
+                        label={t('products.brand')}
                         value={brand}
                         onChange={(value) => setBrand(value)}
-                        placeholder="e.g., Parle"
+                        placeholder={t('foundation.barcode.brandExample')}
                       />
                       <Input
-                        label="Category Name"
+                        label={t('foundation.barcode.categoryName')}
                         value={categoryName}
                         onChange={(value) => setCategoryName(value)}
-                        placeholder="e.g., Biscuits"
+                        placeholder={t('foundation.barcode.categoryExample')}
                       />
                     </div>
 
                     {/* Product Section */}
                     <div className="border-b pb-4">
-                      <h3 className="font-semibold mb-3">Product Info</h3>
+                      <h3 className="font-semibold mb-3">{t('products.productInfo')}</h3>
                       <Input
-                        label="Product Name *"
+                        label={`${t('products.productName')} *`}
                         value={productName}
                         onChange={(value) => setProductName(value)}
-                        placeholder="e.g., Parle-G Gold 200g"
+                        placeholder={t('foundation.barcode.productExample')}
                       />
                       
                       <div className="space-y-2">
                         <Select
-                          label="Category *"
+                          label={`${t('products.category')} *`}
                           value={categoryId?.toString() || ''}
                           onChange={(value) => {
-                            console.log('Category selected:', value);
                             if (value === 'ADD_NEW') {
-                              console.log('Opening category modal');
                               setShowCategoryModal(true);
                               // Don't update categoryId state
                             } else {
@@ -392,7 +392,7 @@ export const AddProductBarcodePage: React.FC = () => {
                             }
                           }}
                           options={[
-                            { value: '', label: 'Select Category' },
+                            { value: '', label: t('foundation.barcode.selectCategory') },
                             ...categories
                               .filter((cat) => cat.is_active)
                               .map((cat) => ({
@@ -406,35 +406,34 @@ export const AddProductBarcodePage: React.FC = () => {
                           fill="outline" 
                           size="small"
                           onClick={() => {
-                            console.log('Add category button clicked');
                             setShowCategoryModal(true);
                           }}
                         >
                           <IonIcon slot="start" icon={add} />
-                          Add New Category
+                          {t('products.addNewCategory')}
                         </IonButton>
                       </div>
                     </div>
 
                     {/* Variant Section */}
                     <div className="border-b pb-4">
-                      <h3 className="font-semibold mb-3">Variant Info</h3>
+                      <h3 className="font-semibold mb-3">{t('products.variantDetailsHeading')}</h3>
                       <Input
-                        label="SKU"
+                        label={t('products.sku')}
                         value={sku}
                         onChange={(value) => setSku(value)}
-                        placeholder="e.g., PG-GOLD-200"
+                        placeholder={t('foundation.barcode.skuExample')}
                       />
                       <div className="grid grid-cols-2 gap-2">
                         <Input
-                          label="MRP *"
+                          label={`${t('foundation.barcode.mrp')} *`}
                           value={mrp}
                           onChange={(value) => setMrp(value)}
                           placeholder="0.00"
                           type="number"
                         />
                         <Input
-                          label="Selling Price *"
+                          label={`${t('products.sellingPrice')} *`}
                           value={sellingPrice}
                           onChange={(value) => setSellingPrice(value)}
                           placeholder="0.00"
@@ -443,13 +442,13 @@ export const AddProductBarcodePage: React.FC = () => {
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <Input
-                          label="Unit"
+                          label={t('foundation.barcode.unit')}
                           value={unit}
                           onChange={(value) => setUnit(value)}
-                          placeholder="g, ml, kg, etc."
+                          placeholder={t('foundation.barcode.unitExample')}
                         />
                         <Input
-                          label="Unit Value"
+                          label={t('foundation.barcode.unitValue')}
                           value={unitValue}
                           onChange={(value) => setUnitValue(value)}
                           placeholder="200"
@@ -460,9 +459,9 @@ export const AddProductBarcodePage: React.FC = () => {
 
                     {/* Inventory Section */}
                     <div>
-                      <h3 className="font-semibold mb-3">Inventory</h3>
+                      <h3 className="font-semibold mb-3">{t('inventory.title')}</h3>
                       <Input
-                        label="Initial Quantity *"
+                        label={`${t('foundation.barcode.initialQuantity')} *`}
                         value={quantity}
                         onChange={(value) => setQuantity(value)}
                         placeholder="0"
@@ -478,7 +477,7 @@ export const AddProductBarcodePage: React.FC = () => {
                         fill="outline"
                         className="flex-1"
                       >
-                        Cancel
+                        {t('common.cancel')}
                       </IonButton>
                       <IonButton
                         expand="block"
@@ -486,7 +485,7 @@ export const AddProductBarcodePage: React.FC = () => {
                         disabled={creating}
                         className="flex-1"
                       >
-                        {creating ? 'Creating...' : 'Create Product'}
+                        {creating ? t('common.creating') : t('products.createProductButton')}
                       </IonButton>
                     </div>
                   </div>
@@ -503,7 +502,7 @@ export const AddProductBarcodePage: React.FC = () => {
         <IonToast
           isOpen={showSuccess}
           onDidDismiss={() => setShowSuccess(false)}
-          message="Product created successfully!"
+          message={t('products.productCreatedSuccessfully')}
           duration={2000}
           color="success"
           icon={checkmarkCircle}

@@ -104,7 +104,7 @@ export const LoginPage: React.FC = () => {
                 onIonChange={(e) => handleLanguageChange(e.detail.value)}
                 interface="action-sheet"
                 interfaceOptions={{
-                  header: 'Select Language',
+                  header: t('foundation.login.selectLanguage'),
                   cssClass: 'language-selector-sheet'
                 }}
                 className="w-full"
@@ -170,7 +170,15 @@ export const LoginPage: React.FC = () => {
 
             {/* Version Info */}
             <div className="text-center mt-8 text-sm" style={{ color: 'var(--ion-color-medium)' }}>
-              Version {import.meta.env.VITE_APP_VERSION}
+              <p>{t('foundation.login.version', { version: import.meta.env.VITE_APP_VERSION || 'dev' })}</p>
+              <a
+                href="https://github.com/iamrajshah"
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1 inline-block"
+              >
+                {t('foundation.login.builtBy')}
+              </a>
             </div>
           </div>
         </div>

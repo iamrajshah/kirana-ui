@@ -33,10 +33,9 @@ export const CustomerLedgerPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
   
-  console.log('CustomerLedgerPage - Customer ID:', id);
   
-  const { data: customerData, isLoading: loadingCustomer, error: customerError } = useGetCustomerByIdQuery(id);
-  const { data: ledgerData, isLoading: loadingLedger, error: ledgerError } = useGetCustomerLedgerQuery({ id });
+  const { data: customerData, isLoading: loadingCustomer } = useGetCustomerByIdQuery(id);
+  const { data: ledgerData, isLoading: loadingLedger } = useGetCustomerLedgerQuery({ id });
 
   const handleInvoiceClick = (entry: LedgerEntry) => {
     if (entry.entry_type === 'INVOICE' && entry.reference_id) {
@@ -44,9 +43,6 @@ export const CustomerLedgerPage: React.FC = () => {
     }
   };
 
-  console.log('Customer Data:', customerData);
-  console.log('Ledger Data:', ledgerData);
-  console.log('Errors:', { customerError, ledgerError });
 
   const customer = customerData?.data;
   const ledger = ledgerData?.data?.ledger || [];

@@ -610,7 +610,7 @@ export const BillingPage: React.FC = () => {
                       disabled={!cartItems.length || isBusy}
                       onClick={() => handleCheckout('UPI')}
                     >
-                      UPI
+                      {t('payment.upi')}
                     </IonButton>
                     <IonButton
                       fill="outline"
@@ -650,7 +650,7 @@ export const BillingPage: React.FC = () => {
                 {t('billing.cash')}
               </IonButton>
               <IonButton disabled={isBusy} onClick={() => handleCheckout('UPI')}>
-                UPI
+                {t('payment.upi')}
               </IonButton>
               <IonButton fill="outline" disabled={isBusy} onClick={() => handleCheckout()}>
                 <IonIcon icon={card} slot="icon-only" />

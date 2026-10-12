@@ -323,10 +323,7 @@ const SupplierLedgerPage: React.FC = () => {
         <PrimaryBankAccountCard
           bankAccount={primaryBankAccount}
           onManageClick={() => {
-            console.log('DEBUG - onManageClick called, hasPermission:', hasManagePermission);
-            console.log('DEBUG - Setting showBankAccountsModal to true');
             setShowBankAccountsModal(true);
-            console.log('DEBUG - After setState call');
           }}
           hasPermission={hasManagePermission}
         />
@@ -459,7 +456,7 @@ const SupplierLedgerPage: React.FC = () => {
               <IonCard>
                 <IonCardContent>
                   <h2 style={{ margin: '0 0 8px', color: 'var(--ion-color-danger)' }}>
-                    Outstanding Balance: {formatCurrency(balance)}
+                    {t('suppliers.outstandingBalance')}: {formatCurrency(balance)}
                   </h2>
                 </IonCardContent>
               </IonCard>
@@ -532,7 +529,6 @@ const SupplierLedgerPage: React.FC = () => {
         <BankAccountModal
           isOpen={showBankAccountsModal}
           onClose={() => {
-            console.log('DEBUG - BankAccountModal onClose called');
             setShowBankAccountsModal(false);
           }}
           supplierId={id!}

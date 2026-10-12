@@ -197,7 +197,6 @@ export const UsersPage: React.FC = () => {
                     <IonButtons slot="end">
                       <IonButton
                         onClick={() => {
-                          console.log('❌ Close button clicked');
                           setShowModal(false);
                         }}
                       >

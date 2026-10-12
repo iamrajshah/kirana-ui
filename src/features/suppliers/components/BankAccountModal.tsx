@@ -18,6 +18,7 @@ import {
 import { close, add, pencil, trash, star } from 'ionicons/icons';
 import { BankAccount } from '../../../core/api/supplierApi';
 import { EmptyState } from '../../../components';
+import { useTranslation } from 'react-i18next';
 
 interface BankAccountModalProps {
   isOpen: boolean;
@@ -39,8 +40,7 @@ export const BankAccountModal: React.FC<BankAccountModalProps> = ({
   onDeleteClick,
   onSetPrimaryClick,
 }) => {
-  console.log('BankAccountModal render - isOpen:', isOpen, 'bankAccounts:', bankAccounts);
-  
+  const { t } = useTranslation();
   const primaryAccount = bankAccounts.find((acc) => acc.is_primary);
   const otherAccounts = bankAccounts.filter((acc) => !acc.is_primary);
 
@@ -48,7 +48,7 @@ export const BankAccountModal: React.FC<BankAccountModalProps> = ({
     <IonModal isOpen={isOpen} onDidDismiss={onClose}>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Manage Bank Accounts</IonTitle>
+          <IonTitle>{t('foundation.bank.manageAccounts')}</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={onClose}>
               <IonIcon icon={close} />
@@ -59,10 +59,10 @@ export const BankAccountModal: React.FC<BankAccountModalProps> = ({
       <IonContent className="ion-padding">
         {bankAccounts.length === 0 ? (
           <div>
-            <EmptyState message="No bank accounts added yet" />
+            <EmptyState message={t('foundation.bank.noneAdded')} />
             <IonButton expand="block" onClick={onAddClick} className="ion-margin-top">
               <IonIcon icon={add} slot="start" />
-              Add Bank Account
+              {t('foundation.bank.addAccount')}
             </IonButton>
           </div>
         ) : (
@@ -71,7 +71,7 @@ export const BankAccountModal: React.FC<BankAccountModalProps> = ({
             {primaryAccount && (
               <div className="ion-margin-bottom">
                 <h3 style={{ marginTop: 0, marginBottom: '12px', fontWeight: 600 }}>
-                  Primary Account
+                  {t('foundation.bank.primaryAccount')}
                 </h3>
                 <IonCard>
                   <IonCardContent>
@@ -81,7 +81,7 @@ export const BankAccountModal: React.FC<BankAccountModalProps> = ({
                           <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>
                             {primaryAccount.bank_name}
                           </h2>
-                          <IonBadge color="primary" mode="ios">PRIMARY</IonBadge>
+                          <IonBadge color="primary" mode="ios">{t('foundation.bank.primary')}</IonBadge>
                         </div>
                         <p style={{ margin: '4px 0', color: 'var(--ion-color-medium)' }}>
                           <strong>{primaryAccount.account_holder_name}</strong>
@@ -90,7 +90,7 @@ export const BankAccountModal: React.FC<BankAccountModalProps> = ({
                           {primaryAccount.account_number}
                         </p>
                         <p style={{ margin: '4px 0', color: 'var(--ion-color-medium)' }}>
-                          IFSC: {primaryAccount.ifsc_code}
+                          {t('foundation.bank.ifscCode')}: {primaryAccount.ifsc_code}
                         </p>
                         {primaryAccount.branch_name && (
                           <p style={{ margin: '4px 0', fontSize: '14px', color: 'var(--ion-color-medium)' }}>
@@ -120,7 +120,7 @@ export const BankAccountModal: React.FC<BankAccountModalProps> = ({
             {otherAccounts.length > 0 && (
               <div>
                 <h3 style={{ marginTop: '24px', marginBottom: '12px', fontWeight: 600 }}>
-                  Other Accounts
+                  {t('foundation.bank.otherAccounts')}
                 </h3>
                 <IonList>
                   {otherAccounts.map((account) => (
@@ -134,7 +134,7 @@ export const BankAccountModal: React.FC<BankAccountModalProps> = ({
                           {account.account_number}
                         </p>
                         <p style={{ fontSize: '12px', color: 'var(--ion-color-medium)' }}>
-                          IFSC: {account.ifsc_code}
+                          {t('foundation.bank.ifscCode')}: {account.ifsc_code}
                         </p>
                         {account.account_type && (
                           <IonBadge color="medium" mode="ios" style={{ marginTop: '4px' }}>
@@ -147,7 +147,7 @@ export const BankAccountModal: React.FC<BankAccountModalProps> = ({
                           fill="clear"
                           size="small"
                           onClick={() => onSetPrimaryClick(account)}
-                          title="Set as Primary"
+                          title={t('foundation.bank.setPrimary')}
                         >
                           <IonIcon icon={star} slot="icon-only" />
                         </IonButton>
@@ -155,7 +155,7 @@ export const BankAccountModal: React.FC<BankAccountModalProps> = ({
                           fill="clear"
                           size="small"
                           onClick={() => onEditClick(account)}
-                          title="Edit"
+                          title={t('common.edit')}
                         >
                           <IonIcon icon={pencil} slot="icon-only" />
                         </IonButton>
@@ -164,7 +164,7 @@ export const BankAccountModal: React.FC<BankAccountModalProps> = ({
                           size="small"
                           color="danger"
                           onClick={() => onDeleteClick(account)}
-                          title="Deactivate"
+                          title={t('foundation.bank.deactivate')}
                         >
                           <IonIcon icon={trash} slot="icon-only" />
                         </IonButton>
@@ -183,7 +183,7 @@ export const BankAccountModal: React.FC<BankAccountModalProps> = ({
               style={{ marginTop: '24px' }}
             >
               <IonIcon icon={add} slot="start" />
-              Add Another Account
+              {t('foundation.bank.addAnother')}
             </IonButton>
           </>
         )}
