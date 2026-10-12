@@ -127,7 +127,7 @@ const SupplierLedgerPage: React.FC = () => {
         supplierId: id!,
         bankAccountId: deletingBankAccount.id,
       }).unwrap();
-      notificationService.success('Bank account deactivated successfully');
+      notificationService.success(t('suppliers.bankAccountDeactivated'));
       setDeletingBankAccount(null);
     } catch (error) {
       notificationService.handleApiError(error);
@@ -140,7 +140,7 @@ const SupplierLedgerPage: React.FC = () => {
         supplierId: id!,
         bankAccountId: account.id,
       }).unwrap();
-      notificationService.success('Primary account updated successfully');
+      notificationService.success(t('suppliers.primaryAccountUpdated'));
     } catch (error) {
       notificationService.handleApiError(error);
     }
@@ -154,13 +154,13 @@ const SupplierLedgerPage: React.FC = () => {
           bankAccountId: editingBankAccount.id,
           ...formData,
         }).unwrap();
-        notificationService.success('Bank account updated successfully');
+        notificationService.success(t('suppliers.bankAccountUpdated'));
       } else {
         await createBankAccount({
           supplierId: id!,
           ...formData,
         }).unwrap();
-        notificationService.success('Bank account added successfully');
+        notificationService.success(t('suppliers.bankAccountAdded'));
       }
       setShowBankAccountFormModal(false);
       setEditingBankAccount(null);
@@ -365,7 +365,9 @@ const SupplierLedgerPage: React.FC = () => {
                               </div>
                               {entry.ref_id && (
                                 <p className="entry-reference" style={{ color: 'var(--ion-color-primary)', fontWeight: '500' }}>
-                                  {entry.ref_type === 'PURCHASE' ? '📦 Purchase #' : 'Ref: #'}{entry.ref_id}
+                                  {entry.ref_type === 'PURCHASE'
+                                    ? t('suppliers.ledger.purchaseReference')
+                                    : t('suppliers.ledger.reference')}{entry.ref_id}
                                 </p>
                               )}
                             </IonLabel>
@@ -558,16 +560,18 @@ const SupplierLedgerPage: React.FC = () => {
       <IonAlert
         isOpen={!!deletingBankAccount}
         onDidDismiss={() => setDeletingBankAccount(null)}
-        header="Deactivate Bank Account"
-        message={`Are you sure you want to deactivate the bank account at ${deletingBankAccount?.bank_name}? This action can be undone by adding the account again.`}
+        header={t('suppliers.deactivateBankAccount')}
+        message={t('suppliers.deactivateBankAccountMessage', {
+          bankName: deletingBankAccount?.bank_name,
+        })}
         buttons={[
           {
-            text: 'Cancel',
+            text: t('common.cancel'),
             role: 'cancel',
             handler: () => setDeletingBankAccount(null),
           },
           {
-            text: 'Deactivate',
+            text: t('suppliers.deactivate'),
             role: 'destructive',
             handler: confirmDeleteBankAccount,
           },

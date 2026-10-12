@@ -164,7 +164,7 @@ export const UsersPage: React.FC = () => {
                       <div slot="end" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <IonBadge color={getRoleBadgeColor(user.roles)}>
                           <IonIcon icon={shield} style={{ marginRight: '4px' }} />
-                          {user.roles[0] || 'USER'}
+                          {user.roles[0] || t('common.defaultUserRole')}
                         </IonBadge>
                         <IonBadge color={user.is_active ? 'success' : 'medium'}>
                           {user.is_active ? t('common.active') : t('common.inactive')}

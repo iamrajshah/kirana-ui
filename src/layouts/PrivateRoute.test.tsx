@@ -2,6 +2,8 @@ import React from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrivateRoute } from './PrivateRoute';
+import { protectedMainLayoutRoutes, protectedPageRoutes } from '@core/navigation/protectedRoutes';
+import { ROUTES } from '@core/constants';
 
 const useAppSelector = vi.fn();
 
@@ -39,5 +41,32 @@ describe('PrivateRoute', () => {
     render(<PrivateRoute permission="billing"><div>billing</div></PrivateRoute>);
 
     expect(screen.getByText('billing')).toBeTruthy();
+  });
+});
+
+describe('protected route configuration', () => {
+  it('maps every permissioned route to the intended capability', () => {
+    expect([...protectedPageRoutes, ...protectedMainLayoutRoutes].map(({ path, permission }) => [path, permission])).toEqual([
+      ['/customers/:id/ledger', 'customers'],
+      ['/products/:id', 'products'],
+      [ROUTES.PRODUCT_BARCODE, 'products'],
+      ['/suppliers/:id/ledger', 'suppliers'],
+      ['/invoices/:id', 'invoices'],
+      ['/purchases/:id', 'purchases'],
+      [ROUTES.PURCHASE_CREATE, 'purchases'],
+      [ROUTES.DASHBOARD, 'dashboard'],
+      [ROUTES.BILLING, 'billing'],
+      [ROUTES.CUSTOMERS, 'customers'],
+      [ROUTES.SUPPLIERS, 'suppliers'],
+      [ROUTES.PURCHASES, 'purchases'],
+      [ROUTES.PRODUCTS, 'products'],
+      [ROUTES.INVENTORY, 'inventory'],
+      [ROUTES.INVOICES, 'invoices'],
+      [ROUTES.PAYMENTS, 'payments'],
+      [ROUTES.REPORTS, 'reports'],
+      [ROUTES.USERS, 'users'],
+      [ROUTES.CATEGORIES, 'products'],
+      [ROUTES.IMPORT_EXPORT, 'import-export'],
+    ]);
   });
 });

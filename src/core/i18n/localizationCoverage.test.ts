@@ -17,6 +17,8 @@ const flattenKeys = (value: LocaleTree, prefix = ''): string[] =>
       : [fullKey];
   });
 
+const englishKeys = new Set(flattenKeys(en));
+
 const sourceFiles = (directory: string): string[] =>
   fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = path.join(directory, entry.name);
@@ -38,36 +40,87 @@ const hardCodedCopy = () => {
       findings.push(`${path.relative(process.cwd(), file)}:${line} ${value}`);
     };
 
+    const recordLiteral = (node: ts.Node) => {
+      if (ts.isStringLiteralLike(node)) record(node, node.text);
+      if (ts.isTemplateExpression(node)) {
+        record(node, [node.head.text, ...node.templateSpans.map((span) => span.literal.text)].join('…'));
+      }
+    };
+
+    const recordUserExpression = (node: ts.Expression) => {
+      if (ts.isStringLiteralLike(node) || ts.isTemplateExpression(node)) {
+        recordLiteral(node);
+        return;
+      }
+      if (ts.isConditionalExpression(node)) {
+        recordUserExpression(node.whenTrue);
+        recordUserExpression(node.whenFalse);
+        return;
+      }
+      if (ts.isParenthesizedExpression(node)) {
+        recordUserExpression(node.expression);
+        return;
+      }
+      if (
+        ts.isBinaryExpression(node) &&
+        [ts.SyntaxKind.BarBarToken, ts.SyntaxKind.QuestionQuestionToken, ts.SyntaxKind.PlusToken].includes(
+          node.operatorToken.kind,
+        )
+      ) {
+        recordUserExpression(node.left);
+        recordUserExpression(node.right);
+      }
+    };
+
     const visit = (node: ts.Node) => {
       if (ts.isJsxText(node)) record(node, node.text.trim());
 
       if (
         ts.isJsxAttribute(node) &&
         ts.isIdentifier(node.name) &&
-        ['placeholder', 'title', 'aria-label', 'label'].includes(node.name.text) &&
-        node.initializer && ts.isStringLiteral(node.initializer)
+        ['placeholder', 'title', 'aria-label', 'label', 'header', 'message', 'loadingText'].includes(node.name.text) &&
+        node.initializer
       ) {
-        record(node, node.initializer.text);
+        if (ts.isStringLiteral(node.initializer)) record(node, node.initializer.text);
+        if (ts.isJsxExpression(node.initializer) && node.initializer.expression) {
+          recordUserExpression(node.initializer.expression);
+        }
+      }
+
+      if (
+        ts.isJsxExpression(node) &&
+        (ts.isJsxElement(node.parent) || ts.isJsxFragment(node.parent)) &&
+        node.expression
+      ) {
+        recordUserExpression(node.expression);
       }
 
       if (
         ts.isPropertyAssignment(node) &&
-        ['label', 'header', 'message'].includes(node.name.getText(source)) &&
-        ts.isStringLiteral(node.initializer)
+        ['label', 'header', 'message', 'text'].includes(node.name.getText(source))
       ) {
-        record(node, node.initializer.text);
+        recordLiteral(node.initializer);
       }
 
       if (ts.isCallExpression(node)) {
         const name = node.expression.getText(source);
         if (
-          ['setErrorMessage', 'setToastMessage'].includes(name) &&
-          node.arguments[0] && ts.isStringLiteral(node.arguments[0])
+          (name === 't' || name === 'i18n.t') &&
+          node.arguments[0] &&
+          ts.isStringLiteral(node.arguments[0]) &&
+          !englishKeys.has(node.arguments[0].text)
         ) {
-          record(node, node.arguments[0].text);
+          record(node.arguments[0], `Missing translation key: ${node.arguments[0].text}`);
         }
-        if (name === 'apiErrorMessage' && node.arguments[1] && ts.isStringLiteral(node.arguments[1])) {
-          record(node, node.arguments[1].text);
+        if (
+          (['setErrorMessage', 'setToastMessage', 'setError', 'setSuccess'].includes(name) ||
+            name.startsWith('notificationService.')) &&
+          node.arguments[0]
+        ) {
+          recordLiteral(node.arguments[0]);
+        }
+        if (name === 'apiErrorMessage' && node.arguments[1]) {
+          recordLiteral(node.arguments[1]);
         }
       }
 
@@ -82,8 +135,8 @@ const hardCodedCopy = () => {
 
 describe('localization coverage', () => {
   it('keeps every supported locale aligned with English', () => {
-    const englishKeys = flattenKeys(en).sort();
-    [hi, mr, gu].forEach((locale) => expect(flattenKeys(locale).sort()).toEqual(englishKeys));
+    const expectedKeys = [...englishKeys].sort();
+    [hi, mr, gu].forEach((locale) => expect(flattenKeys(locale).sort()).toEqual(expectedKeys));
   });
 
   it('does not introduce untranslated user-facing copy in TSX files', () => {

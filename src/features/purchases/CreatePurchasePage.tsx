@@ -244,7 +244,7 @@ const CreatePurchasePage: React.FC = () => {
           <IonCard>
             <IonCardHeader>
               <IonCardTitle>
-                {t('purchases.itemsLabel')} ({cart.length})
+                {t('purchases.items')} ({cart.length})
                 <IonBadge color="primary" style={{ marginLeft: '8px' }}>
                   {formatCurrency(subtotal)}
                 </IonBadge>
@@ -299,13 +299,13 @@ const CreatePurchasePage: React.FC = () => {
                               border: '1px solid var(--ion-color-medium)',
                               borderRadius: '4px',
                             }}
-                            placeholder={t('purchases.unitPricePlaceholder')}
+                            placeholder={t('purchases.unitPrice')}
                           />
                         </div>
                       </div>
 
                       <p style={{ marginTop: '8px', color: 'var(--ion-color-primary)' }}>
-                        {t('purchases.total')} {formatCurrency(item.quantity * item.unit_price)}
+                        {t('common.total')} {formatCurrency(item.quantity * item.unit_price)}
                       </p>
                     </IonLabel>
 
@@ -327,7 +327,7 @@ const CreatePurchasePage: React.FC = () => {
         {cart.length > 0 && (
           <IonCard>
             <IonCardHeader>
-              <IonCardTitle>{t('purchases.paymentDetailsLabel')}</IonCardTitle>
+              <IonCardTitle>{t('purchases.paymentDetails')}</IonCardTitle>
             </IonCardHeader>
             <IonCardContent>
               <div style={{ marginBottom: '16px' }}>
@@ -400,7 +400,7 @@ const CreatePurchasePage: React.FC = () => {
                 >
                   <IonText color="danger">
                     <p style={{ margin: 0 }}>
-                      {t('purchases.pendingAmountLabel')} <strong>{formatCurrency(pending)}</strong>
+                      {t('purchases.pendingAmount')} <strong>{formatCurrency(pending)}</strong>
                     </p>
                   </IonText>
                 </div>

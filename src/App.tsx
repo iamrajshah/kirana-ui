@@ -5,6 +5,11 @@ import { IonReactRouter } from '@ionic/react-router';
 import { Provider } from 'react-redux';
 import { store } from '@core/store';
 import { ROUTES } from '@core/constants';
+import {
+  protectedMainLayoutRoutes,
+  protectedPageRoutes,
+  type ProtectedPageRouteId,
+} from '@core/navigation/protectedRoutes';
 import { PrivateRoute } from '@layouts/PrivateRoute';
 import ToastContainer from '@components/ToastContainer';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -51,6 +56,16 @@ const SupplierLedgerPage = lazy(() => import('@features/suppliers/SupplierLedger
 const CreatePurchasePage = lazy(() => import('@features/purchases/CreatePurchasePage'));
 const PurchaseDetailPage = lazy(() => import('@features/purchases/PurchaseDetailPage'));
 
+const protectedPageComponents: Record<ProtectedPageRouteId, React.ComponentType> = {
+  'customer-ledger': CustomerLedgerPage,
+  'product-detail': ProductDetailPage,
+  'product-barcode': AddProductBarcodePage,
+  'supplier-ledger': SupplierLedgerPage,
+  'invoice-detail': InvoiceDetailPage,
+  'purchase-detail': PurchaseDetailPage,
+  'purchase-create': CreatePurchasePage,
+};
+
 const App: React.FC = () => {
   useEffect(() => {
     // Load saved language from localStorage
@@ -72,26 +87,13 @@ const App: React.FC = () => {
             <Route exact path={ROUTES.PROFILE} render={() => <PrivateRoute><ProfilePage /></PrivateRoute>} />
             <Route exact path={ROUTES.CHANGE_PASSWORD} render={() => <PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
             <Route exact path={ROUTES.ABOUT} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
-            <Route exact path="/customers/:id/ledger" render={() => <PrivateRoute permission="customers"><CustomerLedgerPage /></PrivateRoute>} />
-            <Route exact path="/products/:id" render={() => <PrivateRoute permission="products"><ProductDetailPage /></PrivateRoute>} />
-            <Route exact path={ROUTES.PRODUCT_BARCODE} render={() => <PrivateRoute permission="products"><AddProductBarcodePage /></PrivateRoute>} />
-            <Route exact path="/suppliers/:id/ledger" render={() => <PrivateRoute permission="suppliers"><SupplierLedgerPage /></PrivateRoute>} />
-            <Route exact path="/invoices/:id" render={() => <PrivateRoute permission="invoices"><InvoiceDetailPage /></PrivateRoute>} />
-            <Route exact path="/purchases/:id" render={() => <PrivateRoute permission="purchases"><PurchaseDetailPage /></PrivateRoute>} />
-            <Route exact path={ROUTES.PURCHASE_CREATE} render={() => <PrivateRoute permission="purchases"><CreatePurchasePage /></PrivateRoute>} />
-            <Route exact path={ROUTES.DASHBOARD} render={() => <PrivateRoute permission="dashboard"><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.BILLING} render={() => <PrivateRoute permission="billing"><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.CUSTOMERS} render={() => <PrivateRoute permission="customers"><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.SUPPLIERS} render={() => <PrivateRoute permission="suppliers"><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.PURCHASES} render={() => <PrivateRoute permission="purchases"><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.PRODUCTS} render={() => <PrivateRoute permission="products"><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.INVENTORY} render={() => <PrivateRoute permission="inventory"><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.INVOICES} render={() => <PrivateRoute permission="invoices"><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.PAYMENTS} render={() => <PrivateRoute permission="payments"><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.REPORTS} render={() => <PrivateRoute permission="reports"><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.USERS} render={() => <PrivateRoute permission="users"><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.CATEGORIES} render={() => <PrivateRoute permission="products"><MainLayout /></PrivateRoute>} />
-            <Route exact path={ROUTES.IMPORT_EXPORT} render={() => <PrivateRoute permission="import-export"><MainLayout /></PrivateRoute>} />
+            {protectedPageRoutes.map(({ id, path, permission }) => {
+              const Component = protectedPageComponents[id];
+              return <Route key={id} exact path={path} render={() => <PrivateRoute permission={permission}><Component /></PrivateRoute>} />;
+            })}
+            {protectedMainLayoutRoutes.map(({ path, permission }) => (
+              <Route key={path} exact path={path} render={() => <PrivateRoute permission={permission}><MainLayout /></PrivateRoute>} />
+            ))}
           </IonRouterOutlet>
         </IonReactRouter>
         </Suspense>

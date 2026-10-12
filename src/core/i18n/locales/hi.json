@@ -52,6 +52,12 @@
     "inactive": "निष्क्रिय",
     "customer": "ग्राहक",
     "close": "बंद करें",
+    "dismiss": "बंद करें",
+    "showPassword": "पासवर्ड दिखाएँ",
+    "hidePassword": "पासवर्ड छिपाएँ",
+    "store": "दुकान",
+    "notAvailable": "उपलब्ध नहीं",
+    "defaultUserRole": "उपयोगकर्ता",
     "update": "अपडेट करें",
     "create": "बनाएं",
     "creating": "बना रहे हैं...",
@@ -97,7 +103,12 @@
     "emailOrPhone": "ईमेल या फोन",
     "loginButton": "साइन इन",
     "loginError": "अमान्य क्रेडेंशियल्स",
-    "logoutConfirm": "क्या आप सुनिश्चित हैं कि आप लॉगआउट करना चाहते हैं?"
+    "logoutConfirm": "क्या आप सुनिश्चित हैं कि आप लॉगआउट करना चाहते हैं?",
+    "fillAllFields": "कृपया सभी फ़ील्ड भरें",
+    "loginSuccess": "लॉगिन सफल रहा!",
+    "invalidCredentials": "ईमेल/फ़ोन या पासवर्ड गलत है",
+    "serverError": "सर्वर त्रुटि। कृपया बाद में फिर प्रयास करें।",
+    "networkError": "नेटवर्क त्रुटि। कृपया अपना कनेक्शन जाँचें।"
   },
   "dashboard": {
     "title": "डैशबोर्ड",
@@ -188,6 +199,7 @@
     "loadError": "ग्राहक लोड नहीं हो सके।",
     "noCustomers": "अभी कोई ग्राहक नहीं है।",
     "noCustomersSearch": "इस खोज से कोई ग्राहक नहीं मिला।",
+    "loadingMore": "और ग्राहक लोड हो रहे हैं...",
     "debitCreditGiven": "डेबिट (क्रेडिट दिया गया)",
     "creditPaymentsReceived": "क्रेडिट (भुगतान प्राप्त)",
     "addCustomer": "ग्राहक जोड़ें",
@@ -215,7 +227,9 @@
       "debitCreditGiven": "डेबिट (क्रेडिट दिया गया)",
       "creditPaymentsReceived": "क्रेडिट (भुगतान प्राप्त)",
       "noDebitEntries": "कोई डेबिट प्रविष्टि नहीं",
-      "noCreditEntries": "कोई क्रेडिट प्रविष्टि नहीं"
+      "noCreditEntries": "कोई क्रेडिट प्रविष्टि नहीं",
+      "invoiceReference": "📄 चालान #",
+      "reference": "संदर्भ: #"
     }
   },
   "products": {
@@ -381,12 +395,21 @@
       "notesOptional": "नोट्स (वैकल्पिक)",
       "addPaymentNotes": "भुगतान नोट्स जोड़ें...",
       "payFull": "पूरा भुगतान",
-      "recordPayment": "भुगतान रिकॉर्ड करें"
+      "recordPayment": "भुगतान रिकॉर्ड करें",
+      "purchaseReference": "📦 खरीद #",
+      "reference": "संदर्भ: #"
     },
     "advance": "अग्रिम",
     "supplierCreated": "आपूर्तिकर्ता सफलतापूर्वक बनाया गया",
     "supplierUpdated": "आपूर्तिकर्ता सफलतापूर्वक अपडेट किया गया",
-    "fillRequiredFields": "कृपया सभी आवश्यक फ़ील्ड भरें"
+    "fillRequiredFields": "कृपया सभी आवश्यक फ़ील्ड भरें",
+    "bankAccountDeactivated": "बैंक खाता सफलतापूर्वक निष्क्रिय किया गया",
+    "primaryAccountUpdated": "प्राथमिक खाता सफलतापूर्वक अपडेट किया गया",
+    "bankAccountUpdated": "बैंक खाता सफलतापूर्वक अपडेट किया गया",
+    "bankAccountAdded": "बैंक खाता सफलतापूर्वक जोड़ा गया",
+    "deactivateBankAccount": "बैंक खाता निष्क्रिय करें",
+    "deactivateBankAccountMessage": "क्या आप {{bankName}} का बैंक खाता निष्क्रिय करना चाहते हैं? खाता दोबारा जोड़कर इसे वापस सक्रिय किया जा सकता है।",
+    "deactivate": "निष्क्रिय करें"
   },
   "purchases": {
     "title": "खरीदारी",
@@ -727,7 +750,8 @@
     "darkMode": "डार्क मोड",
     "selectLanguage": "भाषा चुनें",
     "accountMenu": "खाता मेनू",
-    "changePassword": "पासवर्ड बदलें"
+    "changePassword": "पासवर्ड बदलें",
+    "updatedSuccess": "प्रोफ़ाइल सफलतापूर्वक अपडेट हुई"
   },
   "invoice": {
     "invoiceNumber": "इनव्हॉइस #",

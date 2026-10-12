@@ -189,7 +189,9 @@ export const CustomerLedgerPage: React.FC = () => {
                               <p className="entry-description">{entry.description}</p>
                               {entry.reference_id && (
                                 <p className="entry-reference" style={{ color: 'var(--ion-color-primary)', fontWeight: '500' }}>
-                                  {entry.entry_type === 'INVOICE' ? '📄 Invoice #' : 'Ref: #'}{entry.reference_id}
+                                  {entry.entry_type === 'INVOICE'
+                                    ? t('customers.ledger.invoiceReference')
+                                    : t('customers.ledger.reference')}{entry.reference_id}
                                 </p>
                               )}
                             </IonLabel>
@@ -237,7 +239,9 @@ export const CustomerLedgerPage: React.FC = () => {
                               <p className="entry-description">{entry.description}</p>
                               {entry.reference_id && (
                                 <p className="entry-reference" style={{ color: 'var(--ion-color-primary)', fontWeight: '500' }}>
-                                  {entry.entry_type === 'INVOICE' ? '📄 Invoice #' : 'Ref: #'}{entry.reference_id}
+                                  {entry.entry_type === 'INVOICE'
+                                    ? t('customers.ledger.invoiceReference')
+                                    : t('customers.ledger.reference')}{entry.reference_id}
                                 </p>
                               )}
                             </IonLabel>

@@ -356,7 +356,7 @@ export const ProductDetailPage: React.FC = () => {
                     {editingVariant.brand || t('products.variant')} - {editingVariant.size || ''}
                   </p>
                   <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#999' }}>
-                    {t('products.sku')}: {editingVariant.sku || 'N/A'}
+                    {t('products.sku')}: {editingVariant.sku || t('common.notAvailable')}
                   </p>
                 </div>
 

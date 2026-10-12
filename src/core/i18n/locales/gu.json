@@ -52,6 +52,12 @@
     "inactive": "નિષ્ક્રિય",
     "customer": "ગ્રાહક",
     "close": "બંધ કરો",
+    "dismiss": "બંધ કરો",
+    "showPassword": "પાસવર્ડ બતાવો",
+    "hidePassword": "પાસવર્ડ છુપાવો",
+    "store": "દુકાન",
+    "notAvailable": "ઉપલબ્ધ નથી",
+    "defaultUserRole": "વપરાશકર્તા",
     "update": "અપડેટ કરો",
     "create": "બનાવો",
     "creating": "બનાવવામાં આવી રહ્યું છે...",
@@ -97,7 +103,12 @@
     "emailOrPhone": "ઈમેલ અથવા ફોન",
     "loginButton": "સાઇન ઇન",
     "loginError": "અમાન્ય ક્રેડેન્શિયલ્સ",
-    "logoutConfirm": "શું તમે ખાતરી કરો છો કે તમે લોગઆઉટ કરવા માંગો છો?"
+    "logoutConfirm": "શું તમે ખાતરી કરો છો કે તમે લોગઆઉટ કરવા માંગો છો?",
+    "fillAllFields": "કૃપા કરીને બધા ક્ષેત્રો ભરો",
+    "loginSuccess": "લૉગિન સફળ થયું!",
+    "invalidCredentials": "ઈમેલ/ફોન અથવા પાસવર્ડ ખોટો છે",
+    "serverError": "સર્વર ભૂલ. કૃપા કરીને પછી ફરી પ્રયાસ કરો.",
+    "networkError": "નેટવર્ક ભૂલ. કૃપા કરીને તમારું કનેક્શન તપાસો."
   },
   "dashboard": {
     "title": "ડેશબોર્ડ",
@@ -188,6 +199,7 @@
     "loadError": "ગ્રાહકો લોડ થયા નથી.",
     "noCustomers": "હજી ગ્રાહકો નથી.",
     "noCustomersSearch": "આ શોધમાં ગ્રાહક મળ્યો નથી.",
+    "loadingMore": "વધુ ગ્રાહકો લોડ થઈ રહ્યા છે...",
     "debitCreditGiven": "ડેબિટ (ઉધાર આપેલ)",
     "creditPaymentsReceived": "ક્રેડિટ (ચુકવણી પ્રાપ્ત)",
     "addCustomer": "ગ્રાહક ઉમેરો",
@@ -215,7 +227,9 @@
       "debitCreditGiven": "ડેબિટ (ઉધાર આપેલ)",
       "creditPaymentsReceived": "ક્રેડિટ (ચુકવણી પ્રાપ્ત)",
       "noDebitEntries": "કોઈ ડેબિટ નોંધો નથી",
-      "noCreditEntries": "કોઈ ક્રેડિટ નોંધો નથી"
+      "noCreditEntries": "કોઈ ક્રેડિટ નોંધો નથી",
+      "invoiceReference": "📄 ઇન્વૉઇસ #",
+      "reference": "સંદર્ભ: #"
     }
   },
   "products": {
@@ -381,12 +395,21 @@
       "notesOptional": "નોંધો (ઐચ્છિક)",
       "addPaymentNotes": "ચુકવણી નોંધો જોડો...",
       "payFull": "પૂરું ભરો",
-      "recordPayment": "ચુકવણી નોંધો"
+      "recordPayment": "ચુકવણી નોંધો",
+      "purchaseReference": "📦 ખરીદી #",
+      "reference": "સંદર્ભ: #"
     },
     "advance": "એડવાન્સ",
     "supplierCreated": "સપ્લાયર સફળતાપૂર્વક બનાવ્યો",
     "supplierUpdated": "સપ્લાયર સફળતાપૂર્વક અપડેટ થયો",
-    "fillRequiredFields": "કૃપા કરીને બધા જરૂરી ક્ષેત્રો ભરો"
+    "fillRequiredFields": "કૃપા કરીને બધા જરૂરી ક્ષેત્રો ભરો",
+    "bankAccountDeactivated": "બેંક ખાતું સફળતાપૂર્વક નિષ્ક્રિય થયું",
+    "primaryAccountUpdated": "પ્રાથમિક ખાતું સફળતાપૂર્વક અપડેટ થયું",
+    "bankAccountUpdated": "બેંક ખાતું સફળતાપૂર્વક અપડેટ થયું",
+    "bankAccountAdded": "બેંક ખાતું સફળતાપૂર્વક ઉમેરાયું",
+    "deactivateBankAccount": "બેંક ખાતું નિષ્ક્રિય કરો",
+    "deactivateBankAccountMessage": "શું તમે {{bankName}} ખાતેનું બેંક ખાતું નિષ્ક્રિય કરવા માંગો છો? ખાતું ફરી ઉમેરીને આ ક્રિયા પાછી ફેરવી શકાય છે.",
+    "deactivate": "નિષ્ક્રિય કરો"
   },
   "purchases": {
     "title": "ખરીદી",
@@ -727,7 +750,8 @@
     "darkMode": "ડાર્ક મોડ",
     "selectLanguage": "ભાષા પસંદ કરો",
     "accountMenu": "એકાઉન્ટ મેનૂ",
-    "changePassword": "પાસવર્ડ બદલો"
+    "changePassword": "પાસવર્ડ બદલો",
+    "updatedSuccess": "પ્રોફાઇલ સફળતાપૂર્વક અપડેટ થઈ"
   },
   "invoice": {
     "invoiceNumber": "ઇનવોઇસ #",

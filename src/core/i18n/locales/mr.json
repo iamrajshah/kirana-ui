@@ -52,6 +52,12 @@
     "inactive": "निष्क्रिय",
     "customer": "ग्राहक",
     "close": "बंद करा",
+    "dismiss": "बंद करा",
+    "showPassword": "पासवर्ड दाखवा",
+    "hidePassword": "पासवर्ड लपवा",
+    "store": "दुकान",
+    "notAvailable": "उपलब्ध नाही",
+    "defaultUserRole": "वापरकर्ता",
     "update": "अपडेट करा",
     "create": "तयार करा",
     "creating": "तयार करत आहे...",
@@ -97,7 +103,12 @@
     "emailOrPhone": "ईमेल किंवा फोन",
     "loginButton": "साइन इन",
     "loginError": "अवैध क्रेडेंशियल्स",
-    "logoutConfirm": "तुम्हाला खात्री आहे की तुम्ही लॉगआउट करू इच्छिता?"
+    "logoutConfirm": "तुम्हाला खात्री आहे की तुम्ही लॉगआउट करू इच्छिता?",
+    "fillAllFields": "कृपया सर्व फील्ड भरा",
+    "loginSuccess": "लॉगिन यशस्वी झाले!",
+    "invalidCredentials": "ईमेल/फोन किंवा पासवर्ड चुकीचा आहे",
+    "serverError": "सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.",
+    "networkError": "नेटवर्क त्रुटी. कृपया तुमचे कनेक्शन तपासा."
   },
   "dashboard": {
     "title": "डॅशबोर्ड",
@@ -188,6 +199,7 @@
     "loadError": "ग्राहक लोड झाले नाहीत.",
     "noCustomers": "अजून ग्राहक नाहीत.",
     "noCustomersSearch": "या शोधात ग्राहक सापडले नाहीत.",
+    "loadingMore": "आणखी ग्राहक लोड होत आहेत...",
     "debitCreditGiven": "डेबिट (उधार दिलेले)",
     "creditPaymentsReceived": "क्रेडिट (पेमेंट मिळाले)",
     "addCustomer": "ग्राहक जोडा",
@@ -215,7 +227,9 @@
       "debitCreditGiven": "डेबिट (उधार दिलेले)",
       "creditPaymentsReceived": "क्रेडिट (पेमेंट मिळाले)",
       "noDebitEntries": "कोणत्याही डेबिट नोंदी नाहीत",
-      "noCreditEntries": "कोणत्याही क्रेडिट नोंदी नाहीत"
+      "noCreditEntries": "कोणत्याही क्रेडिट नोंदी नाहीत",
+      "invoiceReference": "📄 चलन #",
+      "reference": "संदर्भ: #"
     }
   },
   "products": {
@@ -381,12 +395,21 @@
       "notesOptional": "नोंदी (ऐच्छिक)",
       "addPaymentNotes": "पेमेंट नोंदी जोडा...",
       "payFull": "संपूर्ण भरा",
-      "recordPayment": "पेमेंट नोंदवा"
+      "recordPayment": "पेमेंट नोंदवा",
+      "purchaseReference": "📦 खरेदी #",
+      "reference": "संदर्भ: #"
     },
     "advance": "अग्रिम",
     "supplierCreated": "पुरवठादार यशस्वीरित्या तयार केला गेला",
     "supplierUpdated": "पुरवठादार यशस्वीरित्या अपडेट केला गेला",
-    "fillRequiredFields": "कृपया सर्व आवश्यक फील्ड भरा"
+    "fillRequiredFields": "कृपया सर्व आवश्यक फील्ड भरा",
+    "bankAccountDeactivated": "बँक खाते यशस्वीपणे निष्क्रिय केले",
+    "primaryAccountUpdated": "प्राथमिक खाते यशस्वीपणे अपडेट केले",
+    "bankAccountUpdated": "बँक खाते यशस्वीपणे अपडेट केले",
+    "bankAccountAdded": "बँक खाते यशस्वीपणे जोडले",
+    "deactivateBankAccount": "बँक खाते निष्क्रिय करा",
+    "deactivateBankAccountMessage": "तुम्हाला {{bankName}} येथील बँक खाते निष्क्रिय करायचे आहे का? खाते पुन्हा जोडून ही कृती पूर्ववत करता येईल.",
+    "deactivate": "निष्क्रिय करा"
   },
   "purchases": {
     "title": "खरेदी",
@@ -727,7 +750,8 @@
     "darkMode": "डार्क मोड",
     "selectLanguage": "भाषा निवडा",
     "accountMenu": "खाते मेनू",
-    "changePassword": "पासवर्ड बदला"
+    "changePassword": "पासवर्ड बदला",
+    "updatedSuccess": "प्रोफाइल यशस्वीपणे अपडेट झाले"
   },
   "invoice": {
     "invoiceNumber": "इनव्हॉइस #",

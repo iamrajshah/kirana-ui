@@ -201,11 +201,11 @@ export const ProfilePage: React.FC = () => {
             </div>
             <div className="info-row">
               <span className="info-label">{t('profile.role')}:</span>
-              <span className="info-value">{user?.roles?.[0] || 'USER'}</span>
+              <span className="info-value">{user?.roles?.[0] || t('common.defaultUserRole')}</span>
             </div>
             <div className="info-row">
               <span className="info-label">{t('profile.company')}:</span>
-              <span className="info-value">{user?.tenant?.name || 'N/A'}</span>
+              <span className="info-value">{user?.tenant?.name || t('common.notAvailable')}</span>
             </div>
           </IonCardContent>
         </IonCard>
@@ -213,7 +213,7 @@ export const ProfilePage: React.FC = () => {
         <IonToast
           isOpen={showSuccess}
           onDidDismiss={() => setShowSuccess(false)}
-          message="Profile updated successfully"
+          message={t('profile.updatedSuccess')}
           duration={2000}
           color="success"
         />

@@ -7,6 +7,15 @@ vi.mock('ionicons/icons', () => ({
   eyeOff: 'eye-off',
 }));
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => ({
+      'common.showPassword': 'Show password',
+      'common.hidePassword': 'Hide password',
+    })[key] ?? key,
+  }),
+}));
+
 vi.mock('@ionic/react', () => ({
   IonInput: ({ label, type, value }: { label: string; type: string; value: string }) => (
     <input aria-label={label} type={type} value={value} readOnly />

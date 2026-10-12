@@ -52,6 +52,12 @@
     "inactive": "Inactive",
     "customer": "Customer",
     "close": "Close",
+    "dismiss": "Dismiss",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "store": "Store",
+    "notAvailable": "Not available",
+    "defaultUserRole": "User",
     "update": "Update",
     "create": "Create",
     "creating": "Creating...",
@@ -97,7 +103,12 @@
     "emailOrPhone": "Email or Phone",
     "loginButton": "Sign In",
     "loginError": "Invalid credentials",
-    "logoutConfirm": "Are you sure you want to logout?"
+    "logoutConfirm": "Are you sure you want to logout?",
+    "fillAllFields": "Please fill in all fields",
+    "loginSuccess": "Login successful!",
+    "invalidCredentials": "Invalid email/phone or password",
+    "serverError": "Server error. Please try again later.",
+    "networkError": "Network error. Please check your connection."
   },
   "dashboard": {
     "title": "Dashboard",
@@ -188,6 +199,7 @@
     "loadError": "Couldn't load customers.",
     "noCustomers": "No customers yet.",
     "noCustomersSearch": "No customers match this search.",
+    "loadingMore": "Loading more customers...",
     "debitCreditGiven": "Debit (Credit Given)",
     "creditPaymentsReceived": "Credit (Payments Received)",
     "addCustomer": "Add Customer",
@@ -215,7 +227,9 @@
       "debitCreditGiven": "Debit (Credit Given)",
       "creditPaymentsReceived": "Credit (Payments Received)",
       "noDebitEntries": "No debit entries",
-      "noCreditEntries": "No credit entries"
+      "noCreditEntries": "No credit entries",
+      "invoiceReference": "📄 Invoice #",
+      "reference": "Ref: #"
     }
   },
   "products": {
@@ -381,12 +395,21 @@
       "notesOptional": "Notes (Optional)",
       "addPaymentNotes": "Add payment notes...",
       "payFull": "Pay Full",
-      "recordPayment": "Record Payment"
+      "recordPayment": "Record Payment",
+      "purchaseReference": "📦 Purchase #",
+      "reference": "Ref: #"
     },
     "advance": "Advance",
     "supplierCreated": "Supplier created successfully",
     "supplierUpdated": "Supplier updated successfully",
-    "fillRequiredFields": "Please fill in all required fields"
+    "fillRequiredFields": "Please fill in all required fields",
+    "bankAccountDeactivated": "Bank account deactivated successfully",
+    "primaryAccountUpdated": "Primary account updated successfully",
+    "bankAccountUpdated": "Bank account updated successfully",
+    "bankAccountAdded": "Bank account added successfully",
+    "deactivateBankAccount": "Deactivate Bank Account",
+    "deactivateBankAccountMessage": "Are you sure you want to deactivate the bank account at {{bankName}}? This action can be undone by adding the account again.",
+    "deactivate": "Deactivate"
   },
   "purchases": {
     "title": "Purchases",
@@ -727,7 +750,8 @@
     "darkMode": "Dark Mode",
     "selectLanguage": "Select Language",
     "accountMenu": "Account menu",
-    "changePassword": "Change Password"
+    "changePassword": "Change Password",
+    "updatedSuccess": "Profile updated successfully"
   },
   "invoice": {
     "invoiceNumber": "Invoice #",
