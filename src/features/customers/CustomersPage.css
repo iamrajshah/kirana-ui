@@ -1,0 +1,50 @@
+.customers-grid {
+  margin-top: 16px;
+  padding: 0;
+  background: transparent;
+}
+
+.customer-record {
+  overflow: hidden;
+  align-self: stretch;
+}
+
+.customer-record ion-item {
+  --background: transparent;
+  --padding-start: 16px;
+  --inner-padding-end: 16px;
+  --inner-border-width: 0;
+}
+
+.customer-record-name {
+  overflow-wrap: anywhere;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.customer-record-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 0 8px 8px;
+  border-top: 1px solid var(--ion-border-color, #d9e0e7);
+}
+
+.customers-mobile-action {
+  margin-bottom: 72px;
+}
+
+.customers-desktop-action {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .customers-desktop-action {
+    display: flex;
+  }
+
+  .customers-mobile-action {
+    display: none;
+  }
+}

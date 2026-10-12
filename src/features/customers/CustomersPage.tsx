@@ -12,7 +12,6 @@ import {
   IonFabButton,
   IonModal,
   IonButtons,
-  IonToast,
   IonHeader,
   IonToolbar,
   IonTitle,
@@ -33,6 +32,7 @@ import { useAppSelector } from '@core/hooks';
 import { selectCurrentUser } from '@core/auth/authSlice';
 import { hasPermission } from '@core/permissions/permissions';
 import notificationService from '@core/services/notificationService';
+import './CustomersPage.css';
 
 export const CustomersPage: React.FC = () => {
   const { t } = useTranslation();
@@ -47,7 +47,7 @@ export const CustomersPage: React.FC = () => {
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
   const take = 50;
   
-  const { data, isLoading, isFetching } = useGetCustomersQuery({ search, skip, take });
+  const { data, isLoading, isFetching, isError, refetch } = useGetCustomersQuery({ search, skip, take });
   const [createCustomer, { isLoading: creating }] = useCreateCustomerMutation();
   const [updateCustomer, { isLoading: updating }] = useUpdateCustomerMutation();
 
@@ -78,7 +78,6 @@ export const CustomersPage: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [creditBalance, setCreditBalance] = useState('0');
-  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleCreateCustomer = async () => {
     try {
@@ -142,14 +141,33 @@ export const CustomersPage: React.FC = () => {
     <IonPage>
       <Navbar title={t('customers.title')} />
       <IonContent>
-        <div className="p-4">
+        <div className="workspace-page">
+          <div className="workspace-header">
+            <div>
+              <h1>{t('customers.title')}</h1>
+              <p>{t('customers.pageHint')}</p>
+            </div>
+            {canCreateCustomer && (
+              <div className="workspace-actions customers-desktop-action">
+                <Button onClick={() => setShowModal(true)}>
+                  <IonIcon icon={add} className="mr-2" />
+                  {t('customers.addCustomer')}
+                </Button>
+              </div>
+            )}
+          </div>
           <SearchBar value={search} onChange={setSearch} placeholder={t('common.search')} />
 
           {isLoading && allCustomers.length === 0 ? (
             <Loading isOpen={isLoading} />
+          ) : isError && allCustomers.length === 0 ? (
+            <div className="workspace-state">
+              <p>{t('customers.loadError')}</p>
+              <Button onClick={refetch} variant="outline">{t('common.retry')}</Button>
+            </div>
           ) : allCustomers.length === 0 ? (
             <EmptyState
-              message="No customers found"
+              message={search ? t('customers.noCustomersSearch') : t('customers.noCustomers')}
               action={
                 canCreateCustomer ? (
                   <Button onClick={() => setShowModal(true)}>
@@ -161,40 +179,54 @@ export const CustomersPage: React.FC = () => {
             />
           ) : (
             <>
-              <IonList>
+              <IonList className="workspace-grid customers-grid">
                 {allCustomers.map((customer) => (
-                  <IonItemSliding key={customer.id}>
-                    <IonItem 
-                      button 
-                      onClick={() => history.push(`/customers/${customer.id}/ledger`)}
-                    >
-                      <IonLabel>
-                        <h2 className="font-semibold text-lg">{customer.name}</h2>
-                        <p className="text-gray-600">{customer.phone}</p>
-                        {customer.credit_balance !== 0 && (
-                          <p 
-                            className="font-medium"
-                            style={{ color: customer.credit_balance > 0 ? 'var(--ion-color-danger)' : 'var(--ion-color-success)' }}
+                  <div key={customer.id} className="workspace-record customer-record">
+                    <IonItemSliding>
+                      <IonItem
+                        button
+                        onClick={() => history.push(`/customers/${customer.id}/ledger`)}
+                      >
+                        <IonLabel>
+                          <h2 className="customer-record-name">{customer.name}</h2>
+                          <p>{customer.phone}</p>
+                          {customer.credit_balance !== 0 && (
+                            <p
+                              className="font-medium"
+                              style={{ color: customer.credit_balance > 0 ? 'var(--ion-color-danger)' : 'var(--ion-color-success)' }}
+                            >
+                              {customer.credit_balance > 0
+                                ? `${t('customers.owesYou')}: ${formatCurrency(customer.credit_balance)}`
+                                : `${t('customers.youOwe')}: ${formatCurrency(Math.abs(customer.credit_balance))}`
+                              }
+                            </p>
+                          )}
+                        </IonLabel>
+                      </IonItem>
+                      {canUpdateCustomer && (
+                        <IonItemOptions side="end">
+                          <IonItemOption
+                            color="primary"
+                            onClick={() => handleEditCustomer(customer)}
+                            aria-label={t('common.edit')}
                           >
-                            {customer.credit_balance > 0 
-                              ? `${t('customers.owesYou')}: ${formatCurrency(customer.credit_balance)}`
-                              : `${t('customers.youOwe')}: ${formatCurrency(Math.abs(customer.credit_balance))}`
-                            }
-                          </p>
-                        )}
-                      </IonLabel>
-                    </IonItem>
-                    {canUpdateCustomer && (
-                      <IonItemOptions side="end">
-                        <IonItemOption 
-                          color="primary" 
-                          onClick={() => handleEditCustomer(customer)}
-                        >
-                          <IonIcon slot="icon-only" icon={pencil} />
-                        </IonItemOption>
-                      </IonItemOptions>
-                    )}
-                  </IonItemSliding>
+                            <IonIcon slot="icon-only" icon={pencil} />
+                          </IonItemOption>
+                        </IonItemOptions>
+                      )}
+                    </IonItemSliding>
+                    <div className="customer-record-actions">
+                      <IonButton fill="clear" onClick={() => history.push(`/customers/${customer.id}/ledger`)}>
+                        {t('customers.viewLedger')}
+                      </IonButton>
+                      {canUpdateCustomer && (
+                        <IonButton fill="clear" onClick={() => handleEditCustomer(customer)}>
+                          <IonIcon icon={pencil} slot="start" />
+                          {t('common.edit')}
+                        </IonButton>
+                      )}
+                    </div>
+                  </div>
                 ))}
               </IonList>
               
@@ -207,11 +239,10 @@ export const CustomersPage: React.FC = () => {
 
         {/* FAB Button */}
         {canCreateCustomer && (
-          <IonFab vertical="bottom" horizontal="end" slot="fixed">
+          <IonFab vertical="bottom" horizontal="end" slot="fixed" className="customers-mobile-action">
             <IonFabButton onClick={() => {
-              console.log('🔘 FAB button clicked');
               setShowModal(true);
-            }}>
+            }} aria-label={t('customers.addCustomer')}>
               <IonIcon icon={add} />
             </IonFabButton>
           </IonFab>
@@ -266,13 +297,6 @@ export const CustomersPage: React.FC = () => {
         </IonModal>
         )}
 
-        <IonToast
-          isOpen={showSuccess}
-          onDidDismiss={() => setShowSuccess(false)}
-          message={t('customers.customerAdded')}
-          duration={2000}
-          color="success"
-        />
       </IonContent>
     </IonPage>
   );
