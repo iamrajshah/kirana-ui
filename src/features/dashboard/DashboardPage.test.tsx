@@ -247,8 +247,11 @@ describe('DashboardPage', () => {
   });
 
   it('degrades one unavailable decision group without hiding successful groups or totals', () => {
-    const dashboard = mocks.query.data?.data as Record<string, any>;
-    dashboard.decision_inbox.low_stock = { available: false, records: [] };
+    const dashboard = mocks.query.data?.data;
+    const decisionInbox = dashboard?.decision_inbox as {
+      low_stock: { available: boolean; records: unknown[] };
+    };
+    decisionInbox.low_stock = { available: false, records: [] };
     render(<DashboardPage />);
 
     expect(screen.getByText('Asha Stores')).toBeTruthy();
@@ -260,8 +263,8 @@ describe('DashboardPage', () => {
   });
 
   it('keeps shortcuts and totals usable when the owner decision payload is missing', () => {
-    const dashboard = mocks.query.data?.data as Record<string, any>;
-    delete dashboard.decision_inbox;
+    const dashboard = mocks.query.data?.data;
+    if (dashboard) delete dashboard.decision_inbox;
     render(<DashboardPage />);
 
     expect(screen.getByTestId('dashboard-priorities')).toBeTruthy();
