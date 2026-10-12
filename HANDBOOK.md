@@ -126,6 +126,18 @@ Normal UI tests mock the API and do not require MySQL. A live end-to-end run nee
 the server, a migrated MySQL database, and `VITE_API_BASE_URL` pointing to the
 server's `/api/v1` base URL.
 
+## Free demo deployment
+
+Cloudflare Pages is the preferred free demo host for this Vite UI. Connect the
+GitHub repository, build with `npm run build`, publish `dist`, and set
+`VITE_API_BASE_URL` to the public API URL ending in `/api/v1`. Use the generated
+`*.pages.dev` address until a custom domain is worth configuring.
+
+Free-tier terms change, so verify the current
+[Cloudflare Pages limits](https://developers.cloudflare.com/pages/platform/limits/)
+before relying on it for production. The sibling server handbook records the API
+and database recommendation.
+
 ## Deliberately later
 
 Offline billing requires an explicit reconciliation design and should not be

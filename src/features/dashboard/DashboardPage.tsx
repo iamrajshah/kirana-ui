@@ -40,15 +40,48 @@ type Metric = {
 };
 
 const priorityMetrics: Metric[] = [
-  { key: 'today_sales', labelKey: 'dashboard.todaySales', format: formatCurrency, tone: 'sales', zeroKey: 'dashboard.noSalesToday' },
-  { key: 'pending_invoices', labelKey: 'dashboard.pendingInvoices', format: formatNumber, tone: 'pending', zeroKey: 'dashboard.noPendingInvoices' },
-  { key: 'low_stock_items', labelKey: 'dashboard.lowStock', format: formatNumber, tone: 'stock', zeroKey: 'dashboard.stockHealthy' },
+  {
+    key: 'today_sales',
+    labelKey: 'dashboard.todaySales',
+    format: formatCurrency,
+    tone: 'sales',
+    zeroKey: 'dashboard.noSalesToday',
+  },
+  {
+    key: 'pending_invoices',
+    labelKey: 'dashboard.pendingInvoices',
+    format: formatNumber,
+    tone: 'pending',
+    zeroKey: 'dashboard.noPendingInvoices',
+  },
+  {
+    key: 'low_stock_items',
+    labelKey: 'dashboard.lowStock',
+    format: formatNumber,
+    tone: 'stock',
+    zeroKey: 'dashboard.stockHealthy',
+  },
 ];
 
 const otherMetrics: Metric[] = [
-  { key: 'total_customers', labelKey: 'dashboard.totalCustomers', format: formatNumber, tone: 'neutral' },
-  { key: 'supplier_payables', labelKey: 'dashboard.supplierPayables', format: formatCurrency, tone: 'neutral' },
-  { key: 'customer_receivables', labelKey: 'dashboard.customerReceivables', format: formatCurrency, tone: 'neutral' },
+  {
+    key: 'total_customers',
+    labelKey: 'dashboard.totalCustomers',
+    format: formatNumber,
+    tone: 'neutral',
+  },
+  {
+    key: 'supplier_payables',
+    labelKey: 'dashboard.supplierPayables',
+    format: formatCurrency,
+    tone: 'neutral',
+  },
+  {
+    key: 'customer_receivables',
+    labelKey: 'dashboard.customerReceivables',
+    format: formatCurrency,
+    tone: 'neutral',
+  },
 ];
 
 const shortcutIds = new Set(['billing', 'invoices', 'inventory']);
@@ -59,15 +92,16 @@ const variantName = (decision: LowStockDecision) =>
   [decision.brand, decision.size].filter(Boolean).join(' · ');
 
 export const DashboardPage: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const history = useHistory();
   const user = useAppSelector(selectCurrentUser);
   const { data, isLoading, isError, refetch } = useGetDashboardStatsQuery();
   const stats = data?.data;
-  const shortcuts = getNavigationItems(user?.roles || []).filter((item) => shortcutIds.has(item.id));
-  const canSeeDecisionInbox = user?.roles?.some(
-    (role) => role === 'OWNER' || role === 'MANAGER'
-  ) ?? false;
+  const shortcuts = getNavigationItems(user?.roles || []).filter((item) =>
+    shortcutIds.has(item.id)
+  );
+  const canSeeDecisionInbox =
+    user?.roles?.some((role) => role === 'OWNER' || role === 'MANAGER') ?? false;
 
   const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
     try {
@@ -80,10 +114,15 @@ export const DashboardPage: React.FC = () => {
   const renderMetric = (metric: Metric) => {
     const value = stats?.[metric.key] ?? 0;
     return (
-      <article key={metric.key} className={`workspace-record dashboard-metric dashboard-metric--${metric.tone}`}>
+      <article
+        key={metric.key}
+        className={`workspace-record dashboard-metric dashboard-metric--${metric.tone}`}
+      >
         <h3>{t(metric.labelKey)}</h3>
         <strong className="dashboard-metric-value">{metric.format(value)}</strong>
-        {value === 0 && metric.zeroKey && <p className="dashboard-metric-note">{t(metric.zeroKey)}</p>}
+        {value === 0 && metric.zeroKey && (
+          <p className="dashboard-metric-note">{t(metric.zeroKey)}</p>
+        )}
       </article>
     );
   };
@@ -104,20 +143,29 @@ export const DashboardPage: React.FC = () => {
   const renderMoneyGroup = (group: DashboardDecisionGroup<CustomerCreditDecision>) => (
     <section className="dashboard-decision-group" aria-labelledby="dashboard-money-decisions">
       <h3 id="dashboard-money-decisions">{t('dashboard.decisionInbox.money.title')}</h3>
-      {!group.available ? renderUnavailableGroup('money') : group.records.length === 0 ? (
+      {!group.available ? (
+        renderUnavailableGroup('money')
+      ) : group.records.length === 0 ? (
         <p className="dashboard-decision-empty">{t('dashboard.decisionInbox.money.empty')}</p>
       ) : (
         <div className="dashboard-decision-list">
           {group.records.map((decision) => (
-            <article className="dashboard-decision-card dashboard-decision-card--money" key={decision.customer_id}>
+            <article
+              className="dashboard-decision-card dashboard-decision-card--money"
+              key={decision.customer_id}
+            >
               <div className="dashboard-decision-card__heading">
-                <strong>{decision.customer_name || t('dashboard.decisionInbox.money.unknownCustomer')}</strong>
+                <strong>
+                  {decision.customer_name || t('dashboard.decisionInbox.money.unknownCustomer')}
+                </strong>
                 <span>{formatCurrency(decision.due_amount)}</span>
               </div>
               <p>{t('dashboard.decisionInbox.money.reason')}</p>
               <button
                 type="button"
-                onClick={() => history.push(`/customers/${decision.destination.customer_id}/ledger`)}
+                onClick={() =>
+                  history.push(`/customers/${decision.destination.customer_id}/ledger`)
+                }
               >
                 {t('dashboard.decisionInbox.money.action')}
               </button>
@@ -131,16 +179,24 @@ export const DashboardPage: React.FC = () => {
   const renderStockGroup = (group: DashboardDecisionGroup<LowStockDecision>) => (
     <section className="dashboard-decision-group" aria-labelledby="dashboard-stock-decisions">
       <h3 id="dashboard-stock-decisions">{t('dashboard.decisionInbox.stock.title')}</h3>
-      {!group.available ? renderUnavailableGroup('stock') : group.records.length === 0 ? (
+      {!group.available ? (
+        renderUnavailableGroup('stock')
+      ) : group.records.length === 0 ? (
         <p className="dashboard-decision-empty">{t('dashboard.decisionInbox.stock.empty')}</p>
       ) : (
         <div className="dashboard-decision-list">
           {group.records.map((decision) => (
-            <article className="dashboard-decision-card dashboard-decision-card--stock" key={decision.variant_id}>
+            <article
+              className="dashboard-decision-card dashboard-decision-card--stock"
+              key={decision.variant_id}
+            >
               <div className="dashboard-decision-card__heading">
-                <strong>{decision.product_name || t('dashboard.decisionInbox.stock.unknownProduct')}</strong>
+                <strong>
+                  {decision.product_name || t('dashboard.decisionInbox.stock.unknownProduct')}
+                </strong>
                 <span>
-                  {formatNumber(decision.reason.quantity)} / {formatNumber(decision.reason.low_stock_threshold)}
+                  {formatNumber(decision.reason.quantity)} /{' '}
+                  {formatNumber(decision.reason.low_stock_threshold)}
                 </span>
               </div>
               {variantName(decision) && <p>{variantName(decision)}</p>}
@@ -165,24 +221,42 @@ export const DashboardPage: React.FC = () => {
   const renderHeldGroup = (group: DashboardDecisionGroup<HeldBillAttentionDecision>) => (
     <section className="dashboard-decision-group" aria-labelledby="dashboard-held-decisions">
       <h3 id="dashboard-held-decisions">{t('dashboard.decisionInbox.held.title')}</h3>
-      {!group.available ? renderUnavailableGroup('held') : group.records.length === 0 ? (
+      {!group.available ? (
+        renderUnavailableGroup('held')
+      ) : group.records.length === 0 ? (
         <p className="dashboard-decision-empty">{t('dashboard.decisionInbox.held.empty')}</p>
       ) : (
         <div className="dashboard-decision-list">
           {group.records.map((decision) => (
-            <article className="dashboard-decision-card dashboard-decision-card--held" key={decision.invoice_id}>
+            <article
+              className="dashboard-decision-card dashboard-decision-card--held"
+              key={decision.invoice_id}
+            >
               <div className="dashboard-decision-card__heading">
-                <strong>{decision.invoice_number || t('dashboard.decisionInbox.held.unnumbered')}</strong>
+                <strong>
+                  {decision.invoice_number || t('dashboard.decisionInbox.held.unnumbered')}
+                </strong>
                 <span>{formatCurrency(decision.total_amount)}</span>
               </div>
               <p>
                 {formatNumber(decision.item_count)} {t('dashboard.decisionInbox.held.items')} ·{' '}
                 {t(`dashboard.decisionInbox.held.lease.${decision.lease_state.toLowerCase()}`)}
               </p>
-              <p>{t('dashboard.decisionInbox.held.reason', { heldAt: decision.held_at })}</p>
+              <p>
+                {t('dashboard.decisionInbox.held.reason', {
+                  heldAt: new Intl.DateTimeFormat(i18n.language, {
+                    dateStyle: 'short',
+                    timeStyle: 'short',
+                  }).format(new Date(decision.held_at)),
+                })}
+              </p>
               <button
                 type="button"
-                onClick={() => history.push(`/billing?held=${encodeURIComponent(decision.destination.invoice_id)}`)}
+                onClick={() =>
+                  history.push(
+                    `/billing?held=${encodeURIComponent(decision.destination.invoice_id)}`
+                  )
+                }
               >
                 {t('dashboard.decisionInbox.held.action')}
               </button>
@@ -225,16 +299,22 @@ export const DashboardPage: React.FC = () => {
           {isError && stats && (
             <div className="workspace-state dashboard-error dashboard-stale-warning" role="alert">
               <p>{t('dashboard.statsUnavailable')}</p>
-              <button type="button" onClick={() => void refetch()}>{t('dashboard.retry')}</button>
+              <button type="button" onClick={() => void refetch()}>
+                {t('dashboard.retry')}
+              </button>
             </div>
           )}
 
           {isLoading && !stats ? (
-            <div className="workspace-state" role="status">{t('common.loading')}</div>
+            <div className="workspace-state" role="status">
+              {t('common.loading')}
+            </div>
           ) : !stats ? (
             <div className="workspace-state dashboard-error" role="alert">
               <p>{t('dashboard.statsUnavailable')}</p>
-              <button type="button" onClick={() => void refetch()}>{t('dashboard.retry')}</button>
+              <button type="button" onClick={() => void refetch()}>
+                {t('dashboard.retry')}
+              </button>
             </div>
           ) : (
             <>
@@ -245,14 +325,21 @@ export const DashboardPage: React.FC = () => {
                 >
                   <div className="dashboard-decision-inbox__header">
                     <div>
-                      <h2 id="dashboard-decision-inbox-title">{t('dashboard.decisionInbox.title')}</h2>
+                      <h2 id="dashboard-decision-inbox-title">
+                        {t('dashboard.decisionInbox.title')}
+                      </h2>
                       <p>{t('dashboard.decisionInbox.subtitle')}</p>
                     </div>
                   </div>
                   {!stats.decision_inbox ? (
-                    <div className="dashboard-decision-state dashboard-decision-state--inbox" role="alert">
+                    <div
+                      className="dashboard-decision-state dashboard-decision-state--inbox"
+                      role="alert"
+                    >
                       <p>{t('dashboard.decisionInbox.unavailable')}</p>
-                      <button type="button" onClick={() => void refetch()}>{t('dashboard.retry')}</button>
+                      <button type="button" onClick={() => void refetch()}>
+                        {t('dashboard.retry')}
+                      </button>
                     </div>
                   ) : (
                     <div className="dashboard-decision-groups">
@@ -263,7 +350,11 @@ export const DashboardPage: React.FC = () => {
                   )}
                 </section>
               )}
-              <section className="dashboard-priorities" data-testid="dashboard-priorities" aria-label={t('dashboard.title')}>
+              <section
+                className="dashboard-priorities"
+                data-testid="dashboard-priorities"
+                aria-label={t('dashboard.title')}
+              >
                 {priorityMetrics.map(renderMetric)}
               </section>
               <section className="dashboard-secondary" aria-labelledby="dashboard-secondary-title">
@@ -274,7 +365,6 @@ export const DashboardPage: React.FC = () => {
               </section>
             </>
           )}
-
         </main>
       </IonContent>
     </IonPage>

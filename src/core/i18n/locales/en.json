@@ -260,6 +260,7 @@
       "releaseUnsavedConfirm": "Release this bill? Unsaved changes on this device will be lost.",
       "conflict": "This bill changed at another counter. Your cart is still here; reload before continuing.",
       "reload": "Reload bill",
+      "switchUnsavedConfirm": "Open another held bill? Unsaved work on this bill will be lost.",
       "lease": {
         "unclaimed": "Available",
         "active": "In use",
@@ -834,6 +835,7 @@
     "partial": "Partial"
   },
   "invoiceDetail": {
+    "openHeldBill": "Open held bill",
     "title": "Invoice Details",
     "customerInformation": "Customer Information",
     "items": "Items",

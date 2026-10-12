@@ -82,7 +82,13 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('react-router-dom', () => ({ useHistory: () => ({ push: mocks.push }) }));
-vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: { heldAt?: string }) =>
+      options?.heldAt ? `${key}: ${options.heldAt}` : key,
+    i18n: { language: 'en-IN' },
+  }),
+}));
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('@components', () => ({
   Card: ({ children }: PropsWithChildren) => <div>{children}</div>,
@@ -101,10 +107,17 @@ vi.mock('@ionic/react', () => {
     IonGrid: Container,
     IonRow: Container,
     IonCol: Container,
-    IonRefresher: ({ children, onIonRefresh }: PropsWithChildren<{ onIonRefresh: (event: { detail: { complete: () => void } }) => void }>) => (
+    IonRefresher: ({
+      children,
+      onIonRefresh,
+    }: PropsWithChildren<{
+      onIonRefresh: (event: { detail: { complete: () => void } }) => void;
+    }>) => (
       <div>
         {children}
-        <button onClick={() => onIonRefresh({ detail: { complete: vi.fn() } })}>pull to refresh</button>
+        <button onClick={() => onIonRefresh({ detail: { complete: vi.fn() } })}>
+          pull to refresh
+        </button>
       </div>
     ),
     IonRefresherContent: () => null,
@@ -205,7 +218,9 @@ describe('DashboardPage', () => {
     expect(screen.getByText('dashboard.customerReceivables')).toBeTruthy();
     const actions = screen.getByRole('region', { name: 'dashboard.quickActions' });
     const secondary = screen.getByRole('region', { name: 'dashboard.moreMetrics' });
-    expect(actions.compareDocumentPosition(secondary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      actions.compareDocumentPosition(secondary) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'billing.title' }));
     expect(mocks.push).toHaveBeenCalledWith('/billing');
@@ -220,18 +235,28 @@ describe('DashboardPage', () => {
 
     const inbox = screen.getByRole('region', { name: 'dashboard.decisionInbox.title' });
     const priorities = screen.getByTestId('dashboard-priorities');
-    expect(inbox.compareDocumentPosition(priorities) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      inbox.compareDocumentPosition(priorities) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
     expect(within(inbox).getByText('Asha Stores')).toBeTruthy();
     expect(within(inbox).getByText('Basmati Rice')).toBeTruthy();
     expect(within(inbox).getByText('RICE-5KG')).toBeTruthy();
     expect(within(inbox).getByText('DRAFT-9')).toBeTruthy();
+    expect(within(inbox).queryByText(/2026-10-12T08:30:00/)).toBeNull();
+    expect(within(inbox).getByText(/dashboard\.decisionInbox\.held\.reason:/)).toBeTruthy();
     expect(within(inbox).getAllByRole('button')).toHaveLength(3);
 
-    fireEvent.click(within(inbox).getByRole('button', { name: 'dashboard.decisionInbox.money.action' }));
+    fireEvent.click(
+      within(inbox).getByRole('button', { name: 'dashboard.decisionInbox.money.action' })
+    );
     expect(mocks.push).toHaveBeenCalledWith('/customers/customer-1/ledger');
-    fireEvent.click(within(inbox).getByRole('button', { name: 'dashboard.decisionInbox.stock.action' }));
+    fireEvent.click(
+      within(inbox).getByRole('button', { name: 'dashboard.decisionInbox.stock.action' })
+    );
     expect(mocks.push).toHaveBeenCalledWith('/products/product-7');
-    fireEvent.click(within(inbox).getByRole('button', { name: 'dashboard.decisionInbox.held.action' }));
+    fireEvent.click(
+      within(inbox).getByRole('button', { name: 'dashboard.decisionInbox.held.action' })
+    );
     expect(mocks.push).toHaveBeenCalledWith('/billing?held=invoice-9');
   });
 
@@ -257,7 +282,9 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Asha Stores')).toBeTruthy();
     expect(screen.getByText('DRAFT-9')).toBeTruthy();
     expect(screen.getByTestId('dashboard-priorities')).toBeTruthy();
-    expect(screen.getByRole('alert').textContent).toContain('dashboard.decisionInbox.groupUnavailable');
+    expect(screen.getByRole('alert').textContent).toContain(
+      'dashboard.decisionInbox.groupUnavailable'
+    );
     fireEvent.click(screen.getByRole('button', { name: 'dashboard.decisionInbox.stock.retry' }));
     expect(mocks.refetch).toHaveBeenCalledTimes(1);
   });

@@ -22,10 +22,10 @@ import {
 } from '@ionic/react';
 import { useParams, useHistory } from 'react-router-dom';
 import { cash, closeCircle, checkmarkCircle, create } from 'ionicons/icons';
-import { 
-  useGetInvoiceByIdQuery, 
+import {
+  useGetInvoiceByIdQuery,
   useFinalizeInvoiceMutation,
-  useCancelInvoiceMutation 
+  useCancelInvoiceMutation,
 } from '../../core/api/invoiceApi';
 import { useTranslation } from 'react-i18next';
 
@@ -94,7 +94,7 @@ const InvoiceDetailPage: React.FC = () => {
 
     try {
       if (invoice.status === 'DRAFT') {
-        await finalizeInvoice(id).unwrap();
+        await finalizeInvoice({ id }).unwrap();
       }
 
       await createPayment({
@@ -177,253 +177,271 @@ const InvoiceDetailPage: React.FC = () => {
 
       <IonContent className="ion-padding">
         <div className="max-w-4xl mx-auto">
-        {/* Invoice Header */}
-        <IonCard>
-          <IonCardHeader>
-            <div className="flex justify-between items-start">
-              <div>
-                <IonCardTitle className="text-lg">{invoice.invoice_number}</IonCardTitle>
-                <p className="text-sm text-gray-500">{formatDateTime(invoice.created_at)}</p>
-                {invoice.finalized_at && (
-                  <p className="text-xs text-gray-500">
-                    {t('invoiceDetail.finalized')} {formatDateTime(invoice.finalized_at)}
-                  </p>
-                )}
-                {invoice.cancelled_at && (
-                  <p className="text-xs text-danger">
-                    {t('invoiceDetail.cancelled')} {formatDateTime(invoice.cancelled_at)}
-                  </p>
-                )}
-              </div>
-              <IonBadge color={getStatusColor(invoice.status)} mode="ios">
-                {invoice.status}
-              </IonBadge>
-            </div>
-          </IonCardHeader>
-        </IonCard>
-
-        {/* Customer Information */}
-        {invoice.customer && (
+          {/* Invoice Header */}
           <IonCard>
             <IonCardHeader>
-              <IonCardTitle className="text-base">{t('invoiceDetail.customerInformation')}</IonCardTitle>
+              <div className="flex justify-between items-start">
+                <div>
+                  <IonCardTitle className="text-lg">{invoice.invoice_number}</IonCardTitle>
+                  <p className="text-sm text-gray-500">{formatDateTime(invoice.created_at)}</p>
+                  {invoice.finalized_at && (
+                    <p className="text-xs text-gray-500">
+                      {t('invoiceDetail.finalized')} {formatDateTime(invoice.finalized_at)}
+                    </p>
+                  )}
+                  {invoice.cancelled_at && (
+                    <p className="text-xs text-danger">
+                      {t('invoiceDetail.cancelled')} {formatDateTime(invoice.cancelled_at)}
+                    </p>
+                  )}
+                </div>
+                <IonBadge color={getStatusColor(invoice.status)} mode="ios">
+                  {invoice.status}
+                </IonBadge>
+              </div>
+            </IonCardHeader>
+          </IonCard>
+
+          {/* Customer Information */}
+          {invoice.customer && (
+            <IonCard>
+              <IonCardHeader>
+                <IonCardTitle className="text-base">
+                  {t('invoiceDetail.customerInformation')}
+                </IonCardTitle>
+              </IonCardHeader>
+              <IonCardContent>
+                <div>
+                  <p className="font-semibold">{invoice.customer.name}</p>
+                  <p className="text-sm text-gray-600">{invoice.customer.phone}</p>
+                  {invoice.customer.email && (
+                    <p className="text-sm text-gray-600">{invoice.customer.email}</p>
+                  )}
+                </div>
+              </IonCardContent>
+            </IonCard>
+          )}
+
+          {/* Invoice Items */}
+          <IonCard>
+            <IonCardHeader>
+              <IonCardTitle className="text-base">{t('invoiceDetail.items')}</IonCardTitle>
             </IonCardHeader>
             <IonCardContent>
-              <div>
-                <p className="font-semibold">{invoice.customer.name}</p>
-                <p className="text-sm text-gray-600">{invoice.customer.phone}</p>
-                {invoice.customer.email && <p className="text-sm text-gray-600">{invoice.customer.email}</p>}
+              {invoice.items && invoice.items.length > 0 ? (
+                <div className="space-y-2">
+                  {invoice.items.map((item: InvoiceItem) => (
+                    <div key={item.id} className="border-b pb-2 last:border-b-0">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">
+                            {item.variant?.product?.name || t('invoiceDetail.unknownProduct')}
+                          </p>
+                          {item.variant?.sku && (
+                            <p className="text-xs text-gray-500">
+                              {t('products.sku')}: {item.variant.sku}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold">
+                            {formatCurrency((item.unit_price || item.price) * item.quantity)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-600 mt-1">
+                        <span>
+                          {item.quantity} × {formatCurrency(item.unit_price || item.price)}
+                        </span>
+                        {item.discount_amount > 0 && (
+                          <span className="text-danger">
+                            {t('invoiceDetail.discount')} -{formatCurrency(item.discount_amount)}
+                          </span>
+                        )}
+                      </div>
+                      {item.final_price && (
+                        <div className="text-xs text-right font-semibold text-primary">
+                          {t('foundation.invoice.finalAmount')} {formatCurrency(item.final_price)}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">{t('invoiceDetail.noItemsFound')}</p>
+              )}
+            </IonCardContent>
+          </IonCard>
+
+          {/* Amount Summary */}
+          <IonCard>
+            <IonCardContent>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>{t('invoiceDetail.subtotal')}</span>
+                  <span>{formatCurrency(invoice.subtotal_amount || 0)}</span>
+                </div>
+
+                {invoice.discount_amount > 0 && (
+                  <div className="flex justify-between text-danger">
+                    <span>{t('invoiceDetail.discount')}</span>
+                    <span>-{formatCurrency(invoice.discount_amount)}</span>
+                  </div>
+                )}
+
+                {invoice.gst_amount > 0 && (
+                  <div className="flex justify-between">
+                    <span>{t('invoiceDetail.gst')}</span>
+                    <span>{formatCurrency(invoice.gst_amount)}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between font-bold text-base border-t pt-2">
+                  <span>{t('invoiceDetail.totalAmount')}</span>
+                  <span>{formatCurrency(invoice.total_amount || 0)}</span>
+                </div>
+
+                {invoice.status !== 'DRAFT' && invoice.status !== 'CANCELLED' && (
+                  <>
+                    {invoice.paid_amount > 0 && (
+                      <div className="flex justify-between text-success">
+                        <span>{t('invoiceDetail.paid')}</span>
+                        <span>{formatCurrency(invoice.paid_amount)}</span>
+                      </div>
+                    )}
+
+                    <div
+                      className={`flex justify-between font-semibold ${calculateBalance() > 0 ? 'text-danger' : 'text-success'}`}
+                    >
+                      <span>{t('invoiceDetail.balance')}</span>
+                      <span>{formatCurrency(calculateBalance())}</span>
+                    </div>
+                  </>
+                )}
               </div>
             </IonCardContent>
           </IonCard>
-        )}
 
-        {/* Invoice Items */}
-        <IonCard>
-          <IonCardHeader>
-            <IonCardTitle className="text-base">{t('invoiceDetail.items')}</IonCardTitle>
-          </IonCardHeader>
-          <IonCardContent>
-            {invoice.items && invoice.items.length > 0 ? (
-              <div className="space-y-2">
-                {invoice.items.map((item: InvoiceItem) => (
-                  <div key={item.id} className="border-b pb-2 last:border-b-0">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">
-                          {item.variant?.product?.name || t('invoiceDetail.unknownProduct')}
-                        </p>
-                        {item.variant?.sku && (
-                          <p className="text-xs text-gray-500">{t('products.sku')}: {item.variant.sku}</p>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold">
-                          {formatCurrency((item.unit_price || item.price) * item.quantity)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-600 mt-1">
-                      <span>{item.quantity} × {formatCurrency(item.unit_price || item.price)}</span>
-                      {item.discount_amount > 0 && (
-                        <span className="text-danger">{t('invoiceDetail.discount')} -{formatCurrency(item.discount_amount)}</span>
-                      )}
-                    </div>
-                    {item.final_price && (
-                      <div className="text-xs text-right font-semibold text-primary">
-                        {t('foundation.invoice.finalAmount')} {formatCurrency(item.final_price)}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">{t('invoiceDetail.noItemsFound')}</p>
-            )}
-          </IonCardContent>
-        </IonCard>
-
-        {/* Amount Summary */}
-        <IonCard>
-          <IonCardContent>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span>{t('invoiceDetail.subtotal')}</span>
-                <span>{formatCurrency(invoice.subtotal_amount || 0)}</span>
-              </div>
-              
-              {invoice.discount_amount > 0 && (
-                <div className="flex justify-between text-danger">
-                  <span>{t('invoiceDetail.discount')}</span>
-                  <span>-{formatCurrency(invoice.discount_amount)}</span>
-                </div>
-              )}
-              
-              {invoice.gst_amount > 0 && (
-                <div className="flex justify-between">
-                  <span>{t('invoiceDetail.gst')}</span>
-                  <span>{formatCurrency(invoice.gst_amount)}</span>
-                </div>
-              )}
-              
-              <div className="flex justify-between font-bold text-base border-t pt-2">
-                <span>{t('invoiceDetail.totalAmount')}</span>
-                <span>{formatCurrency(invoice.total_amount || 0)}</span>
-              </div>
-
-              {invoice.status !== 'DRAFT' && invoice.status !== 'CANCELLED' && (
-                <>
-                  {invoice.paid_amount > 0 && (
-                    <div className="flex justify-between text-success">
-                      <span>{t('invoiceDetail.paid')}</span>
-                      <span>{formatCurrency(invoice.paid_amount)}</span>
-                    </div>
-                  )}
-                  
-                  <div className={`flex justify-between font-semibold ${calculateBalance() > 0 ? 'text-danger' : 'text-success'}`}>
-                    <span>{t('invoiceDetail.balance')}</span>
-                    <span>{formatCurrency(calculateBalance())}</span>
-                  </div>
-                </>
-              )}
-            </div>
-          </IonCardContent>
-        </IonCard>
-
-        {/* Action Buttons */}
-        <div className="mt-4 space-y-2 pb-4">
-          {invoice.status === 'DRAFT' && (
-            <>
+          {/* Action Buttons */}
+          <div className="mt-4 space-y-2 pb-4">
+            {invoice.status === 'DRAFT' && invoice.held_at && (
               <IonButton
                 expand="block"
-                onClick={() => history.push(`/billing?edit=${invoice.id}`)}
-                color="medium"
-                fill="outline"
-              >
-                <IonIcon icon={create} slot="start" />
-                {t('invoiceDetail.editDraft')}
-              </IonButton>
-              
-              <IonButton
-                expand="block"
-                onClick={() => setShowPaymentModal(true)}
-                disabled={finalizing}
+                onClick={() => history.push(`/billing?held=${encodeURIComponent(invoice.id)}`)}
                 color="primary"
               >
-                <IonIcon icon={checkmarkCircle} slot="start" />
-                {t('invoiceDetail.finalizeAndCollectPayment')}
+                {t('invoiceDetail.openHeldBill')}
               </IonButton>
-            </>
+            )}
+
+            {invoice.status === 'DRAFT' && !invoice.held_at && (
+              <>
+                <IonButton
+                  expand="block"
+                  onClick={() => history.push(`/billing?edit=${invoice.id}`)}
+                  color="medium"
+                  fill="outline"
+                >
+                  <IonIcon icon={create} slot="start" />
+                  {t('invoiceDetail.editDraft')}
+                </IonButton>
+
+                <IonButton
+                  expand="block"
+                  onClick={() => setShowPaymentModal(true)}
+                  disabled={finalizing}
+                  color="primary"
+                >
+                  <IonIcon icon={checkmarkCircle} slot="start" />
+                  {t('invoiceDetail.finalizeAndCollectPayment')}
+                </IonButton>
+              </>
+            )}
+
+            {(invoice.status === 'UNPAID' || invoice.status === 'PARTIAL') && (
+              <IonButton expand="block" onClick={() => setShowPaymentModal(true)} color="success">
+                <IonIcon icon={cash} slot="start" />
+                {t('invoiceDetail.addPayment')}
+              </IonButton>
+            )}
+
+            {invoice.status === 'DRAFT' && !invoice.held_at && (
+              <IonButton
+                expand="block"
+                onClick={() => setShowCancelAlert(true)}
+                disabled={cancelling}
+                color="danger"
+                fill="outline"
+              >
+                <IonIcon icon={closeCircle} slot="start" />
+                {t('invoiceDetail.cancelInvoice')}
+              </IonButton>
+            )}
+          </div>
+
+          {/* Payment Modal */}
+          {invoice && (
+            <PaymentModal
+              isOpen={showPaymentModal}
+              onClose={() => setShowPaymentModal(false)}
+              onPayment={handlePayment}
+              invoiceAmount={Number(invoice.total_amount) || 0}
+              paidAmount={Number(invoice.paid_amount) || 0}
+              isLoading={isCreatingPayment || finalizing}
+            />
           )}
 
-          {(invoice.status === 'UNPAID' || invoice.status === 'PARTIAL') && (
-            <IonButton
-              expand="block"
-              onClick={() => setShowPaymentModal(true)}
-              color="success"
-            >
-              <IonIcon icon={cash} slot="start" />
-              {t('invoiceDetail.addPayment')}
-            </IonButton>
-          )}
-
-          {invoice.status === 'DRAFT' && (
-            <IonButton
-              expand="block"
-              onClick={() => setShowCancelAlert(true)}
-              disabled={cancelling}
-              color="danger"
-              fill="outline"
-            >
-              <IonIcon icon={closeCircle} slot="start" />
-              {t('invoiceDetail.cancelInvoice')}
-            </IonButton>
-          )}
-        </div>
-
-        {/* Payment Modal */}
-        {invoice && (
-          <PaymentModal
-            isOpen={showPaymentModal}
-            onClose={() => setShowPaymentModal(false)}
-            onPayment={handlePayment}
-            invoiceAmount={Number(invoice.total_amount) || 0}
-            paidAmount={Number(invoice.paid_amount) || 0}
-            isLoading={isCreatingPayment || finalizing}
-          />
-        )}
-
-        {/* Cancel Alert */}
-        <IonAlert
-          isOpen={showCancelAlert}
-          onDidDismiss={() => {
-            setShowCancelAlert(false);
-            setCancelReason('');
-          }}
-          header={t('invoiceDetail.cancelInvoiceTitle')}
-          message={t('invoiceDetail.cancelInvoiceMessage')}
-          inputs={[
-            {
-              name: 'reason',
-              type: 'textarea',
-              placeholder: t('invoiceDetail.cancelReasonPlaceholder'),
-              value: cancelReason,
-            },
-          ]}
-          buttons={[
-            {
-              text: t('invoiceDetail.no'),
-              role: 'cancel',
-            },
-            {
-              text: t('invoiceDetail.yesCancelInvoice'),
-              role: 'destructive',
-              handler: (data) => {
-                setCancelReason(data.reason || '');
-                handleCancelInvoice();
+          {/* Cancel Alert */}
+          <IonAlert
+            isOpen={showCancelAlert}
+            onDidDismiss={() => {
+              setShowCancelAlert(false);
+              setCancelReason('');
+            }}
+            header={t('invoiceDetail.cancelInvoiceTitle')}
+            message={t('invoiceDetail.cancelInvoiceMessage')}
+            inputs={[
+              {
+                name: 'reason',
+                type: 'textarea',
+                placeholder: t('invoiceDetail.cancelReasonPlaceholder'),
+                value: cancelReason,
               },
-            },
-          ]}
-        />        
-        {/* Success Toast */}
-        <IonToast
-          isOpen={showSuccessToast}
-          onDidDismiss={() => setShowSuccessToast(false)}
-          message={toastMessage}
-          duration={2000}
-          color="success"
-          position="top"
-        />
-        
-        {/* Error Toast */}
-        <IonToast
-          isOpen={showErrorToast}
-          onDidDismiss={() => setShowErrorToast(false)}
-          message={toastMessage}
-          duration={3000}
-          color="danger"
-          position="top"
-        />
+            ]}
+            buttons={[
+              {
+                text: t('invoiceDetail.no'),
+                role: 'cancel',
+              },
+              {
+                text: t('invoiceDetail.yesCancelInvoice'),
+                role: 'destructive',
+                handler: (data) => {
+                  setCancelReason(data.reason || '');
+                  handleCancelInvoice();
+                },
+              },
+            ]}
+          />
+          {/* Success Toast */}
+          <IonToast
+            isOpen={showSuccessToast}
+            onDidDismiss={() => setShowSuccessToast(false)}
+            message={toastMessage}
+            duration={2000}
+            color="success"
+            position="top"
+          />
+
+          {/* Error Toast */}
+          <IonToast
+            isOpen={showErrorToast}
+            onDidDismiss={() => setShowErrorToast(false)}
+            message={toastMessage}
+            duration={3000}
+            color="danger"
+            position="top"
+          />
         </div>
       </IonContent>
     </IonPage>

@@ -17,31 +17,35 @@ interface HeldBillsPanelProps {
   currentUser: Pick<User, 'id' | 'name' | 'roles'>;
   counterLabel: string | null;
   onRequestCounterLabel: (force?: boolean) => string | null;
+  onBeforeResume: (bill: HeldBill) => boolean;
   onResume: (bill: HeldBill) => void;
+  onReleased: (bill: HeldBill) => void;
   onClose: () => void;
   focusBillId?: string | null;
   editingInvoiceId?: string | null;
   editingHasChanges?: boolean;
 }
 
-const heldAge = (heldAt: string) => {
+const heldAge = (heldAt: string, locale: string) => {
   const minutes = Math.max(0, Math.floor((Date.now() - new Date(heldAt).getTime()) / 60_000));
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  return `${hours} hr ${minutes % 60} min`;
+  const formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'always', style: 'short' });
+  if (minutes < 60) return formatter.format(-minutes, 'minute');
+  return formatter.format(-Math.floor(minutes / 60), 'hour');
 };
 
 export const HeldBillsPanel: React.FC<HeldBillsPanelProps> = ({
   currentUser,
   counterLabel,
   onRequestCounterLabel,
+  onBeforeResume,
   onResume,
+  onReleased,
   onClose,
   focusBillId,
   editingInvoiceId,
   editingHasChanges = false,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data, isLoading, isFetching, isError, refetch } = useGetHeldBillsQuery({ take: 50 });
   const [claimHeldBill] = useClaimHeldBillMutation();
   const [releaseHeldBill] = useReleaseHeldBillMutation();
@@ -58,6 +62,7 @@ export const HeldBillsPanel: React.FC<HeldBillsPanelProps> = ({
   const counterForAction = () => counterLabel || onRequestCounterLabel(false);
 
   const runClaim = async (bill: HeldBill, takeover = false) => {
+    if (!onBeforeResume(bill)) return;
     const nextCounter = counterForAction();
     if (!nextCounter) return;
     setPendingBillId(bill.id);
@@ -75,9 +80,7 @@ export const HeldBillsPanel: React.FC<HeldBillsPanelProps> = ({
           }).unwrap();
       if (response.data) onResume(response.data);
     } catch (error: unknown) {
-      notificationService.error(
-        apiErrorMessage(error, t('billing.heldBills.actionFailed'), true)
-      );
+      notificationService.error(apiErrorMessage(error, t('billing.heldBills.actionFailed'), true));
       await refetch();
     } finally {
       setPendingBillId(null);
@@ -95,12 +98,11 @@ export const HeldBillsPanel: React.FC<HeldBillsPanelProps> = ({
     setPendingBillId(bill.id);
     try {
       await releaseHeldBill({ id: bill.id, expected_version: bill.version }).unwrap();
+      onReleased(bill);
       await refetch();
       notificationService.success(t('billing.heldBills.released'));
     } catch (error: unknown) {
-      notificationService.error(
-        apiErrorMessage(error, t('billing.heldBills.actionFailed'), true)
-      );
+      notificationService.error(apiErrorMessage(error, t('billing.heldBills.actionFailed'), true));
       await refetch();
     } finally {
       setPendingBillId(null);
@@ -112,7 +114,9 @@ export const HeldBillsPanel: React.FC<HeldBillsPanelProps> = ({
       <header className="held-bills-panel__header">
         <div>
           <p className="held-bills-panel__eyebrow">{t('billing.heldBills.counter')}</p>
-          <h2>{t('billing.heldBills.title')} ({bills.length})</h2>
+          <h2>
+            {t('billing.heldBills.title')} ({bills.length})
+          </h2>
           <p className="held-bills-panel__counter">
             {counterLabel || t('billing.heldBills.counterNotSet')}
             <button type="button" onClick={() => onRequestCounterLabel(true)}>
@@ -132,7 +136,9 @@ export const HeldBillsPanel: React.FC<HeldBillsPanelProps> = ({
 
       <div className="held-bills-panel__body">
         {isLoading ? (
-          <div className="held-bills-panel__state"><IonSpinner /></div>
+          <div className="held-bills-panel__state">
+            <IonSpinner />
+          </div>
         ) : isError ? (
           <div className="held-bills-panel__state">
             <p>{t('billing.heldBills.loadFailed')}</p>
@@ -165,7 +171,8 @@ export const HeldBillsPanel: React.FC<HeldBillsPanelProps> = ({
                     </span>
                   </div>
                   <p className="held-bill-card__meta">
-                    {bill.item_count} {t('billing.heldBills.items')} · {heldAge(bill.held_at)}
+                    {bill.item_count} {t('billing.heldBills.items')} ·{' '}
+                    {heldAge(bill.held_at, i18n.language)}
                   </p>
                   <p className="held-bill-card__holder">
                     {bill.holder
@@ -176,7 +183,10 @@ export const HeldBillsPanel: React.FC<HeldBillsPanelProps> = ({
                   <div className="held-bill-card__actions">
                     {bill.lease_state === 'active' && isMine ? (
                       <>
-                        <IonButton disabled={pending} onClick={() => onResume(bill)}>
+                        <IonButton
+                          disabled={pending}
+                          onClick={() => onBeforeResume(bill) && onResume(bill)}
+                        >
                           {t('billing.heldBills.resume')}
                         </IonButton>
                         <IonButton

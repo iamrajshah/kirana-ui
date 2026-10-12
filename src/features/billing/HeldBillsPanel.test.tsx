@@ -15,7 +15,9 @@ const trigger = (operation: ReturnType<typeof vi.fn>) => (payload: unknown) => (
   unwrap: () => operation(payload),
 });
 
-vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
+}));
 vi.mock('@core/api/invoiceApi', () => ({
   useGetHeldBillsQuery: () => ({
     data: { success: true, data: mocks.bills },
@@ -76,7 +78,9 @@ describe('HeldBillsPanel', () => {
         currentUser={{ id: '7', name: 'Rajesh', roles: ['CASHIER'] }}
         counterLabel="Counter 2"
         onRequestCounterLabel={() => 'Counter 2'}
+        onBeforeResume={() => true}
         onResume={vi.fn()}
+        onReleased={vi.fn()}
         onClose={vi.fn()}
         focusBillId="41"
       />
@@ -95,7 +99,9 @@ describe('HeldBillsPanel', () => {
         currentUser={{ id: '7', name: 'Rajesh', roles: ['CASHIER'] }}
         counterLabel="Counter 2"
         onRequestCounterLabel={() => 'Counter 2'}
+        onBeforeResume={() => true}
         onResume={onResume}
+        onReleased={vi.fn()}
         onClose={vi.fn()}
       />
     );
@@ -127,7 +133,9 @@ describe('HeldBillsPanel', () => {
         currentUser={{ id: '7', name: 'Rajesh', roles: ['CASHIER'] }}
         counterLabel="Counter 2"
         onRequestCounterLabel={() => 'Counter 2'}
+        onBeforeResume={() => true}
         onResume={vi.fn()}
+        onReleased={vi.fn()}
         onClose={vi.fn()}
       />
     );
@@ -140,7 +148,9 @@ describe('HeldBillsPanel', () => {
         currentUser={{ id: '7', name: 'Rajesh', roles: ['MANAGER'] }}
         counterLabel="Counter 2"
         onRequestCounterLabel={() => 'Counter 2'}
+        onBeforeResume={() => true}
         onResume={vi.fn()}
+        onReleased={vi.fn()}
         onClose={vi.fn()}
       />
     );
@@ -158,7 +168,9 @@ describe('HeldBillsPanel', () => {
         currentUser={{ id: '7', name: 'Rajesh', roles: ['CASHIER'] }}
         counterLabel="Counter 2"
         onRequestCounterLabel={() => 'Counter 2'}
+        onBeforeResume={() => true}
         onResume={vi.fn()}
+        onReleased={vi.fn()}
         onClose={vi.fn()}
         editingInvoiceId="41"
         editingHasChanges
@@ -168,5 +180,50 @@ describe('HeldBillsPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'billing.heldBills.release' }));
     expect(confirm).toHaveBeenCalled();
     expect(mocks.release).not.toHaveBeenCalled();
+  });
+
+  it('does not claim a bill when switching would discard local work', () => {
+    mocks.bills = [heldBill()];
+
+    render(
+      <HeldBillsPanel
+        currentUser={{ id: '7', name: 'Rajesh', roles: ['CASHIER'] }}
+        counterLabel="Counter 2"
+        onRequestCounterLabel={() => 'Counter 2'}
+        onBeforeResume={() => false}
+        onResume={vi.fn()}
+        onReleased={vi.fn()}
+        onClose={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'billing.heldBills.claim' }));
+    expect(mocks.claim).not.toHaveBeenCalled();
+  });
+
+  it('notifies the billing page after releasing its open bill', async () => {
+    const bill = heldBill({
+      lease_state: 'active',
+      holder: { id: '7', name: 'Rajesh' },
+      held_by: '7',
+    });
+    mocks.bills = [bill];
+    const onReleased = vi.fn();
+
+    render(
+      <HeldBillsPanel
+        currentUser={{ id: '7', name: 'Rajesh', roles: ['CASHIER'] }}
+        counterLabel="Counter 2"
+        onRequestCounterLabel={() => 'Counter 2'}
+        onBeforeResume={() => true}
+        onResume={vi.fn()}
+        onReleased={onReleased}
+        onClose={vi.fn()}
+        editingInvoiceId="41"
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'billing.heldBills.release' }));
+    await waitFor(() => expect(onReleased).toHaveBeenCalledWith(bill));
   });
 });
