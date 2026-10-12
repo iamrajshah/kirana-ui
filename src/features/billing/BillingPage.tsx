@@ -8,6 +8,7 @@ import {
   IonItem,
   IonLabel,
   IonList,
+  IonModal,
   IonPage,
 } from '@ionic/react';
 import { add, bookmark, card, cash, personAdd, remove, scan, trash } from 'ionicons/icons';
@@ -20,7 +21,9 @@ import {
   useCreateInvoiceMutation,
   useCancelInvoiceMutation,
   useFinalizeInvoiceMutation,
+  useGetHeldBillsQuery,
   useGetInvoiceByIdQuery,
+  useRenewHeldBillMutation,
   useUpdateInvoiceMutation,
 } from '@core/api/invoiceApi';
 import { useCreatePaymentMutation } from '@core/api/paymentApi';
@@ -32,15 +35,24 @@ import {
 } from '@core/api/productApi';
 import notificationService, { apiErrorMessage } from '@core/services/notificationService';
 import { ROUTES } from '@core/constants';
-import type { Customer, PaymentMode } from '@core/types';
+import { selectCurrentUser } from '@core/auth/authSlice';
+import { useAppSelector } from '@core/hooks';
+import type { Customer, HeldBill, PaymentMode } from '@core/types';
 import { formatCurrency, generateIdempotencyKey } from '@utils/helpers';
 import type { BillingCartItem } from './billing.logic';
 import { buildInvoiceItems, calculateBillingTotals } from './billing.logic';
+import { HeldBillsPanel } from './HeldBillsPanel';
+
+const COUNTER_LABEL_STORAGE_KEY = 'kirana_counter_label';
+
+const isConflictError = (error: unknown) =>
+  typeof error === 'object' && error !== null && 'status' in error && error.status === 409;
 
 export const BillingPage: React.FC = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const history = useHistory();
+  const currentUser = useAppSelector(selectCurrentUser);
   const editInvoiceId = new URLSearchParams(location.search).get('edit');
 
   const [searchVariants, { data: variantsData, isLoading: searchLoading }] =
@@ -52,11 +64,17 @@ export const BillingPage: React.FC = () => {
   const [cancelInvoice, { isLoading: cancelling }] = useCancelInvoiceMutation();
   const [updateInvoice, { isLoading: updating }] = useUpdateInvoiceMutation();
   const [finalizeInvoice, { isLoading: finalizing }] = useFinalizeInvoiceMutation();
+  const [renewHeldBill] = useRenewHeldBillMutation();
   const [createPayment, { isLoading: paying }] = useCreatePaymentMutation();
-  const { data: invoiceData, isLoading: invoiceLoading } = useGetInvoiceByIdQuery(
+  const {
+    data: invoiceData,
+    isLoading: invoiceLoading,
+    refetch: refetchInvoice,
+  } = useGetInvoiceByIdQuery(
     editInvoiceId || '',
     { skip: !editInvoiceId }
   );
+  const { data: heldBillsData } = useGetHeldBillsQuery({ take: 50 });
 
   const [searchTerm, setSearchTerm] = useState('');
   const [barcodeInput, setBarcodeInput] = useState('');
@@ -79,6 +97,15 @@ export const BillingPage: React.FC = () => {
   const [billDiscount, setBillDiscount] = useState(0);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(null);
+  const [showHeldBills, setShowHeldBills] = useState(false);
+  const [counterLabel, setCounterLabel] = useState<string | null>(() => {
+    const stored = localStorage.getItem(COUNTER_LABEL_STORAGE_KEY)?.trim();
+    return stored && stored.length <= 32 ? stored : null;
+  });
+  const [activeHeldVersion, setActiveHeldVersion] = useState<number | undefined>();
+  const [heldConflict, setHeldConflict] = useState(false);
+  const loadedInvoiceSnapshotRef = useRef<string | null>(null);
+  const heldBillsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const invoiceIdempotencyKey = useRef(generateIdempotencyKey());
   const paymentIdempotencyKey = useRef(generateIdempotencyKey());
 
@@ -118,10 +145,9 @@ export const BillingPage: React.FC = () => {
         phone: attachedCustomer.phone,
       });
     }
-    setGstAmount(Number(invoice.gst_amount) || 0);
-    setBillDiscount(Number(invoice.discount_amount) || 0);
-    setCartItems(
-      (invoice.items || []).map((item) => ({
+    const nextGstAmount = Number(invoice.gst_amount) || 0;
+    const nextDiscount = Number(invoice.discount_amount) || 0;
+    const nextCartItems: BillingCartItem[] = (invoice.items || []).map((item) => ({
         variant_id: item.variant_id?.toString() || '',
         quantity: Number(item.quantity) || 1,
         unit_price: Number(item.unit_price) || 0,
@@ -129,9 +155,51 @@ export const BillingPage: React.FC = () => {
         discount_type: 'amount',
         product_name: item.variant?.product?.name || t('billing.unknownProduct'),
         sku: item.variant?.sku || '',
-      }))
-    );
+      }));
+    setGstAmount(nextGstAmount);
+    setBillDiscount(nextDiscount);
+    setCartItems(nextCartItems);
+    setActiveHeldVersion(invoice.held_at ? invoice.version : undefined);
+    setHeldConflict(false);
+    loadedInvoiceSnapshotRef.current = JSON.stringify({
+      customer_id: attachedCustomer?.id?.toString() || null,
+      items: buildInvoiceItems(nextCartItems),
+      gst_amount: nextGstAmount,
+      discount_amount: calculateBillingTotals(nextCartItems, nextDiscount, 'amount', nextGstAmount)
+        .billDiscountAmount,
+    });
   }, [editInvoiceId, invoiceData, invoiceLoading, t]);
+
+  useEffect(() => {
+    const invoice = invoiceData?.data;
+    if (
+      !editInvoiceId ||
+      !invoice?.held_at ||
+      !currentUser ||
+      invoice.held_by !== currentUser.id ||
+      activeHeldVersion === undefined
+    ) {
+      return;
+    }
+
+    const renew = async () => {
+      if (document.visibilityState !== 'visible') return;
+      try {
+        await renewHeldBill({ id: editInvoiceId, expected_version: activeHeldVersion }).unwrap();
+      } catch (error: unknown) {
+        if (isConflictError(error)) setHeldConflict(true);
+      }
+    };
+    const interval = window.setInterval(() => void renew(), 5 * 60 * 1000);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') void renew();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [activeHeldVersion, currentUser, editInvoiceId, invoiceData, renewHeldBill]);
 
   useEffect(() => {
     if (searchTerm.length < 2) return;
@@ -270,6 +338,9 @@ export const BillingPage: React.FC = () => {
     setSelectedCustomer(null);
     setShowPaymentModal(false);
     setPendingInvoiceId(null);
+    setActiveHeldVersion(undefined);
+    setHeldConflict(false);
+    loadedInvoiceSnapshotRef.current = null;
     invoiceIdempotencyKey.current = generateIdempotencyKey();
     paymentIdempotencyKey.current = generateIdempotencyKey();
   };
@@ -289,6 +360,40 @@ export const BillingPage: React.FC = () => {
     gst_amount: Number(gstAmount),
     discount_amount: totals.billDiscountAmount,
   });
+
+  const currentInvoiceSnapshot = JSON.stringify(buildUpdateInvoicePayload());
+  const hasLocalHeldChanges = Boolean(
+    editInvoiceId &&
+      loadedInvoiceSnapshotRef.current &&
+      loadedInvoiceSnapshotRef.current !== currentInvoiceSnapshot
+  );
+
+  const requestCounterLabel = (force = false) => {
+    if (counterLabel && !force) return counterLabel;
+    const entered = window.prompt(t('billing.heldBills.counterPrompt'), counterLabel || '');
+    if (entered === null) return null;
+    const nextLabel = entered.trim();
+    if (!nextLabel || nextLabel.length > 32) {
+      notificationService.error(t('billing.heldBills.counterInvalid'));
+      return null;
+    }
+    localStorage.setItem(COUNTER_LABEL_STORAGE_KEY, nextLabel);
+    setCounterLabel(nextLabel);
+    return nextLabel;
+  };
+
+  const resumeHeldBill = (bill: HeldBill) => {
+    setActiveHeldVersion(bill.version);
+    setHeldConflict(false);
+    setShowHeldBills(false);
+    history.replace(`${ROUTES.BILLING}?edit=${bill.id}`, { claimedVersion: bill.version });
+  };
+
+  const reloadHeldBill = async () => {
+    initializedInvoiceId.current = null;
+    setHeldConflict(false);
+    await refetchInvoice();
+  };
 
   const recordPayment = async (
     invoiceId: string,
@@ -323,28 +428,37 @@ export const BillingPage: React.FC = () => {
     }
     try {
       if (editInvoiceId) {
-        await updateInvoice({
+        const response = await updateInvoice({
           id: editInvoiceId,
-          data: buildUpdateInvoicePayload(),
+          data: { ...buildUpdateInvoicePayload(), expected_version: activeHeldVersion },
         }).unwrap();
+        setActiveHeldVersion(response.data?.version);
+        loadedInvoiceSnapshotRef.current = currentInvoiceSnapshot;
+        setHeldConflict(false);
+        notificationService.success(t('billing.draftSaved'));
+        return;
       } else {
-        await createInvoice(invoicePayload('DRAFT')).unwrap();
+        const nextCounter = requestCounterLabel();
+        if (!nextCounter) return;
+        await createInvoice({ ...invoicePayload('DRAFT'), counter_label: nextCounter }).unwrap();
       }
       notificationService.success(t('billing.draftSaved'));
       resetForm();
       history.replace(ROUTES.BILLING);
     } catch (error: unknown) {
+      if (isConflictError(error)) setHeldConflict(true);
       notificationService.error(apiErrorMessage(error, t('billing.failedToSaveDraft'), true));
     }
   };
 
   const createFinalInvoice = async () => {
     if (editInvoiceId) {
-      await updateInvoice({
+      const updated = await updateInvoice({
         id: editInvoiceId,
-        data: buildUpdateInvoicePayload(),
+        data: { ...buildUpdateInvoicePayload(), expected_version: activeHeldVersion },
       }).unwrap();
-      await finalizeInvoice(editInvoiceId).unwrap();
+      const finalVersion = updated.data?.version ?? activeHeldVersion;
+      await finalizeInvoice({ id: editInvoiceId, expected_version: finalVersion }).unwrap();
       return editInvoiceId;
     }
     const result = await createInvoice(invoicePayload('FINALIZED')).unwrap();
@@ -378,6 +492,7 @@ export const BillingPage: React.FC = () => {
       setPendingInvoiceId(invoiceId);
       setShowPaymentModal(true);
     } catch (error: unknown) {
+      if (isConflictError(error)) setHeldConflict(true);
       notificationService.error(apiErrorMessage(error, t('billing.failedToCreateInvoice'), true));
     }
   };
@@ -387,7 +502,11 @@ export const BillingPage: React.FC = () => {
     if (!invoiceId) return;
 
     try {
-      await cancelInvoice({ id: invoiceId, reason: t('billing.paymentNotCompleted') }).unwrap();
+      await cancelInvoice({
+        id: invoiceId,
+        reason: t('billing.paymentNotCompleted'),
+        expected_version: invoiceId === editInvoiceId ? activeHeldVersion : undefined,
+      }).unwrap();
       setShowPaymentModal(false);
       setPendingInvoiceId(null);
       invoiceIdempotencyKey.current = generateIdempotencyKey();
@@ -395,6 +514,7 @@ export const BillingPage: React.FC = () => {
       if (editInvoiceId) history.replace(ROUTES.BILLING);
       notificationService.success(t('billing.checkoutCancelled'));
     } catch (error: unknown) {
+      if (isConflictError(error)) setHeldConflict(true);
       notificationService.error(apiErrorMessage(error, t('billing.failedToCancelCheckout'), true));
     }
   };
@@ -421,6 +541,29 @@ export const BillingPage: React.FC = () => {
         {isBusy && <Loading isOpen message={t('billing.processingBill')} />}
 
         <main className="mx-auto max-w-7xl px-3 pb-44 pt-3 sm:px-5 lg:pb-8">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h1 className="text-xl font-black text-gray-900 sm:text-2xl">
+              {editInvoiceId ? t('billing.editDraftInvoice') : t('billing.fastBilling')}
+            </h1>
+            <button
+              ref={heldBillsTriggerRef}
+              type="button"
+              className="min-h-touch rounded-xl border border-sky-200 bg-white px-3 text-sm font-bold text-sky-700 shadow-sm"
+              onClick={() => setShowHeldBills(true)}
+            >
+              {t('billing.heldBills.title')} ({heldBillsData?.data?.length || 0})
+            </button>
+          </div>
+
+          {heldConflict && (
+            <div role="alert" className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+              <span>{t('billing.heldBills.conflict')}</span>
+              <button type="button" className="min-h-touch font-bold underline" onClick={() => void reloadHeldBill()}>
+                {t('billing.heldBills.reload')}
+              </button>
+            </div>
+          )}
+
           <section className="billing-customer-banner mb-3 rounded-2xl border border-sky-100 p-3 shadow-sm sm:p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -809,6 +952,27 @@ export const BillingPage: React.FC = () => {
             allowPartial={Boolean(customerId)}
           />
         )}
+
+        <IonModal
+          isOpen={showHeldBills}
+          className="held-bills-modal"
+          onDidDismiss={() => {
+            setShowHeldBills(false);
+            heldBillsTriggerRef.current?.focus();
+          }}
+        >
+          {currentUser && (
+            <HeldBillsPanel
+              currentUser={currentUser}
+              counterLabel={counterLabel}
+              onRequestCounterLabel={requestCounterLabel}
+              onResume={resumeHeldBill}
+              onClose={() => setShowHeldBills(false)}
+              editingInvoiceId={editInvoiceId}
+              editingHasChanges={hasLocalHeldChanges}
+            />
+          )}
+        </IonModal>
       </IonContent>
     </IonPage>
   );

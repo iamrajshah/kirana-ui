@@ -121,6 +121,30 @@ export interface Invoice {
   created_at: string;
   finalized_at?: string;
   cancelled_at?: string;
+  created_by?: string | null;
+  origin_counter?: string | null;
+  held_at?: string | null;
+  held_by?: string | null;
+  held_counter?: string | null;
+  lease_expires_at?: string | null;
+  version?: number;
+  updated_at?: string;
+}
+
+export type HeldBillLeaseState = 'active' | 'unclaimed' | 'expired';
+
+export interface HeldBillPerson {
+  id: string;
+  name: string;
+}
+
+export interface HeldBill extends Invoice {
+  held_at: string;
+  version: number;
+  item_count: number;
+  lease_state: HeldBillLeaseState;
+  creator?: HeldBillPerson | null;
+  holder?: HeldBillPerson | null;
 }
 
 export type PaymentMode = 'CASH' | 'UPI' | 'CARD' | 'BANK' | 'ADJUSTMENT';
