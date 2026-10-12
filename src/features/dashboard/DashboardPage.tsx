@@ -12,13 +12,27 @@ import { useGetDashboardStatsQuery } from '@core/api/dashboardApi';
 import { selectCurrentUser } from '@core/auth/authSlice';
 import { useAppSelector } from '@core/hooks';
 import { getNavigationItems } from '@core/navigation/navigation';
-import type { DashboardStats } from '@core/types';
+import type {
+  CustomerCreditDecision,
+  DashboardDecisionGroup,
+  DashboardStats,
+  HeldBillAttentionDecision,
+  LowStockDecision,
+} from '@core/types';
 import { Navbar } from '@components/Navbar';
 import { formatCurrency, formatNumber } from '@utils/helpers';
 import './DashboardPage.css';
 
 type Metric = {
-  key: keyof DashboardStats;
+  key: keyof Pick<
+    DashboardStats,
+    | 'today_sales'
+    | 'pending_invoices'
+    | 'low_stock_items'
+    | 'total_customers'
+    | 'supplier_payables'
+    | 'customer_receivables'
+  >;
   labelKey: string;
   format: (value: number) => string;
   tone: 'sales' | 'pending' | 'stock' | 'neutral';
@@ -39,6 +53,11 @@ const otherMetrics: Metric[] = [
 
 const shortcutIds = new Set(['billing', 'invoices', 'inventory']);
 
+type DecisionGroupName = 'money' | 'stock' | 'held';
+
+const variantName = (decision: LowStockDecision) =>
+  [decision.brand, decision.size].filter(Boolean).join(' · ');
+
 export const DashboardPage: React.FC = () => {
   const { t } = useTranslation();
   const history = useHistory();
@@ -46,6 +65,9 @@ export const DashboardPage: React.FC = () => {
   const { data, isLoading, isError, refetch } = useGetDashboardStatsQuery();
   const stats = data?.data;
   const shortcuts = getNavigationItems(user?.roles || []).filter((item) => shortcutIds.has(item.id));
+  const canSeeDecisionInbox = user?.roles?.some(
+    (role) => role === 'OWNER' || role === 'MANAGER'
+  ) ?? false;
 
   const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
     try {
@@ -65,6 +87,111 @@ export const DashboardPage: React.FC = () => {
       </article>
     );
   };
+
+  const renderUnavailableGroup = (group: DecisionGroupName) => (
+    <div className="dashboard-decision-state" role="alert">
+      <p>{t('dashboard.decisionInbox.groupUnavailable')}</p>
+      <button
+        type="button"
+        aria-label={t(`dashboard.decisionInbox.${group}.retry`)}
+        onClick={() => void refetch()}
+      >
+        {t('dashboard.retry')}
+      </button>
+    </div>
+  );
+
+  const renderMoneyGroup = (group: DashboardDecisionGroup<CustomerCreditDecision>) => (
+    <section className="dashboard-decision-group" aria-labelledby="dashboard-money-decisions">
+      <h3 id="dashboard-money-decisions">{t('dashboard.decisionInbox.money.title')}</h3>
+      {!group.available ? renderUnavailableGroup('money') : group.records.length === 0 ? (
+        <p className="dashboard-decision-empty">{t('dashboard.decisionInbox.money.empty')}</p>
+      ) : (
+        <div className="dashboard-decision-list">
+          {group.records.map((decision) => (
+            <article className="dashboard-decision-card dashboard-decision-card--money" key={decision.customer_id}>
+              <div className="dashboard-decision-card__heading">
+                <strong>{decision.customer_name || t('dashboard.decisionInbox.money.unknownCustomer')}</strong>
+                <span>{formatCurrency(decision.due_amount)}</span>
+              </div>
+              <p>{t('dashboard.decisionInbox.money.reason')}</p>
+              <button
+                type="button"
+                onClick={() => history.push(`/customers/${decision.destination.customer_id}/ledger`)}
+              >
+                {t('dashboard.decisionInbox.money.action')}
+              </button>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+
+  const renderStockGroup = (group: DashboardDecisionGroup<LowStockDecision>) => (
+    <section className="dashboard-decision-group" aria-labelledby="dashboard-stock-decisions">
+      <h3 id="dashboard-stock-decisions">{t('dashboard.decisionInbox.stock.title')}</h3>
+      {!group.available ? renderUnavailableGroup('stock') : group.records.length === 0 ? (
+        <p className="dashboard-decision-empty">{t('dashboard.decisionInbox.stock.empty')}</p>
+      ) : (
+        <div className="dashboard-decision-list">
+          {group.records.map((decision) => (
+            <article className="dashboard-decision-card dashboard-decision-card--stock" key={decision.variant_id}>
+              <div className="dashboard-decision-card__heading">
+                <strong>{decision.product_name || t('dashboard.decisionInbox.stock.unknownProduct')}</strong>
+                <span>
+                  {formatNumber(decision.reason.quantity)} / {formatNumber(decision.reason.low_stock_threshold)}
+                </span>
+              </div>
+              {variantName(decision) && <p>{variantName(decision)}</p>}
+              <p className="dashboard-decision-card__sku">
+                <span>{t('dashboard.decisionInbox.stock.sku')}</span>
+                <span>{decision.sku || t('dashboard.decisionInbox.stock.noSku')}</span>
+              </p>
+              <p>{t('dashboard.decisionInbox.stock.reason')}</p>
+              <button
+                type="button"
+                onClick={() => history.push(`/products/${decision.destination.product_id}`)}
+              >
+                {t('dashboard.decisionInbox.stock.action')}
+              </button>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+
+  const renderHeldGroup = (group: DashboardDecisionGroup<HeldBillAttentionDecision>) => (
+    <section className="dashboard-decision-group" aria-labelledby="dashboard-held-decisions">
+      <h3 id="dashboard-held-decisions">{t('dashboard.decisionInbox.held.title')}</h3>
+      {!group.available ? renderUnavailableGroup('held') : group.records.length === 0 ? (
+        <p className="dashboard-decision-empty">{t('dashboard.decisionInbox.held.empty')}</p>
+      ) : (
+        <div className="dashboard-decision-list">
+          {group.records.map((decision) => (
+            <article className="dashboard-decision-card dashboard-decision-card--held" key={decision.invoice_id}>
+              <div className="dashboard-decision-card__heading">
+                <strong>{decision.invoice_number || t('dashboard.decisionInbox.held.unnumbered')}</strong>
+                <span>{formatCurrency(decision.total_amount)}</span>
+              </div>
+              <p>
+                {formatNumber(decision.item_count)} {t('dashboard.decisionInbox.held.items')} ·{' '}
+                {t(`dashboard.decisionInbox.held.lease.${decision.lease_state.toLowerCase()}`)}
+              </p>
+              <p>{t('dashboard.decisionInbox.held.reason', { heldAt: decision.held_at })}</p>
+              <button
+                type="button"
+                onClick={() => history.push(`/billing?held=${encodeURIComponent(decision.destination.invoice_id)}`)}
+              >
+                {t('dashboard.decisionInbox.held.action')}
+              </button>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
 
   return (
     <IonPage>
@@ -111,6 +238,31 @@ export const DashboardPage: React.FC = () => {
             </div>
           ) : (
             <>
+              {canSeeDecisionInbox && (
+                <section
+                  className="dashboard-decision-inbox"
+                  aria-labelledby="dashboard-decision-inbox-title"
+                >
+                  <div className="dashboard-decision-inbox__header">
+                    <div>
+                      <h2 id="dashboard-decision-inbox-title">{t('dashboard.decisionInbox.title')}</h2>
+                      <p>{t('dashboard.decisionInbox.subtitle')}</p>
+                    </div>
+                  </div>
+                  {!stats.decision_inbox ? (
+                    <div className="dashboard-decision-state dashboard-decision-state--inbox" role="alert">
+                      <p>{t('dashboard.decisionInbox.unavailable')}</p>
+                      <button type="button" onClick={() => void refetch()}>{t('dashboard.retry')}</button>
+                    </div>
+                  ) : (
+                    <div className="dashboard-decision-groups">
+                      {renderMoneyGroup(stats.decision_inbox.money_to_collect)}
+                      {renderStockGroup(stats.decision_inbox.low_stock)}
+                      {renderHeldGroup(stats.decision_inbox.held_bills)}
+                    </div>
+                  )}
+                </section>
+              )}
               <section className="dashboard-priorities" data-testid="dashboard-priorities" aria-label={t('dashboard.title')}>
                 {priorityMetrics.map(renderMetric)}
               </section>
