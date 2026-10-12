@@ -125,7 +125,45 @@
     "lowStock": "Low Stock Items",
     "totalCustomers": "Total Customers",
     "supplierPayables": "Amount Owed to Suppliers",
-    "customerReceivables": "Amount Customers Owe"
+    "customerReceivables": "Amount Customers Owe",
+    "decisionInbox": {
+      "title": "Needs your attention",
+      "subtitle": "The three most useful actions for running the shop right now.",
+      "unavailable": "Today's action list is unavailable. Your shop totals still work.",
+      "groupUnavailable": "This action list could not be loaded.",
+      "money": {
+        "title": "Money to collect",
+        "empty": "No customer dues need attention.",
+        "unknownCustomer": "Unnamed customer",
+        "reason": "Customer credit is outstanding",
+        "action": "Open khata",
+        "retry": "Retry money-to-collect list"
+      },
+      "stock": {
+        "title": "Stock running low",
+        "empty": "No low-stock items need attention.",
+        "unknownProduct": "Unnamed product",
+        "sku": "SKU",
+        "noSku": "No SKU",
+        "reason": "Current stock / reorder level",
+        "action": "Open product",
+        "retry": "Retry low-stock list"
+      },
+      "held": {
+        "title": "Held bills",
+        "empty": "No held bills need attention.",
+        "unnumbered": "Held bill",
+        "items": "items",
+        "reason": "Held since {{heldAt}}",
+        "action": "Review bill",
+        "retry": "Retry held-bill list",
+        "lease": {
+          "unclaimed": "Available",
+          "active": "In use",
+          "expired": "Needs attention"
+        }
+      }
+    }
   },
   "billing": {
     "title": "Billing",
@@ -199,7 +237,35 @@
     "missingInvoice": "Invoice information is missing",
     "paymentNotCompleted": "Payment was not completed",
     "checkoutCancelled": "Unpaid checkout cancelled",
-    "failedToCancelCheckout": "Could not cancel the unpaid checkout"
+    "failedToCancelCheckout": "Could not cancel the unpaid checkout",
+    "heldBills": {
+      "title": "Held bills",
+      "counter": "This device",
+      "counterNotSet": "Counter name not set",
+      "editCounter": "Change",
+      "counterPrompt": "Name this counter or device (for example, Front Counter)",
+      "counterInvalid": "Enter a counter name up to 32 characters",
+      "loadFailed": "Held bills could not be loaded.",
+      "empty": "No held bills",
+      "emptyHint": "Bills held by your team will appear here.",
+      "items": "items",
+      "availableAnyCounter": "Available at any counter",
+      "claim": "Use at this counter",
+      "resume": "Resume bill",
+      "release": "Release",
+      "released": "Bill released for another counter",
+      "readOnly": "In use at another counter",
+      "takeOver": "Take over",
+      "actionFailed": "This held bill changed. Refresh and try again.",
+      "releaseUnsavedConfirm": "Release this bill? Unsaved changes on this device will be lost.",
+      "conflict": "This bill changed at another counter. Your cart is still here; reload before continuing.",
+      "reload": "Reload bill",
+      "lease": {
+        "unclaimed": "Available",
+        "active": "In use",
+        "expired": "Lease expired"
+      }
+    }
   },
   "customers": {
     "title": "Customers",
