@@ -13,7 +13,8 @@ import {
 import { add, bookmark, card, cash, personAdd, remove, scan, trash } from 'ionicons/icons';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Loading, PaymentModal, SearchBar } from '@components';
+import { Loading, SearchBar } from '@components';
+import { PaymentModal } from '@components/PaymentModal';
 import { Navbar } from '@components/Navbar';
 import {
   useCreateInvoiceMutation,

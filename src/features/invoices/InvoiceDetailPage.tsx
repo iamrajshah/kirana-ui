@@ -30,7 +30,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import { useCreatePaymentMutation } from '@core/api/paymentApi';
-import { PaymentModal } from '@components';
+import { PaymentModal } from '@components/PaymentModal';
 import { formatDateTime, formatCurrency, generateIdempotencyKey } from '@utils/helpers';
 import type { PaymentMode } from '@core/types';
 import './InvoiceDetailPage.css';
