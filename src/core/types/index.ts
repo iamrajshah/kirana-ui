@@ -127,7 +127,7 @@ export type PaymentMode = 'CASH' | 'UPI' | 'CARD' | 'BANK' | 'ADJUSTMENT';
 
 export interface Payment {
   id: string;
-  customer_id: string;
+  customer_id?: string;
   customer?: Customer;
   invoice_id?: string;
   invoice?: {

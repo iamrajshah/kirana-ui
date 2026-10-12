@@ -1,134 +1,108 @@
-# Kirana POS - Mobile App
+# Kirana UI
 
-A mobile-first POS (Point of Sale) SaaS application built with Ionic React for kirana stores and small retail businesses.
+Ionic React point-of-sale app for neighborhood shops. It is the web and mobile
+client for the sibling `kirana-server` API.
 
-## Features
+Maintainer: [Rajesh Shah (@iamrajshah)](https://github.com/iamrajshah)
 
-- **Fast Billing**: Touch-optimized product search and cart management
-- **Customer Management**: Track customers and credit balances
-- **Inventory Tracking**: Real-time stock levels with low stock alerts
-- **Payment Recording**: Multiple payment modes (Cash, UPI, Card, etc.)
-- **Dashboard Analytics**: Daily sales, pending invoices, and key metrics
-- **Role-Based Access**: OWNER, MANAGER, and CASHIER roles
-- **Offline Support**: Works with intermittent connectivity
-- **Multi-language**: English default with i18next support
+## What is implemented
 
-## Tech Stack
+- Responsive owner, manager, and cashier navigation.
+- Fast walk-in billing: product search is available immediately and a customer is
+  optional for full Cash, UPI, Card, or Bank payment.
+- Optional customer attachment for credit history, partial payment, and reminders.
+- Touch-friendly cart editing with a sticky mobile payment bar and a persistent
+  desktop/tablet bill summary.
+- Customers, invoices, payments, products, categories, inventory, suppliers,
+  purchases, reports, imports, users, profile, and barcode flows.
+- English, Hindi, Marathi, and Gujarati translation resources.
+- Ionic/Capacitor foundations for web and Android/iOS packaging.
 
-- **Framework**: Ionic React 7
-- **State Management**: Redux Toolkit + RTK Query
-- **Styling**: Tailwind CSS
-- **Authentication**: JWT (access + refresh tokens)
-- **Localization**: i18next
-- **Build Tool**: Vite
+Offline billing queue, cross-counter held bills, cashier shift cash, smart reorder,
+and WhatsApp list-to-cart are planned product work. They are not production-ready
+features yet.
 
-## Prerequisites
+## Cashier flow
 
-- Node.js 18+
-- npm or yarn
+```text
+Open Billing
+  -> Walk-in is selected automatically
+  -> search or scan product
+  -> adjust quantity/price
+  -> Cash or UPI for one-tap full payment
+  -> Card / other for payment details
+```
 
-## Installation
+Attach a customer only when the shopper wants credit, a payment reminder, or a
+customer-linked history. Walk-in bills must be paid in full.
+
+## Important paths
+
+```text
+src/App.tsx                         routes and authentication boundary
+src/layouts/MainLayout.tsx          responsive app navigation
+src/features/billing/               cashier workspace and calculations
+src/core/api/                       RTK Query API contracts
+src/core/i18n/locales/              en, hi, mr, and gu translations
+src/core/types/                     shared UI domain types
+src/components/                     reusable Ionic controls
+```
+
+Read the sibling `kirana-context/README.md` and `kirana-context/GLOSSARY.md`
+before changing invoice, inventory, tenant, ledger, or barcode behaviour.
+
+## Local setup
 
 ```bash
-# Install dependencies
 npm install
-
-# Start development server
+cp .env.example .env
 npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
 ```
 
-## Project Structure
-
-```
-src/
-├── core/
-│   ├── api/          # RTK Query API slices
-│   ├── auth/         # Authentication logic
-│   ├── store/        # Redux store configuration
-│   ├── i18n/         # Localization setup
-│   ├── types/        # TypeScript types
-│   └── constants/    # App constants
-├── features/
-│   ├── login/        # Login screen
-│   ├── dashboard/    # Dashboard screen
-│   ├── billing/      # POS billing screen
-│   ├── customers/    # Customer management
-│   ├── products/     # Product management
-│   ├── inventory/    # Inventory tracking
-│   └── payments/     # Payment recording
-├── components/       # Reusable UI components
-├── layouts/          # Layout wrappers
-├── hooks/            # Custom React hooks
-└── utils/            # Helper functions
-```
-
-## Environment Variables
-
-Create a `.env` file in the root directory:
+Set the local API explicitly so the app does not fall back to a deployed server:
 
 ```env
 VITE_API_BASE_URL=http://localhost:3000/api/v1
-VITE_APP_NAME=Kirana POS
-VITE_APP_VERSION=1.0.0
 ```
 
-## API Integration
+Never commit `.env`, tokens, or credentials.
 
-The app expects the backend API to be running at `VITE_API_BASE_URL`. Ensure your backend matches the API contract defined in `src/core/types/index.ts`.
+## Verification
 
-### Key Endpoints
-
-- POST `/auth/login` - User login
-- POST `/auth/refresh` - Refresh access token
-- GET `/dashboard/stats` - Dashboard statistics
-- GET `/customers` - List customers
-- POST `/invoices` - Create invoice
-- POST `/payments` - Record payment
-- GET `/inventory` - List inventory
-- GET `/products` - List products
-
-## Mobile Build
+The normal UI verification path does not require MySQL. API calls are mocked in
+component/unit tests, and pure billing rules have focused tests.
 
 ```bash
-# Add platforms
-npx cap add ios
-npx cap add android
-
-# Build web assets
+npm test
+npm run lint
 npm run build
-
-# Sync with native projects
-npx cap sync
-
-# Open in IDE
-npx cap open ios
-npx cap open android
 ```
 
-## Design Principles
+For a user-visible billing change, also inspect `/billing` at mobile, tablet, and
+desktop widths. A complete live checkout needs `kirana-server` and MySQL running.
 
-1. **Mobile-First**: All screens optimized for 320px+ width
-2. **Touch-Friendly**: Minimum 48px tap targets
-3. **Fast Flows**: Minimal steps for common tasks
-4. **Simple UI**: Clear, uncluttered interfaces
-5. **One-Handed Use**: Bottom navigation, accessible controls
+## Mobile packaging
 
-## Role-Based Features
+```bash
+npm run build
+npx cap sync
+npx cap open android
+# or: npx cap open ios
+```
 
-- **OWNER**: Full access to all features
-- **MANAGER**: All features except user management
-- **CASHIER**: Billing, customers, and payments only
+Web and Capacitor share the same responsive UI. Native release signing and store
+submission remain separate deployment steps.
+
+## Working agreement for humans and AI agents
+
+- Branch from `dev`; keep one coherent product change per branch and PR.
+- Inspect `git status --short` before editing and preserve unrelated work.
+- Put visible text in all four locale files instead of hardcoding it in a screen.
+- Maintain at least 48px touch targets for cashier actions.
+- Keep walk-in payment and customer-credit behavior aligned with the server API.
+- Open PRs into `dev`; never merge without explicit user approval.
+- Update “implemented” versus “planned” claims when product capability changes.
 
 ## License
 
-Proprietary - All rights reserved
-
-## Support
-
-For issues or questions, contact support@example.com
+Proprietary — all rights reserved.

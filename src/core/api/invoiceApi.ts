@@ -12,7 +12,7 @@ interface InvoicesResponse {
 }
 
 interface CreateInvoicePayload {
-  customer_id: string;
+  customer_id?: string;
   items: Array<{
     variant_id: string;
     quantity: number;
@@ -27,7 +27,7 @@ interface CreateInvoicePayload {
 }
 
 interface UpdateInvoicePayload {
-  customer_id?: string;
+  customer_id?: string | null;
   items?: Array<{
     variant_id: string;
     quantity: number;
@@ -60,11 +60,14 @@ export const invoiceApi = apiSlice.injectEndpoints({
         url: '/invoices',
         method: 'POST',
         body,
-        headers: body.idempotency_key
-          ? { 'idempotency-key': body.idempotency_key }
-          : {},
+        headers: body.idempotency_key ? { 'idempotency-key': body.idempotency_key } : {},
       }),
-      invalidatesTags: ['Invoice', 'Inventory', 'Dashboard', 'Customer'],
+      invalidatesTags: (result, error, body) => [
+        'Invoice',
+        'Inventory',
+        'Dashboard',
+        ...(body.customer_id ? (['Customer'] as const) : []),
+      ],
     }),
     updateInvoice: builder.mutation<
       ApiResponse<Invoice>,
@@ -75,10 +78,7 @@ export const invoiceApi = apiSlice.injectEndpoints({
         method: 'PUT',
         body: data,
       }),
-      invalidatesTags: (result, error, { id }) => [
-        { type: 'Invoice', id },
-        'Invoice',
-      ],
+      invalidatesTags: (result, error, { id }) => [{ type: 'Invoice', id }, 'Invoice'],
     }),
     finalizeInvoice: builder.mutation<ApiResponse<Invoice>, string>({
       query: (id) => ({
@@ -92,10 +92,7 @@ export const invoiceApi = apiSlice.injectEndpoints({
         'Customer',
       ],
     }),
-    cancelInvoice: builder.mutation<
-      ApiResponse<Invoice>,
-      { id: string; reason?: string }
-    >({
+    cancelInvoice: builder.mutation<ApiResponse<Invoice>, { id: string; reason?: string }>({
       query: ({ id, reason }) => ({
         url: `/invoices/${id}/cancel`,
         method: 'POST',

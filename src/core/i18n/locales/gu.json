@@ -34,7 +34,7 @@
     "updating": "અપડેટ કરવામાં આવી રહ્યું છે...",
     "noData": "કોઈ ડેટા ઉપલબ્ધ નથી",
     "notFound": "મળ્યું નથી",
-  "placeholders": {
+    "placeholders": {
       "searchCustomer": "નામ અથવા ફોન દ્વારા ગ્રાહક શોધો",
       "searchProduct": "નામ અથવા SKU દ્વારા ઉત્પાદન શોધો",
       "enterPassword": "પાસવર્ડ દાખલ કરો",
@@ -63,7 +63,7 @@
       "card": "કાર્ડ",
       "bankTransfer": "બેંક ટ્રાન્સફર"
     }
- },
+  },
   "auth": {
     "login": "લોગિન",
     "logout": "લોગઆઉટ",
@@ -123,7 +123,32 @@
     "missingCustomerOrInvoice": "ગ્રાહક અથવા ઇનવોઇસ માહિતી ગુમ છે",
     "paymentRecordedSuccessfully": "ચુકવણી સફળતાપૂર્વક નોંધાઈ!",
     "paymentFailed": "ચુકવણી નિષ્ફળ",
-    "failedToCreateInvoice": "ઇનવોઇસ બનાવવામાં નિષ્ફળ"
+    "failedToCreateInvoice": "ઇનવોઇસ બનાવવામાં નિષ્ફળ",
+    "fastBilling": "ઝડપી બિલિંગ",
+    "saleFor": "વેચાણ",
+    "walkInCustomer": "વૉક-ઇન ગ્રાહક",
+    "walkInHint": "તાત્કાલિક ચુકવણી માટે ગ્રાહક બનાવવાની જરૂર નથી",
+    "customerCreditAvailable": "ઉધાર અને ચુકવણી રિમાઇન્ડર ઉપલબ્ધ છે",
+    "attachCustomer": "ગ્રાહક જોડો",
+    "changeCustomer": "ગ્રાહક બદલો",
+    "useWalkInInstead": "વૉક-ઇન ગ્રાહક તરીકે ચાલુ રાખો",
+    "scanBarcode": "બારકોડ સ્કેન કરો",
+    "unknownProduct": "અજાણ્યું ઉત્પાદન",
+    "clearCart": "કાર્ટ ખાલી કરો",
+    "emptyCartHint": "બિલ શરૂ કરવા વસ્તુ શોધો અથવા સ્કેન કરો",
+    "billSummary": "બિલ સારાંશ",
+    "amountToCollect": "લેવાની રકમ",
+    "walkInFullPaymentOnly": "વૉક-ઇન બિલનું સંપૂર્ણ ચુકવણું જરૂરી છે. ઉધાર માટે ગ્રાહક જોડો.",
+    "payCash": "રોકડ ચુકવણી",
+    "cash": "રોકડ",
+    "otherPayment": "કાર્ડ / અન્ય",
+    "holdBill": "બિલ હોલ્ડ કરો",
+    "draftSaved": "બિલ સફળતાપૂર્વક હોલ્ડ થયું",
+    "processingBill": "બિલ પ્રક્રિયા થઈ રહી છે...",
+    "missingInvoice": "ઇનવોઇસ માહિતી ઉપલબ્ધ નથી",
+    "paymentNotCompleted": "ચુકવણી પૂર્ણ થઈ નથી",
+    "checkoutCancelled": "ચુકવણી વગરનું બિલ રદ કર્યું",
+    "failedToCancelCheckout": "ચુકવણી વગરનું બિલ રદ કરી શકાયું નથી"
   },
   "customers": {
     "title": "ગ્રાહકો",
@@ -184,7 +209,7 @@
     "updateFailed": "અપડેટ નિષ્ફળ",
     "noVariants": "આ ઉત્પાદન માટે કોઈ વેરિઅન્ટ મળ્યા નથી",
     "productNotFound": "ઉત્પાદન મળ્યું નથી",
-     "editProductTitle": "ઉત્પાદન સંપાદિત કરો",
+    "editProductTitle": "ઉત્પાદન સંપાદિત કરો",
     "editSellingPriceTitle": "વેચાણ કિમત સંપાદિત કરો",
     "enterProductName": "ઉત્પાદનનું નામ દાખલ કરો",
     "selectCategoryPlaceholder": "શ્રેણી પસંદ કરો",
@@ -243,7 +268,7 @@
     "enterQuantity": "પ્રમાણ દાખલ કરો",
     "selectReason": "કારણ પસંદ કરો",
     "validQuantity": "કૃપયા વૈધ પ્રમાણ દાખલ કરો",
-     "noInventoryItems": "કોઈ ઇન્વેન્ટરી આઇટમ્સ મળ્યા નથી",
+    "noInventoryItems": "કોઈ ઇન્વેન્ટરી આઇટમ્સ મળ્યા નથી",
     "updateInventory": "ઇન્વેન્ટરી અપડેટ કરો",
     "updateInventoryTitle": "ઇન્વેન્ટરી અપડેટ કરો",
     "quantityRequired": "પ્રમાણ *",
@@ -276,7 +301,7 @@
     "notesPlaceholder": "ચુકવણી નોંધ દાખલ કરો (વૈકલ્પિક)",
     "amountLabel": "રકમ",
     "notesOptional": "નોંધ (વૈકલ્પિક)",
-    "addPaymentNotes": "ચુકવણી નોંધ ઉમેરો...",    
+    "addPaymentNotes": "ચુકવણી નોંધ ઉમેરો...",
     "enterValidAmount": "કૃપા કરીને માન્ય રકમ દાખલ કરો",
     "paymentRecordedSuccess": "ચુકવણી સફળતાપૂર્વક નોંધાઈ",
     "ledger": {
@@ -345,7 +370,7 @@
     "purchaseCreated": "ખરીદી સફળતાપૂર્વક બનાવી",
     "createError": "ખરીદી બનાવવામાં નિષ્ફળ",
     "validation": {
-        "requiredFields": "કૃપા કરીને બધા જરૂરી ક્ષેત્રો ભરો અને ઓછામાં ઓછું એક આઇટમ ઉમેરો"
+      "requiredFields": "કૃપા કરીને બધા જરૂરી ક્ષેત્રો ભરો અને ઓછામાં ઓછું એક આઇટમ ઉમેરો"
     },
     "purchaseDetails": "ખરીદી વિગતો",
     "invoiceHash": "ઇનવોઇસ #",
@@ -391,7 +416,7 @@
     "referenceNumberLabel": "સંદર્ભ નંબર",
     "allocatedAmountLabel": "ફાળવેલ રકમ",
     "autoAllocate": "સ્વચાલિત ફાળવણી",
-     "paymentMode": "ચુકવણી મોડ",
+    "paymentMode": "ચુકવણી મોડ",
     "cash": "રોકડ",
     "upi": "UPI",
     "card": "કાર્ડ",
@@ -420,7 +445,7 @@
   "reports": {
     "title": "રિપોર્ટ્સ",
     "selectReport": "રિપોર્ટ પસંદ કરો",
-     "totalOutstanding": "કુલ બાકી:",
+    "totalOutstanding": "કુલ બાકી:",
     "inventorySummary": "ઇન્વેન્ટરી સારાંશ",
     "lowStockAlert": "ઓછો સ્ટોક ચેતવણી",
     "items": "આઇટમ્સ",
@@ -544,7 +569,7 @@
     "inventoryExport": "ઇન્વેન્ટરી",
     "categoriesExport": "શ્રેણીઓ",
     "invoicesExport": "ચલનો",
-    "customerLedgerExport": "ગ્રાહક ખાતું",    
+    "customerLedgerExport": "ગ્રાહક ખાતું",
     "import": "આયાત",
     "export": "નિકાસ",
     "uploadFile": "ફાઇલ અપલોડ કરો",
@@ -556,7 +581,7 @@
     "invalid": "અમાન્ય:",
     "importFile": "ફાઇલ આયાત કરો",
     "csv": "CSV",
-    "excel": "Excel",    
+    "excel": "Excel",
     "products": "ઉત્પાદનો",
     "inventory": "ઇન્વેન્ટરી",
     "categories": "શ્રેણીઓ",
@@ -584,10 +609,10 @@
     "noFile": "કૃપા કરીને પહેલા ફાઇલ પસંદ કરો"
   },
   "errors": {
-      "validPrice": "કૃપયા માન્ય વેચાણ કિંમત દાખલ કરો",
-      "failedToUpdate": "અપડેટ કરવામાં નિષ્ફળ",
-      "failedToCreate": "બનાવવામાં નિષ્ફળ",
-      "validationError": "કૃપા કરીને ભૂલો માટે ફોર્મ તપાસો।",
+    "validPrice": "કૃપયા માન્ય વેચાણ કિંમત દાખલ કરો",
+    "failedToUpdate": "અપડેટ કરવામાં નિષ્ફળ",
+    "failedToCreate": "બનાવવામાં નિષ્ફળ",
+    "validationError": "કૃપા કરીને ભૂલો માટે ફોર્મ તપાસો।",
     "networkError": "નેટવર્ક ભૂલ. કૃપા કરીને તમારું કનેક્શન તપાસો।",
     "unknownError": "અજ્ઞાત ભૂલ આવી",
     "serverError": "સર્વર ભૂલ. કૃપા કરીને પછીથી ફરી પ્રયાસ કરો.",
@@ -617,7 +642,9 @@
     "theme": "થીમ",
     "lightMode": "લાઇટ મોડ",
     "darkMode": "ડાર્ક મોડ",
-    "selectLanguage": "ભાષા પસંદ કરો"
+    "selectLanguage": "ભાષા પસંદ કરો",
+    "accountMenu": "એકાઉન્ટ મેનૂ",
+    "changePassword": "પાસવર્ડ બદલો"
   },
   "invoice": {
     "invoiceNumber": "ઇનવોઇસ #",
@@ -655,6 +682,11 @@
     "cancelReasonPlaceholder": "રદ કરવાનું કારણ (વૈકલ્પિક)",
     "no": "ના",
     "yesCancelInvoice": "હા, રદ કરો"
+  },
+  "about": {
+    "title": "વિશે",
+    "version": "આવૃત્તિ {{version}}",
+    "builtBy": "બનાવ્યું અને જાળવ્યું"
   },
   "payment": {
     "collectPayment": "ચુકવણી લો",

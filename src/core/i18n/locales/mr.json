@@ -123,7 +123,32 @@
     "missingCustomerOrInvoice": "ग्राहक किंवा चलन माहिती गहाळ आहे",
     "paymentRecordedSuccessfully": "पेमेंट यशस्वीरित्या नोंदवले!",
     "paymentFailed": "पेमेंट अयशस्वी",
-    "failedToCreateInvoice": "चलन तयार करण्यात अयशस्वी"
+    "failedToCreateInvoice": "चलन तयार करण्यात अयशस्वी",
+    "fastBilling": "जलद बिलिंग",
+    "saleFor": "विक्री",
+    "walkInCustomer": "वॉक-इन ग्राहक",
+    "walkInHint": "त्वरित पेमेंटसाठी ग्राहक तयार करण्याची गरज नाही",
+    "customerCreditAvailable": "उधार आणि पेमेंट स्मरणपत्र उपलब्ध आहे",
+    "attachCustomer": "ग्राहक जोडा",
+    "changeCustomer": "ग्राहक बदला",
+    "useWalkInInstead": "वॉक-इन ग्राहक म्हणून सुरू ठेवा",
+    "scanBarcode": "बारकोड स्कॅन करा",
+    "unknownProduct": "अज्ञात उत्पादन",
+    "clearCart": "कार्ट रिकामे करा",
+    "emptyCartHint": "बिल सुरू करण्यासाठी वस्तू शोधा किंवा स्कॅन करा",
+    "billSummary": "बिल सारांश",
+    "amountToCollect": "घ्यायची रक्कम",
+    "walkInFullPaymentOnly": "वॉक-इन बिलाचे पूर्ण पेमेंट आवश्यक आहे. उधारासाठी ग्राहक जोडा.",
+    "payCash": "रोख पेमेंट",
+    "cash": "रोख",
+    "otherPayment": "कार्ड / इतर",
+    "holdBill": "बिल होल्ड करा",
+    "draftSaved": "बिल यशस्वीरित्या होल्ड केले",
+    "processingBill": "बिल प्रक्रिया सुरू आहे...",
+    "missingInvoice": "चलन माहिती उपलब्ध नाही",
+    "paymentNotCompleted": "पेमेंट पूर्ण झाले नाही",
+    "checkoutCancelled": "न भरलेले बिल रद्द केले",
+    "failedToCancelCheckout": "न भरलेले बिल रद्द करता आले नाही"
   },
   "customers": {
     "title": "ग्राहक",
@@ -457,7 +482,7 @@
     "noOutstandingSuppliers": "थकबाकी पुरवठादार आढळले नाहीत",
     "noPurchasesFound": "कोणतीही खरेदी आढळली नाही",
     "noPayablesFound": "कोणतेही देय आढळले नाहीत",
-     "selectReportType": "अहवाल प्रकार निवडा",
+    "selectReportType": "अहवाल प्रकार निवडा",
     "chooseReport": "अहवाल निवडा",
     "salesReport": "विक्री अहवाल",
     "outstandingCustomers": "थकबाकी ग्राहक",
@@ -481,7 +506,7 @@
     "noPurchaseTrend": "ट्रेंड डेटा उपलब्ध नाही",
     "totalPurchases": "एकूण खरेदी:",
     "totalPurchasesCount": "एकूण खरेदी",
-     "totalAmountLabel": "एकूण रक्कम:",
+    "totalAmountLabel": "एकूण रक्कम:",
     "paidAmountLabel": "भरलेली रक्कम:",
     "pendingAmountLabel": "प्रलंबित रक्कम:",
     "pendingShort": "प्रलंबित:",
@@ -583,16 +608,16 @@
     "exportError": "डेटा निर्यात करण्यात अयशस्वी",
     "noFile": "कृपया प्रथम फाइल निवडा"
   },
-   "errors": {
-     "validPrice": "कृपया वैध विक्री किंमत प्रविष्ट करा",
-     "failedToUpdate": "अपडेट करण्यात अयशस्वी",
-     "failedToCreate": "निर्माण करण्यात अयशस्वी",
-     "validationError": "कृपया त्रुटींसाठी फॉर्म तपासा.",
-     "networkError": "नेटवर्क त्रुटी. कृपया तुमचे कनेक्शन तपासा.",
-     "unknownError": "एक अज्ञात त्रुटी आली",
-     "serverError": "सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.",
-     "unauthorized": "ही कृती करण्याची तुम्हाला परवानगी नाही.",
-     "notFound": "विनंती केलेला संसाधन सापडला नाही."
+  "errors": {
+    "validPrice": "कृपया वैध विक्री किंमत प्रविष्ट करा",
+    "failedToUpdate": "अपडेट करण्यात अयशस्वी",
+    "failedToCreate": "निर्माण करण्यात अयशस्वी",
+    "validationError": "कृपया त्रुटींसाठी फॉर्म तपासा.",
+    "networkError": "नेटवर्क त्रुटी. कृपया तुमचे कनेक्शन तपासा.",
+    "unknownError": "एक अज्ञात त्रुटी आली",
+    "serverError": "सर्व्हर त्रुटी. कृपया नंतर पुन्हा प्रयत्न करा.",
+    "unauthorized": "ही कृती करण्याची तुम्हाला परवानगी नाही.",
+    "notFound": "विनंती केलेला संसाधन सापडला नाही."
   },
   "profile": {
     "emailPlaceholder": "your.email@example.com",
@@ -617,7 +642,9 @@
     "theme": "थीम",
     "lightMode": "लाइट मोड",
     "darkMode": "डार्क मोड",
-    "selectLanguage": "भाषा निवडा"
+    "selectLanguage": "भाषा निवडा",
+    "accountMenu": "खाते मेनू",
+    "changePassword": "पासवर्ड बदला"
   },
   "invoice": {
     "invoiceNumber": "इनव्हॉइस #",
@@ -655,6 +682,11 @@
     "cancelReasonPlaceholder": "रद्द करण्याचे कारण (ऐच्छिक)",
     "no": "नाही",
     "yesCancelInvoice": "होय, रद्द करा"
+  },
+  "about": {
+    "title": "माहिती",
+    "version": "आवृत्ती {{version}}",
+    "builtBy": "निर्मिती आणि देखभाल"
   },
   "payment": {
     "collectPayment": "पेमेंट घ्या",

@@ -1,10 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { 
-  IonHeader, 
-  IonToolbar, 
-  IonTitle, 
-  IonButtons, 
-  IonButton, 
+import {
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonButtons,
+  IonButton,
   IonIcon,
   IonPopover,
   IonList,
@@ -17,6 +17,7 @@ import { useAppSelector, useAppDispatch } from '../core/hooks';
 import { selectCurrentUser, logout } from '@core/auth/authSlice';
 import { useHistory } from 'react-router';
 import { ROUTES } from '@core/constants';
+import { useTranslation } from 'react-i18next';
 
 interface NavbarProps {
   title: string;
@@ -24,6 +25,7 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ title }) => {
   const user = useAppSelector(selectCurrentUser);
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const history = useHistory();
   const [showPopover, setShowPopover] = useState(false);
@@ -56,52 +58,50 @@ export const Navbar: React.FC<NavbarProps> = ({ title }) => {
         <IonButtons slot="start">
           <IonMenuButton />
         </IonButtons>
-        <IonTitle>{title}</IonTitle>
+        <IonTitle className="px-1 sm:px-4">{title}</IonTitle>
         {user && (
-          <div slot="end" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginRight: '16px' }}>
-            <div 
+          <div slot="end" className="mr-1 flex items-center gap-1 sm:mr-3 sm:gap-2">
+            <div
               ref={popoverRef}
               onClick={handleUserClick}
-              style={{ 
-                cursor: 'pointer',
-                textAlign: 'right',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                transition: 'background-color 0.2s'
+              className="hidden cursor-pointer rounded px-2 py-1 text-right transition-colors sm:block"
+              style={{
+                transition: 'background-color 0.2s',
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
               <div style={{ fontWeight: 600, fontSize: '14px' }}>
                 {user.tenant?.name || 'Store'}
               </div>
-              <div style={{ 
-                fontSize: '11px', 
-                color: 'var(--ion-color-medium)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                gap: '4px'
-              }}>
+              <div
+                style={{
+                  fontSize: '11px',
+                  color: 'var(--ion-color-medium)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  gap: '4px',
+                }}
+              >
                 {user.name || user.email}
                 <IonIcon icon={chevronDown} style={{ fontSize: '12px' }} />
               </div>
             </div>
             <IonButtons>
-              <IonButton onClick={navigateToProfile} fill="clear" size="small">
+              <IonButton
+                onClick={handleUserClick}
+                fill="clear"
+                aria-label={t('profile.accountMenu')}
+                className="min-h-touch min-w-touch"
+              >
                 <IonIcon slot="icon-only" icon={person} />
-              </IonButton>
-              <IonButton onClick={navigateToChangePassword} fill="clear" size="small">
-                <IonIcon slot="icon-only" icon={lockClosed} />
-              </IonButton>
-              <IonButton onClick={handleLogout} fill="clear" size="small">
-                <IonIcon slot="icon-only" icon={logOutOutline} />
               </IonButton>
             </IonButtons>
           </div>
         )}
       </IonToolbar>
-      
+
       <IonPopover
         isOpen={showPopover}
         trigger={undefined}
@@ -111,11 +111,15 @@ export const Navbar: React.FC<NavbarProps> = ({ title }) => {
         <IonList>
           <IonItem button={true} detail={false} onClick={navigateToProfile}>
             <IonIcon icon={person} slot="start" />
-            <IonLabel>My Profile</IonLabel>
+            <IonLabel>{t('profile.title')}</IonLabel>
           </IonItem>
           <IonItem button={true} detail={false} onClick={navigateToChangePassword}>
             <IonIcon icon={lockClosed} slot="start" />
-            <IonLabel>Change Password</IonLabel>
+            <IonLabel>{t('profile.changePassword')}</IonLabel>
+          </IonItem>
+          <IonItem button={true} detail={false} onClick={handleLogout}>
+            <IonIcon icon={logOutOutline} slot="start" />
+            <IonLabel>{t('auth.logout')}</IonLabel>
           </IonItem>
         </IonList>
       </IonPopover>

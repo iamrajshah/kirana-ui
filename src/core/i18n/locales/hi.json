@@ -123,7 +123,32 @@
     "missingCustomerOrInvoice": "ग्राहक या चालान की जानकारी गायब है",
     "paymentRecordedSuccessfully": "भुगतान सफलतापूर्वक रिकॉर्ड किया गया!",
     "paymentFailed": "भुगतान विफल",
-    "failedToCreateInvoice": "चालान बनाने में विफल"
+    "failedToCreateInvoice": "चालान बनाने में विफल",
+    "fastBilling": "तेज़ बिलिंग",
+    "saleFor": "बिक्री",
+    "walkInCustomer": "वॉक-इन ग्राहक",
+    "walkInHint": "तुरंत भुगतान के लिए ग्राहक बनाना आवश्यक नहीं",
+    "customerCreditAvailable": "उधार और भुगतान रिमाइंडर उपलब्ध हैं",
+    "attachCustomer": "ग्राहक जोड़ें",
+    "changeCustomer": "ग्राहक बदलें",
+    "useWalkInInstead": "वॉक-इन ग्राहक के रूप में जारी रखें",
+    "scanBarcode": "बारकोड स्कैन करें",
+    "unknownProduct": "अज्ञात उत्पाद",
+    "clearCart": "कार्ट खाली करें",
+    "emptyCartHint": "बिल शुरू करने के लिए वस्तु खोजें या स्कैन करें",
+    "billSummary": "बिल सारांश",
+    "amountToCollect": "लेने योग्य राशि",
+    "walkInFullPaymentOnly": "वॉक-इन बिल का पूरा भुगतान जरूरी है। उधार के लिए ग्राहक जोड़ें।",
+    "payCash": "नकद भुगतान",
+    "cash": "नकद",
+    "otherPayment": "कार्ड / अन्य",
+    "holdBill": "बिल होल्ड करें",
+    "draftSaved": "बिल सफलतापूर्वक होल्ड हुआ",
+    "processingBill": "बिल प्रोसेस हो रहा है...",
+    "missingInvoice": "चालान की जानकारी उपलब्ध नहीं है",
+    "paymentNotCompleted": "भुगतान पूरा नहीं हुआ",
+    "checkoutCancelled": "बिना भुगतान वाला बिल रद्द किया गया",
+    "failedToCancelCheckout": "बिना भुगतान वाला बिल रद्द नहीं हो सका"
   },
   "customers": {
     "title": "ग्राहक",
@@ -263,7 +288,7 @@
     "openingBalance": "प्रारंभिक शेष",
     "balance": "शेष",
     "amountOwed": "देय राशि",
-     "searchSuppliers": "आपूर्तिकर्ता खोजें",
+    "searchSuppliers": "आपूर्तिकर्ता खोजें",
     "noSuppliers": "कोई आपूर्तिकर्ता नहीं मिला",
     "noSuppliersFound": "कोई आपूर्तिकर्ता नहीं मिला",
     "supplierAdded": "आपूर्तिकर्ता सफलतापूर्वक जोड़ा गया",
@@ -279,7 +304,7 @@
     "addPaymentNotes": "भुगतान नोट्स जोड़ें...",
     "enterValidAmount": "कृपया एक मान्य राशि दर्ज करें",
     "paymentRecordedSuccess": "भुगतान सफलतापूर्वक रिकॉर्ड किया गया",
-     "ledger": {
+    "ledger": {
       "title": "आपूर्तिकर्ता लेजर",
       "creditPurchases": "क्रेडिट (खरीदारी)",
       "debitPayments": "डेबिट (किया गया भुगतान)",
@@ -356,7 +381,7 @@
     "addProducts": "कृपया कार्ट में कम से कम एक उत्पाद जोड़ें",
     "selectSupplierButton": "आपूर्तिकर्ता चुनें",
     "selectSupplierSelected": "✓",
-     "invoiceNumberLabel": "चालान संख्या",
+    "invoiceNumberLabel": "चालान संख्या",
     "invoiceDateLabel": "चालान तारीख",
     "enterSupplierInvoiceNumber": "आपूर्तिकर्ता चालान संख्या दर्ज करें",
     "invoiceDateFormat": "YYYY-MM-DD",
@@ -478,7 +503,7 @@
     "totalTransactions": "कुल लेनदेन:",
     "totalCollection": "कुल संग्रह",
     "noLedgerData": "कोई खाता डेटा नहीं मिला",
-     "noPurchaseTrend": "कोई रुझान डेटा उपलब्ध नहीं",
+    "noPurchaseTrend": "कोई रुझान डेटा उपलब्ध नहीं",
     "totalPurchases": "कुल खरीद:",
     "totalPurchasesCount": "कुल खरीद",
     "totalAmountLabel": "कुल राशि:",
@@ -584,10 +609,10 @@
     "noFile": "कृपया पहले फ़ाइल चुनें"
   },
   "errors": {
-      "validPrice": "कृपया वैध बिक्री मूल्य दर्ज करें",
-      "failedToUpdate": "अपडेट करने में विफल",
-      "failedToCreate": "बनाने में विफल",
-      "validationError": "कृपया त्रुटियों के लिए फॉर्म जांचें।",
+    "validPrice": "कृपया वैध बिक्री मूल्य दर्ज करें",
+    "failedToUpdate": "अपडेट करने में विफल",
+    "failedToCreate": "बनाने में विफल",
+    "validationError": "कृपया त्रुटियों के लिए फॉर्म जांचें।",
     "networkError": "नेटवर्क त्रुटि। कृपया अपना कनेक्शन जांचें।",
     "unknownError": "एक अज्ञात त्रुटि हुई",
     "serverError": "सर्वर त्रुटि। कृपया बाद में पुन: प्रयास करें।",
@@ -617,7 +642,9 @@
     "theme": "थीम",
     "lightMode": "लाइट मोड",
     "darkMode": "डार्क मोड",
-    "selectLanguage": "भाषा चुनें"
+    "selectLanguage": "भाषा चुनें",
+    "accountMenu": "खाता मेनू",
+    "changePassword": "पासवर्ड बदलें"
   },
   "invoice": {
     "invoiceNumber": "इनव्हॉइस #",
@@ -655,6 +682,11 @@
     "cancelReasonPlaceholder": "रद्द करने का कारण (वैकल्पिक)",
     "no": "नहीं",
     "yesCancelInvoice": "हां, रद्द करें"
+  },
+  "about": {
+    "title": "परिचय",
+    "version": "संस्करण {{version}}",
+    "builtBy": "निर्माण और रखरखाव"
   },
   "payment": {
     "collectPayment": "भुगतान लें",
