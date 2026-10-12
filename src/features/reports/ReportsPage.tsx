@@ -32,6 +32,7 @@ import {
   useGetSupplierLedgerSummaryQuery,
   useGetPurchaseTrendQuery,
 } from '@core/api/reportsApi';
+import type { SupplierOutstanding, PurchaseRegister, SupplierLedgerSummary } from '@core/api/reportsApi';
 import { Loading, EmptyState } from '@components';
 import { formatCurrency, formatNumber } from '@utils/helpers';
 
@@ -45,9 +46,9 @@ export const ReportsPage: React.FC = () => {
   const [supplierLedgerPage, setSupplierLedgerPage] = useState(1);
   
   // Accumulated data
-  const [allSupplierOutstanding, setAllSupplierOutstanding] = useState<any[]>([]);
-  const [allPurchaseRegister, setAllPurchaseRegister] = useState<any[]>([]);
-  const [allSupplierLedger, setAllSupplierLedger] = useState<any[]>([]);
+  const [allSupplierOutstanding, setAllSupplierOutstanding] = useState<SupplierOutstanding[]>([]);
+  const [allPurchaseRegister, setAllPurchaseRegister] = useState<PurchaseRegister[]>([]);
+  const [allSupplierLedger, setAllSupplierLedger] = useState<SupplierLedgerSummary[]>([]);
   
   // Reset pagination when report changes
   useEffect(() => {
@@ -113,14 +114,14 @@ export const ReportsPage: React.FC = () => {
     if (salesLoading) return <Loading isOpen={true} />;
     
     // Backend returns ApiResponse with data array or { breakdown: [...] }
-    const responseData: any = salesData?.data;
+    const responseData = salesData?.data;
     const salesBreakdown = Array.isArray(responseData) ? responseData : (Array.isArray(responseData?.breakdown) ? responseData.breakdown : []);
     
     if (salesBreakdown.length === 0) return <EmptyState message={t('reports.noSalesData')} />;
 
     return (
       <IonList>
-        {salesBreakdown.map((item: any, index: number) => (
+        {salesBreakdown.map((item, index) => (
           <IonItem key={index}>
             <IonLabel>
               <h2 className="font-semibold">{item.date}</h2>
@@ -141,13 +142,13 @@ export const ReportsPage: React.FC = () => {
     if (outstandingLoading) return <Loading isOpen={true} />;
     
     // Backend returns ApiResponse with data array or { summary: {...}, customers: [...] }
-    const responseData: any = outstandingData?.data;
+    const responseData = outstandingData?.data;
     const customers = Array.isArray(responseData) ? responseData : (Array.isArray(responseData?.customers) ? responseData.customers : []);
     const summary = (responseData && !Array.isArray(responseData)) ? responseData.summary : null;
     const finalSummary = summary || { 
-      total: customers.reduce((sum: number, c: any) => sum + (c.outstanding_balance || 0), 0),
+      total: customers.reduce((sum, c) => sum + (c.outstanding_balance || 0), 0),
       total_customers: customers.length,
-      total_outstanding: customers.reduce((sum: number, c: any) => sum + (c.outstanding_balance || 0), 0)
+      total_outstanding: customers.reduce((sum, c) => sum + (c.outstanding_balance || 0), 0)
     };
     
     if (customers.length === 0) return <EmptyState message={t('reports.noOutstandingBalances')} />;
@@ -164,7 +165,7 @@ export const ReportsPage: React.FC = () => {
           </IonCard>
         )}
         <IonList>
-          {customers.map((customer: any) => (
+          {customers.map((customer) => (
             <IonItem key={customer.id}>
               <IonLabel>
                 <h2 className="font-semibold">{customer.name}</h2>
@@ -185,19 +186,19 @@ export const ReportsPage: React.FC = () => {
     if (inventoryLoading) return <Loading isOpen={true} />;
     
     // Backend returns ApiResponse with data array or { summary: {...}, items: [...] }
-    const responseData: any = inventoryData?.data;
+    const responseData = inventoryData?.data;
     const inventory = Array.isArray(responseData) ? responseData : (Array.isArray(responseData?.items) ? responseData.items : []);
     const summary = (responseData && !Array.isArray(responseData)) ? responseData.summary : null;
     const finalSummary = summary || {
       total_items: inventory.length,
-      low_stock_items: inventory.filter((item: any) => item.is_low_stock).length,
-      out_of_stock_items: inventory.filter((item: any) => item.quantity === 0).length,
-      total_inventory_value: inventory.reduce((sum: number, item: any) => sum + (item.stock_value || 0), 0)
+      low_stock_items: inventory.filter((item) => item.is_low_stock).length,
+      out_of_stock_items: inventory.filter((item) => item.quantity === 0).length,
+      total_inventory_value: inventory.reduce((sum, item) => sum + (item.stock_value || 0), 0)
     };
     
     if (inventory.length === 0) return <EmptyState message={t('reports.noInventoryData')} />;
 
-    const lowStockItems = inventory.filter((item: any) => item.is_low_stock);
+    const lowStockItems = inventory.filter((item) => item.is_low_stock);
 
     return (
       <div>
@@ -210,19 +211,19 @@ export const ReportsPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <p className="text-sm text-gray-600">{t('reports.totalItems')}</p>
-                  <p className="font-bold text-lg">{summary.total_items}</p>
+                  <p className="font-bold text-lg">{finalSummary.total_items}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">{t('reports.lowStock')}</p>
-                  <p className="font-bold text-lg text-danger">{summary.low_stock_items}</p>
+                  <p className="font-bold text-lg text-danger">{finalSummary.low_stock_items}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">{t('reports.outOfStock')}</p>
-                  <p className="font-bold text-lg text-danger">{summary.out_of_stock_items}</p>
+                  <p className="font-bold text-lg text-danger">{finalSummary.out_of_stock_items}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">{t('reports.totalValue')}</p>
-                  <p className="font-bold text-lg">{formatCurrency(summary.total_inventory_value)}</p>
+                  <p className="font-bold text-lg">{formatCurrency(finalSummary.total_inventory_value)}</p>
                 </div>
               </div>
             </IonCardContent>
@@ -236,7 +237,7 @@ export const ReportsPage: React.FC = () => {
           </IonCard>
         )}
         <IonList>
-          {inventory.map((item: any) => (
+          {inventory.map((item) => (
             <IonItem key={item.variant_id}>
               <IonLabel>
                 <h2 className="font-semibold">{item.product_name}</h2>
@@ -260,13 +261,13 @@ export const ReportsPage: React.FC = () => {
     if (cashbookLoading) return <Loading isOpen={true} />;
     
     // Backend returns ApiResponse with data object
-    const cashbook: any = cashbookData?.data;
+    const cashbook = cashbookData?.data;
     if (!cashbook) return <EmptyState message={t('reports.noCashbookData')} />;
 
     const breakdown = Array.isArray(cashbook?.breakdown) ? cashbook.breakdown : [];
     const summary = cashbook?.summary || {
-      total_collection: breakdown.reduce((sum: number, item: any) => sum + (item.total_amount || 0), 0),
-      total_transactions: breakdown.reduce((sum: number, item: any) => sum + (item.transaction_count || 0), 0)
+      total_collection: breakdown.reduce((sum, item) => sum + (item.total_amount || 0), 0),
+      total_transactions: breakdown.reduce((sum, item) => sum + (item.transaction_count || 0), 0)
     };
 
     return (
@@ -282,7 +283,7 @@ export const ReportsPage: React.FC = () => {
               </div>
             )}
             <IonList>
-              {breakdown.map((item: any) => (
+              {breakdown.map((item) => (
                 <IonItem key={item.payment_mode}>
                   <IonLabel>{item.payment_mode}</IonLabel>
                   <div slot="end" className="text-right">
@@ -310,13 +311,13 @@ export const ReportsPage: React.FC = () => {
     if (topSellingLoading) return <Loading isOpen={true} />;
     
     // Backend returns ApiResponse with data array or { products: [...] }
-    const responseData: any = topSellingData?.data;
+    const responseData = topSellingData?.data;
     const products = Array.isArray(responseData) ? responseData : (Array.isArray(responseData?.products) ? responseData.products : []);
     if (products.length === 0) return <EmptyState message="No sales data" />;
 
     return (
       <IonList>
-        {products.map((product: any, index: number) => (
+        {products.map((product, index) => (
           <IonItem key={product.variant_id}>
             <IonLabel>
               <div className="flex items-center gap-2">
@@ -351,7 +352,7 @@ export const ReportsPage: React.FC = () => {
     
     if (suppliers.length === 0 && !supplierOutstandingLoading) return <EmptyState message={t('reports.noOutstandingSuppliers')} />;
 
-    const totalOutstanding = suppliers.reduce((sum: number, s: any) => sum + s.outstanding_balance, 0);
+    const totalOutstanding = suppliers.reduce((sum, s) => sum + s.outstanding_balance, 0);
 
     const loadMore = async (e: CustomEvent) => {
       if (hasMore) {
@@ -379,7 +380,7 @@ export const ReportsPage: React.FC = () => {
         </IonCard>
 
         <IonList>
-          {suppliers.map((supplier: any) => (
+          {suppliers.map((supplier) => (
             <IonItem key={supplier.id}>
               <IonLabel>
                 <h2 className="font-semibold">{supplier.name}</h2>
@@ -408,7 +409,7 @@ export const ReportsPage: React.FC = () => {
     if (purchaseRegisterLoading && purchaseRegisterPage === 1) return <Loading isOpen={true} />;
     
     const purchases = allPurchaseRegister;
-    const summary = (purchaseRegisterData as any)?.summary;
+    const summary = purchaseRegisterData?.summary;
     const pagination = {
       total: purchaseRegisterData?.data?.length || 0,
       page: 1,
@@ -455,7 +456,7 @@ export const ReportsPage: React.FC = () => {
         )}
 
         <IonList>
-          {purchases.map((purchase: any) => (
+          {purchases.map((purchase) => (
             <IonItem key={purchase.id} button routerLink={`/purchase/${purchase.id}`}>
               <IonLabel>
                 <h2 className="font-semibold">{purchase.invoice_number}</h2>
@@ -501,7 +502,7 @@ export const ReportsPage: React.FC = () => {
 
     return (
       <IonList>
-        {suppliers.map((supplier: any, index: number) => (
+        {suppliers.map((supplier, index) => (
           <IonItem key={supplier.id}>
             <div slot="start" style={{ 
               width: '30px', 
@@ -553,7 +554,7 @@ export const ReportsPage: React.FC = () => {
     return (
       <div>
         <IonList>
-          {ledgers.map((ledger: any) => (
+          {ledgers.map((ledger) => (
             <IonItem key={ledger.supplier_id}>
               <IonLabel>
                 <h2 className="font-semibold">{ledger.supplier_name}</h2>
@@ -593,8 +594,8 @@ export const ReportsPage: React.FC = () => {
     
     if (trends.length === 0) return <EmptyState message="No trend data available" />;
 
-    const totalAmount = trends.reduce((sum: number, t: any) => sum + t.total_amount, 0);
-    const totalCount = trends.reduce((sum: number, t: any) => sum + t.purchase_count, 0);
+    const totalAmount = trends.reduce((sum, trend) => sum + trend.total_amount, 0);
+    const totalCount = trends.reduce((sum, trend) => sum + trend.purchase_count, 0);
 
     return (
       <div>
@@ -615,7 +616,7 @@ export const ReportsPage: React.FC = () => {
         </IonCard>
 
         <IonList>
-          {trends.map((trend: any, index: number) => (
+          {trends.map((trend, index) => (
             <IonItem key={index}>
               <IonLabel>
                 <h2 className="font-semibold">{trend.month} {trend.year}</h2>
@@ -640,9 +641,6 @@ export const ReportsPage: React.FC = () => {
     
     if (!data) return <EmptyState message="No profit/loss data available" />;
 
-    const totalRevenue = data.revenue?.net_revenue || 0;
-    const totalCost = 0; // Backend doesn't provide cost data currently
-    const grossProfit = totalRevenue - totalCost;
     const cashInHand = data.summary?.cash_in_hand || 0;
     const receivables = data.summary?.receivables || 0;
 

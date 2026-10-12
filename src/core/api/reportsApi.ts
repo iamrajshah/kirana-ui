@@ -4,17 +4,26 @@ import type { ApiResponse, PaginatedApiResponse } from '../types';
 export interface SalesReport {
   date: string;
   total_sales: number;
-  total_invoices: number;
-  average_invoice_value: number;
+  invoice_count: number;
+  total_gst: number;
+  paid_count: number;
+  unpaid_count: number;
 }
 
+export type SalesReportData = SalesReport[] | { breakdown: SalesReport[] };
+
 export interface OutstandingCustomer {
-  customer_id: string;
-  customer_name: string;
+  id: string;
+  name: string;
   phone: string;
-  total_outstanding: number;
-  credit_balance: number;
+  email?: string;
+  outstanding_balance: number;
 }
+
+export type OutstandingCustomersData = OutstandingCustomer[] | {
+  summary: { total_customers: number; total_outstanding: number };
+  customers: OutstandingCustomer[];
+};
 
 export interface InventorySummaryItem {
   variant_id: string;
@@ -26,13 +35,20 @@ export interface InventorySummaryItem {
   stock_value: number;
 }
 
+export type InventorySummaryData = InventorySummaryItem[] | {
+  summary: {
+    total_items: number;
+    low_stock_items: number;
+    out_of_stock_items: number;
+    total_inventory_value: number;
+  };
+  items: InventorySummaryItem[];
+};
+
 export interface DailyCashbook {
   date: string;
-  cash: number;
-  upi: number;
-  card: number;
-  bank_transfer: number;
-  total: number;
+  summary?: { total_collection: number; total_transactions: number };
+  breakdown: { payment_mode: string; transaction_count: number; total_amount: number }[];
 }
 
 export interface ProfitLoss {
@@ -60,9 +76,11 @@ export interface TopSellingProduct {
   variant_id: string;
   product_name: string;
   sku: string;
-  total_quantity_sold: number;
+  total_sold: number;
   total_revenue: number;
 }
+
+export type TopSellingData = TopSellingProduct[] | { products: TopSellingProduct[] };
 
 export interface SupplierOutstanding {
   id: string;
@@ -102,11 +120,23 @@ export interface TopPayable {
 export interface SupplierLedgerSummary {
   supplier_id: string;
   supplier_name: string;
-  supplier_phone: string;
-  total_purchases: number;
-  total_payments: number;
+  phone?: string;
+  supplier_phone?: string;
+  total_credit?: number;
+  total_debit?: number;
   balance: number;
   transaction_count: number;
+}
+
+export interface PurchaseRegisterResponse extends ApiResponse<PurchaseRegister[]> {
+  summary?: {
+    total_purchases?: number;
+    total_count?: number;
+    total_amount?: number;
+    total_paid?: number;
+    total_outstanding?: number;
+    total_pending?: number;
+  };
 }
 
 export interface PurchaseTrendMonth {
@@ -130,7 +160,7 @@ export interface SupplierPaymentHistory {
 export const reportsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getSalesReport: builder.query<
-      ApiResponse<SalesReport[]>,
+      ApiResponse<SalesReportData>,
       { from?: string; to?: string; groupBy?: 'day' | 'week' | 'month' } | void
     >({
       query: (params) => ({
@@ -138,10 +168,10 @@ export const reportsApi = apiSlice.injectEndpoints({
         params: params || {},
       }),
     }),
-    getOutstandingCustomers: builder.query<ApiResponse<OutstandingCustomer[]>, void>({
+    getOutstandingCustomers: builder.query<ApiResponse<OutstandingCustomersData>, void>({
       query: () => '/reports/outstanding-customers',
     }),
-    getInventorySummary: builder.query<ApiResponse<InventorySummaryItem[]>, void>({
+    getInventorySummary: builder.query<ApiResponse<InventorySummaryData>, void>({
       query: () => '/reports/inventory-summary',
     }),
     getDailyCashbook: builder.query<ApiResponse<DailyCashbook>, { date?: string } | void>({
@@ -159,7 +189,7 @@ export const reportsApi = apiSlice.injectEndpoints({
         params: params || {},
       }),
     }),
-    getTopSelling: builder.query<ApiResponse<TopSellingProduct[]>, { limit?: number } | void>({
+    getTopSelling: builder.query<ApiResponse<TopSellingData>, { limit?: number } | void>({
       query: (params) => ({
         url: '/reports/top-selling',
         params: params || {},
@@ -176,7 +206,7 @@ export const reportsApi = apiSlice.injectEndpoints({
       }),
     }),
     getPurchaseRegister: builder.query<
-      ApiResponse<PurchaseRegister[]>,
+      PurchaseRegisterResponse,
       { page?: number; limit?: number; from?: string; to?: string; supplierId?: string; status?: string } | void
     >({
       query: (params) => ({

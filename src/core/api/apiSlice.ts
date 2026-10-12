@@ -3,6 +3,7 @@ import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolk
 import { API_BASE_URL, STORAGE_KEYS } from '../constants';
 import { logout, setCredentials } from '../auth/authSlice';
 import { notificationService } from '../services/notificationService';
+import type { AuthResponse } from '../types';
 
 const baseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
@@ -40,7 +41,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
         );
 
         if (refreshResult.data) {
-          const data = refreshResult.data as any;
+          const data = refreshResult.data as AuthResponse;
           // Store new tokens
           api.dispatch(setCredentials(data.data));
           // Retry original query
@@ -67,8 +68,8 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
       notificationService.error('Server error. Please try again later.');
     } else {
       // Generic error - show message from server if available
-      const errorData = result.error.data as any;
-      if (errorData?.message) {
+      const errorData = result.error.data;
+      if (errorData && typeof errorData === 'object' && 'message' in errorData && typeof errorData.message === 'string' && errorData.message) {
         notificationService.error(errorData.message);
       } else {
         notificationService.error('An error occurred. Please try again.');

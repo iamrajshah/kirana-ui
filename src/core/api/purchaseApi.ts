@@ -45,7 +45,7 @@ export const purchaseApi = apiSlice.injectEndpoints({
     >({
       query: (params) => ({
         url: '/purchases',
-        params: (params as Record<string, any>) || {},
+        params: params || {},
       }),
       providesTags: ['Purchase'],
     }),

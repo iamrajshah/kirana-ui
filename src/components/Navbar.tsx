@@ -12,7 +12,7 @@ import {
   IonLabel,
   IonMenuButton,
 } from '@ionic/react';
-import { logOutOutline, personCircleOutline, person, lockClosed, chevronDown } from 'ionicons/icons';
+import { logOutOutline, person, lockClosed, chevronDown } from 'ionicons/icons';
 import { useAppSelector, useAppDispatch } from '../core/hooks';
 import { selectCurrentUser, logout } from '@core/auth/authSlice';
 import { useHistory } from 'react-router';

@@ -10,6 +10,19 @@ export interface ToastMessage {
   duration?: number;
 }
 
+export const apiErrorMessage = (error: unknown, fallback: string, includeDirectMessage = false): string => {
+  if (includeDirectMessage && typeof error === 'string') return error;
+  if (error && typeof error === 'object') {
+    const value = error as { data?: unknown; message?: unknown };
+    if (value.data && typeof value.data === 'object' && 'message' in value.data) {
+      const message = (value.data as { message?: unknown }).message;
+      if (typeof message === 'string' && message) return message;
+    }
+    if (includeDirectMessage && typeof value.message === 'string' && value.message) return value.message;
+  }
+  return fallback;
+};
+
 class NotificationService {
   private toastEvent = new EventTarget();
   private toastCounter = 0;
@@ -69,18 +82,8 @@ class NotificationService {
   /**
    * Handle API error and show appropriate message
    */
-  handleApiError(error: any) {
-    let message = 'An error occurred. Please try again.';
-    
-    if (error?.data?.message) {
-      message = error.data.message;
-    } else if (error?.message) {
-      message = error.message;
-    } else if (typeof error === 'string') {
-      message = error;
-    }
-
-    this.error(message);
+  handleApiError(error: unknown) {
+    this.error(apiErrorMessage(error, 'An error occurred. Please try again.', true));
   }
 }
 

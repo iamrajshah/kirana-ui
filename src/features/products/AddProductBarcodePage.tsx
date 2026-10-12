@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import type { Category } from '@core/api/categoryApi';
+import { apiErrorMessage } from '@core/services/notificationService';
 import { useHistory } from 'react-router';
 import {
   IonContent,
@@ -18,7 +20,6 @@ import {
   isPlatform,
 } from '@ionic/react';
 import { checkmarkCircle, search, add } from 'ionicons/icons';
-import { useTranslation } from 'react-i18next';
 import {
   useLazyLookupBarcodeQuery,
   useCreateProductFromBarcodeMutation,
@@ -35,7 +36,6 @@ import {
 import type { BarcodeLookupData } from '@core/types';
 
 export const AddProductBarcodePage: React.FC = () => {
-  const { t } = useTranslation();
   const history = useHistory();
   const isMobile = isPlatform('capacitor');
 
@@ -69,7 +69,7 @@ export const AddProductBarcodePage: React.FC = () => {
   // API
   const [lookupBarcode, { isLoading: scanning }] = useLazyLookupBarcodeQuery();
   const [createProduct, { isLoading: creating }] = useCreateProductFromBarcodeMutation();
-  const { data: categoriesData, isLoading: loadingCategories } = useGetCategoriesQuery();
+  const { data: categoriesData } = useGetCategoriesQuery();
 
   const categories = categoriesData?.data || [];
 
@@ -121,8 +121,8 @@ export const AddProductBarcodePage: React.FC = () => {
         setProductSource('NONE');
         setShowForm(true);
       }
-    } catch (error: any) {
-      setErrorMessage(error?.data?.message || 'Failed to check barcode');
+    } catch (error: unknown) {
+      setErrorMessage(apiErrorMessage(error, 'Failed to check barcode'));
       setShowError(true);
     }
   };
@@ -141,7 +141,7 @@ export const AddProductBarcodePage: React.FC = () => {
     history.push(`/products`);
   };
 
-  const handleCategoryCreated = (newCategory: any) => {
+  const handleCategoryCreated = (newCategory: Category) => {
     // Auto-select the newly created category
     setCategoryId(newCategory.id);
   };
@@ -179,7 +179,7 @@ export const AddProductBarcodePage: React.FC = () => {
         },
       };
       
-      const result = await createProduct(payload).unwrap();
+      await createProduct(payload).unwrap();
 
       setShowSuccess(true);
       
@@ -187,8 +187,8 @@ export const AddProductBarcodePage: React.FC = () => {
       setTimeout(() => {
         history.goBack();
       }, 1500);
-    } catch (error: any) {
-      setErrorMessage(error?.data?.message || 'Failed to create product');
+    } catch (error: unknown) {
+      setErrorMessage(apiErrorMessage(error, 'Failed to create product'));
       setShowError(true);
     }
   };

@@ -5,8 +5,6 @@ import {
   IonList,
   IonBadge,
   IonCard,
-  IonCardHeader,
-  IonCardTitle,
   IonCardContent,
   IonIcon,
   IonInfiniteScroll,
@@ -19,7 +17,7 @@ import { useHistory } from 'react-router-dom';
 import { Navbar } from '@components/Navbar';
 import { SearchBar, Loading, EmptyState } from '@components';
 import { useGetInvoicesQuery } from '@core/api/invoiceApi';
-import { formatCurrency, formatDateTime } from '@utils/helpers';
+import { formatCurrency } from '@utils/helpers';
 import { documentText } from 'ionicons/icons';
 import type { InvoiceStatus } from '@core/types';
 import './InvoicesPage.css';
@@ -156,6 +154,7 @@ export const InvoicesPage: React.FC = () => {
           ) : (
             <>
               <IonList className="ion-no-padding">
+                <>
                 {filteredInvoices.reduce((acc: React.ReactNode[], invoice, index) => {
                   const inv = invoice as {
                     id: string;
@@ -250,7 +249,8 @@ export const InvoicesPage: React.FC = () => {
                   );
                   
                   return acc;
-                }, []) as any}
+                }, [] as React.ReactNode[])}
+                </>
               </IonList>
 
             <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>

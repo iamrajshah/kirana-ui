@@ -115,7 +115,7 @@ export const BankAccountFormModal: React.FC<BankAccountFormModalProps> = ({
       const submitData = { ...formData };
       // Remove account_number if editing and it's empty (keep existing)
       if (editingAccount && !submitData.account_number.trim()) {
-        delete (submitData as any).account_number;
+        delete (submitData as Partial<BankAccountFormData>).account_number;
       }
       console.log('DEBUG - Calling onSubmit with:', submitData);
       onSubmit(submitData);

@@ -1,5 +1,5 @@
 import { apiSlice } from './apiSlice';
-import type { ApiResponse, Invoice, InvoiceItem } from '../types';
+import type { ApiResponse, Invoice } from '../types';
 
 interface InvoicesResponse {
   success: boolean;

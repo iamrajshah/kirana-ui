@@ -38,20 +38,6 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
     }
   };
 
-  const requestPermission = async () => {
-    try {
-      const status = await BarcodeScanner.checkPermission({ force: true });
-      setHasPermission(status.granted);
-      if (!status.granted) {
-        onError?.('Camera permission denied');
-      }
-    } catch (error) {
-      console.error('Error requesting camera permission:', error);
-      onError?.('Failed to request camera permission');
-      setHasPermission(false);
-    }
-  };
-
   const startScan = async () => {
     if (!isMobile) {
       onError?.('Barcode scanning is only available on mobile devices');

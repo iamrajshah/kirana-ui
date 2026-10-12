@@ -1,4 +1,5 @@
 import React from 'react';
+import type { LedgerEntry } from '@core/api/customerApi';
 import { useTranslation } from 'react-i18next';
 import {
   IonPage,
@@ -37,7 +38,7 @@ export const CustomerLedgerPage: React.FC = () => {
   const { data: customerData, isLoading: loadingCustomer, error: customerError } = useGetCustomerByIdQuery(id);
   const { data: ledgerData, isLoading: loadingLedger, error: ledgerError } = useGetCustomerLedgerQuery({ id });
 
-  const handleInvoiceClick = (entry: any) => {
+  const handleInvoiceClick = (entry: LedgerEntry) => {
     if (entry.entry_type === 'INVOICE' && entry.reference_id) {
       history.push(`/invoices/${entry.reference_id}`);
     }

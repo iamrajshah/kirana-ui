@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { apiErrorMessage } from '@core/services/notificationService';
 import { Navbar } from '@components/Navbar';
 import {
   IonContent,
@@ -38,7 +39,7 @@ export const InventoryPage: React.FC = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const inventory = data?.data || [];
+  const inventory = useMemo(() => data?.data ?? [], [data?.data]);
 
   // Group inventory by category
   const groupedInventory = useMemo(() => {
@@ -85,9 +86,9 @@ export const InventoryPage: React.FC = () => {
       setShowSuccess(true);
       setShowModal(false);
       setSelectedItem(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error updating inventory:', error);
-      setErrorMessage(error?.data?.message || 'Failed to update inventory');
+      setErrorMessage(apiErrorMessage(error, 'Failed to update inventory'));
       setShowError(true);
     }
   };
