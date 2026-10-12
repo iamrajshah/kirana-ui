@@ -13,7 +13,7 @@ import {
 import { add, bookmark, card, cash, personAdd, remove, scan, trash } from 'ionicons/icons';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Loading, SearchBar } from '@components';
+import { BarcodeScannerComponent, Loading, SearchBar } from '@components';
 import { PaymentModal } from '@components/PaymentModal';
 import { Navbar } from '@components/Navbar';
 import {
@@ -25,7 +25,11 @@ import {
 } from '@core/api/invoiceApi';
 import { useCreatePaymentMutation } from '@core/api/paymentApi';
 import { useLazySearchCustomersQuery } from '@core/api/customerApi';
-import { useLazySearchVariantsQuery, type BillingSearchVariant } from '@core/api/productApi';
+import {
+  useLazyScanBarcodeQuery,
+  useLazySearchVariantsQuery,
+  type BillingSearchVariant,
+} from '@core/api/productApi';
 import notificationService, { apiErrorMessage } from '@core/services/notificationService';
 import { ROUTES } from '@core/constants';
 import type { Customer, PaymentMode } from '@core/types';
@@ -41,6 +45,7 @@ export const BillingPage: React.FC = () => {
 
   const [searchVariants, { data: variantsData, isLoading: searchLoading }] =
     useLazySearchVariantsQuery();
+  const [scanBarcode, { isFetching: barcodeLoading }] = useLazyScanBarcodeQuery();
   const [searchCustomers, { data: customersData, isLoading: customersLoading }] =
     useLazySearchCustomersQuery();
   const [createInvoice, { isLoading: creating }] = useCreateInvoiceMutation();
@@ -54,6 +59,8 @@ export const BillingPage: React.FC = () => {
   );
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [barcodeInput, setBarcodeInput] = useState('');
+  const [showBarcodeTools, setShowBarcodeTools] = useState(false);
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
   const [cartItems, setCartItems] = useState<BillingCartItem[]>([]);
@@ -62,6 +69,12 @@ export const BillingPage: React.FC = () => {
     'id' | 'name' | 'phone'
   > | null>(null);
   const initializedInvoiceId = useRef<string | null>(null);
+  const barcodeQueueRef = useRef<Array<{ barcode: string; billGeneration: number }>>([]);
+  const barcodeProcessingRef = useRef(false);
+  const barcodeWorkPendingRef = useRef(0);
+  const billGenerationRef = useRef(0);
+  const billingMountedRef = useRef(true);
+  const [pendingBarcodeCount, setPendingBarcodeCount] = useState(0);
   const [gstAmount, setGstAmount] = useState(0);
   const [billDiscount, setBillDiscount] = useState(0);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -74,7 +87,17 @@ export const BillingPage: React.FC = () => {
     () => calculateBillingTotals(cartItems, billDiscount, 'amount', gstAmount),
     [billDiscount, cartItems, gstAmount]
   );
-  const isBusy = creating || updating || finalizing || paying || cancelling;
+  const barcodeWorkPending = pendingBarcodeCount > 0 || barcodeLoading;
+  const isBusy = creating || updating || finalizing || paying || cancelling || barcodeWorkPending;
+
+  useEffect(() => {
+    billingMountedRef.current = true;
+    return () => {
+      billingMountedRef.current = false;
+      billGenerationRef.current += 1;
+      barcodeQueueRef.current = [];
+    };
+  }, []);
 
   useEffect(() => {
     if (
@@ -122,7 +145,9 @@ export const BillingPage: React.FC = () => {
     return () => window.clearTimeout(timer);
   }, [customerSearchTerm, searchCustomers]);
 
-  const addToCart = (value: BillingSearchVariant) => {
+  const addToCart = (
+    value: Pick<BillingSearchVariant, 'id' | 'product_name' | 'price' | 'sku'>
+  ) => {
     setCartItems((current) => {
       const existing = current.find((item) => item.variant_id === value.id);
       if (existing) {
@@ -147,6 +172,71 @@ export const BillingPage: React.FC = () => {
     setSearchTerm('');
   };
 
+  const processBarcodeQueue = async () => {
+    if (barcodeProcessingRef.current) return;
+    barcodeProcessingRef.current = true;
+
+    while (barcodeQueueRef.current.length > 0) {
+      const queuedBarcode = barcodeQueueRef.current.shift();
+      if (!queuedBarcode) continue;
+
+      try {
+        const result = await scanBarcode(queuedBarcode.barcode).unwrap();
+        const isCurrentBill =
+          billingMountedRef.current && queuedBarcode.billGeneration === billGenerationRef.current;
+        if (!isCurrentBill) continue;
+
+        if (!result.found || !result.data) {
+          notificationService.error(t('billing.barcodeNotFound'));
+          continue;
+        }
+
+        const { product, variant } = result.data;
+        if (product.is_active !== true || variant.is_active !== true) {
+          notificationService.error(t('billing.barcodeUnavailable'));
+          continue;
+        }
+
+        addToCart({
+          id: variant.id,
+          product_name: product.name,
+          price: Number(variant.selling_price ?? variant.price ?? 0),
+          sku: variant.sku || '',
+        });
+        setShowBarcodeTools(false);
+        notificationService.success(t('billing.barcodeAdded'));
+      } catch (error: unknown) {
+        if (
+          billingMountedRef.current &&
+          queuedBarcode.billGeneration === billGenerationRef.current
+        ) {
+          notificationService.error(apiErrorMessage(error, t('billing.barcodeLookupFailed'), true));
+        }
+      } finally {
+        barcodeWorkPendingRef.current = Math.max(0, barcodeWorkPendingRef.current - 1);
+        if (billingMountedRef.current) {
+          setPendingBarcodeCount(barcodeWorkPendingRef.current);
+        }
+      }
+    }
+
+    barcodeProcessingRef.current = false;
+  };
+
+  const addScannedBarcode = (rawBarcode: string) => {
+    const barcode = rawBarcode.trim();
+    if (!barcode) {
+      notificationService.error(t('billing.enterBarcode'));
+      return;
+    }
+
+    barcodeQueueRef.current.push({ barcode, billGeneration: billGenerationRef.current });
+    barcodeWorkPendingRef.current += 1;
+    setPendingBarcodeCount(barcodeWorkPendingRef.current);
+    setBarcodeInput('');
+    void processBarcodeQueue();
+  };
+
   const updateQuantity = (variantId: string, quantity: number) => {
     setCartItems((current) => {
       const existing = current.find((item) => item.variant_id === variantId);
@@ -168,10 +258,13 @@ export const BillingPage: React.FC = () => {
   };
 
   const resetForm = () => {
+    billGenerationRef.current += 1;
     setCartItems([]);
     setGstAmount(0);
     setBillDiscount(0);
     setSearchTerm('');
+    setBarcodeInput('');
+    setShowBarcodeTools(false);
     setCustomerSearchTerm('');
     setShowCustomerSearch(false);
     setSelectedCustomer(null);
@@ -220,6 +313,10 @@ export const BillingPage: React.FC = () => {
   };
 
   const handleSaveAsDraft = async () => {
+    if (barcodeWorkPendingRef.current > 0) {
+      notificationService.error(t('billing.barcodeInProgress'));
+      return;
+    }
     if (!cartItems.length) {
       notificationService.error(t('billing.pleaseAddProducts'));
       return;
@@ -256,6 +353,10 @@ export const BillingPage: React.FC = () => {
   };
 
   const handleCheckout = async (quickMode?: PaymentMode) => {
+    if (barcodeWorkPendingRef.current > 0) {
+      notificationService.error(t('billing.barcodeInProgress'));
+      return;
+    }
     if (!cartItems.length) {
       notificationService.error(t('billing.pleaseAddProducts'));
       return;
@@ -408,10 +509,44 @@ export const BillingPage: React.FC = () => {
                     fill="outline"
                     aria-label={t('billing.scanBarcode')}
                     className="min-w-touch"
+                    onClick={() => setShowBarcodeTools((value) => !value)}
                   >
                     <IonIcon icon={scan} slot="icon-only" />
                   </IonButton>
                 </div>
+                {showBarcodeTools && (
+                  <div className="mt-2 rounded-xl border border-sky-100 bg-sky-50 p-3">
+                    <p className="mb-2 text-sm font-semibold text-sky-900">
+                      {t('billing.barcodeScannerHint')}
+                    </p>
+                    <BarcodeScannerComponent
+                      onScan={(barcode) => void addScannedBarcode(barcode)}
+                      onError={(message) => notificationService.error(message)}
+                    />
+                    <form
+                      className="mt-2 flex gap-2"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void addScannedBarcode(barcodeInput);
+                      }}
+                    >
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        autoFocus
+                        value={barcodeInput}
+                        onChange={(event) => setBarcodeInput(event.target.value)}
+                        aria-label={t('foundation.barcode.barcode')}
+                        placeholder={t('billing.barcodeEntryPlaceholder')}
+                        className="min-h-touch min-w-0 flex-1 rounded-xl border border-sky-200 bg-white px-3 text-base outline-none focus:border-sky-500"
+                      />
+                      <IonButton type="submit" disabled={barcodeLoading || !barcodeInput.trim()}>
+                        {barcodeLoading ? t('common.loading') : t('common.add')}
+                      </IonButton>
+                    </form>
+                  </div>
+                )}
                 {searchLoading && (
                   <p className="p-3 text-center text-sm text-gray-500">{t('common.loading')}</p>
                 )}
@@ -445,7 +580,11 @@ export const BillingPage: React.FC = () => {
                   <button
                     type="button"
                     className="min-h-touch px-3 text-sm font-semibold text-red-600"
-                    onClick={() => setCartItems([])}
+                    disabled={isBusy}
+                    onClick={() => {
+                      billGenerationRef.current += 1;
+                      setCartItems([]);
+                    }}
                   >
                     {t('billing.clearCart')}
                   </button>
