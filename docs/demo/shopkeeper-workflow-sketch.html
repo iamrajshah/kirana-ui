@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Kirana owner workflow</title>
+  <style>
+    html { color-scheme: light dark; }
+    body { margin: 0; padding: 24px; background: light-dark(#eef2ef, #0c100e); }
+    @media (max-width: 540px) { body { padding: 0; } }
+  </style>
+</head>
+<body>
+pyenv: cannot rehash: /Users/rajesh.shah/.pyenv/shims isn't writable
+<div id="kirana-owner-flow" class="kirana-demo">
+  <style>
+    #kirana-owner-flow {
+      --k-bg: light-dark(#f4f7f5, #111714);
+      --k-surface: light-dark(#ffffff, #19221d);
+      --k-surface-strong: light-dark(#eef8f1, #203229);
+      --k-text: light-dark(#17211b, #f3f7f4);
+      --k-muted: light-dark(#657269, #a9b7ae);
+      --k-line: light-dark(#dbe4de, #34443a);
+      --k-green: light-dark(#187a45, #56d28b);
+      --k-green-ink: light-dark(#ffffff, #092114);
+      --k-amber: light-dark(#fff3d4, #493914);
+      --k-amber-ink: light-dark(#725400, #ffd76a);
+      --k-red: light-dark(#fde7e5, #49211e);
+      --k-red-ink: light-dark(#a52a24, #ff9c95);
+      --k-blue: light-dark(#e7f0ff, #1e304d);
+      --k-blue-ink: light-dark(#1e5aa6, #9ac5ff);
+      color: var(--k-text);
+      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    }
+
+    #kirana-owner-flow * { box-sizing: border-box; }
+    #kirana-owner-flow button { font: inherit; }
+    #kirana-owner-flow .k-icon { display: inline-grid; min-width: 18px; place-items: center; font-style: normal; }
+    #kirana-owner-flow .k-sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    #kirana-owner-flow .k-window {
+      overflow: hidden;
+      border: 1px solid var(--k-line);
+      border-radius: 22px;
+      background: var(--k-bg);
+      box-shadow: 0 18px 55px color-mix(in srgb, var(--k-text) 13%, transparent);
+    }
+
+    #kirana-owner-flow .k-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 70px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--k-line);
+      background: var(--k-surface);
+    }
+
+    #kirana-owner-flow .k-brand,
+    #kirana-owner-flow .k-owner,
+    #kirana-owner-flow .k-row,
+    #kirana-owner-flow .k-status,
+    #kirana-owner-flow .k-button,
+    #kirana-owner-flow .k-nav-button,
+    #kirana-owner-flow .k-mobile-button {
+      display: flex;
+      align-items: center;
+    }
+
+    #kirana-owner-flow .k-brand { gap: 10px; font-weight: 500; }
+    #kirana-owner-flow .k-brand-mark {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border-radius: 12px;
+      background: var(--k-green);
+      color: var(--k-green-ink);
+    }
+
+    #kirana-owner-flow .k-owner { gap: 9px; color: var(--k-muted); }
+    #kirana-owner-flow .k-owner strong { color: var(--k-text); font-weight: 500; }
+    #kirana-owner-flow .k-avatar {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--k-surface-strong);
+      color: var(--k-green);
+    }
+
+    #kirana-owner-flow .k-shell {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      min-height: 680px;
+    }
+
+    #kirana-owner-flow .k-sidebar {
+      padding: 20px 14px;
+      border-right: 1px solid var(--k-line);
+      background: var(--k-surface);
+    }
+
+    #kirana-owner-flow .k-nav-label {
+      margin: 16px 12px 8px;
+      color: var(--k-muted);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    #kirana-owner-flow .k-nav-button,
+    #kirana-owner-flow .k-mobile-button {
+      width: 100%;
+      gap: 11px;
+      border: 0;
+      background: transparent;
+      color: var(--k-muted);
+      cursor: pointer;
+    }
+
+    #kirana-owner-flow .k-nav-button {
+      min-height: 45px;
+      margin: 3px 0;
+      padding: 10px 12px;
+      border-radius: 11px;
+      text-align: left;
+    }
+
+    #kirana-owner-flow .k-nav-button:hover,
+    #kirana-owner-flow .k-nav-button[aria-current="page"] {
+      background: var(--k-surface-strong);
+      color: var(--k-green);
+    }
+
+    #kirana-owner-flow .k-main { min-width: 0; padding: 24px; }
+    #kirana-owner-flow .k-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    #kirana-owner-flow h2,
+    #kirana-owner-flow h3,
+    #kirana-owner-flow p { margin: 0; }
+    #kirana-owner-flow h2 { font-size: clamp(24px, 3vw, 34px); font-weight: 500; }
+    #kirana-owner-flow h3 { font-size: 17px; font-weight: 500; }
+    #kirana-owner-flow .k-subtitle { margin-top: 5px; color: var(--k-muted); }
+
+    #kirana-owner-flow .k-status {
+      gap: 7px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: var(--k-surface-strong);
+      color: var(--k-green);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    #kirana-owner-flow .k-screen { display: none; }
+    #kirana-owner-flow .k-screen.is-active { display: block; }
+
+    #kirana-owner-flow .k-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    #kirana-owner-flow .k-panel {
+      min-width: 0;
+      padding: 17px;
+      border: 1px solid var(--k-line);
+      border-radius: 16px;
+      background: var(--k-surface);
+    }
+
+    #kirana-owner-flow .k-panel.span-4 { grid-column: span 4; }
+    #kirana-owner-flow .k-panel.span-5 { grid-column: span 5; }
+    #kirana-owner-flow .k-panel.span-6 { grid-column: span 6; }
+    #kirana-owner-flow .k-panel.span-7 { grid-column: span 7; }
+    #kirana-owner-flow .k-panel.span-8 { grid-column: span 8; }
+    #kirana-owner-flow .k-panel.span-12 { grid-column: span 12; }
+
+    #kirana-owner-flow .k-kpi { font-size: 28px; font-weight: 500; margin: 8px 0 2px; }
+    #kirana-owner-flow .k-muted { color: var(--k-muted); }
+    #kirana-owner-flow .k-small { font-size: 13px; }
+
+    #kirana-owner-flow .k-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    #kirana-owner-flow .k-button {
+      min-height: 46px;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border: 1px solid var(--k-line);
+      border-radius: 11px;
+      background: var(--k-surface);
+      color: var(--k-text);
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    #kirana-owner-flow .k-button:hover { border-color: var(--k-green); color: var(--k-green); }
+    #kirana-owner-flow .k-button.primary { border-color: var(--k-green); background: var(--k-green); color: var(--k-green-ink); }
+    #kirana-owner-flow .k-button.full { width: 100%; }
+
+    #kirana-owner-flow .k-alerts { display: grid; gap: 10px; margin-top: 14px; }
+    #kirana-owner-flow .k-alert {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--k-amber);
+      color: var(--k-amber-ink);
+    }
+    #kirana-owner-flow .k-alert.red { background: var(--k-red); color: var(--k-red-ink); }
+    #kirana-owner-flow .k-alert button {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font-weight: 500;
+      text-decoration: underline;
+    }
+
+    #kirana-owner-flow .k-list { display: grid; gap: 9px; margin-top: 14px; }
+    #kirana-owner-flow .k-list-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--k-line);
+    }
+    #kirana-owner-flow .k-list-row:last-child { border-bottom: 0; }
+
+    #kirana-owner-flow .k-cart-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--k-line);
+    }
+
+    #kirana-owner-flow .k-qty {
+      padding: 6px 9px;
+      border-radius: 8px;
+      background: var(--k-surface-strong);
+      color: var(--k-green);
+      font-weight: 500;
+    }
+
+    #kirana-owner-flow .k-search {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 48px;
+      margin: 14px 0;
+      padding: 0 13px;
+      border: 1px solid var(--k-line);
+      border-radius: 12px;
+      background: var(--k-bg);
+      color: var(--k-muted);
+    }
+
+    #kirana-owner-flow .k-total {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 18px 0 12px;
+      font-size: 18px;
+    }
+    #kirana-owner-flow .k-total strong { font-size: 30px; font-weight: 500; }
+
+    #kirana-owner-flow .k-flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      color: var(--k-muted);
+      font-size: 13px;
+    }
+    #kirana-owner-flow .k-flow strong { color: var(--k-green); font-weight: 500; }
+
+    #kirana-owner-flow .k-future {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    #kirana-owner-flow .k-future-item {
+      min-height: 125px;
+      padding: 15px;
+      border: 1px dashed var(--k-line);
+      border-radius: 14px;
+      background: var(--k-bg);
+    }
+    #kirana-owner-flow .k-future-item p { margin-top: 7px; color: var(--k-muted); font-size: 13px; }
+    #kirana-owner-flow .k-future-item .k-status { display: inline-flex; margin-top: 12px; background: var(--k-blue); color: var(--k-blue-ink); }
+
+    #kirana-owner-flow .k-bottom-nav {
+      display: none;
+      grid-template-columns: repeat(5, 1fr);
+      border-top: 1px solid var(--k-line);
+      background: var(--k-surface);
+    }
+    #kirana-owner-flow .k-mobile-button {
+      min-height: 62px;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+      font-size: 11px;
+    }
+    #kirana-owner-flow .k-mobile-button[aria-current="page"] { color: var(--k-green); }
+
+    @media (max-width: 800px) {
+      #kirana-owner-flow .k-shell { grid-template-columns: 1fr; min-height: 620px; }
+      #kirana-owner-flow .k-sidebar { display: none; }
+      #kirana-owner-flow .k-main { padding: 18px 16px; }
+      #kirana-owner-flow .k-bottom-nav { display: grid; }
+      #kirana-owner-flow .k-panel.span-4,
+      #kirana-owner-flow .k-panel.span-5,
+      #kirana-owner-flow .k-panel.span-6,
+      #kirana-owner-flow .k-panel.span-7,
+      #kirana-owner-flow .k-panel.span-8 { grid-column: span 12; }
+    }
+
+    @media (max-width: 540px) {
+      #kirana-owner-flow .k-topbar { padding: 12px 14px; }
+      #kirana-owner-flow .k-owner span { display: none; }
+      #kirana-owner-flow .k-actions { grid-template-columns: 1fr; }
+      #kirana-owner-flow .k-future { grid-template-columns: 1fr; }
+      #kirana-owner-flow .k-cart-item { grid-template-columns: minmax(0, 1fr) auto; }
+      #kirana-owner-flow .k-cart-item .k-price { grid-column: 1 / -1; }
+      #kirana-owner-flow .k-flow span { display: none; }
+    }
+  </style>
+
+  <section class="k-window" aria-label="Clickable Kirana owner workflow">
+    <header class="k-topbar">
+      <div class="k-brand"><span class="k-brand-mark"><span class="k-icon" aria-hidden="true">▦</span></span> Kirana POS</div>
+      <div class="k-owner"><span>Demo data ·</span><strong>Owner view</strong><span class="k-avatar">RS</span></div>
+    </header>
+
+    <div class="k-shell">
+      <nav class="k-sidebar" aria-label="Kirana workspace">
+        <div class="k-nav-label">Sell</div>
+        <button class="k-nav-button" type="button" data-screen="today" aria-current="page"><span class="k-icon" aria-hidden="true">▤</span> Today</button>
+        <button class="k-nav-button" type="button" data-screen="sale"><span class="k-icon" aria-hidden="true">⌁</span> New sale</button>
+        <button class="k-nav-button" type="button" data-screen="customers"><span class="k-icon" aria-hidden="true">♙</span> Customers</button>
+        <div class="k-nav-label">Stock</div>
+        <button class="k-nav-button" type="button" data-screen="stock"><span class="k-icon" aria-hidden="true">□</span> Stock</button>
+        <div class="k-nav-label">Manage</div>
+        <button class="k-nav-button" type="button" data-screen="manage"><span class="k-icon" aria-hidden="true">▥</span> Reports & staff</button>
+        <button class="k-nav-button" type="button" data-screen="future"><span class="k-icon" aria-hidden="true">✦</span> Next phases</button>
+      </nav>
+
+      <main class="k-main">
+        <div class="k-heading">
+          <div><h2 id="k-screen-title">Good afternoon, Rajesh</h2><p class="k-subtitle" id="k-screen-subtitle">The three things that need the owner's attention today.</p></div>
+          <span class="k-status" id="k-implementation"><span class="k-icon" aria-hidden="true">✓</span> Implemented</span>
+        </div>
+
+        <div class="k-flow" aria-label="Suggested owner flow"><strong>Owner flow</strong><span>→</span> Today <span>→</span> New sale <span>→</span> Receipt <span>→</span> Stock <span>→</span> Reports</div>
+
+        <section class="k-screen is-active" data-panel="today">
+          <div class="k-grid">
+            <article class="k-panel span-12">
+              <h3>Quick actions</h3>
+              <div class="k-actions">
+                <button class="k-button primary" type="button" data-screen="sale"><span class="k-icon" aria-hidden="true">⌁</span> Start fast bill</button>
+                <button class="k-button" type="button" data-screen="stock"><span class="k-icon" aria-hidden="true">□</span> Check stock</button>
+                <button class="k-button" type="button" data-screen="customers"><span class="k-icon" aria-hidden="true">+</span> Find customer</button>
+              </div>
+            </article>
+            <article class="k-panel span-4"><span class="k-muted">Today's sales</span><div class="k-kpi">₹18,420</div><span class="k-small k-muted">34 bills · demo data</span></article>
+            <article class="k-panel span-4"><span class="k-muted">Payments due</span><div class="k-kpi">₹6,850</div><span class="k-small k-muted">8 customers</span></article>
+            <article class="k-panel span-4"><span class="k-muted">Low-stock items</span><div class="k-kpi">12</div><span class="k-small k-muted">3 need attention today</span></article>
+            <article class="k-panel span-7">
+              <h3>Needs attention</h3>
+              <div class="k-alerts">
+                <div class="k-alert red"><span>3 products may run out today</span><button type="button" data-screen="stock">Review</button></div>
+                <div class="k-alert"><span>₹2,300 is overdue by 7+ days</span><button type="button" data-screen="customers">Collect</button></div>
+              </div>
+            </article>
+            <article class="k-panel span-5">
+              <h3>Recent activity</h3>
+              <div class="k-list">
+                <div class="k-list-row"><span>Walk-in bill #1842</span><strong>₹560</strong></div>
+                <div class="k-list-row"><span>Payment · Mehta Stores</span><strong>₹1,200</strong></div>
+                <div class="k-list-row"><span>Purchase · Fresh Foods</span><strong>₹4,850</strong></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="k-screen" data-panel="sale">
+          <div class="k-grid">
+            <article class="k-panel span-7">
+              <div class="k-row" style="justify-content:space-between; gap:12px;"><div><h3>Walk-in sale</h3><p class="k-small k-muted">Customer creation is optional for a quick bill.</p></div><span class="k-status">Cashier ready</span></div>
+              <div class="k-search"><span class="k-icon" aria-hidden="true">⌁</span> Scan barcode or search product</div>
+              <div class="k-actions">
+                <button class="k-button" type="button">Milk 1 L · ₹64</button>
+                <button class="k-button" type="button">Bread · ₹45</button>
+                <button class="k-button" type="button">Tea 250 g · ₹135</button>
+              </div>
+            </article>
+            <article class="k-panel span-5">
+              <h3>Current bill</h3>
+              <div class="k-cart-item"><span>Milk 1 L</span><span class="k-qty">2</span><strong class="k-price">₹128</strong></div>
+              <div class="k-cart-item"><span>Bread</span><span class="k-qty">1</span><strong class="k-price">₹45</strong></div>
+              <div class="k-total"><span>Total</span><strong>₹173</strong></div>
+              <button class="k-button primary full" type="button" data-screen="receipt"><span class="k-icon" aria-hidden="true">▭</span> Pay ₹173</button>
+            </article>
+          </div>
+        </section>
+
+        <section class="k-screen" data-panel="receipt">
+          <div class="k-grid">
+            <article class="k-panel span-12" style="text-align:center; padding:34px;">
+              <span class="k-brand-mark" style="margin:0 auto 14px;"><span class="k-icon" aria-hidden="true">✓</span></span>
+              <h3>Bill #1843 completed</h3>
+              <p class="k-subtitle">₹173 received in cash · inventory updated</p>
+              <div class="k-actions" style="max-width:640px; margin:22px auto 0;">
+                <button class="k-button" type="button" data-screen="today">Back to today</button>
+                <button class="k-button primary" type="button" data-screen="sale">New sale</button>
+                <button class="k-button" type="button" data-screen="stock">View stock</button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="k-screen" data-panel="stock">
+          <div class="k-grid">
+            <article class="k-panel span-8">
+              <h3>Stock that needs action</h3>
+              <div class="k-list">
+                <div class="k-list-row"><span><strong>Fortune Oil 1 L</strong><br><span class="k-small k-muted">2 left · reorder level 6</span></span><span class="k-status">Reorder</span></div>
+                <div class="k-list-row"><span><strong>Tata Salt 1 kg</strong><br><span class="k-small k-muted">4 left · reorder level 8</span></span><span class="k-status">Reorder</span></div>
+                <div class="k-list-row"><span><strong>Amul Butter 500 g</strong><br><span class="k-small k-muted">1 left · reorder level 3</span></span><span class="k-status">Reorder</span></div>
+              </div>
+            </article>
+            <article class="k-panel span-4">
+              <h3>Stock shortcuts</h3>
+              <div class="k-list">
+                <button class="k-button full" type="button">Receive purchase</button>
+                <button class="k-button full" type="button">Adjust quantity</button>
+                <button class="k-button full" type="button" data-screen="future">See smart reorder plan</button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="k-screen" data-panel="customers">
+          <div class="k-grid">
+            <article class="k-panel span-12">
+              <div class="k-row" style="justify-content:space-between; gap:12px;"><div><h3>Customer balances</h3><p class="k-small k-muted">Find a customer, record payment, or open their ledger.</p></div><button class="k-button" type="button">Add customer</button></div>
+              <div class="k-search"><span class="k-icon" aria-hidden="true">⌕</span> Search name or phone number</div>
+              <div class="k-list">
+                <div class="k-list-row"><span><strong>Mehta Stores</strong><br><span class="k-small k-muted">Last purchase 2 days ago</span></span><strong>₹2,400 due</strong></div>
+                <div class="k-list-row"><span><strong>Anita Patel</strong><br><span class="k-small k-muted">Last payment today</span></span><strong>Paid</strong></div>
+                <div class="k-list-row"><span><strong>Ravi General</strong><br><span class="k-small k-muted">Overdue by 9 days</span></span><strong>₹1,750 due</strong></div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="k-screen" data-panel="manage">
+          <div class="k-grid">
+            <article class="k-panel span-4"><span class="k-muted">Gross sales · 7 days</span><div class="k-kpi">₹1.24 L</div><span class="k-small k-muted">Up 8.4% from last week</span></article>
+            <article class="k-panel span-4"><span class="k-muted">Average bill</span><div class="k-kpi">₹542</div><span class="k-small k-muted">Across 229 bills</span></article>
+            <article class="k-panel span-4"><span class="k-muted">Staff active</span><div class="k-kpi">3</div><span class="k-small k-muted">Owner · manager · cashier</span></article>
+            <article class="k-panel span-12">
+              <h3>Management workspace</h3>
+              <div class="k-actions">
+                <button class="k-button" type="button">Sales report</button>
+                <button class="k-button" type="button">Purchases report</button>
+                <button class="k-button" type="button">Manage staff</button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="k-screen" data-panel="future">
+          <div class="k-panel">
+            <h3>Next product phases</h3>
+            <p class="k-subtitle">These are deliberately separated from the completed responsive remap.</p>
+            <div class="k-future">
+              <div class="k-future-item"><h3>Held bills across counters</h3><p>Pause a cart on one counter and resume it safely on another.</p><span class="k-status">Needs server contract</span></div>
+              <div class="k-future-item"><h3>Offline billing queue</h3><p>Create bills during an outage and sync them without duplicate invoices.</p><span class="k-status">Needs sync design</span></div>
+              <div class="k-future-item"><h3>Shift cash opening & closing</h3><p>Track opening float, cash sales, payouts, and closing variance.</p><span class="k-status">Needs ledger model</span></div>
+              <div class="k-future-item"><h3>Smart reorder list</h3><p>Suggest supplier quantities from stock, velocity, and lead time.</p><span class="k-status">Needs purchase history</span></div>
+              <div class="k-future-item"><h3>WhatsApp list to cart</h3><p>Convert customer messages into a reviewable draft cart before billing.</p><span class="k-status">Needs WhatsApp API</span></div>
+              <div class="k-future-item"><h3>WhatsApp payment reminders</h3><p>Send approved ledger reminders with consent, templates, and delivery logs.</p><span class="k-status">Needs provider budget</span></div>
+            </div>
+          </div>
+        </section>
+
+        <p class="k-sr-only" id="k-live" aria-live="polite"></p>
+      </main>
+    </div>
+
+    <nav class="k-bottom-nav" aria-label="Mobile Kirana workspace">
+      <button class="k-mobile-button" type="button" data-screen="today" aria-current="page"><span class="k-icon" aria-hidden="true">▤</span>Today</button>
+      <button class="k-mobile-button" type="button" data-screen="sale"><span class="k-icon" aria-hidden="true">⌁</span>New sale</button>
+      <button class="k-mobile-button" type="button" data-screen="stock"><span class="k-icon" aria-hidden="true">□</span>Stock</button>
+      <button class="k-mobile-button" type="button" data-screen="customers"><span class="k-icon" aria-hidden="true">♙</span>Customers</button>
+      <button class="k-mobile-button" type="button" data-screen="manage"><span class="k-icon" aria-hidden="true">▥</span>Manage</button>
+    </nav>
+  </section>
+
+  <script>
+    (() => {
+      const root = document.getElementById('kirana-owner-flow');
+      const screens = {
+        today: ['Good afternoon, Rajesh', "The three things that need the owner's attention today.", true],
+        sale: ['Fast walk-in billing', 'Scan, add, take payment—customer creation stays optional.', true],
+        receipt: ['Payment complete', 'The short path returns the cashier to the next customer.', true],
+        stock: ['Stock workspace', 'Low stock and the next useful action remain visible on every screen size.', true],
+        customers: ['Customers & balances', 'Ledgers and collections use readable records instead of dense tables.', true],
+        manage: ['Reports & staff', 'Owner-only decisions are grouped away from the cashier flow.', true],
+        future: ['Next product phases', 'Clear boundaries between what works now and what needs backend design.', false]
+      };
+
+      function showScreen(name) {
+        const meta = screens[name];
+        if (!meta) return;
+        root.querySelectorAll('[data-panel]').forEach((panel) => panel.classList.toggle('is-active', panel.dataset.panel === name));
+        root.querySelectorAll('[data-screen]').forEach((button) => {
+          const active = button.dataset.screen === name || (name === 'receipt' && button.dataset.screen === 'sale');
+          if (active) button.setAttribute('aria-current', 'page');
+          else button.removeAttribute('aria-current');
+        });
+        root.querySelector('#k-screen-title').textContent = meta[0];
+        root.querySelector('#k-screen-subtitle').textContent = meta[1];
+        root.querySelector('#k-implementation').innerHTML = meta[2]
+          ? '<span class="k-icon" aria-hidden="true">✓</span> Implemented'
+          : '<span class="k-icon" aria-hidden="true">◷</span> Planned';
+        root.querySelector('#k-live').textContent = meta[0] + ' screen selected';
+      }
+
+      root.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-screen]');
+        if (button && root.contains(button)) showScreen(button.dataset.screen);
+      });
+    })();
+  </script>
+</div>
+
+</body>
+</html>

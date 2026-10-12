@@ -1,0 +1,122 @@
+.dashboard-page {
+  display: grid;
+  align-content: start;
+  gap: 22px;
+}
+
+.dashboard-page .workspace-header {
+  margin-bottom: 0;
+}
+
+.dashboard-priorities {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dashboard-metric {
+  min-width: 0;
+  padding: 18px;
+}
+
+.dashboard-metric h3 {
+  margin: 0 0 12px;
+  color: var(--ion-color-medium);
+  font-size: 0.88rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.dashboard-metric-value {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--ion-text-color);
+  font-size: clamp(1.55rem, 3vw, 2.3rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+.dashboard-metric-note {
+  margin: 9px 0 0;
+  color: var(--ion-color-medium);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.dashboard-metric--sales {
+  grid-column: 1 / -1;
+  border-color: var(--ion-color-primary);
+  background: var(--ion-color-primary-tint);
+}
+
+.dashboard-metric--pending {
+  border-top: 3px solid var(--ion-color-warning);
+}
+
+.dashboard-metric--stock {
+  border-top: 3px solid var(--ion-color-danger);
+}
+
+.dashboard-secondary h2,
+.dashboard-actions h2 {
+  margin: 0 0 12px;
+  color: var(--ion-text-color);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.dashboard-secondary-grid {
+  gap: 10px;
+}
+
+.dashboard-secondary .dashboard-metric-value {
+  font-size: clamp(1.3rem, 2.2vw, 1.75rem);
+}
+
+.dashboard-shortcuts button,
+.dashboard-error button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--ion-color-primary);
+  border-radius: 10px;
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+}
+
+.dashboard-shortcuts button:focus-visible,
+.dashboard-error button:focus-visible {
+  outline: 3px solid var(--ion-color-secondary);
+  outline-offset: 2px;
+}
+
+.dashboard-error p {
+  margin: 0 0 14px;
+}
+
+.dashboard-stale-warning {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  text-align: left;
+}
+
+.dashboard-stale-warning p {
+  margin: 0;
+}
+
+@media (min-width: 680px) {
+  .dashboard-priorities {
+    grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 16px;
+  }
+
+  .dashboard-metric--sales {
+    grid-column: auto;
+  }
+}

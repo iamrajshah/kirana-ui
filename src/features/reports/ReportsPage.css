@@ -1,0 +1,40 @@
+.report-choices {
+  display: none;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.report-choice {
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--ion-border-color, #d9e0e7);
+  border-radius: 10px;
+  background: var(--ion-card-background, var(--ion-background-color));
+  color: var(--ion-text-color);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.report-choice:hover,
+.report-choice:focus-visible,
+.report-choice-active {
+  border-color: var(--ion-color-primary);
+  background: var(--ion-color-primary-tint);
+}
+
+.report-choice:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+@media (min-width: 768px) {
+  .report-select-card {
+    display: none;
+  }
+
+  .report-choices {
+    display: grid;
+  }
+}

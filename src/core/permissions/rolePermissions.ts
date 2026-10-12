@@ -34,14 +34,18 @@ export const ROLE_PERMISSIONS = {
     'invoices',
     'payments',
   ],
-};
+} as const;
 
-export const hasAccessToTab = (userRoles: string[], tabName: string): boolean => {
+export type TabPermission =
+  (typeof ROLE_PERMISSIONS)[keyof typeof ROLE_PERMISSIONS][number];
+
+export const hasAccessToTab = (userRoles: string[], tabName: TabPermission): boolean => {
   if (!userRoles || userRoles.length === 0) return false;
 
   // Check if user has any role that grants access to this tab
   return userRoles.some((role) => {
-    const permissions = ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS];
-    return permissions?.includes(tabName) || false;
+    const permissions: readonly TabPermission[] | undefined =
+      ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS];
+    return permissions?.includes(tabName) ?? false;
   });
 };

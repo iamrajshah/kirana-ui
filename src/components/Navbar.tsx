@@ -11,6 +11,7 @@ import {
   IonItem,
   IonLabel,
   IonMenuButton,
+  IonBackButton,
 } from '@ionic/react';
 import { logOutOutline, person, lockClosed, chevronDown } from 'ionicons/icons';
 import { useAppSelector, useAppDispatch } from '../core/hooks';
@@ -21,9 +22,10 @@ import { useTranslation } from 'react-i18next';
 
 interface NavbarProps {
   title: string;
+  backHref?: string;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ title }) => {
+export const Navbar: React.FC<NavbarProps> = ({ title, backHref }) => {
   const user = useAppSelector(selectCurrentUser);
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
@@ -56,7 +58,7 @@ export const Navbar: React.FC<NavbarProps> = ({ title }) => {
     <IonHeader>
       <IonToolbar>
         <IonButtons slot="start">
-          <IonMenuButton />
+          {backHref ? <IonBackButton defaultHref={backHref} /> : <IonMenuButton />}
         </IonButtons>
         <IonTitle className="px-1 sm:px-4">{title}</IonTitle>
         {user && (

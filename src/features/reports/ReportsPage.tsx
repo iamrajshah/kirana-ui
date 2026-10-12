@@ -15,6 +15,7 @@ import {
   IonSelect,
   IonSelectOption,
   IonIcon,
+  IonButton,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
 } from '@ionic/react';
@@ -32,79 +33,196 @@ import {
   useGetSupplierLedgerSummaryQuery,
   useGetPurchaseTrendQuery,
 } from '@core/api/reportsApi';
-import type { SupplierOutstanding, PurchaseRegister, SupplierLedgerSummary } from '@core/api/reportsApi';
+import type {
+  SupplierOutstanding,
+  PurchaseRegister,
+  SupplierLedgerSummary,
+} from '@core/api/reportsApi';
 import { Loading, EmptyState } from '@components';
 import { formatCurrency, formatNumber } from '@utils/helpers';
+import './ReportsPage.css';
+
+const reportOptions = [
+  ['sales', 'reports.salesReport'],
+  ['outstanding', 'reports.outstandingCustomers'],
+  ['inventory', 'reports.inventorySummaryReport'],
+  ['cashbook', 'reports.dailyCashbook'],
+  ['profitLoss', 'reports.profitAndLoss'],
+  ['topSelling', 'reports.topSellingProducts'],
+  ['supplierOutstanding', 'reports.supplierOutstandingReport'],
+  ['purchaseRegister', 'reports.purchaseRegisterReport'],
+  ['topPayables', 'reports.topPayablesReport'],
+  ['supplierLedger', 'reports.supplierLedgerSummary'],
+  ['purchaseTrend', 'reports.purchaseTrendReport'],
+] as const;
+
+type ReportId = (typeof reportOptions)[number][0];
 
 export const ReportsPage: React.FC = () => {
   const { t } = useTranslation();
-  const [selectedReport, setSelectedReport] = useState<string>('sales');
-  
+  const [selectedReport, setSelectedReport] = useState<ReportId>('sales');
+
   // Pagination state
   const [supplierOutstandingPage, setSupplierOutstandingPage] = useState(1);
   const [purchaseRegisterPage, setPurchaseRegisterPage] = useState(1);
   const [supplierLedgerPage, setSupplierLedgerPage] = useState(1);
-  
+
   // Accumulated data
   const [allSupplierOutstanding, setAllSupplierOutstanding] = useState<SupplierOutstanding[]>([]);
   const [allPurchaseRegister, setAllPurchaseRegister] = useState<PurchaseRegister[]>([]);
   const [allSupplierLedger, setAllSupplierLedger] = useState<SupplierLedgerSummary[]>([]);
-  
-  // Reset pagination when report changes
-  useEffect(() => {
-    setSupplierOutstandingPage(1);
-    setPurchaseRegisterPage(1);
-    setSupplierLedgerPage(1);
-    setAllSupplierOutstanding([]);
-    setAllPurchaseRegister([]);
-    setAllSupplierLedger([]);
-  }, [selectedReport]);
+
+  const selectReport = (report: ReportId) => {
+    if (report === selectedReport) return;
+
+    if (report === 'supplierOutstanding') {
+      setSupplierOutstandingPage(1);
+      setAllSupplierOutstanding([]);
+    } else if (report === 'purchaseRegister') {
+      setPurchaseRegisterPage(1);
+      setAllPurchaseRegister([]);
+    } else if (report === 'supplierLedger') {
+      setSupplierLedgerPage(1);
+      setAllSupplierLedger([]);
+    }
+
+    setSelectedReport(report);
+  };
 
   // All Reports Data
-  const { data: salesData, isLoading: salesLoading } = useGetSalesReportQuery({ groupBy: 'day' });
-  const { data: outstandingData, isLoading: outstandingLoading } = useGetOutstandingCustomersQuery();
-  const { data: inventoryData, isLoading: inventoryLoading } = useGetInventorySummaryQuery();
-  const { data: cashbookData, isLoading: cashbookLoading } = useGetDailyCashbookQuery();
-  const { data: profitLossData, isLoading: profitLossLoading } = useGetProfitLossQuery();
-  const { data: topSellingData, isLoading: topSellingLoading } = useGetTopSellingQuery({ limit: 20 });
-  
-  const { data: supplierOutstandingData, isLoading: supplierOutstandingLoading } = useGetSupplierOutstandingQuery(
+  const {
+    data: salesData,
+    isLoading: salesLoading,
+    isError: salesError,
+    refetch: refetchSales,
+  } = useGetSalesReportQuery(
+    { groupBy: 'day' },
+    { skip: selectedReport !== 'sales' }
+  );
+  const {
+    data: outstandingData,
+    isLoading: outstandingLoading,
+    isError: outstandingError,
+    refetch: refetchOutstanding,
+  } = useGetOutstandingCustomersQuery(undefined, {
+    skip: selectedReport !== 'outstanding',
+  });
+  const {
+    data: inventoryData,
+    isLoading: inventoryLoading,
+    isError: inventoryError,
+    refetch: refetchInventory,
+  } = useGetInventorySummaryQuery(undefined, {
+    skip: selectedReport !== 'inventory',
+  });
+  const {
+    data: cashbookData,
+    isLoading: cashbookLoading,
+    isError: cashbookError,
+    refetch: refetchCashbook,
+  } = useGetDailyCashbookQuery(undefined, {
+    skip: selectedReport !== 'cashbook',
+  });
+  const {
+    data: profitLossData,
+    isLoading: profitLossLoading,
+    isError: profitLossError,
+    refetch: refetchProfitLoss,
+  } = useGetProfitLossQuery(undefined, {
+    skip: selectedReport !== 'profitLoss',
+  });
+  const {
+    data: topSellingData,
+    isLoading: topSellingLoading,
+    isError: topSellingError,
+    refetch: refetchTopSelling,
+  } = useGetTopSellingQuery(
+    { limit: 20 },
+    { skip: selectedReport !== 'topSelling' }
+  );
+
+  const {
+    data: supplierOutstandingData,
+    isLoading: supplierOutstandingLoading,
+    isError: supplierOutstandingError,
+    refetch: refetchSupplierOutstanding,
+  } = useGetSupplierOutstandingQuery(
     { page: supplierOutstandingPage, limit: 50 },
     { skip: selectedReport !== 'supplierOutstanding' }
   );
-  const { data: purchaseRegisterData, isLoading: purchaseRegisterLoading } = useGetPurchaseRegisterQuery(
+  const {
+    data: purchaseRegisterData,
+    isLoading: purchaseRegisterLoading,
+    isError: purchaseRegisterError,
+    refetch: refetchPurchaseRegister,
+  } = useGetPurchaseRegisterQuery(
     { page: purchaseRegisterPage, limit: 50 },
     { skip: selectedReport !== 'purchaseRegister' }
   );
-  const { data: topPayablesData, isLoading: topPayablesLoading } = useGetTopPayablesQuery({ limit: 10 });
-  const { data: supplierLedgerData, isLoading: supplierLedgerLoading } = useGetSupplierLedgerSummaryQuery(
+  const {
+    data: topPayablesData,
+    isLoading: topPayablesLoading,
+    isError: topPayablesError,
+    refetch: refetchTopPayables,
+  } = useGetTopPayablesQuery(
+    { limit: 10 },
+    { skip: selectedReport !== 'topPayables' }
+  );
+  const {
+    data: supplierLedgerData,
+    isLoading: supplierLedgerLoading,
+    isError: supplierLedgerError,
+    refetch: refetchSupplierLedger,
+  } = useGetSupplierLedgerSummaryQuery(
     { page: supplierLedgerPage, limit: 50 },
     { skip: selectedReport !== 'supplierLedger' }
   );
-  const { data: purchaseTrendData, isLoading: purchaseTrendLoading } = useGetPurchaseTrendQuery({ months: 12 });
-  
+  const {
+    data: purchaseTrendData,
+    isLoading: purchaseTrendLoading,
+    isError: purchaseTrendError,
+    refetch: refetchPurchaseTrend,
+  } = useGetPurchaseTrendQuery(
+    { months: 12 },
+    { skip: selectedReport !== 'purchaseTrend' }
+  );
+
+  const reportRequests: Record<ReportId, { isError?: boolean; refetch?: () => unknown }> = {
+    sales: { isError: salesError, refetch: refetchSales },
+    outstanding: { isError: outstandingError, refetch: refetchOutstanding },
+    inventory: { isError: inventoryError, refetch: refetchInventory },
+    cashbook: { isError: cashbookError, refetch: refetchCashbook },
+    profitLoss: { isError: profitLossError, refetch: refetchProfitLoss },
+    topSelling: { isError: topSellingError, refetch: refetchTopSelling },
+    supplierOutstanding: { isError: supplierOutstandingError, refetch: refetchSupplierOutstanding },
+    purchaseRegister: { isError: purchaseRegisterError, refetch: refetchPurchaseRegister },
+    topPayables: { isError: topPayablesError, refetch: refetchTopPayables },
+    supplierLedger: { isError: supplierLedgerError, refetch: refetchSupplierLedger },
+    purchaseTrend: { isError: purchaseTrendError, refetch: refetchPurchaseTrend },
+  };
+
   // Accumulate data when new page loads
   useEffect(() => {
     if (supplierOutstandingData?.data) {
-      setAllSupplierOutstanding(prev => {
+      setAllSupplierOutstanding((prev) => {
         if (supplierOutstandingPage === 1) return supplierOutstandingData.data;
         return [...prev, ...supplierOutstandingData.data];
       });
     }
   }, [supplierOutstandingData, supplierOutstandingPage]);
-  
+
   useEffect(() => {
     if (purchaseRegisterData?.data) {
-      setAllPurchaseRegister(prev => {
+      setAllPurchaseRegister((prev) => {
         if (purchaseRegisterPage === 1) return purchaseRegisterData.data;
         return [...prev, ...purchaseRegisterData.data];
       });
     }
   }, [purchaseRegisterData, purchaseRegisterPage]);
-  
+
   useEffect(() => {
     if (supplierLedgerData?.data) {
-      setAllSupplierLedger(prev => {
+      setAllSupplierLedger((prev) => {
         if (supplierLedgerPage === 1) return supplierLedgerData.data;
         return [...prev, ...supplierLedgerData.data];
       });
@@ -112,11 +230,15 @@ export const ReportsPage: React.FC = () => {
   }, [supplierLedgerData, supplierLedgerPage]);
   const renderSalesReport = () => {
     if (salesLoading) return <Loading isOpen={true} />;
-    
+
     // Backend returns ApiResponse with data array or { breakdown: [...] }
     const responseData = salesData?.data;
-    const salesBreakdown = Array.isArray(responseData) ? responseData : (Array.isArray(responseData?.breakdown) ? responseData.breakdown : []);
-    
+    const salesBreakdown = Array.isArray(responseData)
+      ? responseData
+      : Array.isArray(responseData?.breakdown)
+        ? responseData.breakdown
+        : [];
+
     if (salesBreakdown.length === 0) return <EmptyState message={t('reports.noSalesData')} />;
 
     return (
@@ -125,12 +247,19 @@ export const ReportsPage: React.FC = () => {
           <IonItem key={index}>
             <IonLabel>
               <h2 className="font-semibold">{item.date}</h2>
-              <p className="text-sm text-gray-600">Invoices: {item.invoice_count}</p>
-              <p className="text-sm text-gray-600">GST: {formatCurrency(item.total_gst)}</p>
+              <p className="text-sm text-gray-600">
+                {t('reports.invoiceCount')} {item.invoice_count}
+              </p>
+              <p className="text-sm text-gray-600">
+                {t('reports.gstLabel')} {formatCurrency(item.total_gst)}
+              </p>
             </IonLabel>
             <div slot="end" className="text-right">
               <div className="font-bold text-lg">{formatCurrency(item.total_sales)}</div>
-              <p className="text-xs text-gray-600">Paid: {item.paid_count} | Unpaid: {item.unpaid_count}</p>
+              <p className="text-xs text-gray-600">
+                {t('reports.paidCount')} {item.paid_count} | {t('reports.unpaidCount')}{' '}
+                {item.unpaid_count}
+              </p>
             </div>
           </IonItem>
         ))}
@@ -140,17 +269,21 @@ export const ReportsPage: React.FC = () => {
 
   const renderOutstandingCustomers = () => {
     if (outstandingLoading) return <Loading isOpen={true} />;
-    
+
     // Backend returns ApiResponse with data array or { summary: {...}, customers: [...] }
     const responseData = outstandingData?.data;
-    const customers = Array.isArray(responseData) ? responseData : (Array.isArray(responseData?.customers) ? responseData.customers : []);
-    const summary = (responseData && !Array.isArray(responseData)) ? responseData.summary : null;
-    const finalSummary = summary || { 
+    const customers = Array.isArray(responseData)
+      ? responseData
+      : Array.isArray(responseData?.customers)
+        ? responseData.customers
+        : [];
+    const summary = responseData && !Array.isArray(responseData) ? responseData.summary : null;
+    const finalSummary = summary || {
       total: customers.reduce((sum, c) => sum + (c.outstanding_balance || 0), 0),
       total_customers: customers.length,
-      total_outstanding: customers.reduce((sum, c) => sum + (c.outstanding_balance || 0), 0)
+      total_outstanding: customers.reduce((sum, c) => sum + (c.outstanding_balance || 0), 0),
     };
-    
+
     if (customers.length === 0) return <EmptyState message={t('reports.noOutstandingBalances')} />;
 
     return (
@@ -159,7 +292,7 @@ export const ReportsPage: React.FC = () => {
           <IonCard>
             <IonCardHeader>
               <IonCardTitle>
-                Total Outstanding: {formatCurrency(finalSummary.total_outstanding)}
+                {t('reports.totalOutstanding')} {formatCurrency(finalSummary.total_outstanding)}
               </IonCardTitle>
             </IonCardHeader>
           </IonCard>
@@ -184,18 +317,22 @@ export const ReportsPage: React.FC = () => {
 
   const renderInventorySummary = () => {
     if (inventoryLoading) return <Loading isOpen={true} />;
-    
+
     // Backend returns ApiResponse with data array or { summary: {...}, items: [...] }
     const responseData = inventoryData?.data;
-    const inventory = Array.isArray(responseData) ? responseData : (Array.isArray(responseData?.items) ? responseData.items : []);
-    const summary = (responseData && !Array.isArray(responseData)) ? responseData.summary : null;
+    const inventory = Array.isArray(responseData)
+      ? responseData
+      : Array.isArray(responseData?.items)
+        ? responseData.items
+        : [];
+    const summary = responseData && !Array.isArray(responseData) ? responseData.summary : null;
     const finalSummary = summary || {
       total_items: inventory.length,
       low_stock_items: inventory.filter((item) => item.is_low_stock).length,
       out_of_stock_items: inventory.filter((item) => item.quantity === 0).length,
-      total_inventory_value: inventory.reduce((sum, item) => sum + (item.stock_value || 0), 0)
+      total_inventory_value: inventory.reduce((sum, item) => sum + (item.stock_value || 0), 0),
     };
-    
+
     if (inventory.length === 0) return <EmptyState message={t('reports.noInventoryData')} />;
 
     const lowStockItems = inventory.filter((item) => item.is_low_stock);
@@ -223,7 +360,9 @@ export const ReportsPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">{t('reports.totalValue')}</p>
-                  <p className="font-bold text-lg">{formatCurrency(finalSummary.total_inventory_value)}</p>
+                  <p className="font-bold text-lg">
+                    {formatCurrency(finalSummary.total_inventory_value)}
+                  </p>
                 </div>
               </div>
             </IonCardContent>
@@ -232,7 +371,9 @@ export const ReportsPage: React.FC = () => {
         {lowStockItems.length > 0 && (
           <IonCard color="danger">
             <IonCardHeader>
-              <IonCardTitle>{t('reports.lowStockAlertCount')} ({lowStockItems.length} {t('reports.items')})</IonCardTitle>
+              <IonCardTitle>
+                {t('reports.lowStockAlertCount')} ({lowStockItems.length} {t('reports.items')})
+              </IonCardTitle>
             </IonCardHeader>
           </IonCard>
         )}
@@ -241,14 +382,20 @@ export const ReportsPage: React.FC = () => {
             <IonItem key={item.variant_id}>
               <IonLabel>
                 <h2 className="font-semibold">{item.product_name}</h2>
-                <p className="text-sm text-gray-600">SKU: {item.sku}</p>
-                <p className="text-sm text-gray-600">Value: {formatCurrency(item.stock_value)}</p>
+                <p className="text-sm text-gray-600">
+                  {t('reports.skuLabel')} {item.sku}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {t('reports.value')} {formatCurrency(item.stock_value)}
+                </p>
               </IonLabel>
               <div slot="end" className="text-right">
                 <IonBadge color={item.is_low_stock ? 'danger' : 'success'} className="text-lg">
                   {formatNumber(item.quantity)}
                 </IonBadge>
-                <p className="text-xs text-gray-600 mt-1">Threshold: {item.low_stock_threshold}</p>
+                <p className="text-xs text-gray-600 mt-1">
+                  {t('reports.thresholdLabel')} {item.low_stock_threshold}
+                </p>
               </div>
             </IonItem>
           ))}
@@ -259,7 +406,7 @@ export const ReportsPage: React.FC = () => {
 
   const renderCashbook = () => {
     if (cashbookLoading) return <Loading isOpen={true} />;
-    
+
     // Backend returns ApiResponse with data object
     const cashbook = cashbookData?.data;
     if (!cashbook) return <EmptyState message={t('reports.noCashbookData')} />;
@@ -267,19 +414,23 @@ export const ReportsPage: React.FC = () => {
     const breakdown = Array.isArray(cashbook?.breakdown) ? cashbook.breakdown : [];
     const summary = cashbook?.summary || {
       total_collection: breakdown.reduce((sum, item) => sum + (item.total_amount || 0), 0),
-      total_transactions: breakdown.reduce((sum, item) => sum + (item.transaction_count || 0), 0)
+      total_transactions: breakdown.reduce((sum, item) => sum + (item.transaction_count || 0), 0),
     };
 
     return (
       <div className="p-4">
         <IonCard>
           <IonCardHeader>
-            <IonCardTitle>{t('reports.dateLabel')} {cashbook.date}</IonCardTitle>
+            <IonCardTitle>
+              {t('reports.dateLabel')} {cashbook.date}
+            </IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
             {summary && (
               <div className="mb-4">
-                <p className="text-sm text-gray-600">{t('reports.totalTransactions')} {summary.total_transactions}</p>
+                <p className="text-sm text-gray-600">
+                  {t('reports.totalTransactions')} {summary.total_transactions}
+                </p>
               </div>
             )}
             <IonList>
@@ -288,7 +439,9 @@ export const ReportsPage: React.FC = () => {
                   <IonLabel>{item.payment_mode}</IonLabel>
                   <div slot="end" className="text-right">
                     <div className="font-semibold">{formatCurrency(item.total_amount)}</div>
-                    <div className="text-xs text-gray-600">{item.transaction_count} txns</div>
+                    <div className="text-xs text-gray-600">
+                      {item.transaction_count} {t('reports.transactions')}
+                    </div>
                   </div>
                 </IonItem>
               ))}
@@ -309,11 +462,15 @@ export const ReportsPage: React.FC = () => {
 
   const renderTopSelling = () => {
     if (topSellingLoading) return <Loading isOpen={true} />;
-    
+
     // Backend returns ApiResponse with data array or { products: [...] }
     const responseData = topSellingData?.data;
-    const products = Array.isArray(responseData) ? responseData : (Array.isArray(responseData?.products) ? responseData.products : []);
-    if (products.length === 0) return <EmptyState message="No sales data" />;
+    const products = Array.isArray(responseData)
+      ? responseData
+      : Array.isArray(responseData?.products)
+        ? responseData.products
+        : [];
+    if (products.length === 0) return <EmptyState message={t('reports.noSalesData')} />;
 
     return (
       <IonList>
@@ -324,8 +481,12 @@ export const ReportsPage: React.FC = () => {
                 <IonBadge color="primary">#{index + 1}</IonBadge>
                 <div>
                   <h2 className="font-semibold">{product.product_name}</h2>
-                  <p className="text-sm text-gray-600">SKU: {product.sku}</p>
-                  <p className="text-sm text-gray-600">Qty Sold: {formatNumber(product.total_sold)}</p>
+                  <p className="text-sm text-gray-600">
+                    {t('reports.skuLabel')} {product.sku}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {t('reports.quantitySold')} {formatNumber(product.total_sold)}
+                  </p>
                 </div>
               </div>
             </IonLabel>
@@ -339,24 +500,26 @@ export const ReportsPage: React.FC = () => {
   };
 
   const renderSupplierOutstanding = () => {
-    if (supplierOutstandingLoading && supplierOutstandingPage === 1) return <Loading isOpen={true} />;
-    
+    if (supplierOutstandingLoading && supplierOutstandingPage === 1)
+      return <Loading isOpen={true} />;
+
     const suppliers = allSupplierOutstanding;
     const pagination = {
       total: supplierOutstandingData?.data?.length || 0,
       page: supplierOutstandingPage,
       pageSize: 10,
-      totalPages: Math.ceil((supplierOutstandingData?.data?.length || 0) / 10)
+      totalPages: Math.ceil((supplierOutstandingData?.data?.length || 0) / 10),
     };
     const hasMore = pagination ? pagination.page < pagination.totalPages : false;
-    
-    if (suppliers.length === 0 && !supplierOutstandingLoading) return <EmptyState message={t('reports.noOutstandingSuppliers')} />;
+
+    if (suppliers.length === 0 && !supplierOutstandingLoading)
+      return <EmptyState message={t('reports.noOutstandingSuppliers')} />;
 
     const totalOutstanding = suppliers.reduce((sum, s) => sum + s.outstanding_balance, 0);
 
     const loadMore = async (e: CustomEvent) => {
       if (hasMore) {
-        setSupplierOutstandingPage(prev => prev + 1);
+        setSupplierOutstandingPage((prev) => prev + 1);
       }
       (e.target as HTMLIonInfiniteScrollElement).complete();
     };
@@ -386,7 +549,9 @@ export const ReportsPage: React.FC = () => {
                 <h2 className="font-semibold">{supplier.name}</h2>
                 <p className="text-sm text-gray-600">{supplier.phone}</p>
                 <p className="text-xs text-gray-500">
-                  {supplier.total_invoices} invoice(s) · Last: {new Date(supplier.last_transaction_date).toLocaleDateString()}
+                  {supplier.total_invoices} {t('reports.invoicesCountLabel')} ·{' '}
+                  {t('reports.lastLabel')}{' '}
+                  {new Date(supplier.last_transaction_date).toLocaleDateString()}
                 </p>
               </IonLabel>
               <div slot="end" className="text-right">
@@ -397,7 +562,7 @@ export const ReportsPage: React.FC = () => {
             </IonItem>
           ))}
         </IonList>
-        
+
         <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
           <IonInfiniteScrollContent loadingText={t('reports.loadingMoreSuppliers')} />
         </IonInfiniteScroll>
@@ -407,22 +572,23 @@ export const ReportsPage: React.FC = () => {
 
   const renderPurchaseRegister = () => {
     if (purchaseRegisterLoading && purchaseRegisterPage === 1) return <Loading isOpen={true} />;
-    
+
     const purchases = allPurchaseRegister;
     const summary = purchaseRegisterData?.summary;
     const pagination = {
       total: purchaseRegisterData?.data?.length || 0,
       page: 1,
       pageSize: 10,
-      totalPages: Math.ceil((purchaseRegisterData?.data?.length || 0) / 10)
+      totalPages: Math.ceil((purchaseRegisterData?.data?.length || 0) / 10),
     };
     const hasMore = pagination ? pagination.page < pagination.totalPages : false;
-    
-    if (purchases.length === 0 && !purchaseRegisterLoading) return <EmptyState message={t('reports.noPurchasesFound')} />;
+
+    if (purchases.length === 0 && !purchaseRegisterLoading)
+      return <EmptyState message={t('reports.noPurchasesFound')} />;
 
     const loadMore = async (e: CustomEvent) => {
       if (hasMore) {
-        setPurchaseRegisterPage(prev => prev + 1);
+        setPurchaseRegisterPage((prev) => prev + 1);
       }
       (e.target as HTMLIonInfiniteScrollElement).complete();
     };
@@ -445,11 +611,15 @@ export const ReportsPage: React.FC = () => {
               </div>
               <div className="flex justify-between mb-2">
                 <span>{t('reports.paidAmountLabel')}</span>
-                <strong style={{ color: 'var(--ion-color-success)' }}>{formatCurrency(summary.total_paid || 0)}</strong>
+                <strong style={{ color: 'var(--ion-color-success)' }}>
+                  {formatCurrency(summary.total_paid || 0)}
+                </strong>
               </div>
               <div className="flex justify-between">
                 <span>{t('reports.pendingAmountLabel')}</span>
-                <strong style={{ color: 'var(--ion-color-danger)' }}>{formatCurrency(summary.total_pending || 0)}</strong>
+                <strong style={{ color: 'var(--ion-color-danger)' }}>
+                  {formatCurrency(summary.total_pending || 0)}
+                </strong>
               </div>
             </IonCardContent>
           </IonCard>
@@ -457,35 +627,42 @@ export const ReportsPage: React.FC = () => {
 
         <IonList>
           {purchases.map((purchase) => (
-            <IonItem key={purchase.id} button routerLink={`/purchase/${purchase.id}`}>
+            <IonItem key={purchase.id} button routerLink={`/purchases/${purchase.id}`}>
               <IonLabel>
                 <h2 className="font-semibold">{purchase.invoice_number}</h2>
-                <p className="text-sm text-gray-600">{purchase.supplier_name} · {purchase.supplier_phone}</p>
+                <p className="text-sm text-gray-600">
+                  {purchase.supplier_name} · {purchase.supplier_phone}
+                </p>
                 <p className="text-xs text-gray-500">
-                  {new Date(purchase.invoice_date).toLocaleDateString()} · {purchase.item_count} item(s)
+                  {new Date(purchase.invoice_date).toLocaleDateString()} · {purchase.item_count}{' '}
+                  {t('reports.items')}
                 </p>
               </IonLabel>
               <div slot="end" className="text-right">
-                <div className="font-bold text-lg">
-                  {formatCurrency(purchase.total_amount)}
-                </div>
+                <div className="font-bold text-lg">{formatCurrency(purchase.total_amount)}</div>
                 {purchase.pending_amount > 0 && (
                   <div className="text-sm" style={{ color: 'var(--ion-color-danger)' }}>
                     {t('reports.pendingShort')} {formatCurrency(purchase.pending_amount)}
                   </div>
                 )}
-                <div className="text-xs mt-1" style={{ 
-                  color: purchase.status === 'PAID' ? 'var(--ion-color-success)' : 
-                         purchase.status === 'PARTIAL' ? 'var(--ion-color-warning)' : 
-                         'var(--ion-color-danger)'
-                }}>
+                <div
+                  className="text-xs mt-1"
+                  style={{
+                    color:
+                      purchase.status === 'PAID'
+                        ? 'var(--ion-color-success)'
+                        : purchase.status === 'PARTIAL'
+                          ? 'var(--ion-color-warning)'
+                          : 'var(--ion-color-danger)',
+                  }}
+                >
                   {purchase.status}
                 </div>
               </div>
             </IonItem>
           ))}
         </IonList>
-        
+
         <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
           <IonInfiniteScrollContent loadingText={t('reports.loadingMorePurchases')} />
         </IonInfiniteScroll>
@@ -495,33 +672,38 @@ export const ReportsPage: React.FC = () => {
 
   const renderTopPayables = () => {
     if (topPayablesLoading) return <Loading isOpen={true} />;
-    
+
     const suppliers = Array.isArray(topPayablesData?.data) ? topPayablesData.data : [];
-    
+
     if (suppliers.length === 0) return <EmptyState message={t('reports.noPayablesFound')} />;
 
     return (
       <IonList>
         {suppliers.map((supplier, index) => (
           <IonItem key={supplier.id}>
-            <div slot="start" style={{ 
-              width: '30px', 
-              height: '30px', 
-              borderRadius: '50%', 
-              background: index < 3 ? 'var(--ion-color-danger)' : 'var(--ion-color-medium)',
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 'bold'
-            }}>
+            <div
+              slot="start"
+              style={{
+                width: '30px',
+                height: '30px',
+                borderRadius: '50%',
+                background: index < 3 ? 'var(--ion-color-danger)' : 'var(--ion-color-medium)',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 'bold',
+              }}
+            >
               {index + 1}
             </div>
             <IonLabel>
               <h2 className="font-semibold">{supplier.name}</h2>
               <p className="text-sm text-gray-600">{supplier.phone}</p>
               <p className="text-xs text-gray-500">
-                {supplier.unpaid_invoices} unpaid invoice(s) · Last: {new Date(supplier.latest_invoice_date).toLocaleDateString()}
+                {supplier.unpaid_invoices} {t('reports.unpaidInvoicesLabel')} ·{' '}
+                {t('reports.lastLabel')}{' '}
+                {new Date(supplier.latest_invoice_date).toLocaleDateString()}
               </p>
             </IonLabel>
             <div slot="end" className="text-right">
@@ -537,16 +719,17 @@ export const ReportsPage: React.FC = () => {
 
   const renderSupplierLedgerSummary = () => {
     if (supplierLedgerLoading && supplierLedgerPage === 1) return <Loading isOpen={true} />;
-    
+
     const ledgers = allSupplierLedger;
     const meta = supplierLedgerData?.meta;
     const hasMore = meta ? (meta.page || 1) * (meta.limit || 50) < (meta.total || 0) : false;
-    
-    if (ledgers.length === 0 && !supplierLedgerLoading) return <EmptyState message="No ledger data found" />;
+
+    if (ledgers.length === 0 && !supplierLedgerLoading)
+      return <EmptyState message={t('reports.noLedgerData')} />;
 
     const loadMore = async (e: CustomEvent) => {
       if (hasMore) {
-        setSupplierLedgerPage(prev => prev + 1);
+        setSupplierLedgerPage((prev) => prev + 1);
       }
       (e.target as HTMLIonInfiniteScrollElement).complete();
     };
@@ -559,9 +742,7 @@ export const ReportsPage: React.FC = () => {
               <IonLabel>
                 <h2 className="font-semibold">{ledger.supplier_name}</h2>
                 <p className="text-sm text-gray-600">{ledger.supplier_phone}</p>
-                <p className="text-xs text-gray-500">
-                  {ledger.transaction_count} transaction(s)
-                </p>
+                <p className="text-xs text-gray-500">{ledger.transaction_count} transaction(s)</p>
               </IonLabel>
               <div slot="end" className="text-right">
                 <div className="text-sm text-gray-600">
@@ -570,16 +751,20 @@ export const ReportsPage: React.FC = () => {
                 <div className="text-sm" style={{ color: 'var(--ion-color-success)' }}>
                   {t('reports.payments')} {formatCurrency(ledger.total_debit || 0)}
                 </div>
-                <strong className="text-lg" style={{ 
-                  color: ledger.balance > 0 ? 'var(--ion-color-danger)' : 'var(--ion-color-success)' 
-                }}>
+                <strong
+                  className="text-lg"
+                  style={{
+                    color:
+                      ledger.balance > 0 ? 'var(--ion-color-danger)' : 'var(--ion-color-success)',
+                  }}
+                >
                   {t('reports.balanceLabel')} {formatCurrency(Math.abs(ledger.balance))}
                 </strong>
               </div>
             </IonItem>
           ))}
         </IonList>
-        
+
         <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
           <IonInfiniteScrollContent loadingText={t('reports.loadingMoreLedgers')} />
         </IonInfiniteScroll>
@@ -589,10 +774,10 @@ export const ReportsPage: React.FC = () => {
 
   const renderPurchaseTrend = () => {
     if (purchaseTrendLoading) return <Loading isOpen={true} />;
-    
+
     const trends = Array.isArray(purchaseTrendData?.data) ? purchaseTrendData.data : [];
-    
-    if (trends.length === 0) return <EmptyState message="No trend data available" />;
+
+    if (trends.length === 0) return <EmptyState message={t('reports.noTrendData')} />;
 
     const totalAmount = trends.reduce((sum, trend) => sum + trend.total_amount, 0);
     const totalCount = trends.reduce((sum, trend) => sum + trend.purchase_count, 0);
@@ -605,7 +790,9 @@ export const ReportsPage: React.FC = () => {
           </IonCardHeader>
           <IonCardContent>
             <div className="flex justify-between mb-2">
-              <span>{t('reports.totalPurchases')} ({trends.length} months):</span>
+              <span>
+                {t('reports.totalPurchases')} ({trends.length} {t('reports.months')}):
+              </span>
               <strong>{totalCount}</strong>
             </div>
             <div className="flex justify-between">
@@ -619,9 +806,12 @@ export const ReportsPage: React.FC = () => {
           {trends.map((trend, index) => (
             <IonItem key={index}>
               <IonLabel>
-                <h2 className="font-semibold">{trend.month} {trend.year}</h2>
+                <h2 className="font-semibold">
+                  {trend.month} {trend.year}
+                </h2>
                 <p className="text-sm text-gray-600">
-                  {trend.purchase_count} purchase(s) · Avg: {formatCurrency(trend.avg_purchase_value)}
+                  {trend.purchase_count} {t('reports.purchasesLabel')} · {t('reports.averageLabel')}{' '}
+                  {formatCurrency(trend.avg_purchase_value)}
                 </p>
               </IonLabel>
               <div slot="end" className="text-right">
@@ -636,10 +826,10 @@ export const ReportsPage: React.FC = () => {
 
   const renderProfitLoss = () => {
     if (profitLossLoading) return <Loading isOpen={true} />;
-    
+
     const data = profitLossData?.data;
-    
-    if (!data) return <EmptyState message="No profit/loss data available" />;
+
+    if (!data) return <EmptyState message={t('reports.noProfitLossData')} />;
 
     const cashInHand = data.summary?.cash_in_hand || 0;
     const receivables = data.summary?.receivables || 0;
@@ -660,9 +850,7 @@ export const ReportsPage: React.FC = () => {
               </div>
               <div className="flex justify-between py-2 border-b">
                 <span className="font-semibold">{t('reports.gstCollected')}</span>
-                <strong>
-                  {formatCurrency(data.revenue?.gst_collected || 0)}
-                </strong>
+                <strong>{formatCurrency(data.revenue?.gst_collected || 0)}</strong>
               </div>
               <div className="flex justify-between py-2 border-b">
                 <span className="font-semibold">{t('reports.netRevenue')}</span>
@@ -694,9 +882,7 @@ export const ReportsPage: React.FC = () => {
               </div>
               <div className="flex justify-between py-2">
                 <span className="font-semibold">{t('reports.collectionEfficiency')}</span>
-                <strong>
-                  {data.collections?.collection_efficiency || 0}%
-                </strong>
+                <strong>{data.collections?.collection_efficiency || 0}%</strong>
               </div>
             </div>
           </IonCardContent>
@@ -727,55 +913,84 @@ export const ReportsPage: React.FC = () => {
     );
   };
 
+  const reportRenderers: Record<ReportId, () => React.ReactNode> = {
+    sales: renderSalesReport,
+    outstanding: renderOutstandingCustomers,
+    inventory: renderInventorySummary,
+    cashbook: renderCashbook,
+    profitLoss: renderProfitLoss,
+    topSelling: renderTopSelling,
+    supplierOutstanding: renderSupplierOutstanding,
+    purchaseRegister: renderPurchaseRegister,
+    topPayables: renderTopPayables,
+    supplierLedger: renderSupplierLedgerSummary,
+    purchaseTrend: renderPurchaseTrend,
+  };
+
   return (
     <IonPage>
       <Navbar title={t('reports.title')} />
       <IonContent>
-        <div className="p-4">
+        <div className="workspace-page">
+          <div className="workspace-header">
+            <div>
+              <h1>{t('reports.title')}</h1>
+              <p>{t('reports.chooseReport')}</p>
+            </div>
+          </div>
           {/* Report Selector Dropdown */}
-          <IonCard className="mb-4">
+          <IonCard className="mb-4 report-select-card">
             <IonCardContent>
               <IonItem lines="none">
                 <IonIcon icon={statsChartOutline} slot="start" className="text-xl" />
                 <IonSelect
                   value={selectedReport}
-                  placeholder="Select Report"
-                  onIonChange={(e) => setSelectedReport(e.detail.value)}
+                  placeholder={t('reports.selectReport')}
+                  onIonChange={(e) => selectReport(e.detail.value as ReportId)}
                   interface="action-sheet"
                   interfaceOptions={{
                     header: t('reports.selectReportType'),
-                    subHeader: t('reports.chooseReport')
+                    subHeader: t('reports.chooseReport'),
                   }}
                 >
-                  <IonSelectOption value="sales">{t('reports.salesReport')}</IonSelectOption>
-                  <IonSelectOption value="outstanding">{t('reports.outstandingCustomers')}</IonSelectOption>
-                  <IonSelectOption value="inventory">{t('reports.inventorySummaryReport')}</IonSelectOption>
-                  <IonSelectOption value="cashbook">{t('reports.dailyCashbook')}</IonSelectOption>
-                  <IonSelectOption value="profitLoss">{t('reports.profitAndLoss')}</IonSelectOption>
-                  <IonSelectOption value="topSelling">{t('reports.topSellingProducts')}</IonSelectOption>
-                  <IonSelectOption value="supplierOutstanding">{t('reports.supplierOutstandingReport')}</IonSelectOption>
-                  <IonSelectOption value="purchaseRegister">{t('reports.purchaseRegisterReport')}</IonSelectOption>
-                  <IonSelectOption value="topPayables">{t('reports.topPayablesReport')}</IonSelectOption>
-                  <IonSelectOption value="supplierLedger">{t('reports.supplierLedgerSummary')}</IonSelectOption>
-                  <IonSelectOption value="purchaseTrend">{t('reports.purchaseTrendReport')}</IonSelectOption>
+                  {reportOptions.map(([id, labelKey]) => (
+                    <IonSelectOption key={id} value={id}>
+                      {t(labelKey)}
+                    </IonSelectOption>
+                  ))}
                 </IonSelect>
               </IonItem>
             </IonCardContent>
           </IonCard>
 
+          <nav className="report-choices" aria-label={t('reports.selectReportType')}>
+            {reportOptions.map(([id, labelKey]) => (
+              <button
+                type="button"
+                key={id}
+                className={
+                  selectedReport === id ? 'report-choice report-choice-active' : 'report-choice'
+                }
+                aria-current={selectedReport === id ? 'page' : undefined}
+                onClick={() => selectReport(id)}
+              >
+                {t(labelKey)}
+              </button>
+            ))}
+          </nav>
+
           {/* Report Content */}
           <div className="mt-4">
-            {selectedReport === 'sales' && renderSalesReport()}
-            {selectedReport === 'outstanding' && renderOutstandingCustomers()}
-            {selectedReport === 'inventory' && renderInventorySummary()}
-            {selectedReport === 'cashbook' && renderCashbook()}
-            {selectedReport === 'profitLoss' && renderProfitLoss()}
-            {selectedReport === 'topSelling' && renderTopSelling()}
-            {selectedReport === 'supplierOutstanding' && renderSupplierOutstanding()}
-            {selectedReport === 'purchaseRegister' && renderPurchaseRegister()}
-            {selectedReport === 'topPayables' && renderTopPayables()}
-            {selectedReport === 'supplierLedger' && renderSupplierLedgerSummary()}
-            {selectedReport === 'purchaseTrend' && renderPurchaseTrend()}
+            {reportRequests[selectedReport]?.isError ? (
+              <div className="workspace-state">
+                <p>{t('reports.loadFailed')}</p>
+                <IonButton onClick={() => reportRequests[selectedReport]?.refetch?.()}>
+                  {t('common.retry')}
+                </IonButton>
+              </div>
+            ) : (
+              reportRenderers[selectedReport]()
+            )}
           </div>
         </div>
       </IonContent>

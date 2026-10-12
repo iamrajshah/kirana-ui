@@ -4,9 +4,6 @@ import { Navbar } from '@components/Navbar';
 import {
   IonContent,
   IonPage,
-  IonList,
-  IonItem,
-  IonLabel,
   IonBadge,
   IonIcon,
   IonModal,
@@ -16,7 +13,6 @@ import {
   IonHeader,
   IonToolbar,
   IonTitle,
-  IonListHeader,
 } from '@ionic/react';
 import { create, close } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
@@ -24,11 +20,12 @@ import { useGetInventoryQuery, useUpdateInventoryMutation } from '@core/api/inve
 import { SearchBar, Loading, EmptyState, Input, Button } from '@components';
 import { formatNumber } from '@utils/helpers';
 import type { Inventory } from '@core/types';
+import '../products/stock-workspace.css';
 
 export const InventoryPage: React.FC = () => {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
-  const { data, isLoading } = useGetInventoryQuery({ search });
+  const { data, isLoading, isError, refetch } = useGetInventoryQuery({ search });
   const [updateInventory, { isLoading: updating }] = useUpdateInventoryMutation();
 
   const [showModal, setShowModal] = useState(false);
@@ -46,7 +43,7 @@ export const InventoryPage: React.FC = () => {
     const groups: Record<string, Inventory[]> = {};
     
     inventory.forEach((item) => {
-      const categoryName = item.variant?.product?.category?.name || 'Uncategorized';
+      const categoryName = item.variant?.product?.category?.name || t('products.uncategorized');
       if (!groups[categoryName]) {
         groups[categoryName] = [];
       }
@@ -54,7 +51,7 @@ export const InventoryPage: React.FC = () => {
     });
     
     return groups;
-  }, [inventory]);
+  }, [inventory, t]);
 
   const categoryNames = useMemo(() => {
     return Object.keys(groupedInventory).sort();
@@ -97,64 +94,63 @@ export const InventoryPage: React.FC = () => {
     <IonPage>
       <Navbar title={t('inventory.title')} />
       <IonContent>
-        <div className="p-4">
-          <SearchBar value={search} onChange={setSearch} placeholder={t('common.search')} />
+        <div className="workspace-page stock-page">
+          <div className="workspace-header">
+            <h1>{t('inventory.title')}</h1>
+          </div>
+          <div className="stock-toolbar">
+            <SearchBar value={search} onChange={setSearch} placeholder={t('common.search')} />
+          </div>
 
-          {isLoading ? (
+          {isLoading && inventory.length === 0 ? (
             <Loading isOpen={isLoading} />
+          ) : isError && inventory.length === 0 ? (
+            <div className="workspace-state" role="alert">
+              <p>{t('inventory.loadError')}</p>
+              <Button onClick={() => refetch()}>{t('common.retry')}</Button>
+            </div>
           ) : inventory.length === 0 ? (
             <EmptyState message={t('inventory.noInventoryItems')} />
           ) : (
-            <>
+            <div>
               {categoryNames.map((categoryName) => (
-                <div key={categoryName} style={{ marginBottom: '16px' }}>
-                  <IonListHeader style={{ 
-                    fontSize: '16px', 
-                    fontWeight: '700', 
-                    color: 'var(--ion-color-primary)',
-                    padding: '8px 16px',
-                    background: 'var(--ion-color-light)',
-                    borderRadius: '8px',
-                    marginBottom: '8px'
-                  }}>
+                <section key={categoryName} className="stock-category">
+                  <h2 className="stock-category-heading">
                     {categoryName}
-                    <IonBadge 
-                      color="primary" 
-                      style={{ marginLeft: '8px' }}
-                    >
+                    <IonBadge color="primary">
                       {groupedInventory[categoryName].length}
                     </IonBadge>
-                  </IonListHeader>
-                  
-                  <IonList>
+                  </h2>
+                  <div className="stock-card-grid">
                     {groupedInventory[categoryName].map((item) => (
-                      <IonItem key={item.variant_id}>
-                        <IonLabel>
-                          <h2 className="font-semibold">{item.variant?.product?.name}</h2>
-                          <p className="text-gray-600">SKU: {item.variant?.sku}</p>
-                          <p className="text-sm">
-                            {t('inventory.lowStockThreshold')}: {item.low_stock_threshold}
-                          </p>
-                        </IonLabel>
-                        <div slot="end" className="flex items-center gap-2">
-                          <div className="text-right">
+                      <article key={item.variant_id} className="workspace-record stock-card">
+                        <div className="stock-card-top">
+                          <div>
+                            <h2>{item.variant?.product?.name}</h2>
+                            <p>{t('products.sku')}: {item.variant?.sku}</p>
+                          </div>
+                          <div>
                             <IonBadge color={item.is_low_stock ? 'danger' : 'success'} className="text-lg">
                               {formatNumber(item.quantity)}
                             </IonBadge>
-                            {item.is_low_stock && (
-                              <p className="text-xs text-danger mt-1">{t('inventory.lowStockWarning')}</p>
-                            )}
                           </div>
-                          <IonButton onClick={() => handleEditClick(item)} fill="clear">
-                            <IonIcon icon={create} />
+                        </div>
+                        <div className="stock-card-bottom">
+                          <div>
+                            <p>{t('inventory.lowStockThreshold')}: {item.low_stock_threshold}</p>
+                            {item.is_low_stock && <p className="stock-warning">{t('inventory.lowStockWarning')}</p>}
+                          </div>
+                          <IonButton onClick={() => handleEditClick(item)} fill="outline" aria-label={t('common.edit')}>
+                            <IonIcon slot="start" icon={create} />
+                            {t('common.edit')}
                           </IonButton>
                         </div>
-                      </IonItem>
+                      </article>
                     ))}
-                  </IonList>
-                </div>
+                  </div>
+                </section>
               ))}
-            </>
+            </div>
           )}
         </div>
 
@@ -175,7 +171,7 @@ export const InventoryPage: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <h2 className="font-semibold text-lg">{selectedItem.variant?.product?.name}</h2>
-                    <p className="text-gray-600">SKU: {selectedItem.variant?.sku}</p>
+                    <p className="text-gray-600">{t('products.sku')}: {selectedItem.variant?.sku}</p>
                   </div>
 
                   <Input

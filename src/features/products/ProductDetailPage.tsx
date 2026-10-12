@@ -158,7 +158,7 @@ export const ProductDetailPage: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent>
-        <div style={{ padding: '16px' }}>
+        <div className="workspace-page">
           <IonCard style={{ backgroundColor: 'var(--ion-card-background)' }}>
             <IonCardHeader>
               <IonCardTitle style={{ color: 'var(--ion-text-color)' }}>{t('products.productInfo')}</IonCardTitle>

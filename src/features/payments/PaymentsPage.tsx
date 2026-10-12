@@ -25,13 +25,14 @@ import { useGetPaymentsQuery, useCreatePaymentMutation } from '@core/api/payment
 import { useGetCustomersQuery } from '@core/api/customerApi';
 import { useLazyGetPendingInvoicesByCustomerQuery } from '@core/api/invoiceApi';
 import { Input, Select, Button, EmptyState, Loading } from '@components';
-import { formatCurrency, formatDateTime, generateIdempotencyKey } from '@utils/helpers';
+import { formatCurrency, generateIdempotencyKey } from '@utils/helpers';
 import { PAYMENT_MODES } from '@core/constants';
 import type { PaymentMode } from '@core/types';
+import './PaymentsPage.css';
 
 export const PaymentsPage: React.FC = () => {
-  const { t } = useTranslation();
-  const { data, isLoading, refetch } = useGetPaymentsQuery({});
+  const { t, i18n } = useTranslation();
+  const { data, isLoading, isError, refetch } = useGetPaymentsQuery({});
   const { data: customersData } = useGetCustomersQuery({ take: 1000 });
   const [createPayment, { isLoading: creating }] = useCreatePaymentMutation();
 
@@ -71,26 +72,19 @@ export const PaymentsPage: React.FC = () => {
   const handleCreatePayment = async () => {
     // Validation
     if (!customerId) {
-      setErrorMessage('Please select a customer');
+      setErrorMessage(t('payments.selectCustomerError'));
       setShowError(true);
       return;
     }
 
     if (!amount || Number(amount) <= 0) {
-      setErrorMessage('Please enter a valid amount');
+      setErrorMessage(t('payments.invalidAmount'));
       setShowError(true);
       return;
     }
 
     try {
-      console.log('💰 Creating payment:', {
-        customer_id: customerId,
-        amount: Number(amount),
-        payment_mode: paymentMode,
-        reference_note: referenceNote || undefined,
-      });
-
-      const result = await createPayment({
+      await createPayment({
         customer_id: customerId,
         invoice_id: invoiceId || undefined,
         amount: Number(amount),
@@ -99,21 +93,12 @@ export const PaymentsPage: React.FC = () => {
         idempotency_key: generateIdempotencyKey(),
       }).unwrap();
 
-      console.log('✅ Payment created:', result);
-
       setShowSuccess(true);
       setShowModal(false);
       resetForm();
-      refetch();
     } catch (err) {
       const error = err as { status?: number; data?: { message?: string }; message?: string };
-      console.error('❌ Failed to create payment:', error);
-      console.error('Error details:', {
-        status: error?.status,
-        data: error?.data,
-        message: error?.message,
-      });
-      const errMsg = error?.data?.message || error?.message || 'Failed to record payment';
+      const errMsg = error?.data?.message || error?.message || t('payments.saveError');
       setErrorMessage(errMsg);
       setShowError(true);
     }
@@ -128,6 +113,14 @@ export const PaymentsPage: React.FC = () => {
   };
 
   const payments = useMemo(() => data?.data || [], [data?.data]);
+  const paymentModeLabels: Record<string, string> = {
+    CASH: t('payments.cash'),
+    UPI: t('payments.upi'),
+    CARD: t('payments.card'),
+    CHEQUE: t('payments.cheque'),
+    BANK: t('payments.bankTransfer'),
+    ADJUSTMENT: t('payments.adjustment'),
+  };
   const customers =
     customersData?.data?.map((c) => ({ value: c.id, label: `${c.name} (${c.phone})` })) ||
     [];
@@ -136,7 +129,7 @@ export const PaymentsPage: React.FC = () => {
   const groupedPayments = useMemo(() => {
     const groups: { [key: string]: typeof payments } = {};
     payments.forEach((payment) => {
-      const date = new Date(payment.created_at).toLocaleDateString('en-US', {
+      const date = new Date(payment.created_at).toLocaleDateString(i18n?.language || 'en-IN', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
@@ -147,18 +140,35 @@ export const PaymentsPage: React.FC = () => {
       groups[date].push(payment);
     });
     return groups;
-  }, [payments]);
+  }, [payments, i18n?.language]);
 
   return (
     <IonPage>
       <Navbar title={t('payments.title')} />
       <IonContent>
-        <div className="p-4">
+        <div className="workspace-page">
+          <div className="workspace-header">
+            <div>
+              <h1>{t('payments.title')}</h1>
+              <p>{t('payments.pageHint')}</p>
+            </div>
+            <div className="workspace-actions payments-desktop-action">
+              <Button onClick={() => setShowModal(true)}>
+                <IonIcon icon={add} className="mr-2" />
+                {t('payments.recordPayment')}
+              </Button>
+            </div>
+          </div>
           {isLoading ? (
             <Loading isOpen={isLoading} />
+          ) : isError && payments.length === 0 ? (
+            <div className="workspace-state">
+              <p>{t('payments.loadError')}</p>
+              <Button onClick={() => refetch()} variant="outline">{t('common.retry')}</Button>
+            </div>
           ) : payments.length === 0 ? (
             <EmptyState
-              message="No payments recorded yet"
+              message={t('payments.noPayments')}
               action={
                 <Button onClick={() => setShowModal(true)}>
                   <IonIcon icon={add} className="mr-2" />
@@ -167,40 +177,53 @@ export const PaymentsPage: React.FC = () => {
               }
             />
           ) : (
-            <IonList>
-              {Object.entries(groupedPayments).map(([date, datePayments]) => (
-                <IonItemGroup key={date}>
-                  <IonItemDivider color="light" sticky>
-                    <IonLabel>
-                      <h2 style={{ fontWeight: '600' }}>{date}</h2>
-                    </IonLabel>
-                  </IonItemDivider>
-                  {datePayments.map((payment) => (
-                    <IonItem key={payment.id}>
+            <>
+              {isError && (
+                <div className="payments-stale-warning" role="status">
+                  <span>{t('payments.refreshWarning')}</span>
+                  <Button onClick={() => refetch()} variant="outline">
+                    {t('common.retry')}
+                  </Button>
+                </div>
+              )}
+              <IonList className="payments-list">
+                {Object.entries(groupedPayments).map(([date, datePayments]) => (
+                  <IonItemGroup key={date} className="payments-day">
+                    <IonItemDivider color="light" sticky>
                       <IonLabel>
-                        <h2 className="font-semibold">{payment.customer?.name}</h2>
-                        <p className="text-gray-600">{formatDateTime(payment.created_at)}</p>
-                        <p className="text-sm">{payment.payment_mode}</p>
+                        <h2 style={{ fontWeight: '600' }}>{date}</h2>
                       </IonLabel>
-                      <div slot="end" className="text-right">
-                        <div className="font-bold text-success text-lg">
-                          {formatCurrency(payment.amount)}
-                        </div>
-                      </div>
-                    </IonItem>
-                  ))}
-                </IonItemGroup>
-              ))}
-            </IonList>
+                    </IonItemDivider>
+                    <div className="workspace-grid payments-grid">
+                      {datePayments.map((payment) => (
+                        <IonItem key={payment.id} className="workspace-record payment-record">
+                          <IonLabel>
+                            <div className="payment-record-body">
+                              <div>
+                                <h2>{payment.customer?.name || t('common.customer')}</h2>
+                                <p>{new Date(payment.created_at).toLocaleString(i18n?.language || 'en-IN', {
+                                  dateStyle: 'medium', timeStyle: 'short',
+                                })}</p>
+                                <p>{paymentModeLabels[payment.payment_mode] || payment.payment_mode}</p>
+                              </div>
+                              <strong>{formatCurrency(payment.amount)}</strong>
+                            </div>
+                          </IonLabel>
+                        </IonItem>
+                      ))}
+                    </div>
+                  </IonItemGroup>
+                ))}
+              </IonList>
+            </>
           )}
         </div>
 
         {/* FAB Button */}
-        <IonFab vertical="bottom" horizontal="end" slot="fixed">
+        <IonFab vertical="bottom" horizontal="end" slot="fixed" className="payments-mobile-action">
           <IonFabButton onClick={() => {
-            console.log('💰 FAB button clicked - Record Payment');
             setShowModal(true);
-          }}>
+          }} aria-label={t('payments.recordPayment')}>
             <IonIcon icon={add} />
           </IonFabButton>
         </IonFab>
@@ -210,7 +233,6 @@ export const PaymentsPage: React.FC = () => {
           <IonModal 
             isOpen={true}
             onDidDismiss={() => {
-              console.log('🚪 Payment modal dismissed');
               setShowModal(false);
             }}
           >
@@ -220,7 +242,6 @@ export const PaymentsPage: React.FC = () => {
                   <IonTitle>{t('payments.recordPayment')}</IonTitle>
                   <IonButtons slot="end">
                     <IonButton onClick={() => {
-                      console.log('❌ Close button clicked');
                       setShowModal(false);
                     }}>
                       <IonIcon icon={close} />
@@ -238,21 +259,21 @@ export const PaymentsPage: React.FC = () => {
               required
             />
             {customerId && loadingInvoices && (
-              <div className="text-center py-2 text-sm">Loading invoices...</div>
+              <div className="text-center py-2 text-sm">{t('payments.loadingInvoices')}</div>
             )}
             {customerId && pendingInvoicesData?.data && pendingInvoicesData.data.length > 0 && (
               <Select
-                label="Select Invoice (Optional)"
+                label={t('payments.selectInvoice')}
                 value={invoiceId}
                 onChange={setInvoiceId}
                 options={[
-                  { value: '', label: 'General Payment (No Invoice)' },
+                  { value: '', label: t('payments.generalPayment') },
                   ...pendingInvoicesData.data.map(inv => ({
                     value: inv.id,
                     label: `${inv.invoice_number} - ${formatCurrency((inv.total_amount || 0) - (inv.paid_amount || 0))} (${inv.status})`
                   }))
                 ]}
-                placeholder="Select an invoice"
+                placeholder={t('common.placeholders.selectInvoice')}
               />
             )}
             <Input
@@ -261,13 +282,13 @@ export const PaymentsPage: React.FC = () => {
               onChange={setAmount}
               type="number"
               required
-              placeholder={invoiceId ? "Amount auto-filled, edit for partial payment" : "Enter amount"}
+              placeholder={invoiceId ? t('payments.amountAutoFilled') : t('payments.enterAmount')}
             />
             <Select
               label={t('payments.paymentMode')}
               value={paymentMode}
               onChange={setPaymentMode}
-              options={PAYMENT_MODES.map((m) => ({ value: m.value, label: m.label }))}
+              options={PAYMENT_MODES.map((m) => ({ value: m.value, label: paymentModeLabels[m.value] || m.label }))}
               required
             />
             <Input
@@ -276,7 +297,6 @@ export const PaymentsPage: React.FC = () => {
               onChange={setReferenceNote}
             />
             <Button onClick={() => {
-              console.log('💾 Save payment button clicked');
               handleCreatePayment();
             }} loading={creating} fullWidth size="large">
               {t('common.save')}

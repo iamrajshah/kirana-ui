@@ -15,7 +15,7 @@ import {
 } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { Navbar } from '@components/Navbar';
-import { SearchBar, Loading, EmptyState } from '@components';
+import { SearchBar, Loading, EmptyState, Button } from '@components';
 import { useGetInvoicesQuery } from '@core/api/invoiceApi';
 import { formatCurrency } from '@utils/helpers';
 import { documentText } from 'ionicons/icons';
@@ -26,7 +26,7 @@ import { useTranslation } from 'react-i18next';
 export const InvoicesPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [skip, setSkip] = useState(0);
-    const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   
   const [allInvoices, setAllInvoices] = useState<unknown[]>([]);
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'ALL'>('ALL');
@@ -34,7 +34,7 @@ export const InvoicesPage: React.FC = () => {
   const history = useHistory();
   
   // Load all invoices without status filter - filter locally instead
-  const { data, isLoading, isFetching } = useGetInvoicesQuery({ 
+  const { data, isLoading, isFetching, isError, refetch } = useGetInvoicesQuery({
     skip, 
     take
   });
@@ -86,6 +86,15 @@ export const InvoicesPage: React.FC = () => {
     }
   };
 
+  const statusLabels: Record<string, string> = {
+    DRAFT: t('invoices.draft'),
+    FINALIZED: t('invoices.finalized'),
+    UNPAID: t('invoices.unpaid'),
+    PARTIAL: t('invoices.partial'),
+    PAID: t('invoices.paid'),
+    CANCELLED: t('invoices.cancelled'),
+  };
+
   // Filter invoices based on search and status locally
   const filteredInvoices = allInvoices.filter((invoice) => {
     const inv = invoice as { status: string; invoice_number: string; customer?: { name?: string; phone?: string } };
@@ -109,7 +118,13 @@ export const InvoicesPage: React.FC = () => {
     <IonPage>
       <Navbar title={t('invoices.title')} />
       <IonContent>
-        <div className="p-4 max-w-4xl mx-auto">
+        <div className="workspace-page">
+          <div className="workspace-header">
+            <div>
+              <h1>{t('invoices.title')}</h1>
+              <p>{t('invoices.pageHint')}</p>
+            </div>
+          </div>
           <SearchBar 
             value={search} 
             onChange={setSearch} 
@@ -147,13 +162,18 @@ export const InvoicesPage: React.FC = () => {
 
           {isLoading && allInvoices.length === 0 ? (
             <Loading isOpen={isLoading} />
+          ) : isError && allInvoices.length === 0 ? (
+            <div className="workspace-state">
+              <p>{t('invoices.loadError')}</p>
+              <Button onClick={() => refetch()} variant="outline">{t('common.retry')}</Button>
+            </div>
           ) : filteredInvoices.length === 0 ? (
             <EmptyState
-              message={search ? t('invoices.noInvoicesSearch') : t('invoices.noInvoicesFound')}
+              message={search || statusFilter !== 'ALL' ? t('invoices.noInvoicesSearch') : t('invoices.noInvoicesFound')}
             />
           ) : (
             <>
-              <IonList className="ion-no-padding">
+              <IonList className="ion-no-padding workspace-grid invoice-grid">
                 <>
                 {filteredInvoices.reduce((acc: React.ReactNode[], invoice, index) => {
                   const inv = invoice as {
@@ -170,14 +190,14 @@ export const InvoicesPage: React.FC = () => {
                     cancelled_at?: string;
                   };
                   
-                  const currentDate = new Date(inv.created_at).toLocaleDateString('en-US', {
+                  const currentDate = new Date(inv.created_at).toLocaleDateString(i18n?.language || 'en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
                   });
                   
                   const prevInv = index > 0 ? filteredInvoices[index - 1] as typeof inv : null;
-                  const prevDate = prevInv ? new Date(prevInv.created_at).toLocaleDateString('en-US', {
+                  const prevDate = prevInv ? new Date(prevInv.created_at).toLocaleDateString(i18n?.language || 'en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
@@ -185,12 +205,7 @@ export const InvoicesPage: React.FC = () => {
                   
                   if (currentDate !== prevDate) {
                     acc.push(
-                      <div key={`divider-${currentDate}`} className="sticky top-0 z-10 px-4 py-2 text-sm font-semibold" style={{ 
-                        backgroundColor: 'var(--ion-card-background, var(--ion-background-color))', 
-                        borderBottom: '2px solid var(--ion-color-primary, #3880ff)',
-                        color: 'var(--ion-text-color)',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                      }}>
+                      <div key={`divider-${currentDate}`} className="invoice-date-divider">
                         {currentDate}
                       </div>
                     );
@@ -199,47 +214,45 @@ export const InvoicesPage: React.FC = () => {
                   acc.push(
                     <IonCard 
                       key={inv.id} 
-                      className="mx-2 mb-2 shadow-sm"
+                      className="workspace-record invoice-record"
                       button
                       onClick={() => history.push(`/invoices/${inv.id}`)}
-                      style={{ 
-                        borderBottom: '1px solid var(--ion-color-light-shade, rgba(0,0,0,0.1))'
-                      }}
+                      aria-label={`${inv.invoice_number}, ${statusLabels[inv.status] || inv.status}`}
                     >
-                      <IonCardContent className="p-2.5">
+                      <IonCardContent>
                         {/* Header: Invoice # and Status */}
-                        <div className="flex justify-between items-center mb-1.5">
-                          <div className="flex items-center gap-1.5">
-                            <IonIcon icon={documentText} className="text-primary flex-shrink-0" style={{ fontSize: '16px' }} />
-                            <h3 className="text-sm font-semibold truncate">{inv.invoice_number}</h3>
-                            <span className="text-xs" style={{ color: 'var(--ion-color-medium)' }}>
-                              {new Date(inv.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                        <div className="invoice-record-header">
+                          <div className="invoice-record-identity">
+                            <IonIcon icon={documentText} color="primary" />
+                            <h3>{inv.invoice_number}</h3>
+                            <span className="invoice-record-time">
+                              {new Date(inv.created_at).toLocaleTimeString(i18n?.language || 'en-US', { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
-                          <IonBadge color={getStatusColor(inv.status)} mode="ios" style={{ fontSize: '10px', padding: '2px 6px' }}>
-                            {inv.status}
+                          <IonBadge color={getStatusColor(inv.status)} mode="ios">
+                            {statusLabels[inv.status] || inv.status}
                           </IonBadge>
                         </div>
                         
                         {/* Customer Info - Single Line */}
                         {inv.customer && (
-                          <div className="mb-1.5 truncate text-xs" style={{ color: 'var(--ion-color-medium)' }}>
+                          <div className="invoice-record-customer">
                             {inv.customer.name} • {inv.customer.phone}
                           </div>
                         )}
                         
                         {/* Amount Summary - Compact */}
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-bold text-primary">
+                        <div className="invoice-record-amounts">
+                          <span className="invoice-record-total">
                             {formatCurrency(inv.total_amount || 0)}
                           </span>
                           
                           {inv.status !== 'DRAFT' && inv.status !== 'CANCELLED' && (inv.balance_amount && inv.balance_amount > 0 || (inv.total_amount || 0) - (inv.paid_amount || 0) > 0) ? (
-                            <span className="text-xs font-semibold text-danger">
+                            <span className="invoice-record-due">
                               {t('invoices.due')}: {formatCurrency((inv.total_amount || 0) - (inv.paid_amount || 0))}
                             </span>
                           ) : inv.status === 'PAID' ? (
-                            <span className="text-xs font-semibold text-success">
+                            <span className="invoice-record-paid">
                               {t('invoices.paidCheck')}
                             </span>
                           ) : null}

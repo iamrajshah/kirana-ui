@@ -3,10 +3,8 @@ import type { Supplier } from '../../core/api/supplierApi';
 import {
   IonPage,
   IonContent,
-  IonList,
   IonItem,
   IonLabel,
-  IonText,
   IonFab,
   IonFabButton,
   IonIcon,
@@ -45,6 +43,7 @@ import { useAppSelector } from '../../core/hooks';
 import { selectCurrentUser } from '../../core/auth/authSlice';
 import { hasPermission } from '../../core/permissions/permissions';
 import notificationService from '@core/services/notificationService';
+import '../products/stock-workspace.css';
 
 const SuppliersPage: React.FC = () => {
   const { t } = useTranslation();
@@ -74,7 +73,7 @@ const SuppliersPage: React.FC = () => {
   const [paymentMode, setPaymentMode] = useState('CASH');
   const [paymentNotes, setPaymentNotes] = useState('');
 
-  const { data, isLoading, isFetching, refetch } = useGetSuppliersQuery({ page, limit });
+  const { data, isLoading, isFetching, isError, refetch } = useGetSuppliersQuery({ page, limit });
   const [createSupplier, { isLoading: creating }] = useCreateSupplierMutation();
   const [updateSupplier, { isLoading: updating }] = useUpdateSupplierMutation();
   const [makePayment, { isLoading: processingPayment }] = useMakeSupplierPaymentMutation();
@@ -178,8 +177,8 @@ const SuppliersPage: React.FC = () => {
     setPaymentSupplier(null);
   };
 
-  const handleMakePayment = () => {
-    if (!paymentSupplier) return;
+  const handleMakePayment = (supplier: Supplier) => {
+    setPaymentSupplier(supplier);
     setShowPaymentModal(true);
   };
 
@@ -215,96 +214,105 @@ const SuppliersPage: React.FC = () => {
     <IonPage>
       <Navbar title={t('suppliers.title')} />
       <IonContent>
-        <SearchBar
-          value={searchTerm}
-          onChange={setSearchTerm}
-          placeholder={t('suppliers.searchSuppliers')}
-        />
-
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent />
         </IonRefresher>
-
-        {isLoading && allSuppliers.length === 0 ? (
-          <div className="ion-text-center ion-padding">
-            <IonSpinner />
+        <div className="workspace-page stock-page">
+          <div className="workspace-header">
+            <h1>{t('suppliers.title')}</h1>
+            {hasCreatePermission && (
+              <div className="workspace-actions stock-primary-actions">
+                <IonButton onClick={() => setShowModal(true)}>
+                  <IonIcon slot="start" icon={add} />
+                  {t('suppliers.addSupplier')}
+                </IonButton>
+              </div>
+            )}
           </div>
-        ) : filteredSuppliers.length === 0 ? (
-          <div className="ion-text-center ion-padding">
-            <IonText color="medium">
+          <div className="stock-toolbar">
+            <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder={t('suppliers.searchSuppliers')} />
+          </div>
+
+          {isLoading && allSuppliers.length === 0 ? (
+            <div className="workspace-state"><IonSpinner /></div>
+          ) : isError && allSuppliers.length === 0 ? (
+            <div className="workspace-state" role="alert">
+              <p>{t('suppliers.loadError')}</p>
+              <Button onClick={() => refetch()}>{t('common.retry')}</Button>
+            </div>
+          ) : filteredSuppliers.length === 0 ? (
+            <div className="workspace-state">
               <p>{searchTerm ? t('suppliers.noSuppliersFound') : t('suppliers.noSuppliers')}</p>
-            </IonText>
-          </div>
-        ) : (
-          <>
-            <IonList>
+            </div>
+          ) : (
+            <>
+              <div className="stock-card-grid">
               {filteredSuppliers.map((supplier) => (
-                <IonItemSliding key={supplier.id}>
-                  <IonItem
-                    button
-                    onClick={() => history.push(`/suppliers/${supplier.id}/ledger`)}
-                  >
-                    <IonLabel>
-                      <h2 className="font-semibold text-lg">{supplier.name}</h2>
-                      <p className="text-gray-600">{supplier.phone}</p>
-                      {supplier.email && <p className="text-gray-500">{supplier.email}</p>}
-                      {supplier.balance !== 0 && (
-                        <p
-                          className="font-medium"
-                          style={{
-                            color:
-                              supplier.balance > 0
-                                ? 'var(--ion-color-danger)'
-                                : 'var(--ion-color-success)',
-                          }}
-                        >
-                          {supplier.balance > 0
-                            ? `${t('suppliers.amountOwed')}: ${formatCurrency(supplier.balance)}`
-                            : `${t('suppliers.advance')}: ${formatCurrency(Math.abs(supplier.balance))}`}
-                        </p>
-                      )}
-                    </IonLabel>
-                  </IonItem>
-                  <IonItemOptions side="end">
-                    {supplier.balance > 0 && (
-                      <IonItemOption 
-                        color="success" 
-                        onClick={() => {
-                          setPaymentSupplier(supplier);
-                          handleMakePayment();
-                        }}
-                        disabled={!hasUpdatePermission}
-                      >
-                        <IonIcon slot="icon-only" icon={cash} />
-                      </IonItemOption>
+                <article key={supplier.id} className="workspace-record stock-card">
+                  <IonItemSliding>
+                    <IonItem button onClick={() => history.push(`/suppliers/${supplier.id}/ledger`)}>
+                      <IonLabel>
+                        <h2>{supplier.name}</h2>
+                        <p>{supplier.phone}</p>
+                        {supplier.email && <p>{supplier.email}</p>}
+                        {supplier.balance !== 0 && (
+                          <p className={supplier.balance > 0 ? 'stock-warning' : undefined}>
+                            {supplier.balance > 0
+                              ? `${t('suppliers.amountOwed')}: ${formatCurrency(supplier.balance)}`
+                              : `${t('suppliers.advance')}: ${formatCurrency(Math.abs(supplier.balance))}`}
+                          </p>
+                        )}
+                      </IonLabel>
+                    </IonItem>
+                    {hasUpdatePermission && (
+                      <IonItemOptions side="end">
+                        {supplier.balance > 0 && (
+                          <IonItemOption color="success" onClick={() => handleMakePayment(supplier)} aria-label={t('suppliers.makePayment')}>
+                            <IonIcon slot="icon-only" icon={cash} />
+                          </IonItemOption>
+                        )}
+                        <IonItemOption color="primary" onClick={() => handleEditSupplier(supplier)} aria-label={t('common.edit')}>
+                          <IonIcon slot="icon-only" icon={pencil} />
+                        </IonItemOption>
+                      </IonItemOptions>
                     )}
-                    <IonItemOption 
-                      color="primary" 
-                      onClick={() => handleEditSupplier(supplier)}
-                      disabled={!hasUpdatePermission}
-                    >
-                      <IonIcon slot="icon-only" icon={pencil} />
-                    </IonItemOption>
-                  </IonItemOptions>
-                </IonItemSliding>
+                  </IonItemSliding>
+                  <div className="stock-card-bottom stock-supplier-actions">
+                    <IonButton fill="clear" onClick={() => history.push(`/suppliers/${supplier.id}/ledger`)}>
+                      {t('suppliers.viewLedger')}
+                    </IonButton>
+                    {hasUpdatePermission && (
+                      <div className="workspace-actions">
+                        {supplier.balance > 0 && (
+                          <IonButton fill="outline" onClick={() => handleMakePayment(supplier)}>
+                            {t('suppliers.makePayment')}
+                          </IonButton>
+                        )}
+                        <IonButton fill="outline" onClick={() => handleEditSupplier(supplier)}>
+                          {t('common.edit')}
+                        </IonButton>
+                      </div>
+                    )}
+                  </div>
+                </article>
               ))}
-            </IonList>
+              </div>
 
-            <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
-              <IonInfiniteScrollContent loadingText="Loading more suppliers..." />
-            </IonInfiniteScroll>
-          </>
-        )}
+              <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
+              <IonInfiniteScrollContent loadingText={t('suppliers.loadingMore')} />
+              </IonInfiniteScroll>
+            </>
+          )}
+        </div>
 
         {/* Add Supplier FAB */}
-        <IonFab vertical="bottom" horizontal="end" slot="fixed">
-          <IonFabButton 
+        {hasCreatePermission && <IonFab vertical="bottom" horizontal="end" slot="fixed" className="stock-fab">
+          <IonFabButton aria-label={t('suppliers.addSupplier')}
             onClick={() => setShowModal(true)}
-            disabled={!hasCreatePermission}
           >
             <IonIcon icon={add} />
           </IonFabButton>
-        </IonFab>
+        </IonFab>}
 
         {/* Add/Edit Supplier Modal */}
         {showModal && (
@@ -371,7 +379,7 @@ const SuppliersPage: React.FC = () => {
           }}>
             <IonHeader>
               <IonToolbar>
-                <IonTitle>Make Payment</IonTitle>
+                <IonTitle>{t('suppliers.makePayment')}</IonTitle>
                 <IonButtons slot="end">
                   <IonButton onClick={() => {
                     setShowPaymentModal(false);
@@ -387,14 +395,14 @@ const SuppliersPage: React.FC = () => {
                 <h2 style={{ margin: '0 0 4px', fontSize: '18px' }}>{paymentSupplier.name}</h2>
                 <p style={{ margin: '0', fontSize: '14px', color: 'var(--ion-color-medium)' }}>{paymentSupplier.phone}</p>
                 <p style={{ margin: '8px 0 0', fontSize: '16px', fontWeight: 'bold', color: 'var(--ion-color-danger)' }}>
-                  Outstanding: {formatCurrency(paymentSupplier.balance)}
+                  <span>{t('suppliers.outstandingBalance')}</span>: {formatCurrency(paymentSupplier.balance)}
                 </p>
               </div>
 
               <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', marginBottom: '16px' }}>
                 <div style={{ flex: 1 }}>
                   <Input
-                    label="Amount"
+                    label={t('suppliers.amountLabel')}
                     value={paymentAmount}
                     onChange={setPaymentAmount}
                     type="number"
@@ -407,14 +415,14 @@ const SuppliersPage: React.FC = () => {
                     onClick={() => setPaymentAmount(paymentSupplier.balance.toString())}
                     style={{ marginBottom: '0' }}
                   >
-                    Pay Full
+                    {t('suppliers.ledger.payFull')}
                   </IonButton>
                 )}
               </div>
 
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                  Payment Mode
+                  {t('common.labels.paymentMode')}
                 </label>
                 <IonSelect
                   value={paymentMode}
@@ -426,18 +434,18 @@ const SuppliersPage: React.FC = () => {
                     padding: '8px'
                   }}
                 >
-                  <IonSelectOption value="CASH">Cash</IonSelectOption>
-                  <IonSelectOption value="UPI">UPI</IonSelectOption>
-                  <IonSelectOption value="CARD">Card</IonSelectOption>
-                  <IonSelectOption value="BANK">Bank Transfer</IonSelectOption>
+                  <IonSelectOption value="CASH">{t('common.paymentModes.cash')}</IonSelectOption>
+                  <IonSelectOption value="UPI">{t('common.paymentModes.upi')}</IonSelectOption>
+                  <IonSelectOption value="CARD">{t('common.paymentModes.card')}</IonSelectOption>
+                  <IonSelectOption value="BANK">{t('common.paymentModes.bankTransfer')}</IonSelectOption>
                 </IonSelect>
               </div>
 
               <Input
-                label="Notes (Optional)"
+                label={t('suppliers.notesOptional')}
                 value={paymentNotes}
                 onChange={setPaymentNotes}
-                placeholder="Add payment notes..."
+                placeholder={t('suppliers.addPaymentNotes')}
               />
 
               <Button
@@ -447,7 +455,7 @@ const SuppliersPage: React.FC = () => {
                 fullWidth
                 size="large"
               >
-                Record Payment
+                {t('suppliers.ledger.recordPayment')}
               </Button>
             </IonContent>
           </IonModal>

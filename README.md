@@ -36,6 +36,14 @@ Open Billing
 Attach a customer only when the shopper wants credit, a payment reminder, or a
 customer-linked history. Walk-in bills must be paid in full.
 
+## Clickable owner walkthrough
+
+Open [`docs/demo/shopkeeper-workflow-sketch.html`](docs/demo/shopkeeper-workflow-sketch.html)
+in a browser for a no-database demonstration of the owner-first navigation,
+fast walk-in billing, stock, customer, and management flow. The final screen
+separates implemented behavior from later phases that still need server or
+provider contracts.
+
 ## Important paths
 
 ```text

@@ -33,6 +33,7 @@ import { useLazySearchVariantsQuery } from '../../core/api/productApi';
 import { SearchBar, Input, Button, EmptyState } from '../../components';
 import { formatCurrency, debounce } from '@utils/helpers';
 import notificationService from '@core/services/notificationService';
+import { ROUTES } from '@core/constants';
 
 interface CartItem {
   variant_id: string;
@@ -158,7 +159,7 @@ const CreatePurchasePage: React.FC = () => {
       setPaymentAmount('');
       setSearchTerm('');
 
-      setTimeout(() => history.push('/purchases'), 1000);
+      setTimeout(() => history.push(ROUTES.PURCHASES), 1000);
     } catch (error: unknown) {
       notificationService.handleApiError(error);
     }
@@ -172,8 +173,8 @@ const CreatePurchasePage: React.FC = () => {
 
   return (
     <IonPage>
-      <Navbar title={t('purchases.createPurchase')} />
-      <IonContent className="ion-padding">
+      <Navbar title={t('purchases.createPurchase')} backHref={ROUTES.PURCHASES} />
+      <IonContent className="detail-workspace">
         {/* Supplier & Invoice Info */}
         <IonCard>
           <IonCardContent>
