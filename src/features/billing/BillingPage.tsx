@@ -53,7 +53,9 @@ export const BillingPage: React.FC = () => {
   const location = useLocation();
   const history = useHistory();
   const currentUser = useAppSelector(selectCurrentUser);
-  const editInvoiceId = new URLSearchParams(location.search).get('edit');
+  const query = new URLSearchParams(location.search);
+  const editInvoiceId = query.get('edit');
+  const focusedHeldBillId = query.get('held');
 
   const [searchVariants, { data: variantsData, isLoading: searchLoading }] =
     useLazySearchVariantsQuery();
@@ -97,7 +99,7 @@ export const BillingPage: React.FC = () => {
   const [billDiscount, setBillDiscount] = useState(0);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(null);
-  const [showHeldBills, setShowHeldBills] = useState(false);
+  const [showHeldBills, setShowHeldBills] = useState(Boolean(focusedHeldBillId));
   const [counterLabel, setCounterLabel] = useState<string | null>(() => {
     const stored = localStorage.getItem(COUNTER_LABEL_STORAGE_KEY)?.trim();
     return stored && stored.length <= 32 ? stored : null;
@@ -387,6 +389,11 @@ export const BillingPage: React.FC = () => {
     setHeldConflict(false);
     setShowHeldBills(false);
     history.replace(`${ROUTES.BILLING}?edit=${bill.id}`, { claimedVersion: bill.version });
+  };
+
+  const closeHeldBills = () => {
+    setShowHeldBills(false);
+    if (focusedHeldBillId) history.replace(ROUTES.BILLING);
   };
 
   const reloadHeldBill = async () => {
@@ -957,7 +964,7 @@ export const BillingPage: React.FC = () => {
           isOpen={showHeldBills}
           className="held-bills-modal"
           onDidDismiss={() => {
-            setShowHeldBills(false);
+            closeHeldBills();
             heldBillsTriggerRef.current?.focus();
           }}
         >
@@ -967,7 +974,8 @@ export const BillingPage: React.FC = () => {
               counterLabel={counterLabel}
               onRequestCounterLabel={requestCounterLabel}
               onResume={resumeHeldBill}
-              onClose={() => setShowHeldBills(false)}
+              onClose={closeHeldBills}
+              focusBillId={focusedHeldBillId}
               editingInvoiceId={editInvoiceId}
               editingHasChanges={hasLocalHeldChanges}
             />

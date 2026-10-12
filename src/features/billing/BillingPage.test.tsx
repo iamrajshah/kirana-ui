@@ -52,7 +52,11 @@ vi.mock('@core/hooks', () => ({
   useAppSelector: () => ({ id: '7', name: 'Rajesh', roles: ['CASHIER'] }),
 }));
 vi.mock('@core/auth/authSlice', () => ({ selectCurrentUser: vi.fn() }));
-vi.mock('./HeldBillsPanel', () => ({ HeldBillsPanel: () => <div>held bills panel</div> }));
+vi.mock('./HeldBillsPanel', () => ({
+  HeldBillsPanel: ({ focusBillId }: { focusBillId?: string | null }) => (
+    <div>held bills panel {focusBillId}</div>
+  ),
+}));
 
 vi.mock('@components', () => ({
   Loading: () => null,
@@ -180,6 +184,14 @@ afterEach(cleanup);
 
 describe('BillingPage', () => {
   describe('held bill continuity', () => {
+    it('opens the held-bill panel focused on a dashboard-linked bill', () => {
+      mocks.search = '?held=held-9';
+
+      render(<BillingPage />);
+
+      expect(screen.getByText('held bills panel held-9')).toBeTruthy();
+    });
+
     it('holds a new bill with the saved counter and resets only after the server accepts it', async () => {
       mocks.search = '';
       let resolveHold: (value: { data: { id: string; version: number } }) => void = () => undefined;

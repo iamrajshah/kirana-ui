@@ -19,6 +19,7 @@ interface HeldBillsPanelProps {
   onRequestCounterLabel: (force?: boolean) => string | null;
   onResume: (bill: HeldBill) => void;
   onClose: () => void;
+  focusBillId?: string | null;
   editingInvoiceId?: string | null;
   editingHasChanges?: boolean;
 }
@@ -36,6 +37,7 @@ export const HeldBillsPanel: React.FC<HeldBillsPanelProps> = ({
   onRequestCounterLabel,
   onResume,
   onClose,
+  focusBillId,
   editingInvoiceId,
   editingHasChanges = false,
 }) => {
@@ -47,7 +49,11 @@ export const HeldBillsPanel: React.FC<HeldBillsPanelProps> = ({
   const [pendingBillId, setPendingBillId] = useState<string | null>(null);
 
   const canTakeOver = currentUser.roles.some((role) => role === 'OWNER' || role === 'MANAGER');
-  const bills = data?.data || [];
+  const bills = [...(data?.data || [])].sort((left, right) => {
+    if (left.id === focusBillId) return -1;
+    if (right.id === focusBillId) return 1;
+    return 0;
+  });
 
   const counterForAction = () => counterLabel || onRequestCounterLabel(false);
 
@@ -147,7 +153,11 @@ export const HeldBillsPanel: React.FC<HeldBillsPanelProps> = ({
               const activeOther = bill.lease_state === 'active' && !isMine;
               const pending = pendingBillId === bill.id;
               return (
-                <article className="held-bill-card" key={bill.id}>
+                <article
+                  className="held-bill-card"
+                  data-highlighted={bill.id === focusBillId || undefined}
+                  key={bill.id}
+                >
                   <div className="held-bill-card__topline">
                     <strong>{formatCurrency(Number(bill.total_amount || 0))}</strong>
                     <span data-state={bill.lease_state}>

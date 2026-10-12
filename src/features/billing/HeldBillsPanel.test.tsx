@@ -68,6 +68,24 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('HeldBillsPanel', () => {
+  it('places a dashboard-linked bill first and marks it for attention', () => {
+    mocks.bills = [heldBill({ id: '40' }), heldBill({ id: '41' })];
+
+    render(
+      <HeldBillsPanel
+        currentUser={{ id: '7', name: 'Rajesh', roles: ['CASHIER'] }}
+        counterLabel="Counter 2"
+        onRequestCounterLabel={() => 'Counter 2'}
+        onResume={vi.fn()}
+        onClose={vi.fn()}
+        focusBillId="41"
+      />
+    );
+
+    const cards = screen.getAllByRole('article');
+    expect(cards[0].getAttribute('data-highlighted')).toBe('true');
+  });
+
   it('claims an unclaimed bill with the saved counter and resumes the returned version', async () => {
     mocks.bills = [heldBill()];
     const onResume = vi.fn();
