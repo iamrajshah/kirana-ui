@@ -94,6 +94,7 @@ export const BillingPage: React.FC = () => {
   const barcodeWorkPendingRef = useRef(0);
   const billGenerationRef = useRef(0);
   const billingMountedRef = useRef(true);
+  const heldRenewalPendingRef = useRef(false);
   const [pendingBarcodeCount, setPendingBarcodeCount] = useState(0);
   const [gstAmount, setGstAmount] = useState(0);
   const [billDiscount, setBillDiscount] = useState(0);
@@ -185,11 +186,14 @@ export const BillingPage: React.FC = () => {
     }
 
     const renew = async () => {
-      if (document.visibilityState !== 'visible') return;
+      if (document.visibilityState !== 'visible' || heldRenewalPendingRef.current) return;
+      heldRenewalPendingRef.current = true;
       try {
         await renewHeldBill({ id: editInvoiceId, expected_version: activeHeldVersion }).unwrap();
       } catch (error: unknown) {
         if (isConflictError(error)) setHeldConflict(true);
+      } finally {
+        heldRenewalPendingRef.current = false;
       }
     };
     const interval = window.setInterval(() => void renew(), 5 * 60 * 1000);
@@ -356,14 +360,19 @@ export const BillingPage: React.FC = () => {
     idempotency_key: invoiceIdempotencyKey.current,
   });
 
-  const buildUpdateInvoicePayload = () => ({
-    customer_id: customerId || null,
-    items: buildInvoiceItems(cartItems),
-    gst_amount: Number(gstAmount),
-    discount_amount: totals.billDiscountAmount,
-  });
-
-  const currentInvoiceSnapshot = JSON.stringify(buildUpdateInvoicePayload());
+  const updateInvoicePayload = useMemo(
+    () => ({
+      customer_id: customerId || null,
+      items: buildInvoiceItems(cartItems),
+      gst_amount: Number(gstAmount),
+      discount_amount: totals.billDiscountAmount,
+    }),
+    [cartItems, customerId, gstAmount, totals.billDiscountAmount]
+  );
+  const currentInvoiceSnapshot = useMemo(
+    () => JSON.stringify(updateInvoicePayload),
+    [updateInvoicePayload]
+  );
   const hasLocalHeldChanges = Boolean(
     editInvoiceId &&
       loadedInvoiceSnapshotRef.current &&
@@ -437,7 +446,7 @@ export const BillingPage: React.FC = () => {
       if (editInvoiceId) {
         const response = await updateInvoice({
           id: editInvoiceId,
-          data: { ...buildUpdateInvoicePayload(), expected_version: activeHeldVersion },
+          data: { ...updateInvoicePayload, expected_version: activeHeldVersion },
         }).unwrap();
         setActiveHeldVersion(response.data?.version);
         loadedInvoiceSnapshotRef.current = currentInvoiceSnapshot;
@@ -462,7 +471,7 @@ export const BillingPage: React.FC = () => {
     if (editInvoiceId) {
       const updated = await updateInvoice({
         id: editInvoiceId,
-        data: { ...buildUpdateInvoicePayload(), expected_version: activeHeldVersion },
+        data: { ...updateInvoicePayload, expected_version: activeHeldVersion },
       }).unwrap();
       const finalVersion = updated.data?.version ?? activeHeldVersion;
       await finalizeInvoice({ id: editInvoiceId, expected_version: finalVersion }).unwrap();
