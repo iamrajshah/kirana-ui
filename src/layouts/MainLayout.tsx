@@ -1,12 +1,14 @@
 import React, { lazy } from 'react';
 import { IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonRouterOutlet, IonSplitPane } from '@ionic/react';
-import { Route, Redirect } from 'react-router';
+import { Route } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ROUTES } from '@core/constants';
 import { useAppSelector } from '../core/hooks';
 import { selectCurrentUser } from '@core/auth/authSlice';
 import { getNavigationItems } from '@core/navigation/navigation';
+import { protectedMainLayoutRoutes } from '@core/navigation/protectedRoutes';
 import { SideMenu } from '@components';
+import { PrivateRoute } from './PrivateRoute';
 import '@components/Workspace/workspace.css';
 
 const DashboardPage = lazy(() => import('@features/dashboard/DashboardPage').then((module) => ({ default: module.DashboardPage })));
@@ -24,6 +26,22 @@ const SuppliersPage = lazy(() => import('@features/suppliers/SuppliersPage'));
 const PurchasesPage = lazy(() => import('@features/purchases/PurchasesPage'));
 const AboutPage = lazy(() => import('@features/about/AboutPage').then((module) => ({ default: module.AboutPage })));
 
+const mainPageComponents: Record<string, React.ComponentType> = {
+  [ROUTES.DASHBOARD]: DashboardPage,
+  [ROUTES.BILLING]: BillingPage,
+  [ROUTES.CUSTOMERS]: CustomersPage,
+  [ROUTES.PRODUCTS]: ProductsPage,
+  [ROUTES.PAYMENTS]: PaymentsPage,
+  [ROUTES.SUPPLIERS]: SuppliersPage,
+  [ROUTES.PURCHASES]: PurchasesPage,
+  [ROUTES.INVENTORY]: InventoryPage,
+  [ROUTES.INVOICES]: InvoicesPage,
+  [ROUTES.REPORTS]: ReportsPage,
+  [ROUTES.USERS]: UsersPage,
+  [ROUTES.CATEGORIES]: CategoriesPage,
+  [ROUTES.IMPORT_EXPORT]: ImportExportPage,
+};
+
 export const MainLayout: React.FC = () => {
   const { t } = useTranslation();
   const user = useAppSelector(selectCurrentUser);
@@ -36,22 +54,21 @@ export const MainLayout: React.FC = () => {
       <div id="main-content" className="workspace-main">
       <IonTabs className="workspace-tabs">
         <IonRouterOutlet>
-          <Route exact path="/">
-            <Redirect to={ROUTES.DASHBOARD} />
-          </Route>
-          <Route exact path={ROUTES.DASHBOARD} component={DashboardPage} />
-          <Route exact path={ROUTES.BILLING} component={BillingPage} />
-          <Route exact path={ROUTES.CUSTOMERS} component={CustomersPage} />
-          <Route exact path={ROUTES.PRODUCTS} component={ProductsPage} />
-          <Route exact path={ROUTES.PAYMENTS} component={PaymentsPage} />
-          <Route exact path={ROUTES.SUPPLIERS} component={SuppliersPage} />
-          <Route exact path={ROUTES.PURCHASES} component={PurchasesPage} />
-          <Route exact path={ROUTES.INVENTORY} component={InventoryPage} />
-          <Route exact path={ROUTES.INVOICES} component={InvoicesPage} />
-          <Route exact path={ROUTES.REPORTS} component={ReportsPage} />
-          <Route exact path={ROUTES.USERS} component={UsersPage} />
-          <Route exact path={ROUTES.CATEGORIES} component={CategoriesPage} />
-          <Route exact path={ROUTES.IMPORT_EXPORT} component={ImportExportPage} />
+          {protectedMainLayoutRoutes.map(({ path, permission }) => {
+            const Component = mainPageComponents[path];
+            return (
+              <Route
+                key={path}
+                exact
+                path={path}
+                render={() => (
+                  <PrivateRoute permission={permission}>
+                    <Component />
+                  </PrivateRoute>
+                )}
+              />
+            );
+          })}
           <Route exact path={ROUTES.ABOUT} component={AboutPage} />
         </IonRouterOutlet>
 

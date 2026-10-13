@@ -44,3 +44,8 @@ export const protectedMainLayoutRoutes: readonly ProtectedRouteAccess[] = [
   { path: ROUTES.CATEGORIES, permission: 'products' },
   { path: ROUTES.IMPORT_EXPORT, permission: 'import-export' },
 ];
+
+export const mainLayoutPaths: readonly string[] = [
+  ROUTES.ABOUT,
+  ...protectedMainLayoutRoutes.map(({ path }) => path),
+];
