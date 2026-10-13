@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useEffect } from 'react';
-import { Route, Redirect } from 'react-router';
-import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
+import { Route, Redirect, Switch } from 'react-router';
+import { IonApp, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Provider } from 'react-redux';
 import { store } from '@core/store';
@@ -81,7 +81,7 @@ const App: React.FC = () => {
         <IonApp>
         <Suspense fallback={<div className="workspace-state" role="status">{i18n.t('common.loading')}</div>}>
         <IonReactRouter>
-          <IonRouterOutlet>
+          <Switch>
             <Route exact path={ROUTES.LOGIN} component={LoginPage} />
             <Route exact path="/" render={() => <Redirect to={ROUTES.LOGIN} />} />
             <Route exact path={ROUTES.PROFILE} render={() => <PrivateRoute><ProfilePage /></PrivateRoute>} />
@@ -99,7 +99,7 @@ const App: React.FC = () => {
                 </PrivateRoute>
               )}
             />
-          </IonRouterOutlet>
+          </Switch>
         </IonReactRouter>
         </Suspense>
         <ToastContainer />
