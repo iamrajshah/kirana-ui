@@ -72,6 +72,7 @@ export interface ProductVariant {
   is_active: boolean;
   product?: Product;
   inventory?: Inventory;
+  barcodes?: BarcodeInfo[];
 }
 
 export interface Inventory {
@@ -272,6 +273,11 @@ export interface BarcodeInfo {
   id: string;
   barcode: string;
   is_active: boolean;
+}
+
+export interface StoreBarcodeInfo extends BarcodeInfo {
+  variant_id: string;
+  reused: boolean;
 }
 
 export interface BarcodeProductData {

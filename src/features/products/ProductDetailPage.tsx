@@ -20,7 +20,7 @@ import {
   IonModal,
   IonToast,
 } from '@ionic/react';
-import { pencil, close } from 'ionicons/icons';
+import { pencil, close, barcodeOutline } from 'ionicons/icons';
 import { useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useGetProductByIdQuery, useUpdateProductMutation, useUpdateVariantMutation } from '@core/api/productApi';
@@ -28,9 +28,16 @@ import { useGetCategoriesQuery } from '@core/api/categoryApi';
 import { Loading, EmptyState, Input, Select, Button } from '@components';
 import { formatCurrency } from '@utils/helpers';
 import type { ProductVariant } from '@core/types';
+import { useAppSelector } from '@core/hooks';
+import { selectCurrentUser } from '@core/auth/authSlice';
+import { ProductBarcodeLabelModal } from './ProductBarcodeLabelModal';
 
 export const ProductDetailPage: React.FC = () => {
   const { t } = useTranslation();
+  const currentUser = useAppSelector(selectCurrentUser);
+  const canManageBarcodes = currentUser?.roles?.some(
+    (role) => role === 'OWNER' || role === 'MANAGER'
+  ) ?? false;
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, error } = useGetProductByIdQuery(id);
   const { data: categoriesData } = useGetCategoriesQuery();
@@ -47,6 +54,7 @@ export const ProductDetailPage: React.FC = () => {
   const [editCategoryId, setEditCategoryId] = useState<number | null>(null);
   const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
   const [editSellingPrice, setEditSellingPrice] = useState('');
+  const [barcodeVariant, setBarcodeVariant] = useState<ProductVariant | null>(null);
 
   const categories = categoriesData?.data || [];
 
@@ -193,17 +201,20 @@ export const ProductDetailPage: React.FC = () => {
                       <IonCardTitle style={{ color: 'var(--ion-text-color)' }}>
                         {variant.brand || t('products.variant')} - {variant.size || ''}
                       </IonCardTitle>
-                      <IonButton 
-                        fill="clear" 
-                        size="small"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleVariantEditClick(variant.id?.toString());
-                        }}
-                      >
-                        <IonIcon icon={pencil} />
-                      </IonButton>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <IonButton
+                          fill="clear"
+                          size="small"
+                          aria-label={t('products.editVariant')}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleVariantEditClick(variant.id?.toString());
+                          }}
+                        >
+                          <IonIcon icon={pencil} />
+                        </IonButton>
+                      </div>
                     </div>
                   </IonCardHeader>
                   <IonCardContent>
@@ -256,6 +267,16 @@ export const ProductDetailPage: React.FC = () => {
                         </IonItem>
                       )}
                     </IonList>
+                    {canManageBarcodes && (
+                      <IonButton
+                        expand="block"
+                        fill="outline"
+                        onClick={() => setBarcodeVariant(variant)}
+                      >
+                        <IonIcon slot="start" icon={barcodeOutline} />
+                        {t('products.manageBarcodeLabel')}
+                      </IonButton>
+                    )}
                   </IonCardContent>
                 </IonCard>
               ))}
@@ -277,6 +298,13 @@ export const ProductDetailPage: React.FC = () => {
           duration={2000}
           color="success"
           onDidDismiss={() => setShowSuccess(false)}
+        />
+
+        <ProductBarcodeLabelModal
+          isOpen={Boolean(barcodeVariant)}
+          productName={product.name}
+          variant={barcodeVariant}
+          onDismiss={() => setBarcodeVariant(null)}
         />
 
         <IonToast

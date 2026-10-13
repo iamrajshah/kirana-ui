@@ -19,6 +19,8 @@ Maintainer: [Rajesh Shah (@iamrajshah)](https://github.com/iamrajshah)
   that need attention.
 - Customers, invoices, payments, products, categories, inventory, suppliers,
   purchases, reports, imports, users, profile, and barcode flows.
+- Owner/manager-generated EAN-13 labels for loose or store-packed product
+  variants. Labels print in batches and scan through the ordinary billing flow.
 - English, Hindi, Marathi, and Gujarati translation resources.
 - Ionic/Capacitor foundations for web and Android/iOS packaging.
 
@@ -41,6 +43,17 @@ Open Billing
 
 Attach a customer only when the shopper wants credit, a payment reminder, or a
 customer-linked history. Walk-in bills must be paid in full.
+
+## Store barcode labels
+
+Open a product, choose the relevant selling variant, and select **Generate or
+print barcode label**. Kirana generates one stable internal barcode for that
+variant. The label may show the current price, but the barcode itself stores
+only product identity; later price changes therefore do not require relabeling.
+
+Create separate variants when loose stock is pre-packed into different selling
+units such as 250 g, 500 g, and 1 kg. Scanning a printed label uses the same
+product lookup as a manufacturer barcode.
 
 ## Clickable owner walkthrough
 
