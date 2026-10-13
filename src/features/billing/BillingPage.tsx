@@ -29,6 +29,7 @@ import {
 import { useCreatePaymentMutation } from '@core/api/paymentApi';
 import { useLazySearchCustomersQuery } from '@core/api/customerApi';
 import {
+  useCreateProductFromBarcodeMutation,
   useLazyScanBarcodeQuery,
   useLazySearchVariantsQuery,
   type BillingSearchVariant,
@@ -42,6 +43,10 @@ import { formatCurrency, generateIdempotencyKey } from '@utils/helpers';
 import type { BillingCartItem } from './billing.logic';
 import { buildInvoiceItems, calculateBillingTotals } from './billing.logic';
 import { HeldBillsPanel } from './HeldBillsPanel';
+import {
+  UnknownBarcodeResolution,
+  type UnknownBarcodeProductInput,
+} from './UnknownBarcodeResolution';
 
 const COUNTER_LABEL_STORAGE_KEY = 'kirana_counter_label';
 
@@ -60,6 +65,8 @@ export const BillingPage: React.FC = () => {
   const [searchVariants, { data: variantsData, isLoading: searchLoading }] =
     useLazySearchVariantsQuery();
   const [scanBarcode, { isFetching: barcodeLoading }] = useLazyScanBarcodeQuery();
+  const [createProductFromBarcode, { isLoading: creatingBarcodeProduct }] =
+    useCreateProductFromBarcodeMutation();
   const [searchCustomers, { data: customersData, isLoading: customersLoading }] =
     useLazySearchCustomersQuery();
   const [createInvoice, { isLoading: creating }] = useCreateInvoiceMutation();
@@ -78,6 +85,7 @@ export const BillingPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [barcodeInput, setBarcodeInput] = useState('');
   const [showBarcodeTools, setShowBarcodeTools] = useState(false);
+  const [unknownBarcode, setUnknownBarcode] = useState<string | null>(null);
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
   const [cartItems, setCartItems] = useState<BillingCartItem[]>([]);
@@ -117,7 +125,17 @@ export const BillingPage: React.FC = () => {
     [billDiscount, cartItems, gstAmount]
   );
   const barcodeWorkPending = pendingBarcodeCount > 0 || barcodeLoading;
-  const isBusy = creating || updating || finalizing || paying || cancelling || barcodeWorkPending;
+  const canCreateBarcodeProduct = Boolean(
+    currentUser?.roles?.some((role) => ['OWNER', 'MANAGER'].includes(role.toUpperCase()))
+  );
+  const isBusy =
+    creating ||
+    updating ||
+    finalizing ||
+    paying ||
+    cancelling ||
+    barcodeWorkPending ||
+    creatingBarcodeProduct;
   const updateActiveHeldVersion = useCallback((version: number | undefined) => {
     activeHeldVersionRef.current = version;
     setActiveHeldVersion(version);
@@ -277,7 +295,10 @@ export const BillingPage: React.FC = () => {
         if (!isCurrentBill) continue;
 
         if (!result.found || !result.data) {
-          notificationService.error(t('billing.barcodeNotFound'));
+          barcodeQueueRef.current = [];
+          barcodeWorkPendingRef.current = 1;
+          setUnknownBarcode(queuedBarcode.barcode);
+          setShowBarcodeTools(false);
           continue;
         }
 
@@ -337,6 +358,38 @@ export const BillingPage: React.FC = () => {
     });
   };
 
+  const createUnknownBarcodeProduct = async (input: UnknownBarcodeProductInput) => {
+    if (!unknownBarcode || !canCreateBarcodeProduct) return;
+    try {
+      const response = await createProductFromBarcode({
+        barcode: unknownBarcode,
+        productMaster: { name: input.name },
+        product: { name: input.name },
+        variant: {
+          mrp: input.sellingPrice,
+          sellingPrice: input.sellingPrice,
+        },
+        inventory: { quantity: input.openingStock },
+      }).unwrap();
+      const created = response.data;
+      if (!created?.variant?.id || !created.product?.name) {
+        throw new Error(t('billing.unknownBarcode.invalidResponse'));
+      }
+      addToCart({
+        id: created.variant.id,
+        product_name: created.product.name,
+        price: Number(created.variant.selling_price ?? created.variant.price ?? input.sellingPrice),
+        sku: created.variant.sku || '',
+      });
+      setUnknownBarcode(null);
+      notificationService.success(t('billing.unknownBarcode.createdAndAdded'));
+    } catch (error: unknown) {
+      notificationService.error(
+        apiErrorMessage(error, t('billing.unknownBarcode.createFailed'), true)
+      );
+    }
+  };
+
   const updatePrice = (variantId: string, price: number) => {
     setCartItems((current) => {
       const existing = current.find((item) => item.variant_id === variantId);
@@ -355,6 +408,7 @@ export const BillingPage: React.FC = () => {
     setSearchTerm('');
     setBarcodeInput('');
     setShowBarcodeTools(false);
+    setUnknownBarcode(null);
     setCustomerSearchTerm('');
     setShowCustomerSearch(false);
     setSelectedCustomer(null);
@@ -1020,6 +1074,23 @@ export const BillingPage: React.FC = () => {
             allowPartial={Boolean(customerId)}
           />
         )}
+
+        <IonModal
+          isOpen={Boolean(unknownBarcode)}
+          aria-labelledby="unknown-barcode-title"
+          onDidDismiss={() => setUnknownBarcode(null)}
+        >
+          {unknownBarcode && (
+            <UnknownBarcodeResolution
+              key={unknownBarcode}
+              barcode={unknownBarcode}
+              canCreate={canCreateBarcodeProduct}
+              isCreating={creatingBarcodeProduct}
+              onCreate={createUnknownBarcodeProduct}
+              onDismiss={() => setUnknownBarcode(null)}
+            />
+          )}
+        </IonModal>
 
         <IonModal
           isOpen={showHeldBills}

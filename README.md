@@ -13,6 +13,9 @@ Maintainer: [Rajesh Shah (@iamrajshah)](https://github.com/iamrajshah)
 - Optional customer attachment for credit history, partial payment, and reminders.
 - Touch-friendly cart editing with a sticky mobile payment bar and a persistent
   desktop/tablet bill summary.
+- Barcode billing through camera, manual entry, or a counter scanner. Owners and
+  managers can turn an unknown barcode into a reusable product without losing
+  the current bill; cashiers receive a manager-required handoff.
 - Cross-counter held bills with claim, resume, release, manager takeover,
   renewable leases, and conflict-safe recovery.
 - An owner/manager Decision Inbox for customer dues, low stock, and held bills
