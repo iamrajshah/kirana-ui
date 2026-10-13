@@ -12,7 +12,7 @@ import {
   setupIonicReact,
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { Route, useHistory } from 'react-router-dom';
+import { Route, Switch, useHistory } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { mainLayoutPaths } from '@core/navigation/protectedRoutes';
 
@@ -49,6 +49,9 @@ describe('main application navigation', () => {
                   <IonItem button onClick={() => history.push('/billing')}>
                     <IonLabel>Open billing</IonLabel>
                   </IonItem>
+                  <IonItem button onClick={() => history.push('/products')}>
+                    <IonLabel>Open products</IonLabel>
+                  </IonItem>
                 </>
               )}
             />
@@ -63,8 +66,16 @@ describe('main application navigation', () => {
                     onIonInput={(event) => setQuery(event.detail.value ?? '')}
                   />
                   <output aria-label="Billing search value">{query}</output>
+                  <IonItem button onClick={() => history.push('/products')}>
+                    <IonLabel>Open products</IonLabel>
+                  </IonItem>
                 </>
               )}
+            />
+            <Route
+              exact
+              path="/products"
+              render={() => <IonInput aria-label="Product list search" />}
             />
           </IonRouterOutlet>
           <IonTabBar slot="bottom">
@@ -84,9 +95,9 @@ describe('main application navigation', () => {
     render(
       <IonApp>
         <IonReactRouter>
-          <IonRouterOutlet>
+          <Switch>
             <Route exact path={mainLayoutPaths} render={() => <LayoutProbe />} />
-          </IonRouterOutlet>
+          </Switch>
         </IonReactRouter>
       </IonApp>
     );
@@ -107,7 +118,13 @@ describe('main application navigation', () => {
       bubbles: true,
     }));
     expect(screen.getByLabelText('Billing search value').textContent).toBe('wheat');
+
+    fireEvent.click(screen.getByText('Open products').closest('ion-item')!);
+    await waitFor(() => {
+      expect(screen.getByLabelText('Product list search')).toBeTruthy();
+    });
     expect(mounted).toHaveBeenCalledTimes(1);
     expect(unmounted).not.toHaveBeenCalled();
+    expect(document.querySelectorAll('ion-tabs')).toHaveLength(1);
   });
 });

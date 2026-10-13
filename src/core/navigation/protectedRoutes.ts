@@ -25,8 +25,8 @@ export const protectedPageRoutes: readonly ProtectedPageRouteAccess[] = [
   { id: 'product-barcode', path: ROUTES.PRODUCT_BARCODE, permission: 'products' },
   { id: 'supplier-ledger', path: '/suppliers/:id/ledger', permission: 'suppliers' },
   { id: 'invoice-detail', path: '/invoices/:id', permission: 'invoices' },
-  { id: 'purchase-detail', path: '/purchases/:id', permission: 'purchases' },
   { id: 'purchase-create', path: ROUTES.PURCHASE_CREATE, permission: 'purchases' },
+  { id: 'purchase-detail', path: '/purchases/:id', permission: 'purchases' },
 ];
 
 export const protectedMainLayoutRoutes: readonly ProtectedRouteAccess[] = [
