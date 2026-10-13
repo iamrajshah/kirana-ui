@@ -6,7 +6,7 @@ import { Provider } from 'react-redux';
 import { store } from '@core/store';
 import { ROUTES } from '@core/constants';
 import {
-  protectedMainLayoutRoutes,
+  mainLayoutPaths,
   protectedPageRoutes,
   type ProtectedPageRouteId,
 } from '@core/navigation/protectedRoutes';
@@ -86,14 +86,19 @@ const App: React.FC = () => {
             <Route exact path="/" render={() => <Redirect to={ROUTES.LOGIN} />} />
             <Route exact path={ROUTES.PROFILE} render={() => <PrivateRoute><ProfilePage /></PrivateRoute>} />
             <Route exact path={ROUTES.CHANGE_PASSWORD} render={() => <PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
-            <Route exact path={ROUTES.ABOUT} render={() => <PrivateRoute><MainLayout /></PrivateRoute>} />
             {protectedPageRoutes.map(({ id, path, permission }) => {
               const Component = protectedPageComponents[id];
               return <Route key={id} exact path={path} render={() => <PrivateRoute permission={permission}><Component /></PrivateRoute>} />;
             })}
-            {protectedMainLayoutRoutes.map(({ path, permission }) => (
-              <Route key={path} exact path={path} render={() => <PrivateRoute permission={permission}><MainLayout /></PrivateRoute>} />
-            ))}
+            <Route
+              exact
+              path={mainLayoutPaths}
+              render={() => (
+                <PrivateRoute>
+                  <MainLayout />
+                </PrivateRoute>
+              )}
+            />
           </IonRouterOutlet>
         </IonReactRouter>
         </Suspense>
