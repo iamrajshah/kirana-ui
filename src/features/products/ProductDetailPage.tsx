@@ -23,21 +23,25 @@ import {
 import { pencil, close, barcodeOutline } from 'ionicons/icons';
 import { useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { useGetProductByIdQuery, useUpdateProductMutation, useUpdateVariantMutation } from '@core/api/productApi';
+import {
+  useGetProductByIdQuery,
+  useUpdateProductMutation,
+  useUpdateVariantMutation,
+} from '@core/api/productApi';
 import { useGetCategoriesQuery } from '@core/api/categoryApi';
 import { Loading, EmptyState, Input, Select, Button } from '@components';
 import { formatCurrency } from '@utils/helpers';
 import type { ProductVariant } from '@core/types';
 import { useAppSelector } from '@core/hooks';
 import { selectCurrentUser } from '@core/auth/authSlice';
+import { APP_NAME } from '@core/constants';
 import { ProductBarcodeLabelModal } from './ProductBarcodeLabelModal';
 
 export const ProductDetailPage: React.FC = () => {
   const { t } = useTranslation();
   const currentUser = useAppSelector(selectCurrentUser);
-  const canManageBarcodes = currentUser?.roles?.some(
-    (role) => role === 'OWNER' || role === 'MANAGER'
-  ) ?? false;
+  const canManageBarcodes =
+    currentUser?.roles?.some((role) => role === 'OWNER' || role === 'MANAGER') ?? false;
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, error } = useGetProductByIdQuery(id);
   const { data: categoriesData } = useGetCategoriesQuery();
@@ -61,7 +65,11 @@ export const ProductDetailPage: React.FC = () => {
   const handleEditClick = () => {
     if (data?.data) {
       setEditName(data.data.name);
-      setEditCategoryId(typeof data.data.category_id === 'string' ? parseInt(data.data.category_id) : data.data.category_id);
+      setEditCategoryId(
+        typeof data.data.category_id === 'string'
+          ? parseInt(data.data.category_id)
+          : data.data.category_id
+      );
       setShowEditModal(true);
     }
   };
@@ -70,7 +78,9 @@ export const ProductDetailPage: React.FC = () => {
     const product = data?.data;
     if (!product) return;
     const variants = product.variants || product.product_variants || [];
-    const variant = variants.find((v: ProductVariant) => v.id?.toString() === variantId?.toString());
+    const variant = variants.find(
+      (v: ProductVariant) => v.id?.toString() === variantId?.toString()
+    );
     if (!variant) {
       return;
     }
@@ -81,7 +91,7 @@ export const ProductDetailPage: React.FC = () => {
 
   const handleUpdateVariantPrice = async () => {
     if (!editingVariant) return;
-    
+
     const sellingPrice = parseFloat(editSellingPrice);
     if (isNaN(sellingPrice) || sellingPrice <= 0) {
       setErrorMessage(t('errors.validPrice'));
@@ -169,18 +179,24 @@ export const ProductDetailPage: React.FC = () => {
         <div className="workspace-page">
           <IonCard style={{ backgroundColor: 'var(--ion-card-background)' }}>
             <IonCardHeader>
-              <IonCardTitle style={{ color: 'var(--ion-text-color)' }}>{t('products.productInfo')}</IonCardTitle>
+              <IonCardTitle style={{ color: 'var(--ion-text-color)' }}>
+                {t('products.productInfo')}
+              </IonCardTitle>
             </IonCardHeader>
             <IonCardContent>
               <IonList>
                 <IonItem>
                   <IonLabel>
                     <h3 style={{ color: 'var(--ion-text-color)' }}>{t('products.category')}</h3>
-                    <p style={{ color: 'var(--ion-color-medium)' }}>{product.category?.name || t('products.uncategorized')}</p>
+                    <p style={{ color: 'var(--ion-color-medium)' }}>
+                      {product.category?.name || t('products.uncategorized')}
+                    </p>
                   </IonLabel>
                 </IonItem>
                 <IonItem>
-                  <IonLabel style={{ color: 'var(--ion-text-color)' }}>{t('common.status')}</IonLabel>
+                  <IonLabel style={{ color: 'var(--ion-text-color)' }}>
+                    {t('common.status')}
+                  </IonLabel>
                   <IonBadge slot="end" color={product.is_active ? 'success' : 'danger'}>
                     {product.is_active ? t('products.active') : t('products.inactive')}
                   </IonBadge>
@@ -191,13 +207,26 @@ export const ProductDetailPage: React.FC = () => {
 
           {variants && variants.length > 0 && (
             <div style={{ marginTop: '16px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', color: 'var(--ion-text-color)' }}>
+              <h2
+                style={{
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  marginBottom: '8px',
+                  color: 'var(--ion-text-color)',
+                }}
+              >
                 {t('products.variants')} ({variants.length})
               </h2>
               {variants.map((variant: ProductVariant) => (
                 <IonCard key={variant.id} style={{ backgroundColor: 'var(--ion-card-background)' }}>
                   <IonCardHeader>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
                       <IonCardTitle style={{ color: 'var(--ion-text-color)' }}>
                         {variant.brand || t('products.variant')} - {variant.size || ''}
                       </IonCardTitle>
@@ -221,43 +250,68 @@ export const ProductDetailPage: React.FC = () => {
                     <IonList>
                       {variant.packaging && (
                         <IonItem>
-                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>{t('products.packaging')}</IonLabel>
-                          <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>{variant.packaging}</IonLabel>
+                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>
+                            {t('products.packaging')}
+                          </IonLabel>
+                          <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>
+                            {variant.packaging}
+                          </IonLabel>
                         </IonItem>
                       )}
                       <IonItem>
-                        <IonLabel style={{ color: 'var(--ion-text-color)' }}>{t('products.price')}</IonLabel>
-                        <IonLabel slot="end" style={{ fontWeight: 'bold', color: 'var(--ion-text-color)' }}>
+                        <IonLabel style={{ color: 'var(--ion-text-color)' }}>
+                          {t('products.price')}
+                        </IonLabel>
+                        <IonLabel
+                          slot="end"
+                          style={{ fontWeight: 'bold', color: 'var(--ion-text-color)' }}
+                        >
                           {formatCurrency(Number(variant.price))}
                         </IonLabel>
                       </IonItem>
                       {variant.selling_price && (
                         <IonItem>
-                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>{t('products.sellingPrice')}</IonLabel>
-                          <IonLabel slot="end" style={{ fontWeight: 'bold', color: 'var(--ion-color-success)' }}>
+                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>
+                            {t('products.sellingPrice')}
+                          </IonLabel>
+                          <IonLabel
+                            slot="end"
+                            style={{ fontWeight: 'bold', color: 'var(--ion-color-success)' }}
+                          >
                             {formatCurrency(Number(variant.selling_price))}
                           </IonLabel>
                         </IonItem>
                       )}
                       {variant.gst_percent && (
                         <IonItem>
-                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>{t('products.gstLabel')}</IonLabel>
-                          <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>{variant.gst_percent}%</IonLabel>
+                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>
+                            {t('products.gstLabel')}
+                          </IonLabel>
+                          <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>
+                            {variant.gst_percent}%
+                          </IonLabel>
                         </IonItem>
                       )}
                       {variant.sku && (
                         <IonItem>
-                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>{t('products.sku')}</IonLabel>
-                          <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>{variant.sku}</IonLabel>
+                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>
+                            {t('products.sku')}
+                          </IonLabel>
+                          <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>
+                            {variant.sku}
+                          </IonLabel>
                         </IonItem>
                       )}
                       {variant.inventory && (
                         <IonItem>
-                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>{t('inventory.currentStock')}</IonLabel>
+                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>
+                            {t('inventory.currentStock')}
+                          </IonLabel>
                           <IonBadge
                             slot="end"
                             color={
-                              (variant.inventory.quantity || 0) <= (variant.inventory.low_stock_threshold || 5)
+                              (variant.inventory.quantity || 0) <=
+                              (variant.inventory.low_stock_threshold || 5)
                                 ? 'danger'
                                 : 'success'
                             }
@@ -302,6 +356,7 @@ export const ProductDetailPage: React.FC = () => {
 
         <ProductBarcodeLabelModal
           isOpen={Boolean(barcodeVariant)}
+          shopName={currentUser?.tenant?.name || APP_NAME}
           productName={product.name}
           variant={barcodeVariant}
           onDismiss={() => setBarcodeVariant(null)}
@@ -359,7 +414,7 @@ export const ProductDetailPage: React.FC = () => {
         )}
 
         {showVariantEditModal && editingVariant && (
-          <IonModal 
+          <IonModal
             isOpen={showVariantEditModal}
             onDidDismiss={() => {
               setShowVariantEditModal(false);
@@ -379,7 +434,14 @@ export const ProductDetailPage: React.FC = () => {
             </IonHeader>
             <IonContent>
               <div style={{ padding: '16px' }}>
-                <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                <div
+                  style={{
+                    marginBottom: '16px',
+                    padding: '12px',
+                    backgroundColor: '#f5f5f5',
+                    borderRadius: '8px',
+                  }}
+                >
                   <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
                     {editingVariant.brand || t('products.variant')} - {editingVariant.size || ''}
                   </p>
@@ -389,7 +451,14 @@ export const ProductDetailPage: React.FC = () => {
                 </div>
 
                 <div style={{ marginBottom: '12px' }}>
-                  <IonLabel style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>
+                  <IonLabel
+                    style={{
+                      display: 'block',
+                      marginBottom: '8px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                    }}
+                  >
                     {t('products.basePriceCostPrice')}
                   </IonLabel>
                   <div style={{ padding: '12px', backgroundColor: '#f0f0f0', borderRadius: '4px' }}>
@@ -410,7 +479,9 @@ export const ProductDetailPage: React.FC = () => {
                 <div style={{ marginTop: '24px' }}>
                   <Button
                     onClick={handleUpdateVariantPrice}
-                    disabled={updatingVariant || !editSellingPrice || parseFloat(editSellingPrice) <= 0}
+                    disabled={
+                      updatingVariant || !editSellingPrice || parseFloat(editSellingPrice) <= 0
+                    }
                     loading={updatingVariant}
                   >
                     {t('products.updatePrice')}
