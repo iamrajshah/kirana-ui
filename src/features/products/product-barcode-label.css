@@ -1,0 +1,172 @@
+.barcode-label-workspace {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(280px, 1.1fr);
+  gap: 24px;
+  padding: 24px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.barcode-label-settings,
+.barcode-label-preview {
+  border: 1px solid var(--ion-color-step-200, #d7d8da);
+  border-radius: 16px;
+  background: var(--ion-card-background, #fff);
+  padding: 20px;
+}
+
+.barcode-label-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.barcode-label-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.barcode-label-heading > ion-icon {
+  width: 28px;
+  height: 28px;
+  color: var(--ion-color-primary);
+}
+
+.barcode-label-heading strong,
+.barcode-label-heading p {
+  display: block;
+  margin: 0;
+}
+
+.barcode-label-heading p,
+.barcode-label-settings ion-note {
+  margin-top: 4px;
+  color: var(--ion-color-medium);
+}
+
+.barcode-label-error {
+  margin: 0;
+  color: var(--ion-color-danger);
+}
+
+.barcode-label-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 390px;
+  background: var(--ion-color-light);
+}
+
+.barcode-label-preview > span {
+  margin-bottom: 16px;
+  color: var(--ion-color-medium);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.product-barcode-label {
+  width: 50mm;
+  min-height: 30mm;
+  padding: 2.2mm 3mm;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: start;
+  gap: 0.8mm 2mm;
+  overflow: hidden;
+  border: 1px dashed #8b8b8b;
+  border-radius: 2mm;
+  background: #fff;
+  color: #111;
+}
+
+.product-barcode-label small {
+  grid-column: 1 / -1;
+  font-size: 7pt;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.product-barcode-label strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 11pt;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-barcode-label > span {
+  grid-column: 1;
+  font-size: 8pt;
+}
+
+.product-barcode-label > b {
+  grid-column: 2;
+  grid-row: 2 / 4;
+  align-self: center;
+  font-size: 14pt;
+}
+
+.store-barcode-svg {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 13mm;
+  shape-rendering: crispEdges;
+}
+
+.barcode-label-empty {
+  max-width: 260px;
+  text-align: center;
+  color: var(--ion-color-medium);
+}
+
+.barcode-label-empty ion-icon {
+  width: 56px;
+  height: 56px;
+}
+
+.barcode-print-sheet {
+  display: none;
+}
+
+@media (max-width: 680px) {
+  .barcode-label-workspace {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .barcode-label-preview {
+    min-height: 260px;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .barcode-print-sheet,
+  .barcode-print-sheet * {
+    visibility: visible !important;
+  }
+
+  .barcode-print-sheet {
+    position: absolute;
+    inset: 0;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, 50mm);
+    align-content: start;
+    gap: 3mm;
+    padding: 5mm;
+    background: #fff;
+  }
+
+  .product-barcode-label {
+    break-inside: avoid;
+    border: 0.2mm solid #777;
+  }
+}

@@ -8,6 +8,7 @@ import type {
   BarcodeLookupResponse,
   CreateProductFromBarcodeRequest,
   BarcodeProductResponse,
+  StoreBarcodeInfo,
 } from '../types';
 
 export interface BillingSearchVariant {
@@ -130,6 +131,14 @@ export const productApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Product', 'Inventory'],
     }),
+    generateStoreBarcode: builder.mutation<ApiResponse<StoreBarcodeInfo>, { variantId: string }>({
+      query: (body) => ({
+        url: '/products/barcode/generate',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Product'],
+    }),
   }),
 });
 
@@ -147,4 +156,5 @@ export const {
   useScanBarcodeQuery,
   useLazyScanBarcodeQuery,
   useCreateProductFromBarcodeMutation,
+  useGenerateStoreBarcodeMutation,
 } = productApi;
