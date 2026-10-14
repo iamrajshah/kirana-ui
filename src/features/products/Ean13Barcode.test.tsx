@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { Ean13Barcode } from './Ean13Barcode';
 import { encodeEan13 } from './ean13';
@@ -13,8 +13,24 @@ describe('Ean13Barcode', () => {
   });
 
   it('renders a printable barcode with an accessible value', () => {
-    render(<Ean13Barcode value="2012345678903" ariaLabel="Barcode 2012345678903" />);
-    expect(screen.getByRole('img', { name: 'Barcode 2012345678903' })).toBeTruthy();
+    const { container } = render(
+      <Ean13Barcode value="2012345678903" ariaLabel="Barcode 2012345678903" />
+    );
+    expect(within(container).getByRole('img', { name: 'Barcode 2012345678903' })).toBeTruthy();
+  });
+
+  it('keeps the barcode graphic when the human-readable number is hidden', () => {
+    const { container } = render(
+      <Ean13Barcode
+        value="2012345678903"
+        ariaLabel="Barcode 2012345678903"
+        showText={false}
+      />
+    );
+
+    expect(within(container).getByRole('img', { name: 'Barcode 2012345678903' })).toBeTruthy();
+    expect(container.querySelector('text')).toBeNull();
+    expect(container.querySelectorAll('rect').length).toBeGreaterThan(1);
   });
 
   it('does not render malformed values', () => {

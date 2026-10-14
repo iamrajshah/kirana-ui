@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   IonButton,
@@ -35,17 +35,87 @@ interface Props {
 
 const MAX_LABEL_COPIES = 1000;
 const LARGE_PRINT_JOB_THRESHOLD = 500;
+const MAX_LABEL_DATE = '9999-12-31';
+const DATE_INPUT_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+const parseLabelDate = (value: string) => {
+  if (!DATE_INPUT_PATTERN.test(value)) return null;
+
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(`${value}T00:00:00`);
+  if (
+    !Number.isFinite(date.getTime()) ||
+    date.getFullYear() !== year ||
+    date.getMonth() + 1 !== month ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+};
+
+const todayInputValue = () => {
+  const now = new Date();
+  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
+  return localDate.toISOString().slice(0, 10);
+};
+
+interface BarcodeLabelOptions {
+  showPrice: boolean;
+  showShopName: boolean;
+  showMrp: boolean;
+  showVariant: boolean;
+  showSku: boolean;
+  showPackedOn: boolean;
+  showExpiry: boolean;
+  showBarcodeNumber: boolean;
+  packedOnDate: string;
+  expiryDate: string;
+}
+
+const createDefaultLabelOptions = (): BarcodeLabelOptions => ({
+  showPrice: true,
+  showShopName: true,
+  showMrp: true,
+  showVariant: true,
+  showSku: false,
+  showPackedOn: false,
+  showExpiry: false,
+  showBarcodeNumber: true,
+  packedOnDate: todayInputValue(),
+  expiryDate: '',
+});
+
+const getDateValidationKey = ({
+  showPackedOn,
+  showExpiry,
+  packedOnDate,
+  expiryDate,
+}: BarcodeLabelOptions) => {
+  if (showExpiry && !parseLabelDate(expiryDate)) return 'products.expiryDateRequired';
+  if (showPackedOn && !parseLabelDate(packedOnDate)) {
+    return 'products.packedOnDateRequired';
+  }
+  if (showPackedOn && showExpiry && expiryDate < packedOnDate) {
+    return 'products.expiryBeforePackedOn';
+  }
+  return '';
+};
 
 interface BarcodeLabelProps {
   barcode: string;
   productName: string;
   shopName: string;
-  showPrice: boolean;
-  showShopName: boolean;
+  options: Pick<
+    BarcodeLabelOptions,
+    'showPrice' | 'showShopName' | 'showBarcodeNumber'
+  >;
   sellingPriceLabel: string;
   mrpPriceLabel: string;
   showMrp: boolean;
   variantLabel: string;
+  details: string[];
   storePackedItemLabel: string;
   mrpLabel: string;
   barcodeAriaLabel: string;
@@ -55,18 +125,18 @@ const BarcodeLabel: React.FC<BarcodeLabelProps> = ({
   barcode,
   productName,
   shopName,
-  showPrice,
-  showShopName,
+  options: { showPrice, showShopName, showBarcodeNumber },
   sellingPriceLabel,
   mrpPriceLabel,
   showMrp,
   variantLabel,
+  details,
   storePackedItemLabel,
   mrpLabel,
   barcodeAriaLabel,
 }) => {
   return (
-    <div className="product-barcode-label">
+    <div className={`product-barcode-label${details.length ? ' product-barcode-label--with-details' : ''}`}>
       <div className="product-barcode-label-header">
         <small className={showShopName ? 'product-barcode-shop-name' : 'product-barcode-kind'}>
           {showShopName ? shopName : storePackedItemLabel}
@@ -84,7 +154,18 @@ const BarcodeLabel: React.FC<BarcodeLabelProps> = ({
           )}
         </div>
       )}
-      <Ean13Barcode value={barcode} ariaLabel={barcodeAriaLabel} />
+      {details.length > 0 && (
+        <div className="product-barcode-details">
+          {details.map((detail) => (
+            <span key={detail}>{detail}</span>
+          ))}
+        </div>
+      )}
+      <Ean13Barcode
+        value={barcode}
+        ariaLabel={barcodeAriaLabel}
+        showText={showBarcodeNumber}
+      />
     </div>
   );
 };
@@ -96,14 +177,13 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
   variant,
   onDismiss,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const existing = variant?.barcodes?.find(
     (barcode) => barcode.is_active && /^20\d{11}$/.test(barcode.barcode)
   );
   const [generated, setGenerated] = useState<StoreBarcodeInfo | null>(null);
   const [copiesInput, setCopiesInput] = useState('1');
-  const [showPrice, setShowPrice] = useState(true);
-  const [showShopName, setShowShopName] = useState(true);
+  const [labelOptions, setLabelOptions] = useState(createDefaultLabelOptions);
   const [printJob, setPrintJob] = useState<{
     copies: number;
     labelProps: BarcodeLabelProps;
@@ -111,8 +191,25 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
   const [error, setError] = useState('');
   const [generateBarcode, { isLoading }] = useGenerateStoreBarcodeMutation();
   const barcode = generated?.barcode || existing?.barcode || '';
+  const {
+    showPrice,
+    showShopName,
+    showMrp,
+    showVariant,
+    showSku,
+    showPackedOn,
+    showExpiry,
+    showBarcodeNumber,
+    packedOnDate,
+    expiryDate,
+  } = labelOptions;
+  const updateLabelOption = <Key extends keyof BarcodeLabelOptions>(
+    key: Key,
+    value: BarcodeLabelOptions[Key]
+  ) => setLabelOptions((current) => ({ ...current, [key]: value }));
   const sellingPrice = Number(variant?.selling_price ?? variant?.price ?? 0);
-  const mrpPrice = Number(variant?.mrp_price ?? variant?.price ?? 0);
+  const hasMrp = variant?.mrp_price != null;
+  const mrpPrice = Number(variant?.mrp_price ?? 0);
   const variantLabel = [
     variant?.brand,
     variant?.size,
@@ -128,16 +225,45 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
     parsedCopies <= MAX_LABEL_COPIES;
   const copies = copiesAreValid ? parsedCopies : 0;
   const pageCount = copiesAreValid ? Math.ceil(copies / BARCODE_LABELS_PER_PAGE) : 0;
+  const language = i18n.resolvedLanguage || i18n.language || 'en';
+  const locale = language === 'en' ? 'en-IN' : language;
+  const dateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      }),
+    [locale]
+  );
+  const dateValidationKey = getDateValidationKey(labelOptions);
+  const datesAreValid = !dateValidationKey;
+  const dateError = dateValidationKey ? t(dateValidationKey) : '';
+  const packedOnDateValue = parseLabelDate(packedOnDate);
+  const expiryDateValue = parseLabelDate(expiryDate);
+  const details = [
+    showSku && variant?.sku ? t('products.barcodeSkuDetail', { value: variant.sku }) : '',
+    showPackedOn && packedOnDateValue
+      ? t('products.barcodePackedOnDetail', {
+          value: dateFormatter.format(packedOnDateValue),
+        })
+      : '',
+    showExpiry && expiryDateValue
+      ? t('products.barcodeExpiryDetail', {
+          value: dateFormatter.format(expiryDateValue),
+        })
+      : '',
+  ].filter(Boolean);
   const labelProps: BarcodeLabelProps = {
     barcode,
     productName,
     shopName,
-    showPrice,
-    showShopName,
+    options: { showPrice, showShopName, showBarcodeNumber },
     sellingPriceLabel: formatCurrency(sellingPrice),
     mrpPriceLabel: formatCurrency(mrpPrice),
-    showMrp: showPrice && mrpPrice !== sellingPrice,
-    variantLabel,
+    showMrp: showPrice && showMrp && hasMrp && mrpPrice !== sellingPrice,
+    variantLabel: showVariant ? variantLabel : '',
+    details,
     storePackedItemLabel: t('products.storePackedItem'),
     mrpLabel: t('products.mrpShort'),
     barcodeAriaLabel: t('products.barcodeAriaLabel', { value: barcode }),
@@ -147,8 +273,7 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
   useEffect(() => {
     setGenerated(null);
     setCopiesInput('1');
-    setShowPrice(true);
-    setShowShopName(true);
+    setLabelOptions(createDefaultLabelOptions());
     setPrintJob(null);
     setError('');
   }, [variant?.id]);
@@ -183,7 +308,7 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
   };
 
   const handlePrint = () => {
-    if (!copiesAreValid) return;
+    if (!copiesAreValid || !datesAreValid) return;
     setPrintJob({ copies, labelProps });
   };
 
@@ -218,6 +343,7 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
             <IonItem lines="full">
               <IonLabel position="stacked">{t('products.labelCopies')}</IonLabel>
               <IonInput
+                aria-label={t('products.labelCopies')}
                 type="number"
                 min="1"
                 max={String(MAX_LABEL_COPIES)}
@@ -236,10 +362,14 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
             {copies > LARGE_PRINT_JOB_THRESHOLD && (
               <IonNote color="warning">{t('products.barcodeLargePrintWarning')}</IonNote>
             )}
+
+            <strong className="barcode-label-section-title">
+              {t('products.labelContent')}
+            </strong>
             <IonItem lines="full">
               <IonToggle
                 checked={showShopName}
-                onIonChange={(event) => setShowShopName(event.detail.checked)}
+                onIonChange={(event) => updateLabelOption('showShopName', event.detail.checked)}
               >
                 {t('products.showShopNameOnLabel')}
               </IonToggle>
@@ -247,11 +377,97 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
             <IonItem lines="full">
               <IonToggle
                 checked={showPrice}
-                onIonChange={(event) => setShowPrice(event.detail.checked)}
+                onIonChange={(event) => updateLabelOption('showPrice', event.detail.checked)}
               >
                 {t('products.showPriceOnLabel')}
               </IonToggle>
             </IonItem>
+            <IonItem lines="full">
+              <IonToggle
+                checked={showMrp}
+                disabled={!showPrice || !hasMrp}
+                onIonChange={(event) => updateLabelOption('showMrp', event.detail.checked)}
+              >
+                {t('products.showMrpOnLabel')}
+              </IonToggle>
+            </IonItem>
+            <IonItem lines="full">
+              <IonToggle
+                checked={showVariant}
+                onIonChange={(event) => updateLabelOption('showVariant', event.detail.checked)}
+              >
+                {t('products.showVariantOnLabel')}
+              </IonToggle>
+            </IonItem>
+            <IonItem lines="full">
+              <IonToggle
+                checked={showSku}
+                disabled={!variant?.sku}
+                onIonChange={(event) => updateLabelOption('showSku', event.detail.checked)}
+              >
+                {t('products.showSkuOnLabel')}
+              </IonToggle>
+            </IonItem>
+            <IonItem lines="full">
+              <IonToggle
+                checked={showBarcodeNumber}
+                onIonChange={(event) =>
+                  updateLabelOption('showBarcodeNumber', event.detail.checked)
+                }
+              >
+                {t('products.showBarcodeNumberOnLabel')}
+              </IonToggle>
+            </IonItem>
+            <IonItem lines="full">
+              <IonToggle
+                checked={showPackedOn}
+                onIonChange={(event) => updateLabelOption('showPackedOn', event.detail.checked)}
+              >
+                {t('products.showPackedOnLabel')}
+              </IonToggle>
+            </IonItem>
+            {showPackedOn && (
+              <IonItem lines="full">
+                <IonLabel position="stacked">{t('products.packedOnDate')}</IonLabel>
+                <IonInput
+                  aria-label={t('products.packedOnDate')}
+                  type="date"
+                  max={MAX_LABEL_DATE}
+                  value={packedOnDate}
+                  onIonInput={(event) =>
+                    updateLabelOption('packedOnDate', event.detail.value ?? '')
+                  }
+                />
+              </IonItem>
+            )}
+            <IonItem lines="full">
+              <IonToggle
+                checked={showExpiry}
+                onIonChange={(event) => updateLabelOption('showExpiry', event.detail.checked)}
+              >
+                {t('products.showExpiryOnLabel')}
+              </IonToggle>
+            </IonItem>
+            {showExpiry && (
+              <IonItem lines="full">
+                <IonLabel position="stacked">{t('products.expiryDate')}</IonLabel>
+                <IonInput
+                  aria-label={t('products.expiryDate')}
+                  type="date"
+                  min={showPackedOn ? packedOnDate : undefined}
+                  max={MAX_LABEL_DATE}
+                  value={expiryDate}
+                  onIonInput={(event) =>
+                    updateLabelOption('expiryDate', event.detail.value ?? '')
+                  }
+                />
+              </IonItem>
+            )}
+            {dateError && (
+              <p className="barcode-label-error" role="alert">
+                {dateError}
+              </p>
+            )}
             <IonNote>{t('products.barcodePriceNote')}</IonNote>
 
             {error && (
@@ -266,7 +482,11 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
                 {isLoading ? t('common.loading') : t('products.generateBarcode')}
               </IonButton>
             ) : (
-              <IonButton expand="block" onClick={handlePrint} disabled={!copiesAreValid}>
+              <IonButton
+                expand="block"
+                onClick={handlePrint}
+                disabled={!copiesAreValid || !datesAreValid}
+              >
                 <IonIcon slot="start" icon={printOutline} />
                 {t('products.printBarcodeLabels', { count: copies })}
               </IonButton>

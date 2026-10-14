@@ -1,13 +1,18 @@
 import React, { type PropsWithChildren } from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ProductVariant } from '@core/types';
 import { ProductBarcodeLabelModal } from './ProductBarcodeLabelModal';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, values?: { count?: number }) =>
-      values?.count == null ? key : `${key}:${values.count}`,
+    t: (key: string, values?: { count?: number; value?: string; max?: number }) => {
+      if (values?.count != null) return `${key}:${values.count}`;
+      if (values?.value != null) return `${key}:${values.value}`;
+      if (values?.max != null) return `${key}:${values.max}`;
+      return key;
+    },
+    i18n: { language: 'en', resolvedLanguage: 'en' },
   }),
 }));
 
@@ -16,7 +21,17 @@ vi.mock('@core/api/productApi', () => ({
 }));
 
 vi.mock('./Ean13Barcode', () => ({
-  Ean13Barcode: ({ ariaLabel }: { ariaLabel: string }) => <div role="img" aria-label={ariaLabel} />,
+  Ean13Barcode: ({
+    value,
+    ariaLabel,
+    showText,
+  }: {
+    value: string;
+    ariaLabel: string;
+    showText?: boolean;
+  }) => (
+    <div role="img" aria-label={ariaLabel} data-barcode-number={showText ? value : undefined} />
+  ),
 }));
 
 vi.mock('@ionic/react', () => {
@@ -36,14 +51,20 @@ vi.mock('@ionic/react', () => {
     IonHeader: Container,
     IonIcon: () => null,
     IonInput: ({
+      'aria-label': ariaLabel,
+      type,
       value,
       onIonInput,
     }: {
+      'aria-label'?: string;
+      type?: string;
       value: string;
       onIonInput: (event: { detail: { value: string } }) => void;
     }) => (
       <input
-        aria-label="products.labelCopies"
+        aria-label={ariaLabel || 'products.labelCopies'}
+        type={type === 'date' ? 'text' : type}
+        data-input-type={type}
         value={value}
         onChange={(event) => onIonInput({ detail: { value: event.target.value } })}
       />
@@ -134,6 +155,20 @@ describe('ProductBarcodeLabelModal', () => {
     expect(screen.getAllByText(/products\.mrpShort.*₹650/).length).toBeGreaterThan(0);
   });
 
+  it('does not present the generic variant price as MRP when MRP is unavailable', () => {
+    render(
+      <ProductBarcodeLabelModal
+        isOpen
+        shopName="Rajesh Kirana Store"
+        productName="India Gate Basmati Rice"
+        variant={{ ...variant, mrp_price: undefined }}
+        onDismiss={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByText(/products\.mrpShort/)).toBeNull();
+  });
+
   it('keeps 566 copies and creates all 27 pages only when printing', async () => {
     const print = vi.spyOn(window, 'print').mockImplementation(() => undefined);
     render(
@@ -219,6 +254,139 @@ describe('ProductBarcodeLabelModal', () => {
     expect(printSheet?.textContent).not.toContain('₹650');
     expect(printSheet?.textContent).toContain('products.storePackedItem');
     window.dispatchEvent(new Event('afterprint'));
+  });
+
+  it('configures SKU, packed date, expiry date, and barcode number in preview and print', () => {
+    vi.spyOn(window, 'print').mockImplementation(() => undefined);
+    render(
+      <ProductBarcodeLabelModal
+        isOpen
+        shopName="Rajesh Kirana Store"
+        productName="India Gate Basmati Rice"
+        variant={variant}
+        onDismiss={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'products.showSkuOnLabel' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'products.showPackedOnLabel' }));
+    fireEvent.change(screen.getByLabelText('products.packedOnDate'), {
+      target: { value: '2026-10-14' },
+    });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'products.showExpiryOnLabel' }));
+    fireEvent.change(screen.getByLabelText('products.expiryDate'), {
+      target: { value: '2027-04-14' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /products.printBarcodeLabels:1/ }));
+
+    const preview = document.querySelector('.barcode-label-preview');
+    const printSheet = document.querySelector('.barcode-print-sheet');
+    for (const area of [preview, printSheet]) {
+      expect(area?.textContent).toContain('products.barcodeSkuDetail:RICE-5KG');
+      expect(area?.textContent).toContain('products.barcodePackedOnDetail:14 Oct 2026');
+      expect(area?.textContent).toContain('products.barcodeExpiryDetail:14 Apr 2027');
+      expect(area?.querySelector('[data-barcode-number="2001173897723"]')).toBeTruthy();
+    }
+    window.dispatchEvent(new Event('afterprint'));
+  });
+
+  it('blocks printing when expiry is earlier than the packed date', () => {
+    render(
+      <ProductBarcodeLabelModal
+        isOpen
+        shopName="Rajesh Kirana Store"
+        productName="India Gate Basmati Rice"
+        variant={variant}
+        onDismiss={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'products.showPackedOnLabel' }));
+    fireEvent.change(screen.getByLabelText('products.packedOnDate'), {
+      target: { value: '2026-10-14' },
+    });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'products.showExpiryOnLabel' }));
+    fireEvent.change(screen.getByLabelText('products.expiryDate'), {
+      target: { value: '2026-10-13' },
+    });
+
+    expect(screen.getByText('products.expiryBeforePackedOn')).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: /products.printBarcodeLabels:1/ }).hasAttribute('disabled')
+    ).toBe(true);
+  });
+
+  it('requires enabled packed-on and expiry dates before printing', () => {
+    render(
+      <ProductBarcodeLabelModal
+        isOpen
+        shopName="Rajesh Kirana Store"
+        productName="India Gate Basmati Rice"
+        variant={variant}
+        onDismiss={vi.fn()}
+      />
+    );
+
+    const printButton = () => screen.getByRole('button', { name: /products.printBarcodeLabels:1/ });
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'products.showPackedOnLabel' }));
+    fireEvent.change(screen.getByLabelText('products.packedOnDate'), { target: { value: '' } });
+    expect(screen.getByText('products.packedOnDateRequired')).toBeTruthy();
+    expect(printButton().hasAttribute('disabled')).toBe(true);
+
+    fireEvent.change(screen.getByLabelText('products.packedOnDate'), {
+      target: { value: '2026-10-14' },
+    });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'products.showExpiryOnLabel' }));
+    expect(screen.getByText('products.expiryDateRequired')).toBeTruthy();
+    expect(printButton().hasAttribute('disabled')).toBe(true);
+  });
+
+  it('handles malformed enabled dates without crashing the preview', () => {
+    render(
+      <ProductBarcodeLabelModal
+        isOpen
+        shopName="Rajesh Kirana Store"
+        productName="India Gate Basmati Rice"
+        variant={variant}
+        onDismiss={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'products.showExpiryOnLabel' }));
+    fireEvent.change(screen.getByLabelText('products.expiryDate'), {
+      target: { value: '10000-12-31' },
+    });
+
+    expect(screen.getByText('products.expiryDateRequired')).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: /products.printBarcodeLabels:1/ }).hasAttribute('disabled')
+    ).toBe(true);
+  });
+
+  it('lets optional label fields be hidden without removing the barcode graphic', () => {
+    render(
+      <ProductBarcodeLabelModal
+        isOpen
+        shopName="Rajesh Kirana Store"
+        productName="India Gate Basmati Rice"
+        variant={variant}
+        onDismiss={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'products.showMrpOnLabel' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'products.showVariantOnLabel' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'products.showBarcodeNumberOnLabel' }));
+
+    const preview = document.querySelector('.barcode-label-preview');
+    expect(preview?.textContent).not.toContain('products.mrpShort');
+    expect(preview?.textContent).not.toContain('India Gate · 5 kg · PACKET');
+    const previewBarcode = within(preview as HTMLElement).getByRole('img', {
+      name: 'products.barcodeAriaLabel:2001173897723',
+    });
+    expect(previewBarcode).toBeTruthy();
+    expect(previewBarcode.hasAttribute('data-barcode-number')).toBe(false);
   });
 
   it('cancels a pending print when modal dismissal begins', () => {
