@@ -6,12 +6,18 @@ export const Ean13Barcode: React.FC<{ value: string; ariaLabel: string }> = ({ v
   if (!bits) return null;
 
   return (
-    <svg className="store-barcode-svg" viewBox="0 0 109 67" role="img" aria-label={ariaLabel}>
-      <rect width="109" height="67" fill="#fff" />
+    <svg
+      className="store-barcode-svg"
+      viewBox="0 0 109 70"
+      preserveAspectRatio="xMidYMid meet"
+      role="img"
+      aria-label={ariaLabel}
+    >
+      <rect width="109" height="70" fill="#fff" />
       {bits.split('').map((bit, index) => bit === '1' ? (
-        <rect key={index} x={index + 7} y="3" width="1" height="50" fill="#000" />
+        <rect key={index} x={index + 7} y="2" width="1" height="53" fill="#000" />
       ) : null)}
-      <text x="54.5" y="64" textAnchor="middle" fill="#000" fontSize="9" fontFamily="monospace" letterSpacing="1.3">
+      <text x="54.5" y="67" textAnchor="middle" fill="#000" fontSize="10" fontFamily="monospace" letterSpacing="1.15">
         {value}
       </text>
     </svg>
