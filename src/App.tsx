@@ -7,8 +7,6 @@ import { store } from '@core/store';
 import { ROUTES } from '@core/constants';
 import {
   mainLayoutPaths,
-  protectedPageRoutes,
-  type ProtectedPageRouteId,
 } from '@core/navigation/protectedRoutes';
 import { PrivateRoute } from '@layouts/PrivateRoute';
 import ToastContainer from '@components/ToastContainer';
@@ -46,26 +44,6 @@ setupIonicReact({
 
 const MainLayout = lazy(() => import('@layouts/MainLayout').then((module) => ({ default: module.MainLayout })));
 const LoginPage = lazy(() => import('@features/login/LoginPage').then((module) => ({ default: module.LoginPage })));
-const ProfilePage = lazy(() => import('@features/profile/ProfilePage').then((module) => ({ default: module.ProfilePage })));
-const ChangePasswordPage = lazy(() => import('@features/profile/ChangePasswordPage').then((module) => ({ default: module.ChangePasswordPage })));
-const CustomerLedgerPage = lazy(() => import('@features/customers/CustomerLedgerPage').then((module) => ({ default: module.CustomerLedgerPage })));
-const ProductDetailPage = lazy(() => import('@features/products/ProductDetailPage').then((module) => ({ default: module.ProductDetailPage })));
-const AddProductBarcodePage = lazy(() => import('@features/products/AddProductBarcodePage').then((module) => ({ default: module.AddProductBarcodePage })));
-const InvoiceDetailPage = lazy(() => import('@features/invoices/InvoiceDetailPage'));
-const SupplierLedgerPage = lazy(() => import('@features/suppliers/SupplierLedgerPage'));
-const CreatePurchasePage = lazy(() => import('@features/purchases/CreatePurchasePage'));
-const PurchaseDetailPage = lazy(() => import('@features/purchases/PurchaseDetailPage'));
-
-const protectedPageComponents: Record<ProtectedPageRouteId, React.ComponentType> = {
-  'customer-ledger': CustomerLedgerPage,
-  'product-detail': ProductDetailPage,
-  'product-barcode': AddProductBarcodePage,
-  'supplier-ledger': SupplierLedgerPage,
-  'invoice-detail': InvoiceDetailPage,
-  'purchase-detail': PurchaseDetailPage,
-  'purchase-create': CreatePurchasePage,
-};
-
 const App: React.FC = () => {
   useEffect(() => {
     // Load saved language from localStorage
@@ -84,12 +62,6 @@ const App: React.FC = () => {
           <Switch>
             <Route exact path={ROUTES.LOGIN} component={LoginPage} />
             <Route exact path="/" render={() => <Redirect to={ROUTES.LOGIN} />} />
-            <Route exact path={ROUTES.PROFILE} render={() => <PrivateRoute><ProfilePage /></PrivateRoute>} />
-            <Route exact path={ROUTES.CHANGE_PASSWORD} render={() => <PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
-            {protectedPageRoutes.map(({ id, path, permission }) => {
-              const Component = protectedPageComponents[id];
-              return <Route key={id} exact path={path} render={() => <PrivateRoute permission={permission}><Component /></PrivateRoute>} />;
-            })}
             <Route
               exact
               path={mainLayoutPaths}

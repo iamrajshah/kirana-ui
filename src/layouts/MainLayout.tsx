@@ -6,7 +6,11 @@ import { ROUTES } from '@core/constants';
 import { useAppSelector } from '../core/hooks';
 import { selectCurrentUser } from '@core/auth/authSlice';
 import { getNavigationItems } from '@core/navigation/navigation';
-import { protectedMainLayoutRoutes } from '@core/navigation/protectedRoutes';
+import {
+  protectedMainLayoutRoutes,
+  protectedPageRoutes,
+  type ProtectedPageRouteId,
+} from '@core/navigation/protectedRoutes';
 import { SideMenu } from '@components';
 import { PrivateRoute } from './PrivateRoute';
 import '@components/Workspace/workspace.css';
@@ -25,6 +29,15 @@ const CategoriesPage = lazy(() => import('@features/categories/CategoriesPage').
 const SuppliersPage = lazy(() => import('@features/suppliers/SuppliersPage'));
 const PurchasesPage = lazy(() => import('@features/purchases/PurchasesPage'));
 const AboutPage = lazy(() => import('@features/about/AboutPage').then((module) => ({ default: module.AboutPage })));
+const ProfilePage = lazy(() => import('@features/profile/ProfilePage').then((module) => ({ default: module.ProfilePage })));
+const ChangePasswordPage = lazy(() => import('@features/profile/ChangePasswordPage').then((module) => ({ default: module.ChangePasswordPage })));
+const CustomerLedgerPage = lazy(() => import('@features/customers/CustomerLedgerPage').then((module) => ({ default: module.CustomerLedgerPage })));
+const ProductDetailPage = lazy(() => import('@features/products/ProductDetailPage').then((module) => ({ default: module.ProductDetailPage })));
+const AddProductBarcodePage = lazy(() => import('@features/products/AddProductBarcodePage').then((module) => ({ default: module.AddProductBarcodePage })));
+const InvoiceDetailPage = lazy(() => import('@features/invoices/InvoiceDetailPage'));
+const SupplierLedgerPage = lazy(() => import('@features/suppliers/SupplierLedgerPage'));
+const CreatePurchasePage = lazy(() => import('@features/purchases/CreatePurchasePage'));
+const PurchaseDetailPage = lazy(() => import('@features/purchases/PurchaseDetailPage'));
 
 const mainPageComponents: Record<string, React.ComponentType> = {
   [ROUTES.DASHBOARD]: DashboardPage,
@@ -42,6 +55,16 @@ const mainPageComponents: Record<string, React.ComponentType> = {
   [ROUTES.IMPORT_EXPORT]: ImportExportPage,
 };
 
+const protectedPageComponents: Record<ProtectedPageRouteId, React.ComponentType> = {
+  'customer-ledger': CustomerLedgerPage,
+  'product-detail': ProductDetailPage,
+  'product-barcode': AddProductBarcodePage,
+  'supplier-ledger': SupplierLedgerPage,
+  'invoice-detail': InvoiceDetailPage,
+  'purchase-detail': PurchaseDetailPage,
+  'purchase-create': CreatePurchasePage,
+};
+
 export const MainLayout: React.FC = () => {
   const { t } = useTranslation();
   const user = useAppSelector(selectCurrentUser);
@@ -54,6 +77,23 @@ export const MainLayout: React.FC = () => {
       <div id="main-content" className="workspace-main">
       <IonTabs className="workspace-tabs">
         <IonRouterOutlet>
+          <Route exact path={ROUTES.PROFILE} render={() => <PrivateRoute><ProfilePage /></PrivateRoute>} />
+          <Route exact path={ROUTES.CHANGE_PASSWORD} render={() => <PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
+          {protectedPageRoutes.map(({ id, path, permission }) => {
+            const Component = protectedPageComponents[id];
+            return (
+              <Route
+                key={id}
+                exact
+                path={path}
+                render={() => (
+                  <PrivateRoute permission={permission}>
+                    <Component />
+                  </PrivateRoute>
+                )}
+              />
+            );
+          })}
           {protectedMainLayoutRoutes.map(({ path, permission }) => {
             const Component = mainPageComponents[path];
             return (

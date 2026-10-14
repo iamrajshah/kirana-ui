@@ -2,13 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   IonApp,
+  IonBackButton,
+  IonButtons,
+  IonHeader,
   IonInput,
   IonItem,
   IonLabel,
+  IonPage,
   IonRouterOutlet,
   IonTabBar,
   IonTabButton,
   IonTabs,
+  IonToolbar,
   setupIonicReact,
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
@@ -19,7 +24,7 @@ import { mainLayoutPaths } from '@core/navigation/protectedRoutes';
 setupIonicReact({ mode: 'md' });
 
 describe('main application navigation', () => {
-  it('keeps one shell mounted while Ionic switches primary routes', async () => {
+  it('keeps one shell mounted while navigating between primary and detail routes', async () => {
     const mounted = vi.fn();
     const unmounted = vi.fn();
 
@@ -75,7 +80,30 @@ describe('main application navigation', () => {
             <Route
               exact
               path="/products"
-              render={() => <IonInput aria-label="Product list search" />}
+              render={() => (
+                <>
+                  <IonInput aria-label="Product list search" />
+                  <IonItem button onClick={() => history.push('/products/137')}>
+                    <IonLabel>Open product details</IonLabel>
+                  </IonItem>
+                </>
+              )}
+            />
+            <Route
+              exact
+              path="/products/:id"
+              render={() => (
+                <IonPage>
+                  <IonHeader>
+                    <IonToolbar>
+                      <IonButtons slot="start">
+                        <IonBackButton defaultHref="/products" />
+                      </IonButtons>
+                    </IonToolbar>
+                  </IonHeader>
+                  <p>Product details</p>
+                </IonPage>
+              )}
             />
           </IonRouterOutlet>
           <IonTabBar slot="bottom">
@@ -120,6 +148,16 @@ describe('main application navigation', () => {
     expect(screen.getByLabelText('Billing search value').textContent).toBe('wheat');
 
     fireEvent.click(screen.getByText('Open products').closest('ion-item')!);
+    await waitFor(() => {
+      expect(screen.getByLabelText('Product list search')).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByText('Open product details').closest('ion-item')!);
+    await waitFor(() => {
+      expect(screen.getByText('Product details')).toBeTruthy();
+    });
+
+    fireEvent.click(document.querySelector('ion-back-button')!);
     await waitFor(() => {
       expect(screen.getByLabelText('Product list search')).toBeTruthy();
     });
