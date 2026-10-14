@@ -1,10 +1,16 @@
 import { apiSlice } from './apiSlice';
 import type { ApiResponse } from '../types';
+import {
+  beginCurrentUserProfileUpdate,
+  finishCurrentUserProfileUpdate,
+  updateCurrentUser,
+} from '../auth/authSlice';
+import type { RootState } from '../store';
 
 export interface User {
   id: string;
   name: string;
-  email?: string;
+  email?: string | null;
   phone: string;
   roles: string[];
   is_active: boolean;
@@ -25,6 +31,31 @@ export interface UpdateProfileRequest {
   phone?: string;
   email?: string;
 }
+
+type ProfileUser = Pick<User, 'id' | 'name' | 'phone' | 'email'>;
+
+const transformProfileResponse = (response: ApiResponse<User>): ApiResponse<ProfileUser> => {
+  const profile = response?.data;
+  if (
+    !profile ||
+    typeof profile.id !== 'string' ||
+    typeof profile.name !== 'string' ||
+    typeof profile.phone !== 'string' ||
+    (profile.email !== undefined && profile.email !== null && typeof profile.email !== 'string')
+  ) {
+    throw new Error('Invalid profile update response');
+  }
+
+  return {
+    ...response,
+    data: {
+      id: profile.id,
+      name: profile.name,
+      phone: profile.phone,
+      email: profile.email,
+    },
+  };
+};
 
 export interface ChangePasswordRequest {
   currentPassword: string;
@@ -60,12 +91,28 @@ export const userApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['User'],
     }),
-    updateProfile: builder.mutation<ApiResponse<User>, UpdateProfileRequest>({
+    updateProfile: builder.mutation<ApiResponse<ProfileUser>, UpdateProfileRequest>({
       query: (data) => ({
         url: '/users/me/profile',
         method: 'PATCH',
         body: data,
       }),
+      transformResponse: transformProfileResponse,
+      async onQueryStarted(_request, { dispatch, getState, queryFulfilled, requestId }) {
+        const { user, sessionVersion } = (getState() as RootState).auth;
+        if (!user) return;
+
+        const request = { requestId, userId: user.id, sessionVersion };
+        dispatch(beginCurrentUserProfileUpdate(request));
+        try {
+          const { data } = await queryFulfilled;
+          const { id, name, phone, email } = data.data;
+          dispatch(updateCurrentUser({ id, name, phone, email, sessionVersion, requestId }));
+        } catch {
+          // The mutation error is surfaced to the calling screen.
+          dispatch(finishCurrentUserProfileUpdate(request));
+        }
+      },
       invalidatesTags: ['User'],
     }),
     changePassword: builder.mutation<ApiResponse<void>, ChangePasswordRequest>({

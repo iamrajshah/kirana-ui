@@ -6,6 +6,10 @@ interface AuthState {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
+  sessionVersion: number;
+  profileUpdateSequence: number;
+  lastAppliedProfileUpdateSequence: number;
+  profileUpdateRequests: Record<string, number>;
 }
 
 interface CredentialsPayload {
@@ -23,10 +27,28 @@ interface CredentialsPayload {
   refresh_token?: string;
 }
 
+type CurrentUserProfileUpdate = Pick<User, 'id'> &
+  Partial<Pick<User, 'name' | 'phone' | 'email'>> & {
+    sessionVersion: number;
+    requestId: string;
+  };
+
+interface ProfileUpdateRequest {
+  requestId: string;
+  userId: string;
+  sessionVersion: number;
+}
+
+const storedUser: User | null = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || 'null');
+
 const initialState: AuthState = {
-  user: JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || 'null'),
+  user: storedUser,
   accessToken: localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN),
   refreshToken: localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN),
+  sessionVersion: storedUser ? 1 : 0,
+  profileUpdateSequence: 0,
+  lastAppliedProfileUpdateSequence: 0,
+  profileUpdateRequests: {},
 };
 
 const authSlice = createSlice({
@@ -68,6 +90,12 @@ const authSlice = createSlice({
         return;
       }
 
+      if (!state.user || state.user.id !== user.id || !state.accessToken) {
+        state.sessionVersion += 1;
+        state.profileUpdateSequence = 0;
+        state.lastAppliedProfileUpdateSequence = 0;
+        state.profileUpdateRequests = {};
+      }
       state.user = user;
       state.accessToken = access_token;
       state.refreshToken = refresh_token;
@@ -76,10 +104,44 @@ const authSlice = createSlice({
       localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, access_token);
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
     },
+    beginCurrentUserProfileUpdate: (state, action: PayloadAction<ProfileUpdateRequest>) => {
+      if (!state.user || action.payload.userId !== state.user.id) return;
+      if (action.payload.sessionVersion !== state.sessionVersion) return;
+
+      state.profileUpdateSequence += 1;
+      state.profileUpdateRequests[action.payload.requestId] = state.profileUpdateSequence;
+    },
+    updateCurrentUser: (state, action: PayloadAction<CurrentUserProfileUpdate>) => {
+      if (!state.user) return;
+      const requestSequence = state.profileUpdateRequests[action.payload.requestId];
+      if (requestSequence === undefined) return;
+      delete state.profileUpdateRequests[action.payload.requestId];
+      if (action.payload.id !== state.user.id) return;
+      if (action.payload.sessionVersion !== state.sessionVersion) return;
+      if (requestSequence < state.lastAppliedProfileUpdateSequence) return;
+      if (localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) !== state.accessToken) return;
+
+      const { name, phone, email } = action.payload;
+      state.user = {
+        ...state.user,
+        ...(name !== undefined && { name }),
+        ...(phone !== undefined && { phone }),
+        ...(email !== undefined && { email }),
+      };
+      state.lastAppliedProfileUpdateSequence = requestSequence;
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(state.user));
+    },
+    finishCurrentUserProfileUpdate: (state, action: PayloadAction<ProfileUpdateRequest>) => {
+      delete state.profileUpdateRequests[action.payload.requestId];
+    },
     logout: (state) => {
       state.user = null;
       state.accessToken = null;
       state.refreshToken = null;
+      state.sessionVersion += 1;
+      state.profileUpdateSequence = 0;
+      state.lastAppliedProfileUpdateSequence = 0;
+      state.profileUpdateRequests = {};
 
       localStorage.removeItem(STORAGE_KEYS.USER);
       localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
@@ -88,7 +150,13 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout } = authSlice.actions;
+export const {
+  setCredentials,
+  beginCurrentUserProfileUpdate,
+  updateCurrentUser,
+  finishCurrentUserProfileUpdate,
+  logout,
+} = authSlice.actions;
 export default authSlice.reducer;
 
 // Selectors
