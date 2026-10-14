@@ -111,6 +111,9 @@ export const BillingPage: React.FC = () => {
     const stored = localStorage.getItem(COUNTER_LABEL_STORAGE_KEY)?.trim();
     return stored && stored.length <= 32 ? stored : null;
   });
+  const [counterLabelDraft, setCounterLabelDraft] = useState('');
+  const [showCounterDialog, setShowCounterDialog] = useState(false);
+  const counterLabelRequestRef = useRef<((value: string | null) => void) | null>(null);
   const [activeHeldVersion, setActiveHeldVersion] = useState<number | undefined>();
   const activeHeldVersionRef = useRef<number | undefined>();
   const [heldConflict, setHeldConflict] = useState(false);
@@ -147,6 +150,8 @@ export const BillingPage: React.FC = () => {
       billingMountedRef.current = false;
       billGenerationRef.current += 1;
       barcodeQueueRef.current = [];
+      counterLabelRequestRef.current?.(null);
+      counterLabelRequestRef.current = null;
     };
   }, []);
 
@@ -449,18 +454,32 @@ export const BillingPage: React.FC = () => {
     loadedInvoiceSnapshotRef.current !== currentInvoiceSnapshot
   );
 
-  const requestCounterLabel = (force = false) => {
+  const requestCounterLabel = async (force = false): Promise<string | null> => {
     if (counterLabel && !force) return counterLabel;
-    const entered = window.prompt(t('billing.heldBills.counterPrompt'), counterLabel || '');
-    if (entered === null) return null;
-    const nextLabel = entered.trim();
+    return new Promise((resolve) => {
+      counterLabelRequestRef.current?.(null);
+      counterLabelRequestRef.current = resolve;
+      setCounterLabelDraft(counterLabel || '');
+      setShowCounterDialog(true);
+    });
+  };
+
+  const closeCounterDialog = (value: string | null) => {
+    const resolve = counterLabelRequestRef.current;
+    counterLabelRequestRef.current = null;
+    setShowCounterDialog(false);
+    resolve?.(value);
+  };
+
+  const saveCounterLabel = () => {
+    const nextLabel = counterLabelDraft.trim();
     if (!nextLabel || nextLabel.length > 32) {
       notificationService.error(t('billing.heldBills.counterInvalid'));
-      return null;
+      return;
     }
     localStorage.setItem(COUNTER_LABEL_STORAGE_KEY, nextLabel);
     setCounterLabel(nextLabel);
-    return nextLabel;
+    closeCounterDialog(nextLabel);
   };
 
   const resumeHeldBill = (bill: HeldBill) => {
@@ -520,15 +539,20 @@ export const BillingPage: React.FC = () => {
     history.replace(ROUTES.BILLING);
   };
 
-  const handleSaveAsDraft = async () => {
+  const validateBillReady = () => {
     if (barcodeWorkPendingRef.current > 0) {
       notificationService.error(t('billing.barcodeInProgress'));
-      return;
+      return false;
     }
     if (!cartItems.length) {
       notificationService.error(t('billing.pleaseAddProducts'));
-      return;
+      return false;
     }
+    return true;
+  };
+
+  const handleSaveAsDraft = async () => {
+    if (!validateBillReady()) return;
     try {
       if (editInvoiceId) {
         heldMutationPendingRef.current = true;
@@ -542,7 +566,7 @@ export const BillingPage: React.FC = () => {
         notificationService.success(t('billing.draftSaved'));
         return;
       } else {
-        const nextCounter = requestCounterLabel();
+        const nextCounter = await requestCounterLabel();
         if (!nextCounter) return;
         await createInvoice({ ...invoicePayload('DRAFT'), counter_label: nextCounter }).unwrap();
       }
@@ -579,14 +603,7 @@ export const BillingPage: React.FC = () => {
   };
 
   const handleCheckout = async (quickMode?: PaymentMode) => {
-    if (barcodeWorkPendingRef.current > 0) {
-      notificationService.error(t('billing.barcodeInProgress'));
-      return;
-    }
-    if (!cartItems.length) {
-      notificationService.error(t('billing.pleaseAddProducts'));
-      return;
-    }
+    if (!validateBillReady()) return;
     let invoiceId: string | null = null;
     try {
       invoiceId = await createFinalInvoice();
@@ -603,6 +620,23 @@ export const BillingPage: React.FC = () => {
       }
       setPendingInvoiceId(invoiceId);
       setShowPaymentModal(true);
+    } catch (error: unknown) {
+      if (isConflictError(error)) setHeldConflict(true);
+      notificationService.error(apiErrorMessage(error, t('billing.failedToCreateInvoice'), true));
+    }
+  };
+
+  const handlePayLater = async () => {
+    if (!validateBillReady()) return;
+    if (!customerId) {
+      notificationService.error(t('billing.creditRequiresCustomer'));
+      return;
+    }
+    try {
+      await createFinalInvoice();
+      notificationService.success(t('billing.creditBillCreated'));
+      resetForm();
+      history.replace(ROUTES.BILLING);
     } catch (error: unknown) {
       if (isConflictError(error)) setHeldConflict(true);
       notificationService.error(apiErrorMessage(error, t('billing.failedToCreateInvoice'), true));
@@ -1034,6 +1068,17 @@ export const BillingPage: React.FC = () => {
                       <IonIcon icon={bookmark} slot="start" />
                       {editInvoiceId ? t('billing.update') : t('billing.holdBill')}
                     </IonButton>
+                    {customerId && (
+                      <IonButton
+                        fill="outline"
+                        color="warning"
+                        className="col-span-2 min-h-touch"
+                        disabled={!cartItems.length || isBusy}
+                        onClick={() => void handlePayLater()}
+                      >
+                        {t('billing.payLater')}
+                      </IonButton>
+                    )}
                   </div>
                 </IonCardContent>
               </IonCard>
@@ -1059,6 +1104,11 @@ export const BillingPage: React.FC = () => {
               <IonButton fill="outline" disabled={isBusy} onClick={() => handleCheckout()}>
                 <IonIcon icon={card} slot="icon-only" />
               </IonButton>
+              {customerId && (
+                <IonButton color="warning" disabled={isBusy} onClick={() => void handlePayLater()}>
+                  {t('billing.khata')}
+                </IonButton>
+              )}
             </div>
           </div>
         )}
@@ -1074,6 +1124,48 @@ export const BillingPage: React.FC = () => {
             allowPartial={Boolean(customerId)}
           />
         )}
+
+        <IonModal
+          isOpen={showCounterDialog}
+          backdropDismiss={false}
+          onDidDismiss={() => closeCounterDialog(null)}
+        >
+          <div className="mx-auto flex min-h-full w-full max-w-lg items-center px-4 py-8">
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="counter-dialog-title"
+              className="w-full rounded-2xl bg-white p-5 shadow-xl"
+            >
+              <h2 id="counter-dialog-title" className="text-xl font-bold text-gray-900">
+                {t('billing.heldBills.counterTitle')}
+              </h2>
+              <p className="mt-1 text-sm text-gray-600">
+                {t('billing.heldBills.counterHint')}
+              </p>
+              <label className="mt-4 block text-sm font-semibold text-gray-700">
+                {t('billing.heldBills.counterPrompt')}
+                <input
+                  autoFocus
+                  aria-label={t('billing.heldBills.counterPrompt')}
+                  className="mt-2 min-h-touch w-full rounded-xl border border-gray-300 px-3 text-base outline-none focus:border-sky-500"
+                  maxLength={32}
+                  value={counterLabelDraft}
+                  onChange={(event) => setCounterLabelDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') saveCounterLabel();
+                  }}
+                />
+              </label>
+              <div className="mt-5 flex justify-end gap-2">
+                <IonButton fill="clear" onClick={() => closeCounterDialog(null)}>
+                  {t('common.cancel')}
+                </IonButton>
+                <IonButton onClick={saveCounterLabel}>{t('common.save')}</IonButton>
+              </div>
+            </section>
+          </div>
+        </IonModal>
 
         <IonModal
           isOpen={Boolean(unknownBarcode)}

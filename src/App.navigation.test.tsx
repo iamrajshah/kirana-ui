@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { lazy, useEffect, useState } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   IonApp,
@@ -20,6 +20,7 @@ import { IonReactRouter } from '@ionic/react-router';
 import { Route, Switch, useHistory } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { mainLayoutPaths } from '@core/navigation/protectedRoutes';
+import { RoutePageSuspense } from '@layouts/RoutePageSuspense';
 
 setupIonicReact({ mode: 'md' });
 
@@ -27,6 +28,26 @@ describe('main application navigation', () => {
   it('keeps one shell mounted while navigating between primary and detail routes', async () => {
     const mounted = vi.fn();
     const unmounted = vi.fn();
+
+    let resolveProductDetail: () => void = () => undefined;
+    const ProductDetail = () => (
+      <IonPage>
+        <IonHeader>
+          <IonToolbar>
+            <IonButtons slot="start">
+              <IonBackButton defaultHref="/products" />
+            </IonButtons>
+          </IonToolbar>
+        </IonHeader>
+        <p>Product details</p>
+      </IonPage>
+    );
+    const LazyProductDetail = lazy(
+      () =>
+        new Promise<{ default: React.ComponentType }>((resolve) => {
+          resolveProductDetail = () => resolve({ default: ProductDetail });
+        })
+    );
 
     const LayoutProbe = () => {
       const [query, setQuery] = useState('');
@@ -93,16 +114,9 @@ describe('main application navigation', () => {
               exact
               path="/products/:id"
               render={() => (
-                <IonPage>
-                  <IonHeader>
-                    <IonToolbar>
-                      <IonButtons slot="start">
-                        <IonBackButton defaultHref="/products" />
-                      </IonButtons>
-                    </IonToolbar>
-                  </IonHeader>
-                  <p>Product details</p>
-                </IonPage>
+                <RoutePageSuspense loadingLabel="Loading page">
+                  <LazyProductDetail />
+                </RoutePageSuspense>
               )}
             />
           </IonRouterOutlet>
@@ -153,6 +167,11 @@ describe('main application navigation', () => {
     });
 
     fireEvent.click(screen.getByText('Open product details').closest('ion-item')!);
+    expect((await screen.findByRole('status')).textContent).toBe('Loading page');
+    expect(mounted).toHaveBeenCalledTimes(1);
+    expect(unmounted).not.toHaveBeenCalled();
+
+    resolveProductDetail();
     await waitFor(() => {
       expect(screen.getByText('Product details')).toBeTruthy();
     });

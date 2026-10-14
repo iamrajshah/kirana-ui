@@ -77,7 +77,7 @@ describe('HeldBillsPanel', () => {
       <HeldBillsPanel
         currentUser={{ id: '7', name: 'Rajesh', roles: ['CASHIER'] }}
         counterLabel="Counter 2"
-        onRequestCounterLabel={() => 'Counter 2'}
+        onRequestCounterLabel={async () => 'Counter 2'}
         onBeforeResume={() => true}
         onResume={vi.fn()}
         onReleased={vi.fn()}
@@ -98,7 +98,7 @@ describe('HeldBillsPanel', () => {
       <HeldBillsPanel
         currentUser={{ id: '7', name: 'Rajesh', roles: ['CASHIER'] }}
         counterLabel="Counter 2"
-        onRequestCounterLabel={() => 'Counter 2'}
+        onRequestCounterLabel={async () => 'Counter 2'}
         onBeforeResume={() => true}
         onResume={onResume}
         onReleased={vi.fn()}
@@ -112,6 +112,34 @@ describe('HeldBillsPanel', () => {
       expect(mocks.claim).toHaveBeenCalledWith({
         id: '41',
         counter_label: 'Counter 2',
+        expected_version: 3,
+      })
+    );
+    expect(onResume).toHaveBeenCalledWith(expect.objectContaining({ id: '41', version: 4 }));
+  });
+
+  it('waits for an in-app counter choice before claiming an available bill', async () => {
+    mocks.bills = [heldBill()];
+    const onResume = vi.fn();
+
+    render(
+      <HeldBillsPanel
+        currentUser={{ id: '7', name: 'Rajesh', roles: ['CASHIER'] }}
+        counterLabel={null}
+        onRequestCounterLabel={async () => 'Counter 3'}
+        onBeforeResume={() => true}
+        onResume={onResume}
+        onReleased={vi.fn()}
+        onClose={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'billing.heldBills.claim' }));
+
+    await waitFor(() =>
+      expect(mocks.claim).toHaveBeenCalledWith({
+        id: '41',
+        counter_label: 'Counter 3',
         expected_version: 3,
       })
     );
@@ -132,7 +160,7 @@ describe('HeldBillsPanel', () => {
       <HeldBillsPanel
         currentUser={{ id: '7', name: 'Rajesh', roles: ['CASHIER'] }}
         counterLabel="Counter 2"
-        onRequestCounterLabel={() => 'Counter 2'}
+        onRequestCounterLabel={async () => 'Counter 2'}
         onBeforeResume={() => true}
         onResume={vi.fn()}
         onReleased={vi.fn()}
@@ -147,7 +175,7 @@ describe('HeldBillsPanel', () => {
       <HeldBillsPanel
         currentUser={{ id: '7', name: 'Rajesh', roles: ['MANAGER'] }}
         counterLabel="Counter 2"
-        onRequestCounterLabel={() => 'Counter 2'}
+        onRequestCounterLabel={async () => 'Counter 2'}
         onBeforeResume={() => true}
         onResume={vi.fn()}
         onReleased={vi.fn()}
@@ -167,7 +195,7 @@ describe('HeldBillsPanel', () => {
       <HeldBillsPanel
         currentUser={{ id: '7', name: 'Rajesh', roles: ['CASHIER'] }}
         counterLabel="Counter 2"
-        onRequestCounterLabel={() => 'Counter 2'}
+        onRequestCounterLabel={async () => 'Counter 2'}
         onBeforeResume={() => true}
         onResume={vi.fn()}
         onReleased={vi.fn()}
@@ -189,7 +217,7 @@ describe('HeldBillsPanel', () => {
       <HeldBillsPanel
         currentUser={{ id: '7', name: 'Rajesh', roles: ['CASHIER'] }}
         counterLabel="Counter 2"
-        onRequestCounterLabel={() => 'Counter 2'}
+        onRequestCounterLabel={async () => 'Counter 2'}
         onBeforeResume={() => false}
         onResume={vi.fn()}
         onReleased={vi.fn()}
@@ -214,7 +242,7 @@ describe('HeldBillsPanel', () => {
       <HeldBillsPanel
         currentUser={{ id: '7', name: 'Rajesh', roles: ['CASHIER'] }}
         counterLabel="Counter 2"
-        onRequestCounterLabel={() => 'Counter 2'}
+        onRequestCounterLabel={async () => 'Counter 2'}
         onBeforeResume={() => true}
         onResume={vi.fn()}
         onReleased={onReleased}
