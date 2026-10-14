@@ -94,6 +94,12 @@
       "bankTransfer": "બેંક ટ્રાન્સફર"
     }
   },
+  "validation": {
+    "validName": "અક્ષરો ધરાવતું નામ દાખલ કરો (મહત્તમ 150 અક્ષર).",
+    "validPhone": "માન્ય 10 અંકનો મોબાઇલ નંબર દાખલ કરો.",
+    "validEmail": "માન્ય ઈમેલ સરનામું દાખલ કરો.",
+    "nonNegativeAmount": "રકમ ઋણ હોઈ શકતી નથી."
+  },
   "auth": {
     "login": "લોગિન",
     "logout": "લોગઆઉટ",
@@ -442,6 +448,8 @@
     "generateBarcodeHint": "બારકોડ એક વાર બનાવો, પછી બીજા પેક પ્રોડક્ટની જેમ પ્રિન્ટ અને સ્કેન કરો."
   },
   "inventory": {
+    "onHand": "હાથ પરનો સ્ટોક",
+    "validThresholdRequired": "ઓછા સ્ટોકની મર્યાદા ઋણ હોઈ શકતી નથી",
     "title": "ઇન્વેન્ટરી",
     "loadError": "સ્ટોક લોડ થયો નથી.",
     "updateStock": "સ્ટોક અપડેટ કરો",
@@ -610,6 +618,8 @@
     "close": "બંધ કરો"
   },
   "payments": {
+    "searchPayments": "ગ્રાહક, પ્રકાર, રકમ અથવા તારીખથી ચુકવણી શોધો...",
+    "searchCustomers": "નામ અથવા ફોનથી ગ્રાહક શોધો",
     "title": "ચુકવણીઓ",
     "pageHint": "ગ્રાહક ખાતાં માટે ચુકવણી નોંધો.",
     "loadError": "ચુકવણીઓ લોડ થઈ નથી.",
@@ -801,6 +811,8 @@
     "failedToUpdateUserStatus": "વપરાશકર્તા સ્થિતિ અપડેટ કરવામાં નિષ્ફળ"
   },
   "importExport": {
+    "supportedFormats": "સમર્થિત ફોર્મેટ: CSV અને Excel (.xlsx, .xls)",
+    "unsupportedFile": "CSV, .xlsx અથવા .xls ફાઇલ પસંદ કરો.",
     "title": "આયાત/નિકાસ",
     "jobsLoadFailed": "આયાતનો ઇતિહાસ લોડ થયો નથી.",
     "operationCompleted": "કામ સફળતાપૂર્વક પૂરું થયું",
@@ -864,6 +876,7 @@
     "notFound": "વિનંતી કરેલ સંસાધન મળ્યું નથી."
   },
   "profile": {
+    "settings": "સેટિંગ્સ",
     "emailPlaceholder": "your.email@example.com",
     "currentPasswordLabel": "વર્તમાન પાસવર્ડ",
     "currentPasswordPlaceholder": "વર્તમાન પાસવર્ડ દાખલ કરો",

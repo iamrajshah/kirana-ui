@@ -7,19 +7,28 @@ import { useTranslation } from 'react-i18next';
 interface PrimaryBankAccountCardProps {
   bankAccount: BankAccount | null;
   onManageClick: () => void;
+  onAddClick: () => void;
   hasPermission: boolean;
 }
 
 export const PrimaryBankAccountCard: React.FC<PrimaryBankAccountCardProps> = ({
   bankAccount,
   onManageClick,
+  onAddClick,
   hasPermission,
 }) => {
   const { t } = useTranslation();
   return (
     <IonCard>
       <IonCardContent>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'start',
+            marginBottom: '12px',
+          }}
+        >
           <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>
             {t('foundation.bank.primaryAccount')}
           </h3>
@@ -35,7 +44,9 @@ export const PrimaryBankAccountCard: React.FC<PrimaryBankAccountCardProps> = ({
               <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>
                 {bankAccount.bank_name}
               </h2>
-              <IonBadge color="primary" mode="ios">{t('foundation.bank.primary')}</IonBadge>
+              <IonBadge color="primary" mode="ios">
+                {t('foundation.bank.primary')}
+              </IonBadge>
             </div>
             <div style={{ marginTop: '12px' }}>
               <div style={{ marginBottom: '6px' }}>
@@ -67,9 +78,7 @@ export const PrimaryBankAccountCard: React.FC<PrimaryBankAccountCardProps> = ({
                   <strong style={{ fontSize: '14px', color: 'var(--ion-color-medium)' }}>
                     {t('foundation.bank.branch')}:
                   </strong>
-                  <p style={{ margin: '2px 0', fontSize: '15px' }}>
-                    {bankAccount.branch_name}
-                  </p>
+                  <p style={{ margin: '2px 0', fontSize: '15px' }}>{bankAccount.branch_name}</p>
                 </div>
               )}
               {bankAccount.account_type && (
@@ -86,7 +95,7 @@ export const PrimaryBankAccountCard: React.FC<PrimaryBankAccountCardProps> = ({
             <p style={{ color: 'var(--ion-color-medium)', margin: '0 0 12px' }}>
               {t('foundation.bank.noDetails')}
             </p>
-            <IonButton onClick={onManageClick} size="small" disabled={!hasPermission}>
+            <IonButton onClick={onAddClick} size="small" disabled={!hasPermission}>
               {t('foundation.bank.addAccount')}
             </IonButton>
             {!hasPermission && (

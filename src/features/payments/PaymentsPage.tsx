@@ -24,7 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { useGetPaymentsQuery, useCreatePaymentMutation } from '@core/api/paymentApi';
 import { useGetCustomersQuery } from '@core/api/customerApi';
 import { useLazyGetPendingInvoicesByCustomerQuery } from '@core/api/invoiceApi';
-import { Input, Select, Button, EmptyState, Loading } from '@components';
+import { Input, Select, Button, EmptyState, Loading, SearchBar } from '@components';
 import { formatCurrency, generateIdempotencyKey } from '@utils/helpers';
 import { PAYMENT_MODES } from '@core/constants';
 import type { PaymentMode } from '@core/types';
@@ -42,11 +42,14 @@ export const PaymentsPage: React.FC = () => {
   const [amount, setAmount] = useState('');
   const [paymentMode, setPaymentMode] = useState('CASH');
   const [referenceNote, setReferenceNote] = useState('');
+  const [paymentSearch, setPaymentSearch] = useState('');
+  const [customerSearch, setCustomerSearch] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  
-  const [getPendingInvoices, { data: pendingInvoicesData, isLoading: loadingInvoices }] = useLazyGetPendingInvoicesByCustomerQuery();
+
+  const [getPendingInvoices, { data: pendingInvoicesData, isLoading: loadingInvoices }] =
+    useLazyGetPendingInvoicesByCustomerQuery();
 
   // Load pending invoices when customer is selected
   React.useEffect(() => {
@@ -61,9 +64,10 @@ export const PaymentsPage: React.FC = () => {
   // Auto-fill amount when invoice is selected
   React.useEffect(() => {
     if (invoiceId && pendingInvoicesData?.data) {
-      const selectedInvoice = pendingInvoicesData.data.find(inv => inv.id === invoiceId);
+      const selectedInvoice = pendingInvoicesData.data.find((inv) => inv.id === invoiceId);
       if (selectedInvoice) {
-        const balanceAmount = (selectedInvoice.total_amount || 0) - (selectedInvoice.paid_amount || 0);
+        const balanceAmount =
+          (selectedInvoice.total_amount || 0) - (selectedInvoice.paid_amount || 0);
         setAmount(balanceAmount.toString());
       }
     }
@@ -110,6 +114,7 @@ export const PaymentsPage: React.FC = () => {
     setAmount('');
     setPaymentMode('CASH');
     setReferenceNote('');
+    setCustomerSearch('');
   };
 
   const payments = useMemo(() => data?.data || [], [data?.data]);
@@ -121,18 +126,42 @@ export const PaymentsPage: React.FC = () => {
     BANK: t('payments.bankTransfer'),
     ADJUSTMENT: t('payments.adjustment'),
   };
-  const customers =
-    customersData?.data?.map((c) => ({ value: c.id, label: `${c.name} (${c.phone})` })) ||
-    [];
+  const customers = useMemo(() => {
+    const term = customerSearch.trim().toLowerCase();
+    return (customersData?.data || [])
+      .filter(
+        (customer) =>
+          !term || customer.name.toLowerCase().includes(term) || customer.phone.includes(term)
+      )
+      .map((customer) => ({ value: customer.id, label: `${customer.name} (${customer.phone})` }));
+  }, [customersData?.data, customerSearch]);
+
+  const filteredPayments = useMemo(() => {
+    const term = paymentSearch.trim().toLowerCase();
+    if (!term) return payments;
+    return payments.filter((payment) =>
+      [
+        payment.customer?.name,
+        payment.payment_mode,
+        payment.amount,
+        payment.reference_note,
+        String(payment.created_at).slice(0, 10),
+      ].some((value) =>
+        String(value ?? '')
+          .toLowerCase()
+          .includes(term)
+      )
+    );
+  }, [payments, paymentSearch]);
 
   // Group payments by date
   const groupedPayments = useMemo(() => {
     const groups: { [key: string]: typeof payments } = {};
-    payments.forEach((payment) => {
+    filteredPayments.forEach((payment) => {
       const date = new Date(payment.created_at).toLocaleDateString(i18n?.language || 'en-IN', {
         year: 'numeric',
         month: 'long',
-        day: 'numeric'
+        day: 'numeric',
       });
       if (!groups[date]) {
         groups[date] = [];
@@ -140,7 +169,7 @@ export const PaymentsPage: React.FC = () => {
       groups[date].push(payment);
     });
     return groups;
-  }, [payments, i18n?.language]);
+  }, [filteredPayments, i18n?.language]);
 
   return (
     <IonPage>
@@ -159,14 +188,21 @@ export const PaymentsPage: React.FC = () => {
               </Button>
             </div>
           </div>
+          <SearchBar
+            value={paymentSearch}
+            onChange={setPaymentSearch}
+            placeholder={t('payments.searchPayments')}
+          />
           {isLoading ? (
             <Loading isOpen={isLoading} />
           ) : isError && payments.length === 0 ? (
             <div className="workspace-state">
               <p>{t('payments.loadError')}</p>
-              <Button onClick={() => refetch()} variant="outline">{t('common.retry')}</Button>
+              <Button onClick={() => refetch()} variant="outline">
+                {t('common.retry')}
+              </Button>
             </div>
-          ) : payments.length === 0 ? (
+          ) : filteredPayments.length === 0 ? (
             <EmptyState
               message={t('payments.noPayments')}
               action={
@@ -201,10 +237,18 @@ export const PaymentsPage: React.FC = () => {
                             <div className="payment-record-body">
                               <div>
                                 <h2>{payment.customer?.name || t('common.customer')}</h2>
-                                <p>{new Date(payment.created_at).toLocaleString(i18n?.language || 'en-IN', {
-                                  dateStyle: 'medium', timeStyle: 'short',
-                                })}</p>
-                                <p>{paymentModeLabels[payment.payment_mode] || payment.payment_mode}</p>
+                                <p>
+                                  {new Date(payment.created_at).toLocaleString(
+                                    i18n?.language || 'en-IN',
+                                    {
+                                      dateStyle: 'medium',
+                                      timeStyle: 'short',
+                                    }
+                                  )}
+                                </p>
+                                <p>
+                                  {paymentModeLabels[payment.payment_mode] || payment.payment_mode}
+                                </p>
                               </div>
                               <strong>{formatCurrency(payment.amount)}</strong>
                             </div>
@@ -221,19 +265,23 @@ export const PaymentsPage: React.FC = () => {
 
         {/* FAB Button */}
         <IonFab vertical="bottom" horizontal="end" slot="fixed" className="payments-mobile-action">
-          <IonFabButton onClick={() => {
-            setShowModal(true);
-          }} aria-label={t('payments.recordPayment')}>
+          <IonFabButton
+            onClick={() => {
+              setShowModal(true);
+            }}
+            aria-label={t('payments.recordPayment')}
+          >
             <IonIcon icon={add} />
           </IonFabButton>
         </IonFab>
 
         {/* Record Payment Modal */}
         {showModal && (
-          <IonModal 
+          <IonModal
             isOpen={true}
             onDidDismiss={() => {
               setShowModal(false);
+              resetForm();
             }}
           >
             <IonPage>
@@ -241,69 +289,88 @@ export const PaymentsPage: React.FC = () => {
                 <IonToolbar>
                   <IonTitle>{t('payments.recordPayment')}</IonTitle>
                   <IonButtons slot="end">
-                    <IonButton onClick={() => {
-                      setShowModal(false);
-                    }}>
+                    <IonButton
+                      onClick={() => {
+                        setShowModal(false);
+                        resetForm();
+                      }}
+                    >
                       <IonIcon icon={close} />
                     </IonButton>
                   </IonButtons>
                 </IonToolbar>
               </IonHeader>
               <IonContent className="ion-padding">
-            <Select
-              label={t('billing.selectCustomer')}
-              value={customerId}
-              onChange={setCustomerId}
-              options={customers}
-              placeholder={t('billing.selectCustomer')}
-              required
-            />
-            {customerId && loadingInvoices && (
-              <div className="text-center py-2 text-sm">{t('payments.loadingInvoices')}</div>
-            )}
-            {customerId && pendingInvoicesData?.data && pendingInvoicesData.data.length > 0 && (
-              <Select
-                label={t('payments.selectInvoice')}
-                value={invoiceId}
-                onChange={setInvoiceId}
-                options={[
-                  { value: '', label: t('payments.generalPayment') },
-                  ...pendingInvoicesData.data.map(inv => ({
-                    value: inv.id,
-                    label: `${inv.invoice_number} - ${formatCurrency((inv.total_amount || 0) - (inv.paid_amount || 0))} (${inv.status})`
-                  }))
-                ]}
-                placeholder={t('common.placeholders.selectInvoice')}
-              />
-            )}
-            <Input
-              label={t('common.amount')}
-              value={amount}
-              onChange={setAmount}
-              type="number"
-              required
-              placeholder={invoiceId ? t('payments.amountAutoFilled') : t('payments.enterAmount')}
-            />
-            <Select
-              label={t('payments.paymentMode')}
-              value={paymentMode}
-              onChange={setPaymentMode}
-              options={PAYMENT_MODES.map((m) => ({ value: m.value, label: paymentModeLabels[m.value] || m.label }))}
-              required
-            />
-            <Input
-              label={t('payments.referenceNote')}
-              value={referenceNote}
-              onChange={setReferenceNote}
-            />
-            <Button onClick={() => {
-              handleCreatePayment();
-            }} loading={creating} fullWidth size="large">
-              {t('common.save')}
-            </Button>
-          </IonContent>
-        </IonPage>
-        </IonModal>
+                <Input
+                  label={t('payments.searchCustomers')}
+                  value={customerSearch}
+                  onChange={setCustomerSearch}
+                  placeholder={t('payments.searchCustomers')}
+                />
+                <Select
+                  label={t('billing.selectCustomer')}
+                  value={customerId}
+                  onChange={setCustomerId}
+                  options={customers}
+                  placeholder={t('billing.selectCustomer')}
+                  required
+                />
+                {customerId && loadingInvoices && (
+                  <div className="text-center py-2 text-sm">{t('payments.loadingInvoices')}</div>
+                )}
+                {customerId && pendingInvoicesData?.data && pendingInvoicesData.data.length > 0 && (
+                  <Select
+                    label={t('payments.selectInvoice')}
+                    value={invoiceId}
+                    onChange={setInvoiceId}
+                    options={[
+                      { value: '', label: t('payments.generalPayment') },
+                      ...pendingInvoicesData.data.map((inv) => ({
+                        value: inv.id,
+                        label: `${inv.invoice_number} - ${formatCurrency((inv.total_amount || 0) - (inv.paid_amount || 0))} (${inv.status})`,
+                      })),
+                    ]}
+                    placeholder={t('common.placeholders.selectInvoice')}
+                  />
+                )}
+                <Input
+                  label={t('common.amount')}
+                  value={amount}
+                  onChange={setAmount}
+                  type="number"
+                  required
+                  placeholder={
+                    invoiceId ? t('payments.amountAutoFilled') : t('payments.enterAmount')
+                  }
+                />
+                <Select
+                  label={t('payments.paymentMode')}
+                  value={paymentMode}
+                  onChange={setPaymentMode}
+                  options={PAYMENT_MODES.map((m) => ({
+                    value: m.value,
+                    label: paymentModeLabels[m.value] || m.label,
+                  }))}
+                  required
+                />
+                <Input
+                  label={t('payments.referenceNote')}
+                  value={referenceNote}
+                  onChange={setReferenceNote}
+                />
+                <Button
+                  onClick={() => {
+                    handleCreatePayment();
+                  }}
+                  loading={creating}
+                  fullWidth
+                  size="large"
+                >
+                  {t('common.save')}
+                </Button>
+              </IonContent>
+            </IonPage>
+          </IonModal>
         )}
 
         <IonToast

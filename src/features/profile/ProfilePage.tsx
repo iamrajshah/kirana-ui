@@ -26,21 +26,18 @@ import { Input } from '@components/Input';
 import { useUpdateProfileMutation } from '@core/api/userApi';
 import { useAppSelector } from '@core/hooks';
 import { useTranslation } from 'react-i18next';
-import { useHistory } from 'react-router';
-import { ROUTES } from '@core/constants';
 import { useTheme } from '../../contexts/useTheme';
 import './ProfilePage.css';
 
 export const ProfilePage: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const history = useHistory();
   const user = useAppSelector((state) => state.auth.user);
   const { theme, toggleTheme } = useTheme();
-  
+
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  
+
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -93,11 +90,6 @@ export const ProfilePage: React.FC = () => {
       await updateProfile(updateData).unwrap();
 
       setShowSuccess(true);
-      
-      // Redirect to dashboard after 1 second
-      setTimeout(() => {
-        history.push(ROUTES.DASHBOARD);
-      }, 1000);
     } catch (error: unknown) {
       console.error('❌ Error updating profile:', error);
       setErrorMessage(apiErrorMessage(error, t('foundation.profile.updateFailed')));
@@ -148,7 +140,7 @@ export const ProfilePage: React.FC = () => {
               type="email"
               placeholder={t('profile.emailPlaceholder')}
             />
-            
+
             <IonButton
               onClick={handleUpdateProfile}
               disabled={isLoading}
@@ -162,6 +154,9 @@ export const ProfilePage: React.FC = () => {
         </IonCard>
 
         <IonCard>
+          <IonCardHeader>
+            <IonCardTitle>{t('profile.settings')}</IonCardTitle>
+          </IonCardHeader>
           <IonItem>
             <IonIcon icon={languageIcon} slot="start" />
             <IonLabel>{t('profile.language')}</IonLabel>
@@ -172,7 +167,7 @@ export const ProfilePage: React.FC = () => {
               interface="action-sheet"
               interfaceOptions={{
                 header: t('profile.selectLanguage'),
-                cssClass: 'language-selector-sheet'
+                cssClass: 'language-selector-sheet',
               }}
             >
               {languages.map((lang) => (
@@ -186,11 +181,7 @@ export const ProfilePage: React.FC = () => {
           <IonItem>
             <IonIcon icon={contrast} slot="start" />
             <IonLabel>{t('profile.theme')}</IonLabel>
-            <IonToggle
-              checked={theme === 'dark'}
-              onIonChange={toggleTheme}
-              slot="end"
-            >
+            <IonToggle checked={theme === 'dark'} onIonChange={toggleTheme} slot="end">
               {theme === 'dark' ? t('profile.darkMode') : t('profile.lightMode')}
             </IonToggle>
           </IonItem>
