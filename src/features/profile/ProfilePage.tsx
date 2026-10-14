@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { apiErrorMessage } from '@core/services/notificationService';
 import {
   IonPage,
@@ -45,7 +45,8 @@ export const ProfilePage: React.FC = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const [updateProfile] = useUpdateProfileMutation();
+  const [updateProfile, { isLoading }] = useUpdateProfileMutation();
+  const updateInFlight = useRef(false);
 
   const languages = [
     { code: 'en', name: 'English' },
@@ -68,6 +69,8 @@ export const ProfilePage: React.FC = () => {
   }, [user]);
 
   const handleUpdateProfile = async () => {
+    if (updateInFlight.current) return;
+
     if (!name.trim() && !phone.trim() && !email.trim()) {
       setErrorMessage(t('foundation.profile.oneFieldRequired'));
       setShowError(true);
@@ -75,6 +78,7 @@ export const ProfilePage: React.FC = () => {
     }
 
     try {
+      updateInFlight.current = true;
       const updateData: { name?: string; phone?: string; email?: string } = {};
       if (name.trim() !== user?.name) updateData.name = name.trim();
       if (phone.trim() !== user?.phone) updateData.phone = phone.trim();
@@ -98,6 +102,8 @@ export const ProfilePage: React.FC = () => {
       console.error('❌ Error updating profile:', error);
       setErrorMessage(apiErrorMessage(error, t('foundation.profile.updateFailed')));
       setShowError(true);
+    } finally {
+      updateInFlight.current = false;
     }
   };
 
@@ -145,7 +151,7 @@ export const ProfilePage: React.FC = () => {
             
             <IonButton
               onClick={handleUpdateProfile}
-
+              disabled={isLoading}
               expand="block"
               style={{ marginTop: '20px' }}
             >
