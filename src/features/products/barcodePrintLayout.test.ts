@@ -14,4 +14,13 @@ describe('barcode print layout', () => {
   it('keeps a small print run on one sheet', () => {
     expect(paginateBarcodeCopies(3)).toEqual([[0, 1, 2]]);
   });
+
+  it('keeps large print jobs intact instead of silently capping them', () => {
+    const pages = paginateBarcodeCopies(566);
+
+    expect(pages).toHaveLength(27);
+    expect(pages.slice(0, -1).every((page) => page.length === 21)).toBe(true);
+    expect(pages.at(-1)).toHaveLength(20);
+    expect(pages.flat()).toHaveLength(566);
+  });
 });
