@@ -6,6 +6,7 @@ import { ROUTES } from '@core/constants';
 import { useAppSelector } from '../core/hooks';
 import { selectCurrentUser } from '@core/auth/authSlice';
 import { getNavigationItems } from '@core/navigation/navigation';
+import type { TabPermission } from '@core/permissions/rolePermissions';
 import {
   protectedMainLayoutRoutes,
   protectedPageRoutes,
@@ -13,6 +14,7 @@ import {
 } from '@core/navigation/protectedRoutes';
 import { SideMenu } from '@components';
 import { PrivateRoute } from './PrivateRoute';
+import { RoutePageSuspense } from './RoutePageSuspense';
 import '@components/Workspace/workspace.css';
 
 const DashboardPage = lazy(() => import('@features/dashboard/DashboardPage').then((module) => ({ default: module.DashboardPage })));
@@ -70,6 +72,13 @@ export const MainLayout: React.FC = () => {
   const user = useAppSelector(selectCurrentUser);
   const userRoles = user?.roles || [];
   const primaryItems = getNavigationItems(userRoles).filter((item) => item.primary);
+  const renderPage = (Component: React.ComponentType, permission?: TabPermission) => (
+    <PrivateRoute permission={permission}>
+      <RoutePageSuspense loadingLabel={t('common.loading')}>
+        <Component />
+      </RoutePageSuspense>
+    </PrivateRoute>
+  );
 
   return (
     <IonSplitPane contentId="main-content" when="(min-width: 992px)" className="workspace-split-pane">
@@ -77,8 +86,8 @@ export const MainLayout: React.FC = () => {
       <div id="main-content" className="workspace-main">
       <IonTabs className="workspace-tabs">
         <IonRouterOutlet>
-          <Route exact path={ROUTES.PROFILE} render={() => <PrivateRoute><ProfilePage /></PrivateRoute>} />
-          <Route exact path={ROUTES.CHANGE_PASSWORD} render={() => <PrivateRoute><ChangePasswordPage /></PrivateRoute>} />
+          <Route exact path={ROUTES.PROFILE} render={() => renderPage(ProfilePage)} />
+          <Route exact path={ROUTES.CHANGE_PASSWORD} render={() => renderPage(ChangePasswordPage)} />
           {protectedPageRoutes.map(({ id, path, permission }) => {
             const Component = protectedPageComponents[id];
             return (
@@ -86,11 +95,7 @@ export const MainLayout: React.FC = () => {
                 key={id}
                 exact
                 path={path}
-                render={() => (
-                  <PrivateRoute permission={permission}>
-                    <Component />
-                  </PrivateRoute>
-                )}
+                render={() => renderPage(Component, permission)}
               />
             );
           })}
@@ -101,15 +106,11 @@ export const MainLayout: React.FC = () => {
                 key={path}
                 exact
                 path={path}
-                render={() => (
-                  <PrivateRoute permission={permission}>
-                    <Component />
-                  </PrivateRoute>
-                )}
+                render={() => renderPage(Component, permission)}
               />
             );
           })}
-          <Route exact path={ROUTES.ABOUT} component={AboutPage} />
+          <Route exact path={ROUTES.ABOUT} render={() => renderPage(AboutPage)} />
         </IonRouterOutlet>
 
         <IonTabBar slot="bottom" className="workspace-bottom-tabs">

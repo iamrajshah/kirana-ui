@@ -257,7 +257,7 @@ describe('BillingPage', () => {
       expect(screen.queryByText('Anita (9999999999)')).toBeNull();
     });
 
-    it('holds a new bill with the saved counter and resets only after the server accepts it', async () => {
+    it('asks for the counter inside the app before holding a new bill', async () => {
       mocks.search = '';
       let resolveHold: (value: { data: { id: string; version: number } }) => void = () => undefined;
       mocks.createInvoice.mockReturnValueOnce(
@@ -265,14 +265,17 @@ describe('BillingPage', () => {
           resolveHold = resolve;
         })
       );
-      vi.spyOn(window, 'prompt').mockReturnValue(' Counter 4 ');
-
       render(<BillingPage />);
       fireEvent.click(screen.getByRole('button', { name: 'billing.scanBarcode' }));
       fireEvent.click(screen.getByRole('button', { name: 'camera scan' }));
       await screen.findByText('Tea');
 
       fireEvent.click(screen.getByRole('button', { name: 'billing.holdBill' }));
+
+      fireEvent.change(screen.getByRole('textbox', { name: 'billing.heldBills.counterPrompt' }), {
+        target: { value: ' Counter 4 ' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'common.save' }));
 
       await waitFor(() =>
         expect(mocks.createInvoice).toHaveBeenCalledWith(
@@ -284,6 +287,27 @@ describe('BillingPage', () => {
       resolveHold({ data: { id: 'held-1', version: 0 } });
       await waitFor(() => expect(screen.queryByText('Tea')).toBeNull());
       expect(localStorage.getItem('kirana_counter_label')).toBe('Counter 4');
+    });
+
+    it('finalizes a named-customer bill as unpaid without recording a payment', async () => {
+      mocks.invoice = {
+        ...mocks.invoice,
+        customer: { id: '12', name: 'Anita', phone: '9999999999' },
+      };
+      mocks.updateInvoice.mockResolvedValueOnce({ data: { id: 'edit-1', version: 4 } });
+
+      render(<BillingPage />);
+      await screen.findByText('Anita (9999999999)');
+      fireEvent.click(screen.getByRole('button', { name: 'billing.payLater' }));
+
+      await waitFor(() =>
+        expect(mocks.finalizeInvoice).toHaveBeenCalledWith({
+          id: 'edit-1',
+          expected_version: 4,
+        })
+      );
+      expect(mocks.createPayment).not.toHaveBeenCalled();
+      expect(mocks.notifySuccess).toHaveBeenCalledWith('billing.creditBillCreated');
     });
 
     it('updates and finalizes a claimed bill using consecutive server versions', async () => {

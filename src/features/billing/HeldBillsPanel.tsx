@@ -16,7 +16,7 @@ import './HeldBillsPanel.css';
 interface HeldBillsPanelProps {
   currentUser: Pick<User, 'id' | 'name' | 'roles'>;
   counterLabel: string | null;
-  onRequestCounterLabel: (force?: boolean) => string | null;
+  onRequestCounterLabel: (force?: boolean) => Promise<string | null>;
   onBeforeResume: (bill: HeldBill) => boolean;
   onResume: (bill: HeldBill) => void;
   onReleased: (bill: HeldBill) => void;
@@ -59,11 +59,9 @@ export const HeldBillsPanel: React.FC<HeldBillsPanelProps> = ({
     return 0;
   });
 
-  const counterForAction = () => counterLabel || onRequestCounterLabel(false);
-
   const runClaim = async (bill: HeldBill, takeover = false) => {
     if (!onBeforeResume(bill)) return;
-    const nextCounter = counterForAction();
+    const nextCounter = counterLabel || (await onRequestCounterLabel(false));
     if (!nextCounter) return;
     setPendingBillId(bill.id);
     try {
