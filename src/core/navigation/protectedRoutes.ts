@@ -46,6 +46,9 @@ export const protectedMainLayoutRoutes: readonly ProtectedRouteAccess[] = [
 ];
 
 export const mainLayoutPaths: readonly string[] = [
+  ROUTES.PROFILE,
+  ROUTES.CHANGE_PASSWORD,
   ROUTES.ABOUT,
+  ...protectedPageRoutes.map(({ path }) => path),
   ...protectedMainLayoutRoutes.map(({ path }) => path),
 ];
