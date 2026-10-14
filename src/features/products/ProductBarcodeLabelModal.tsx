@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   IonButton,
   IonButtons,
@@ -21,6 +22,7 @@ import type { ProductVariant, StoreBarcodeInfo } from '@core/types';
 import { formatCurrency } from '@utils/helpers';
 import { apiErrorMessage } from '@core/services/notificationService';
 import { Ean13Barcode } from './Ean13Barcode';
+import { paginateBarcodeCopies } from './barcodePrintLayout';
 import './product-barcode-label.css';
 
 interface Props {
@@ -50,7 +52,7 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
   const variantLabel = [variant?.brand, variant?.size, variant?.packaging === 'LOOSE' ? t('products.packagingLoose') : variant?.packaging]
     .filter(Boolean)
     .join(' · ');
-  const labels = useMemo(() => Array.from({ length: copies }, (_, index) => index), [copies]);
+  const printPages = useMemo(() => paginateBarcodeCopies(copies), [copies]);
 
   useEffect(() => {
     setGenerated(null);
@@ -152,23 +154,29 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
           </section>
         </div>
 
-        {barcode && (
-          <div className="barcode-print-sheet" aria-hidden="true">
-            {labels.map((index) => (
-              <div className="product-barcode-label" key={index}>
-                <small>{t('products.storePackedItem')}</small>
-                <strong>{productName}</strong>
-                {variantLabel && <span>{variantLabel}</span>}
-                {showPrice && <b>{formatCurrency(sellingPrice)}</b>}
-                <Ean13Barcode
-                  value={barcode}
-                  ariaLabel={t('products.barcodeAriaLabel', { value: barcode })}
-                />
-              </div>
-            ))}
-          </div>
-        )}
       </IonContent>
+
+      {barcode && createPortal(
+        <div className="barcode-print-sheet" aria-hidden="true">
+          {printPages.map((page, pageIndex) => (
+            <section className="barcode-print-page" key={pageIndex}>
+              {page.map((index) => (
+                <div className="product-barcode-label" key={index}>
+                  <small>{t('products.storePackedItem')}</small>
+                  <strong>{productName}</strong>
+                  {variantLabel && <span>{variantLabel}</span>}
+                  {showPrice && <b>{formatCurrency(sellingPrice)}</b>}
+                  <Ean13Barcode
+                    value={barcode}
+                    ariaLabel={t('products.barcodeAriaLabel', { value: barcode })}
+                  />
+                </div>
+              ))}
+            </section>
+          ))}
+        </div>,
+        document.body
+      )}
     </IonModal>
   );
 };

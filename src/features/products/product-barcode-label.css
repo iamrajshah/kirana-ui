@@ -69,9 +69,10 @@
 }
 
 .product-barcode-label {
-  width: 50mm;
-  min-height: 30mm;
-  padding: 2.2mm 3mm;
+  box-sizing: border-box;
+  width: 58mm;
+  height: 35mm;
+  padding: 2.4mm 3mm;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-content: start;
@@ -85,15 +86,18 @@
 
 .product-barcode-label small {
   grid-column: 1 / -1;
-  font-size: 7pt;
+  grid-row: 1;
+  font-size: 8pt;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .product-barcode-label strong {
+  grid-column: 1;
+  grid-row: 2;
   min-width: 0;
   overflow: hidden;
-  font-size: 11pt;
+  font-size: 11.5pt;
   line-height: 1.1;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -101,7 +105,12 @@
 
 .product-barcode-label > span {
   grid-column: 1;
-  font-size: 8pt;
+  grid-row: 3;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 8.5pt;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .product-barcode-label > b {
@@ -113,8 +122,9 @@
 
 .store-barcode-svg {
   grid-column: 1 / -1;
+  grid-row: 4;
   width: 100%;
-  height: 13mm;
+  height: 16mm;
   shape-rendering: crispEdges;
 }
 
@@ -133,6 +143,10 @@
   display: none;
 }
 
+.barcode-print-page {
+  display: none;
+}
+
 @media (max-width: 680px) {
   .barcode-label-workspace {
     grid-template-columns: 1fr;
@@ -145,6 +159,24 @@
 }
 
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  html,
+  body {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  body > :not(.barcode-print-sheet) {
+    display: none !important;
+  }
+
   body * {
     visibility: hidden !important;
   }
@@ -155,18 +187,41 @@
   }
 
   .barcode-print-sheet {
-    position: absolute;
-    inset: 0;
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, 50mm);
-    align-content: start;
-    gap: 3mm;
-    padding: 5mm;
+    position: static;
+    display: block !important;
+    width: 100%;
+    height: auto !important;
+    margin: 0;
+    padding: 0;
+    overflow: visible !important;
     background: #fff;
+  }
+
+  .barcode-print-page {
+    display: grid !important;
+    grid-template-columns: repeat(3, 58mm);
+    grid-auto-rows: 35mm;
+    align-content: start;
+    justify-content: center;
+    gap: 3mm;
+    width: 100%;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .barcode-print-page + .barcode-print-page {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  .barcode-print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
   }
 
   .product-barcode-label {
     break-inside: avoid;
+    page-break-inside: avoid;
     border: 0.2mm solid #777;
   }
 }
