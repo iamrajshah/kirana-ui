@@ -12,8 +12,14 @@ const mocks = vi.hoisted(() => ({
   renewHeldBill: vi.fn(),
   createPayment: vi.fn(),
   scanBarcode: vi.fn(),
+  createProductFromBarcode: vi.fn(),
   notifyError: vi.fn(),
   notifySuccess: vi.fn(),
+  user: { id: '7', name: 'Rajesh', roles: ['CASHIER'] } as {
+    id: string;
+    name: string;
+    roles: string[];
+  },
   search: '?edit=edit-1',
   invoice: {} as Record<string, unknown>,
 }));
@@ -50,7 +56,7 @@ vi.mock('react-i18next', () => ({
 
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('@core/hooks', () => ({
-  useAppSelector: () => ({ id: '7', name: 'Rajesh', roles: ['CASHIER'] }),
+  useAppSelector: () => mocks.user,
 }));
 vi.mock('@core/auth/authSlice', () => ({ selectCurrentUser: vi.fn() }));
 vi.mock('./HeldBillsPanel', () => ({
@@ -119,6 +125,10 @@ vi.mock('@core/api/customerApi', () => ({
 vi.mock('@core/api/productApi', () => ({
   useLazySearchVariantsQuery: () => [vi.fn(), { data: undefined, isLoading: false }],
   useLazyScanBarcodeQuery: () => [apiTrigger(mocks.scanBarcode), { isFetching: false }],
+  useCreateProductFromBarcodeMutation: () => [
+    apiTrigger(mocks.createProductFromBarcode),
+    { isLoading: false },
+  ],
 }));
 
 vi.mock('@core/services/notificationService', () => ({
@@ -135,6 +145,8 @@ vi.mock('ionicons/icons', () => ({
   remove: 'remove',
   scan: 'scan',
   trash: 'trash',
+  barcodeOutline: 'barcodeOutline',
+  close: 'close',
 }));
 
 vi.mock('@ionic/react', () => {
@@ -187,6 +199,23 @@ beforeEach(() => {
   mocks.renewHeldBill.mockResolvedValue({ data: { id: 'edit-1', version: 3 } });
   mocks.cancelInvoice.mockResolvedValue({ data: { id: 'edit-1' } });
   mocks.scanBarcode.mockResolvedValue(matchedBarcode);
+  mocks.user = { id: '7', name: 'Rajesh', roles: ['CASHIER'] };
+  mocks.createProductFromBarcode.mockResolvedValue({
+    data: {
+      barcode: { id: 'barcode-9', barcode: '8901234567890', is_active: true },
+      product: { id: 'product-9', name: 'Tata Salt 1 kg', is_active: true },
+      variant: {
+        id: 'variant-9',
+        product_id: 'product-9',
+        sku: null,
+        mrp_price: 28,
+        selling_price: 28,
+        price: 28,
+        is_active: true,
+      },
+      inventory: { variant_id: 'variant-9', quantity: 10, low_stock_threshold: 5 },
+    },
+  });
 });
 
 afterEach(cleanup);
@@ -342,7 +371,7 @@ describe('BillingPage', () => {
       expect(await screen.findByText('Tea')).toBeTruthy();
     });
 
-    it('keeps the bill open and explains an unknown barcode', async () => {
+    it('keeps the cashier bill open and asks for manager help for an unknown barcode', async () => {
       mocks.scanBarcode.mockResolvedValueOnce({ success: true, found: false });
 
       render(<BillingPage />);
@@ -351,10 +380,44 @@ describe('BillingPage', () => {
       fireEvent.click(screen.getByRole('button', { name: 'billing.scanBarcode' }));
       fireEvent.click(screen.getByRole('button', { name: 'camera scan' }));
 
-      await waitFor(() =>
-        expect(mocks.notifyError).toHaveBeenCalledWith('billing.barcodeNotFound')
-      );
+      expect(await screen.findByText('billing.unknownBarcode.managerRequired')).toBeTruthy();
+      expect(screen.getByText('8901234567890')).toBeTruthy();
       expect(screen.getByText('Rice')).toBeTruthy();
+      expect(mocks.createProductFromBarcode).not.toHaveBeenCalled();
+    });
+
+    it('lets an owner save an unknown product and adds it to the current bill', async () => {
+      mocks.user = { id: '7', name: 'Rajesh', roles: ['OWNER'] };
+      mocks.scanBarcode.mockResolvedValueOnce({ success: true, found: false });
+
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+
+      fireEvent.click(screen.getByRole('button', { name: 'billing.scanBarcode' }));
+      fireEvent.click(screen.getByRole('button', { name: 'camera scan' }));
+
+      fireEvent.change(await screen.findByLabelText('billing.unknownBarcode.productName'), {
+        target: { value: 'Tata Salt 1 kg' },
+      });
+      fireEvent.change(screen.getByLabelText('billing.unknownBarcode.sellingPrice'), {
+        target: { value: '28' },
+      });
+      fireEvent.change(screen.getByLabelText('billing.unknownBarcode.openingStock'), {
+        target: { value: '10' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'billing.unknownBarcode.createAndAdd' }));
+
+      await waitFor(() =>
+        expect(mocks.createProductFromBarcode).toHaveBeenCalledWith({
+          barcode: '8901234567890',
+          productMaster: { name: 'Tata Salt 1 kg' },
+          product: { name: 'Tata Salt 1 kg' },
+          variant: { mrp: 28, sellingPrice: 28 },
+          inventory: { quantity: 10 },
+        })
+      );
+      expect(await screen.findByText('Tata Salt 1 kg')).toBeTruthy();
+      expect(mocks.notifySuccess).toHaveBeenCalledWith('billing.unknownBarcode.createdAndAdded');
     });
 
     it('accepts barcode input from a desktop counter scanner', async () => {
@@ -468,9 +531,7 @@ describe('BillingPage', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'billing.scanBarcode' }));
       fireEvent.click(screen.getByRole('button', { name: 'camera scan' }));
-      await waitFor(() =>
-        expect(mocks.notifyError).toHaveBeenCalledWith('billing.barcodeNotFound')
-      );
+      await screen.findByText('billing.unknownBarcode.managerRequired');
 
       fireEvent.click(screen.getByRole('button', { name: 'billing.payCash' }));
 

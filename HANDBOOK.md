@@ -24,6 +24,9 @@ workflow should remain understandable in English, Hindi, Marathi, and Gujarati.
 
 - A walk-in cash or UPI sale does not require customer creation.
 - Product search and barcode scanning lead into the same cart.
+- When a barcode is unknown, an owner or manager can save a minimal product with
+  its selling price and opening stock, then add it to the current bill. Cashiers
+  are told to involve a manager, and their existing cart remains untouched.
 - A customer is attached only when credit, history, a named invoice, or a payment
   reminder is required.
 - The mobile payment actions remain reachable near the bottom of the screen;
@@ -99,6 +102,8 @@ remain usable. Cashiers continue to see their normal operational dashboard.
 - Renew an actively edited held bill only while the page is visible.
 - A takeover is an exceptional owner/manager action and must remain explicit.
 - Keep idempotency keys on invoice and payment creation paths.
+- Unknown-barcode creation must remain tenant-scoped and permission-protected;
+  never let a cashier bypass the server's product-creation permission.
 
 ## Developer and AI-agent workflow
 
