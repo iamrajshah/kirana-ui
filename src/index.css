@@ -228,3 +228,8 @@ body.scanner-active .ion-page {
   background: transparent !important;
   --background: transparent !important;
 }
+/* Keep one app-controlled password reveal action in browsers that add their own. */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}

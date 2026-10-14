@@ -59,11 +59,13 @@ import './SupplierLedgerPage.css';
 
 const SupplierLedgerPage: React.FC = () => {
   const { t } = useTranslation();
-  const { id } = useParams<{ id: string }>();  const history = useHistory();  const user = useAppSelector(selectCurrentUser);
+  const { id } = useParams<{ id: string }>();
+  const history = useHistory();
+  const user = useAppSelector(selectCurrentUser);
   const userRoles = user?.roles || [];
   const hasUpdatePermission = hasPermission(userRoles, 'SUPPLIER_UPDATE');
   const hasManagePermission = hasPermission(userRoles, 'SUPPLIER_MANAGE');
-  
+
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Bank account modals
@@ -78,7 +80,11 @@ const SupplierLedgerPage: React.FC = () => {
   const [notes, setNotes] = useState('');
 
   const { data: supplierData, isLoading: loadingSupplier } = useGetSupplierByIdQuery(id!);
-  const { data: ledgerData, isLoading: loadingLedger, refetch } = useGetSupplierLedgerQuery({ id: id!, page: 1, limit: 50 });
+  const {
+    data: ledgerData,
+    isLoading: loadingLedger,
+    refetch,
+  } = useGetSupplierLedgerQuery({ id: id!, page: 1, limit: 50 });
   const { data: bankAccountsData } = useGetBankAccountsQuery(id!);
   const [makePayment, { isLoading: processingPayment }] = useMakeSupplierPaymentMutation();
   const [createBankAccount, { isLoading: creatingBankAccount }] = useCreateBankAccountMutation();
@@ -169,7 +175,7 @@ const SupplierLedgerPage: React.FC = () => {
       notificationService.handleApiError(error);
     }
   };
-  
+
   const handleMakePayment = async () => {
     if (!amount || parseFloat(amount) <= 0) {
       notificationService.warning(t('suppliers.enterValidAmount'));
@@ -236,8 +242,8 @@ const SupplierLedgerPage: React.FC = () => {
 
   // Separate credit and debit entries
   // For suppliers: credit = money we owe them (purchases), debit = payments we make
-  const creditEntries = entries.filter(entry => entry.credit > 0);
-  const debitEntries = entries.filter(entry => entry.debit > 0);
+  const creditEntries = entries.filter((entry) => entry.credit > 0);
+  const debitEntries = entries.filter((entry) => entry.debit > 0);
 
   const getEntryTypeColor = (type: string) => {
     switch (type) {
@@ -309,7 +315,11 @@ const SupplierLedgerPage: React.FC = () => {
                       <div className="summary-label">{t('suppliers.ledger.currentBalance')}</div>
                       <div className={`summary-value balance ${balance > 0 ? 'credit' : 'debit'}`}>
                         {formatCurrency(Math.abs(balance))}
-                        {balance > 0 ? ` ${t('suppliers.ledger.payable')}` : balance < 0 ? ` ${t('suppliers.ledger.advance')}` : ''}
+                        {balance > 0
+                          ? ` ${t('suppliers.ledger.payable')}`
+                          : balance < 0
+                            ? ` ${t('suppliers.ledger.advance')}`
+                            : ''}
                       </div>
                     </div>
                   </IonCol>
@@ -325,6 +335,7 @@ const SupplierLedgerPage: React.FC = () => {
           onManageClick={() => {
             setShowBankAccountsModal(true);
           }}
+          onAddClick={handleAddBankAccount}
           hasPermission={hasManagePermission}
         />
 
@@ -350,8 +361,8 @@ const SupplierLedgerPage: React.FC = () => {
                     ) : (
                       <IonList>
                         {creditEntries.map((entry) => (
-                          <IonItem 
-                            key={entry.id} 
+                          <IonItem
+                            key={entry.id}
                             className="ledger-item"
                             button={entry.ref_type === 'PURCHASE' && !!entry.ref_id}
                             onClick={() => handlePurchaseClick(entry)}
@@ -361,13 +372,19 @@ const SupplierLedgerPage: React.FC = () => {
                                 <IonBadge color={getEntryTypeColor(entry.ref_type)} mode="ios">
                                   {getEntryTypeLabel(entry.ref_type)}
                                 </IonBadge>
-                                <span className="entry-date">{formatDateTime(entry.created_at)}</span>
+                                <span className="entry-date">
+                                  {formatDateTime(entry.created_at)}
+                                </span>
                               </div>
                               {entry.ref_id && (
-                                <p className="entry-reference" style={{ color: 'var(--ion-color-primary)', fontWeight: '500' }}>
+                                <p
+                                  className="entry-reference"
+                                  style={{ color: 'var(--ion-color-primary)', fontWeight: '500' }}
+                                >
                                   {entry.ref_type === 'PURCHASE'
                                     ? t('suppliers.ledger.purchaseReference')
-                                    : t('suppliers.ledger.reference')}{entry.ref_id}
+                                    : t('suppliers.ledger.reference')}
+                                  {entry.ref_id}
                                 </p>
                               )}
                             </IonLabel>
@@ -405,15 +422,26 @@ const SupplierLedgerPage: React.FC = () => {
                                 <IonBadge color={getEntryTypeColor(entry.ref_type)} mode="ios">
                                   {getEntryTypeLabel(entry.ref_type)}
                                 </IonBadge>
-                                <span className="entry-date">{formatDateTime(entry.created_at)}</span>
+                                <span className="entry-date">
+                                  {formatDateTime(entry.created_at)}
+                                </span>
                               </div>
                               {entry.payment_mode && (
-                                <p className="entry-reference" style={{ color: 'var(--ion-color-medium)', fontSize: '0.85rem' }}>
+                                <p
+                                  className="entry-reference"
+                                  style={{ color: 'var(--ion-color-medium)', fontSize: '0.85rem' }}
+                                >
                                   💳 {entry.payment_mode}
                                 </p>
                               )}
                               {entry.description && (
-                                <p style={{ color: 'var(--ion-color-medium)', fontSize: '0.85rem', fontStyle: 'italic' }}>
+                                <p
+                                  style={{
+                                    color: 'var(--ion-color-medium)',
+                                    fontSize: '0.85rem',
+                                    fontStyle: 'italic',
+                                  }}
+                                >
                                   {entry.description}
                                 </p>
                               )}
@@ -492,16 +520,18 @@ const SupplierLedgerPage: React.FC = () => {
                   value={paymentMode}
                   onIonChange={(e) => setPaymentMode(e.detail.value)}
                   interface="popover"
-                  style={{ 
+                  style={{
                     border: '1px solid var(--ion-color-medium)',
                     borderRadius: '8px',
-                    padding: '8px'
+                    padding: '8px',
                   }}
                 >
                   <IonSelectOption value="CASH">{t('suppliers.ledger.cash')}</IonSelectOption>
                   <IonSelectOption value="UPI">{t('suppliers.ledger.upi')}</IonSelectOption>
                   <IonSelectOption value="CARD">{t('suppliers.ledger.card')}</IonSelectOption>
-                  <IonSelectOption value="BANK_TRANSFER">{t('suppliers.ledger.bankTransfer')}</IonSelectOption>
+                  <IonSelectOption value="BANK_TRANSFER">
+                    {t('suppliers.ledger.bankTransfer')}
+                  </IonSelectOption>
                 </IonSelect>
               </div>
 

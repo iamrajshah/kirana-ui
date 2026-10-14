@@ -35,6 +35,7 @@ import {
 } from '@core/api/importExportApi';
 import { API_BASE_URL, STORAGE_KEYS } from '@core/constants';
 import './ImportExportPage.css';
+import { isSupportedImportFile } from '@utils/formValidation';
 
 type TabType = 'import' | 'export';
 type ImportType = 'CUSTOMERS' | 'PRODUCTS' | 'INVENTORY' | 'CATEGORIES';
@@ -86,6 +87,13 @@ export const ImportExportPage: React.FC = () => {
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      if (!isSupportedImportFile(file.name)) {
+        setSelectedFile(null);
+        setErrorMessage(t('importExport.unsupportedFile'));
+        setShowError(true);
+        event.target.value = '';
+        return;
+      }
       setSelectedFile(file);
     }
   };
@@ -96,7 +104,6 @@ export const ImportExportPage: React.FC = () => {
       setShowError(true);
       return;
     }
-
 
     try {
       await uploadFile({
@@ -117,7 +124,6 @@ export const ImportExportPage: React.FC = () => {
   };
 
   const handleCommit = async (jobId: string) => {
-
     try {
       await commitJob(jobId).unwrap();
       setShowSuccess(true);
@@ -129,7 +135,6 @@ export const ImportExportPage: React.FC = () => {
   };
 
   const handleExport = async (type: ExportType, format: 'CSV' | 'EXCEL' = 'CSV') => {
-
     try {
       const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
       const response = await fetch(`${API_BASE_URL}/import/export/${type}?format=${format}`, {
@@ -246,6 +251,9 @@ export const ImportExportPage: React.FC = () => {
                       onChange={handleFileSelect}
                       style={{ display: 'block', marginBottom: '10px' }}
                     />
+                    <p style={{ fontSize: '13px', color: 'var(--ion-color-medium)' }}>
+                      {t('importExport.supportedFormats')}
+                    </p>
                     {selectedFile && (
                       <p style={{ fontSize: '14px', color: 'var(--ion-color-medium)' }}>
                         {t('importExport.selectedFile')} {selectedFile.name}
@@ -256,7 +264,7 @@ export const ImportExportPage: React.FC = () => {
                   <IonButton
                     onClick={handleUpload}
                     expand="block"
-                    disabled={true}
+                    disabled={!selectedFile || uploading}
                     style={{ marginTop: '20px' }}
                   >
                     {uploading ? (

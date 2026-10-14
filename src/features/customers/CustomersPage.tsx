@@ -24,7 +24,11 @@ import {
 import { add, close, pencil } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router';
-import { useGetCustomersQuery, useCreateCustomerMutation, useUpdateCustomerMutation } from '@core/api/customerApi';
+import {
+  useGetCustomersQuery,
+  useCreateCustomerMutation,
+  useUpdateCustomerMutation,
+} from '@core/api/customerApi';
 import { SearchBar, Input, Button, EmptyState, Loading } from '@components';
 import { Navbar } from '@components/Navbar';
 import { formatCurrency } from '@utils/helpers';
@@ -33,6 +37,7 @@ import { selectCurrentUser } from '@core/auth/authSlice';
 import { hasPermission } from '@core/permissions/permissions';
 import notificationService from '@core/services/notificationService';
 import './CustomersPage.css';
+import { validatePartyForm, type PartyFieldError } from '@utils/formValidation';
 
 export const CustomersPage: React.FC = () => {
   const { t } = useTranslation();
@@ -41,13 +46,17 @@ export const CustomersPage: React.FC = () => {
   const userRoles = user?.roles || [];
   const canCreateCustomer = hasPermission(userRoles, 'CUSTOMER_CREATE');
   const canUpdateCustomer = hasPermission(userRoles, 'CUSTOMER_UPDATE');
-  
+
   const [search, setSearch] = useState('');
   const [skip, setSkip] = useState(0);
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
   const take = 50;
-  
-  const { data, isLoading, isFetching, isError, refetch } = useGetCustomersQuery({ search, skip, take });
+
+  const { data, isLoading, isFetching, isError, refetch } = useGetCustomersQuery({
+    search,
+    skip,
+    take,
+  });
   const [createCustomer, { isLoading: creating }] = useCreateCustomerMutation();
   const [updateCustomer, { isLoading: updating }] = useUpdateCustomerMutation();
 
@@ -63,8 +72,8 @@ export const CustomersPage: React.FC = () => {
       if (skip === 0) {
         setAllCustomers(data.data);
       } else {
-        setAllCustomers(prev => {
-          const existingIds = new Set(prev.map(c => c.id));
+        setAllCustomers((prev) => {
+          const existingIds = new Set(prev.map((c) => c.id));
           const newCustomers = data.data.filter((c) => !existingIds.has(c.id));
           return [...prev, ...newCustomers];
         });
@@ -78,8 +87,25 @@ export const CustomersPage: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [creditBalance, setCreditBalance] = useState('0');
+  const [formErrors, setFormErrors] = useState<Partial<Record<PartyFieldError, string>>>({});
 
   const handleCreateCustomer = async () => {
+    const errors = validatePartyForm({
+      name,
+      phone,
+      email,
+      openingBalance: editingCustomer ? undefined : creditBalance,
+    });
+    if (Object.keys(errors).length > 0) {
+      setFormErrors({
+        name: errors.name ? t('validation.validName') : undefined,
+        phone: errors.phone ? t('validation.validPhone') : undefined,
+        email: errors.email ? t('validation.validEmail') : undefined,
+        openingBalance: errors.openingBalance ? t('validation.nonNegativeAmount') : undefined,
+      });
+      return;
+    }
+    setFormErrors({});
     try {
       if (editingCustomer) {
         await updateCustomer({
@@ -122,6 +148,7 @@ export const CustomersPage: React.FC = () => {
     setPhone('');
     setEmail('');
     setCreditBalance('0');
+    setFormErrors({});
   };
 
   const total = data?.meta?.total || 0;
@@ -130,7 +157,7 @@ export const CustomersPage: React.FC = () => {
 
   const loadMore = async (e: CustomEvent) => {
     if (hasMore && !isFetching) {
-      setSkip(prev => prev + take);
+      setSkip((prev) => prev + take);
     }
     setTimeout(() => {
       (e.target as HTMLIonInfiniteScrollElement).complete();
@@ -163,7 +190,9 @@ export const CustomersPage: React.FC = () => {
           ) : isError && allCustomers.length === 0 ? (
             <div className="workspace-state">
               <p>{t('customers.loadError')}</p>
-              <Button onClick={refetch} variant="outline">{t('common.retry')}</Button>
+              <Button onClick={refetch} variant="outline">
+                {t('common.retry')}
+              </Button>
             </div>
           ) : allCustomers.length === 0 ? (
             <EmptyState
@@ -193,12 +222,16 @@ export const CustomersPage: React.FC = () => {
                           {customer.credit_balance !== 0 && (
                             <p
                               className="font-medium"
-                              style={{ color: customer.credit_balance > 0 ? 'var(--ion-color-danger)' : 'var(--ion-color-success)' }}
+                              style={{
+                                color:
+                                  customer.credit_balance > 0
+                                    ? 'var(--ion-color-danger)'
+                                    : 'var(--ion-color-success)',
+                              }}
                             >
                               {customer.credit_balance > 0
                                 ? `${t('customers.owesYou')}: ${formatCurrency(customer.credit_balance)}`
-                                : `${t('customers.youOwe')}: ${formatCurrency(Math.abs(customer.credit_balance))}`
-                              }
+                                : `${t('customers.youOwe')}: ${formatCurrency(Math.abs(customer.credit_balance))}`}
                             </p>
                           )}
                         </IonLabel>
@@ -216,7 +249,10 @@ export const CustomersPage: React.FC = () => {
                       )}
                     </IonItemSliding>
                     <div className="customer-record-actions">
-                      <IonButton fill="clear" onClick={() => history.push(`/customers/${customer.id}/ledger`)}>
+                      <IonButton
+                        fill="clear"
+                        onClick={() => history.push(`/customers/${customer.id}/ledger`)}
+                      >
                         {t('customers.viewLedger')}
                       </IonButton>
                       {canUpdateCustomer && (
@@ -229,7 +265,7 @@ export const CustomersPage: React.FC = () => {
                   </div>
                 ))}
               </IonList>
-              
+
               <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
                 <IonInfiniteScrollContent loadingText={t('customers.loadingMore')} />
               </IonInfiniteScroll>
@@ -239,10 +275,18 @@ export const CustomersPage: React.FC = () => {
 
         {/* FAB Button */}
         {canCreateCustomer && (
-          <IonFab vertical="bottom" horizontal="end" slot="fixed" className="customers-mobile-action">
-            <IonFabButton onClick={() => {
-              setShowModal(true);
-            }} aria-label={t('customers.addCustomer')}>
+          <IonFab
+            vertical="bottom"
+            horizontal="end"
+            slot="fixed"
+            className="customers-mobile-action"
+          >
+            <IonFabButton
+              onClick={() => {
+                setShowModal(true);
+              }}
+              aria-label={t('customers.addCustomer')}
+            >
               <IonIcon icon={add} />
             </IonFabButton>
           </IonFab>
@@ -250,53 +294,73 @@ export const CustomersPage: React.FC = () => {
 
         {/* Add Customer Modal */}
         {showModal && (
-          <IonModal 
-            isOpen={showModal}
-            onDidDismiss={() => setShowModal(false)}
-          >
-          <IonHeader>
-            <IonToolbar>
-              <IonTitle>{editingCustomer ? t('customers.editCustomer') : t('customers.addCustomer')}</IonTitle>
-              <IonButtons slot="end">
-                <IonButton onClick={() => {
-                  setShowModal(false);
-                  resetForm();
-                }}>
-                  <IonIcon icon={close} />
-                </IonButton>
-              </IonButtons>
-            </IonToolbar>
-          </IonHeader>
-          <IonContent className="ion-padding">
-            <Input
-              label={t('customers.customerName')}
-              value={name}
-              onChange={setName}
-              required
-            />
-            <Input
-              label={t('customers.customerPhone')}
-              value={phone}
-              onChange={setPhone}
-              type="tel"
-              required
-            />
-            <Input label={t('customers.customerEmail')} value={email} onChange={setEmail} />
-            {!editingCustomer && (
+          <IonModal isOpen={showModal} onDidDismiss={() => setShowModal(false)}>
+            <IonHeader>
+              <IonToolbar>
+                <IonTitle>
+                  {editingCustomer ? t('customers.editCustomer') : t('customers.addCustomer')}
+                </IonTitle>
+                <IonButtons slot="end">
+                  <IonButton
+                    onClick={() => {
+                      setShowModal(false);
+                      resetForm();
+                    }}
+                  >
+                    <IonIcon icon={close} />
+                  </IonButton>
+                </IonButtons>
+              </IonToolbar>
+            </IonHeader>
+            <IonContent className="ion-padding">
               <Input
-                label={t('customers.creditBalance')}
-                value={creditBalance}
-                onChange={setCreditBalance}
-                type="number"
+                label={t('customers.customerName')}
+                value={name}
+                onChange={setName}
+                error={formErrors.name}
+                maxLength={150}
+                required
               />
-            )}
-            <Button onClick={handleCreateCustomer} loading={creating || updating} fullWidth size="large">
-              {t('common.save')}
-            </Button>
-          </IonContent>
-        </IonModal>
+              <Input
+                label={t('customers.customerPhone')}
+                value={phone}
+                onChange={setPhone}
+                type="tel"
+                error={formErrors.phone}
+                maxLength={10}
+                inputMode="numeric"
+                required
+              />
+              <Input
+                label={t('customers.customerEmail')}
+                value={email}
+                onChange={setEmail}
+                type="email"
+                error={formErrors.email}
+                maxLength={254}
+              />
+              {!editingCustomer && (
+                <Input
+                  label={t('customers.creditBalance')}
+                  value={creditBalance}
+                  onChange={setCreditBalance}
+                  type="number"
+                  error={formErrors.openingBalance}
+                  min={0}
+                  inputMode="decimal"
+                />
+              )}
+              <Button
+                onClick={handleCreateCustomer}
+                loading={creating || updating}
+                fullWidth
+                size="large"
+              >
+                {t('common.save')}
+              </Button>
+            </IonContent>
+          </IonModal>
         )}
-
       </IonContent>
     </IonPage>
   );

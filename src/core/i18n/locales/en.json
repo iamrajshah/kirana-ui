@@ -94,6 +94,12 @@
       "bankTransfer": "Bank Transfer"
     }
   },
+  "validation": {
+    "validName": "Enter a name containing letters (maximum 150 characters).",
+    "validPhone": "Enter a valid 10-digit mobile number.",
+    "validEmail": "Enter a valid email address.",
+    "nonNegativeAmount": "Amount cannot be negative."
+  },
   "auth": {
     "login": "Login",
     "logout": "Logout",
@@ -442,6 +448,8 @@
     "generateBarcodeHint": "Generate a barcode once, then print and scan it like any packaged product."
   },
   "inventory": {
+    "onHand": "On hand",
+    "validThresholdRequired": "Low stock threshold cannot be negative",
     "title": "Inventory",
     "loadError": "Couldn't load inventory.",
     "updateStock": "Update Stock",
@@ -610,6 +618,8 @@
     "close": "Close"
   },
   "payments": {
+    "searchPayments": "Search payments by customer, mode, amount or date...",
+    "searchCustomers": "Search customers by name or phone",
     "title": "Payments",
     "pageHint": "Record payments against customer accounts.",
     "loadError": "Couldn't load payments.",
@@ -801,6 +811,8 @@
     "failedToUpdateUserStatus": "Failed to update user status"
   },
   "importExport": {
+    "supportedFormats": "Supported formats: CSV and Excel (.xlsx, .xls)",
+    "unsupportedFile": "Choose a CSV, .xlsx or .xls file.",
     "title": "Import/Export",
     "jobsLoadFailed": "Couldn't load import history.",
     "operationCompleted": "Operation completed successfully",
@@ -864,6 +876,7 @@
     "notFound": "Requested resource not found."
   },
   "profile": {
+    "settings": "Settings",
     "emailPlaceholder": "your.email@example.com",
     "currentPasswordLabel": "Current Password",
     "currentPasswordPlaceholder": "Enter current password",

@@ -41,7 +41,7 @@ export const InventoryPage: React.FC = () => {
   // Group inventory by category
   const groupedInventory = useMemo(() => {
     const groups: Record<string, Inventory[]> = {};
-    
+
     inventory.forEach((item) => {
       const categoryName = item.variant?.product?.category?.name || t('products.uncategorized');
       if (!groups[categoryName]) {
@@ -49,7 +49,7 @@ export const InventoryPage: React.FC = () => {
       }
       groups[categoryName].push(item);
     });
-    
+
     return groups;
   }, [inventory, t]);
 
@@ -70,6 +70,12 @@ export const InventoryPage: React.FC = () => {
 
       if (!quantity || parseFloat(quantity) < 0) {
         setErrorMessage(t('inventory.validQuantityRequired'));
+        setShowError(true);
+        return;
+      }
+
+      if (lowStockThreshold && parseFloat(lowStockThreshold) < 0) {
+        setErrorMessage(t('inventory.validThresholdRequired'));
         setShowError(true);
         return;
       }
@@ -117,9 +123,7 @@ export const InventoryPage: React.FC = () => {
                 <section key={categoryName} className="stock-category">
                   <h2 className="stock-category-heading">
                     {categoryName}
-                    <IonBadge color="primary">
-                      {groupedInventory[categoryName].length}
-                    </IonBadge>
+                    <IonBadge color="primary">{groupedInventory[categoryName].length}</IonBadge>
                   </h2>
                   <div className="stock-card-grid">
                     {groupedInventory[categoryName].map((item) => (
@@ -127,20 +131,34 @@ export const InventoryPage: React.FC = () => {
                         <div className="stock-card-top">
                           <div>
                             <h2>{item.variant?.product?.name}</h2>
-                            <p>{t('products.sku')}: {item.variant?.sku}</p>
+                            <p>
+                              {t('products.sku')}: {item.variant?.sku}
+                            </p>
                           </div>
                           <div>
-                            <IonBadge color={item.is_low_stock ? 'danger' : 'success'} className="text-lg">
+                            <p>{t('inventory.onHand')}</p>
+                            <IonBadge
+                              color={item.is_low_stock ? 'danger' : 'success'}
+                              className="text-lg"
+                            >
                               {formatNumber(item.quantity)}
                             </IonBadge>
                           </div>
                         </div>
                         <div className="stock-card-bottom">
                           <div>
-                            <p>{t('inventory.lowStockThreshold')}: {item.low_stock_threshold}</p>
-                            {item.is_low_stock && <p className="stock-warning">{t('inventory.lowStockWarning')}</p>}
+                            <p>
+                              {t('inventory.lowStockThreshold')}: {item.low_stock_threshold}
+                            </p>
+                            {item.is_low_stock && (
+                              <p className="stock-warning">{t('inventory.lowStockWarning')}</p>
+                            )}
                           </div>
-                          <IonButton onClick={() => handleEditClick(item)} fill="outline" aria-label={t('common.edit')}>
+                          <IonButton
+                            onClick={() => handleEditClick(item)}
+                            fill="outline"
+                            aria-label={t('common.edit')}
+                          >
                             <IonIcon slot="start" icon={create} />
                             {t('common.edit')}
                           </IonButton>
@@ -171,7 +189,9 @@ export const InventoryPage: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <h2 className="font-semibold text-lg">{selectedItem.variant?.product?.name}</h2>
-                    <p className="text-gray-600">{t('products.sku')}: {selectedItem.variant?.sku}</p>
+                    <p className="text-gray-600">
+                      {t('products.sku')}: {selectedItem.variant?.sku}
+                    </p>
                   </div>
 
                   <Input
@@ -179,6 +199,8 @@ export const InventoryPage: React.FC = () => {
                     type="number"
                     value={quantity}
                     onChange={setQuantity}
+                    min={0}
+                    inputMode="decimal"
                     placeholder={t('inventory.enterQuantityPlaceholder')}
                   />
 
@@ -187,6 +209,8 @@ export const InventoryPage: React.FC = () => {
                     type="number"
                     value={lowStockThreshold}
                     onChange={setLowStockThreshold}
+                    min={0}
+                    inputMode="numeric"
                     placeholder={t('inventory.enterLowStockPlaceholder')}
                   />
 

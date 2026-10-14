@@ -64,6 +64,12 @@ const CreatePurchasePage: React.FC = () => {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMode, setPaymentMode] = useState('CASH');
   const [showSupplierModal, setShowSupplierModal] = useState(false);
+  const [supplierSearch, setSupplierSearch] = useState('');
+
+  const filteredSuppliers = suppliers.filter((supplier) => {
+    const term = supplierSearch.trim().toLowerCase();
+    return !term || supplier.name.toLowerCase().includes(term) || supplier.phone?.includes(term);
+  });
 
   // Debounced search
   const handleSearch = debounce((term: string) => {
@@ -155,9 +161,13 @@ const CreatePurchasePage: React.FC = () => {
 
       // Reset form
       setCart([]);
+      setSelectedSupplierId('');
       setInvoiceNumber('');
+      setInvoiceDate(new Date().toISOString().split('T')[0]);
       setPaymentAmount('');
+      setPaymentMode('CASH');
       setSearchTerm('');
+      setSupplierSearch('');
 
       setTimeout(() => history.push(ROUTES.PURCHASES), 1000);
     } catch (error: unknown) {
@@ -198,7 +208,7 @@ const CreatePurchasePage: React.FC = () => {
               label={t('purchases.invoiceDateLabel')}
               value={invoiceDate}
               onChange={setInvoiceDate}
-              type="text"
+              type="date"
               placeholder={t('purchases.invoiceDateFormat')}
             />
           </IonCardContent>
@@ -383,7 +393,7 @@ const CreatePurchasePage: React.FC = () => {
                   <IonSelectOption value="CASH">{t('purchases.cash')}</IonSelectOption>
                   <IonSelectOption value="UPI">{t('purchases.upi')}</IonSelectOption>
                   <IonSelectOption value="CARD">{t('purchases.card')}</IonSelectOption>
-                  <IonSelectOption value="BANK_TRANSFER">
+                  <IonSelectOption value="BANK">
                     {t('purchases.bankTransferOption')}
                   </IonSelectOption>
                 </IonSelect>
@@ -438,8 +448,15 @@ const CreatePurchasePage: React.FC = () => {
               </IonToolbar>
             </IonHeader>
             <IonContent>
+              <div className="ion-padding-horizontal ion-padding-top">
+                <SearchBar
+                  value={supplierSearch}
+                  onChange={setSupplierSearch}
+                  placeholder={t('suppliers.searchSuppliers')}
+                />
+              </div>
               <IonList>
-                {suppliers.map((supplier) => (
+                {filteredSuppliers.map((supplier) => (
                   <IonItem
                     key={supplier.id}
                     button

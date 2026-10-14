@@ -94,6 +94,12 @@
       "bankTransfer": "बैंक ट्रांसफर"
     }
   },
+  "validation": {
+    "validName": "अक्षरों वाला नाम दर्ज करें (अधिकतम 150 अक्षर)।",
+    "validPhone": "मान्य 10 अंकों का मोबाइल नंबर दर्ज करें।",
+    "validEmail": "मान्य ईमेल पता दर्ज करें।",
+    "nonNegativeAmount": "राशि ऋणात्मक नहीं हो सकती।"
+  },
   "auth": {
     "login": "लॉगिन",
     "logout": "लॉगआउट",
@@ -442,6 +448,8 @@
     "generateBarcodeHint": "बारकोड एक बार बनाएं, फिर इसे दूसरे पैक उत्पाद की तरह प्रिंट और स्कैन करें।"
   },
   "inventory": {
+    "onHand": "उपलब्ध स्टॉक",
+    "validThresholdRequired": "कम स्टॉक सीमा ऋणात्मक नहीं हो सकती",
     "title": "इन्वेंटरी",
     "loadError": "स्टॉक लोड नहीं हो सका।",
     "updateStock": "स्टॉक अपडेट करें",
@@ -610,6 +618,8 @@
     "close": "बंद करें"
   },
   "payments": {
+    "searchPayments": "ग्राहक, प्रकार, राशि या तारीख से भुगतान खोजें...",
+    "searchCustomers": "नाम या फोन से ग्राहक खोजें",
     "title": "भुगतान",
     "pageHint": "ग्राहक खातों में भुगतान दर्ज करें।",
     "loadError": "भुगतान लोड नहीं हो सके।",
@@ -801,6 +811,8 @@
     "failedToUpdateUserStatus": "उपयोगकर्ता स्थिति अपडेट करने में विफल"
   },
   "importExport": {
+    "supportedFormats": "समर्थित प्रारूप: CSV और Excel (.xlsx, .xls)",
+    "unsupportedFile": "CSV, .xlsx या .xls फ़ाइल चुनें।",
     "title": "आयात/निर्यात",
     "jobsLoadFailed": "आयात का इतिहास लोड नहीं हो सका।",
     "operationCompleted": "काम सफलतापूर्वक पूरा हुआ",
@@ -864,6 +876,7 @@
     "notFound": "अनुरोधित संसाधन नहीं मिला।"
   },
   "profile": {
+    "settings": "सेटिंग्स",
     "emailPlaceholder": "your.email@example.com",
     "currentPasswordLabel": "वर्तमान पासवर्ड",
     "currentPasswordPlaceholder": "वर्तमान पासवर्ड दर्ज करें",

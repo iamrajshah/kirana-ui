@@ -2,7 +2,9 @@
 
 export const APP_NAME = import.meta.env.VITE_APP_NAME || 'Kirana POS';
 export const APP_VERSION = import.meta.env.VITE_APP_VERSION || '1.0.0';
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://appealing-youthfulness-production-a6ab.up.railway.app/api/v1';
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://appealing-youthfulness-production-a6ab.up.railway.app/api/v1';
 
 // User Roles
 export const ROLES = {
@@ -49,7 +51,6 @@ export const PAYMENT_MODES = [
   { value: 'CASH', label: 'Cash' },
   { value: 'UPI', label: 'UPI' },
   { value: 'CARD', label: 'Card' },
-  { value: 'CHEQUE', label: 'Cheque' },
   { value: 'BANK', label: 'Bank Transfer' },
 ] as const;
 
