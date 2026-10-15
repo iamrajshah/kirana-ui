@@ -5,22 +5,25 @@ import { ReportsPage } from './ReportsPage';
 
 const inventoryPayload = vi.hoisted(() => ({ value: null as unknown }));
 const purchasePayload = vi.hoisted(() => ({ value: [] as unknown[] }));
-const reportRequests = vi.hoisted(() => Object.fromEntries([
-  'sales',
-  'outstanding',
-  'inventory',
-  'cashbook',
-  'profitLoss',
-  'topSelling',
-  'supplierOutstanding',
-  'purchaseRegister',
-  'topPayables',
-  'supplierLedger',
-  'purchaseTrend',
-].map((id) => [id, { isError: false, refetch: vi.fn() }])) as Record<
-  string,
-  { isError: boolean; refetch: ReturnType<typeof vi.fn> }
->);
+const salesPayload = vi.hoisted(() => ({ value: undefined as unknown }));
+const reportRequests = vi.hoisted(
+  () =>
+    Object.fromEntries(
+      [
+        'sales',
+        'outstanding',
+        'inventory',
+        'cashbook',
+        'profitLoss',
+        'topSelling',
+        'supplierOutstanding',
+        'purchaseRegister',
+        'topPayables',
+        'supplierLedger',
+        'purchaseTrend',
+      ].map((id) => [id, { isError: false, refetch: vi.fn() }])
+    ) as Record<string, { isError: boolean; refetch: ReturnType<typeof vi.fn> }>
+);
 const querySkips = vi.hoisted(() => ({ sales: [] as boolean[], inventory: [] as boolean[] }));
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
@@ -37,6 +40,7 @@ vi.mock('@core/api/reportsApi', () => {
       querySkips.sales.push(Boolean(options?.skip));
       return {
         ...emptyReport('sales')(),
+        data: salesPayload.value,
         ...reportRequests.sales,
       };
     },
@@ -115,12 +119,35 @@ const item = {
 beforeEach(() => {
   inventoryPayload.value = null;
   purchasePayload.value = [];
+  salesPayload.value = undefined;
   Object.values(reportRequests).forEach((request) => {
     request.isError = false;
     request.refetch.mockClear();
   });
   querySkips.sales.length = 0;
   querySkips.inventory.length = 0;
+});
+
+it('formats sales report dates for people instead of exposing API timestamps', () => {
+  salesPayload.value = {
+    data: {
+      breakdown: [
+        {
+          date: '2026-10-14T00:00:00.000Z',
+          invoice_count: 4,
+          total_gst: 0,
+          total_sales: 1435,
+          paid_count: 2,
+          unpaid_count: 1,
+        },
+      ],
+    },
+  };
+
+  render(<ReportsPage />);
+
+  expect(screen.getByText('14 Oct 2026')).toBeTruthy();
+  expect(screen.queryByText('2026-10-14T00:00:00.000Z')).toBeNull();
 });
 
 afterEach(cleanup);

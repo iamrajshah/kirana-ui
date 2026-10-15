@@ -120,7 +120,12 @@
   font-weight: 650;
 }
 
-.workspace-bottom-tabs ion-tab-button.tab-selected::before {
+.workspace-bottom-tabs ion-tab-button.workspace-tab-context-active {
+  --color: var(--kirana-nav-foreground);
+}
+
+.workspace-bottom-tabs ion-tab-button.tab-selected::before,
+.workspace-bottom-tabs ion-tab-button.workspace-tab-context-active::before {
   position: absolute;
   top: 5px;
   width: 32px;
@@ -138,6 +143,12 @@
 .workspace-bottom-tabs ion-tab-button[tab='billing'] ion-icon {
   padding: 8px;
   border-radius: 12px;
+  background: rgba(var(--ion-color-primary-rgb), 0.18);
+  color: var(--ion-color-primary);
+}
+
+.workspace-bottom-tabs ion-tab-button[tab='billing'].tab-selected ion-icon,
+.workspace-bottom-tabs ion-tab-button[tab='billing'].workspace-tab-context-active ion-icon {
   background: var(--ion-color-primary);
   color: var(--ion-color-primary-contrast);
   box-shadow: 0 8px 18px rgba(var(--ion-color-primary-rgb), 0.3);
