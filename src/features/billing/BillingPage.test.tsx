@@ -5,7 +5,10 @@ import { BillingPage } from './BillingPage';
 
 const mocks = vi.hoisted(() => ({
   historyReplace: vi.fn(),
+  historyPush: vi.fn(),
   createInvoice: vi.fn(),
+  quoteInvoice: vi.fn(),
+  quoteTrigger: vi.fn(),
   cancelInvoice: vi.fn(),
   updateInvoice: vi.fn(),
   finalizeInvoice: vi.fn(),
@@ -22,6 +25,10 @@ const mocks = vi.hoisted(() => ({
   },
   search: '?edit=edit-1',
   invoice: {} as Record<string, unknown>,
+  document: null as Record<string, unknown> | null,
+  documentError: false,
+  refetchDocument: vi.fn(),
+  settingsMode: 'SIMPLE_RECEIPT' as 'SIMPLE_RECEIPT' | 'GST_TAX_INVOICE',
 }));
 
 const apiTrigger = (operation: ReturnType<typeof vi.fn>) => (payload: unknown) => ({
@@ -46,7 +53,7 @@ const matchedBarcode = {
 };
 
 vi.mock('react-router-dom', () => ({
-  useHistory: () => ({ replace: mocks.historyReplace }),
+  useHistory: () => ({ replace: mocks.historyReplace, push: mocks.historyPush }),
   useLocation: () => ({ search: mocks.search }),
 }));
 
@@ -102,6 +109,7 @@ vi.mock('@components/PaymentModal', () => ({
 
 vi.mock('@core/api/invoiceApi', () => ({
   useCreateInvoiceMutation: () => [apiTrigger(mocks.createInvoice), { isLoading: false }],
+  useQuoteInvoiceMutation: () => [mocks.quoteTrigger, { isLoading: false }],
   useCancelInvoiceMutation: () => [apiTrigger(mocks.cancelInvoice), { isLoading: false }],
   useUpdateInvoiceMutation: () => [apiTrigger(mocks.updateInvoice), { isLoading: false }],
   useFinalizeInvoiceMutation: () => [apiTrigger(mocks.finalizeInvoice), { isLoading: false }],
@@ -111,6 +119,25 @@ vi.mock('@core/api/invoiceApi', () => ({
     data: { data: mocks.invoice },
     isLoading: false,
     refetch: vi.fn(),
+  }),
+  useGetFinalizedDocumentQuery: () => ({
+    data: mocks.document ? { success: true, data: mocks.document } : undefined,
+    isLoading: false,
+    isError: mocks.documentError,
+    refetch: mocks.refetchDocument,
+  }),
+}));
+
+vi.mock('@core/api/tenantSettingsApi', () => ({
+  useGetTenantSettingsQuery: () => ({
+    data: {
+      data: {
+        document_mode: mocks.settingsMode,
+        state_code: '27',
+        default_paper_width: 'MM80',
+        capabilities: { receipt_documents_enabled: true },
+      },
+    },
   }),
 }));
 
@@ -174,8 +201,14 @@ vi.mock('@ionic/react', () => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.quoteTrigger.mockImplementation((payload: unknown) => ({
+    unwrap: () => mocks.quoteInvoice(payload),
+  }));
   localStorage.clear();
   mocks.search = '?edit=edit-1';
+  mocks.document = null;
+  mocks.documentError = false;
+  mocks.settingsMode = 'SIMPLE_RECEIPT';
   mocks.invoice = {
     id: 'edit-1',
     customer: null,
@@ -214,6 +247,24 @@ beforeEach(() => {
         is_active: true,
       },
       inventory: { variant_id: 'variant-9', quantity: 10, low_stock_threshold: 5 },
+    },
+  });
+  mocks.quoteInvoice.mockResolvedValue({
+    data: {
+      fingerprint: 'a'.repeat(64),
+      document_mode: 'SIMPLE_RECEIPT',
+      settings_version: 1,
+      subtotal_amount: '100.00',
+      item_discount_amount: '0.00',
+      bill_discount_amount: '0.00',
+      discount_amount: '0.00',
+      taxable_amount: '100.00',
+      cgst_amount: '0.00',
+      sgst_amount: '0.00',
+      igst_amount: '0.00',
+      gst_amount: '0.00',
+      total_amount: '100.00',
+      lines: [],
     },
   });
 });
@@ -301,10 +352,9 @@ describe('BillingPage', () => {
       fireEvent.click(screen.getByRole('button', { name: 'billing.payLater' }));
 
       await waitFor(() =>
-        expect(mocks.finalizeInvoice).toHaveBeenCalledWith({
-          id: 'edit-1',
-          expected_version: 4,
-        })
+        expect(mocks.finalizeInvoice).toHaveBeenCalledWith(
+          expect.objectContaining({ id: 'edit-1', expected_version: 4 })
+        )
       );
       expect(mocks.createPayment).not.toHaveBeenCalled();
       expect(mocks.notifySuccess).toHaveBeenCalledWith('billing.creditBillCreated');
@@ -324,10 +374,9 @@ describe('BillingPage', () => {
           data: expect.objectContaining({ expected_version: 3 }),
         })
       );
-      expect(mocks.finalizeInvoice).toHaveBeenCalledWith({
-        id: 'edit-1',
-        expected_version: 4,
-      });
+      expect(mocks.finalizeInvoice).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'edit-1', expected_version: 4 })
+      );
     });
 
     it('preserves the cart and offers a reload when a held bill update conflicts', async () => {
@@ -566,6 +615,136 @@ describe('BillingPage', () => {
   });
 
   describe('checkout recovery', () => {
+    it('keeps the finalized invoice as a completion state until New Sale', async () => {
+      mocks.createPayment.mockResolvedValueOnce({ data: { id: 'payment-1' } });
+      mocks.document = {
+        kind: 'FINALIZED_DOCUMENT',
+        invoice_id: 'edit-1',
+        invoice_number: 'KIR-1',
+        issued_at: '2026-10-15T10:00:00.000Z',
+        document_mode: 'SIMPLE_RECEIPT',
+        legacy: false,
+        cancellation: { cancelled: false, marker: null },
+        supplier: {
+          name: 'Rajesh Kirana',
+          phone: null,
+          address: null,
+          state: null,
+          state_code: null,
+          gstin: null,
+        },
+        customer: null,
+        place_of_supply: null,
+        totals: {
+          subtotal_amount: '100.00',
+          item_discount_amount: '0.00',
+          bill_discount_amount: '0.00',
+          discount_amount: '0.00',
+          gst_amount: '0.00',
+          total_amount: '100.00',
+        },
+        items: [],
+        footer: null,
+        payment: {
+          status: 'PAID',
+          paid_amount: '100.00',
+          remaining_amount: '0.00',
+          modes: ['CASH'],
+          last_allocation_at: null,
+          as_of: '2026-10-15T10:01:00.000Z',
+          allocations: [],
+        },
+      };
+
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+      fireEvent.click(screen.getByRole('button', { name: 'billing.payCash' }));
+
+      expect(await screen.findByText('billing.completion.title')).toBeTruthy();
+      expect(localStorage.getItem('kirana_billing_completion_invoice')).toBe('edit-1');
+      expect(screen.queryByText('Rice')).toBeNull();
+
+      fireEvent.click(screen.getByRole('button', { name: 'billing.completion.newSale' }));
+      expect(localStorage.getItem('kirana_billing_completion_invoice')).toBeNull();
+      expect(screen.queryByText('billing.completion.title')).toBeNull();
+      expect(mocks.historyReplace).toHaveBeenLastCalledWith('/billing');
+    });
+
+    it('restores a saved completion by invoice identity and retries only the document read', () => {
+      localStorage.setItem('kirana_billing_completion_invoice', '42');
+      mocks.documentError = true;
+      mocks.search = '';
+
+      render(<BillingPage />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'billing.completion.retryBill' }));
+      expect(mocks.refetchDocument).toHaveBeenCalledOnce();
+      expect(mocks.createInvoice).not.toHaveBeenCalled();
+      expect(mocks.createPayment).not.toHaveBeenCalled();
+    });
+
+    it('uses an authoritative quote before finalization and payment', async () => {
+      mocks.createPayment.mockResolvedValueOnce({ data: { id: 'payment-1' } });
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+
+      await waitFor(() => expect(mocks.quoteInvoice).toHaveBeenCalled());
+      fireEvent.click(screen.getByRole('button', { name: 'billing.payCash' }));
+
+      await waitFor(() => expect(mocks.finalizeInvoice).toHaveBeenCalled());
+      expect(mocks.finalizeInvoice).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'edit-1',
+          quote_fingerprint: 'a'.repeat(64),
+          quoted_payable: '100.00',
+        })
+      );
+      expect(mocks.createPayment).toHaveBeenCalledWith(
+        expect.objectContaining({ amount: 100, invoice_id: 'edit-1' })
+      );
+    });
+
+    it('returns a GST bill to review when the authoritative quote changes', async () => {
+      mocks.settingsMode = 'GST_TAX_INVOICE';
+      const quote = (fingerprint: string, total: string) => ({
+        data: {
+          fingerprint,
+          document_mode: 'GST_TAX_INVOICE',
+          settings_version: 1,
+          subtotal_amount: '100.00',
+          item_discount_amount: '0.00',
+          bill_discount_amount: '0.00',
+          discount_amount: '0.00',
+          taxable_amount: '100.00',
+          cgst_amount: '9.00',
+          sgst_amount: '9.00',
+          igst_amount: '0.00',
+          gst_amount: '18.00',
+          total_amount: total,
+          lines: [],
+        },
+      });
+      mocks.quoteInvoice.mockResolvedValue(quote('a'.repeat(64), '118.00'));
+
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+      await waitFor(() =>
+        expect(
+          (screen.getByRole('button', { name: 'billing.payCash' }) as HTMLButtonElement).disabled
+        ).toBe(false)
+      );
+
+      mocks.quoteInvoice.mockResolvedValue(quote('b'.repeat(64), '119.00'));
+      fireEvent.click(screen.getByRole('button', { name: 'billing.payCash' }));
+
+      await waitFor(() => expect(mocks.quoteInvoice).toHaveBeenCalledTimes(2));
+      expect(mocks.finalizeInvoice).not.toHaveBeenCalled();
+      expect(mocks.createPayment).not.toHaveBeenCalled();
+      await waitFor(() =>
+        expect(mocks.notifyError).toHaveBeenCalledWith('billing.quoteChangedReview')
+      );
+    });
+
     it('opens recovery after quick payment fails and completes the same invoice on retry', async () => {
       mocks.createPayment
         .mockRejectedValueOnce(new Error('payment unavailable'))

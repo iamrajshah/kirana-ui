@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { buildInvoiceItems, calculateBillingTotals } from './billing.logic';
+import {
+  BILLING_COMPLETION_STORAGE_KEY,
+  buildInvoiceItems,
+  calculateBillingTotals,
+  clearBillingCompletion,
+  loadBillingCompletion,
+  persistBillingCompletion,
+} from './billing.logic';
 
 const cart = [
   {
@@ -34,5 +41,25 @@ describe('billing calculations', () => {
       billDiscountAmount: 7,
       total: 98,
     });
+  });
+});
+
+describe('billing completion recovery', () => {
+  it('persists only the finalized invoice identity', () => {
+    localStorage.clear();
+
+    persistBillingCompletion('42');
+
+    expect(localStorage.getItem(BILLING_COMPLETION_STORAGE_KEY)).toBe('42');
+    expect(loadBillingCompletion()).toBe('42');
+  });
+
+  it('ignores malformed state and clears only after an explicit new sale', () => {
+    localStorage.setItem(BILLING_COMPLETION_STORAGE_KEY, '   ');
+    expect(loadBillingCompletion()).toBeNull();
+
+    persistBillingCompletion('84');
+    clearBillingCompletion();
+    expect(loadBillingCompletion()).toBeNull();
   });
 });

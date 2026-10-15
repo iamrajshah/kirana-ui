@@ -1,3 +1,7 @@
+import type { FinalizedDocumentDto } from '@core/types';
+
+export type { FinalizedDocumentDto } from '@core/types';
+
 export type ReceiptDocumentMode = 'SIMPLE_RECEIPT' | 'GST_TAX_INVOICE';
 export type ReceiptPaymentStatus = 'PAID' | 'PARTIALLY_PAID' | 'AMOUNT_DUE';
 export type ReceiptPaperWidth = '58mm' | '80mm';
@@ -26,74 +30,6 @@ export interface ReceiptLabels {
   authorizedSignatory: string;
   saleItems: string;
   billTotals: string;
-}
-
-export interface DocumentPartyDto {
-  id?: string | null;
-  name: string | null;
-  phone: string | null;
-  address: string | null;
-  state: string | null;
-  state_code: string | null;
-  gstin: string | null;
-  signatory?: string | null;
-}
-
-export interface FinalizedDocumentDto {
-  kind: 'FINALIZED_DOCUMENT';
-  invoice_id: string;
-  invoice_number: string | null;
-  issued_at: string | null;
-  document_mode: ReceiptDocumentMode;
-  legacy: boolean;
-  cancellation: { cancelled: boolean; marker: string | null };
-  supplier: DocumentPartyDto;
-  customer: DocumentPartyDto | null;
-  place_of_supply: { name: string | null; state_code: string | null } | null;
-  totals: {
-    subtotal_amount: string;
-    item_discount_amount: string;
-    bill_discount_amount: string;
-    discount_amount: string;
-    gst_amount: string;
-    total_amount: string;
-  };
-  items: Array<{
-    id?: string;
-    variant_id: string | null;
-    product_name: string | null;
-    sku: string | null;
-    hsn_code: string | null;
-    uqc_code: string | null;
-    unit_label: string | null;
-    quantity: number;
-    unit_price: string;
-    gross_amount: string;
-    item_discount_amount: string;
-    allocated_bill_discount_amount: string;
-    taxable_amount: string;
-    gst_rate: string | null;
-    cgst_amount: string | null;
-    sgst_amount: string | null;
-    igst_amount: string | null;
-    line_total_amount: string;
-  }>;
-  footer: string | null;
-  payment: {
-    status: ReceiptPaymentStatus;
-    paid_amount: string;
-    remaining_amount: string;
-    modes: string[];
-    last_allocation_at: string | null;
-    as_of: string;
-    allocations: Array<{
-      payment_id?: string;
-      amount: string;
-      payment_mode: string | null;
-      reference_note: string | null;
-      created_at: string | null;
-    }>;
-  };
 }
 
 export interface ReceiptViewModel {

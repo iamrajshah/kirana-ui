@@ -8,6 +8,23 @@ export interface BillingCartItem {
   discount_type: 'amount' | 'percent';
 }
 
+export const BILLING_COMPLETION_STORAGE_KEY = 'kirana_billing_completion_invoice';
+
+export const loadBillingCompletion = (): string | null => {
+  if (typeof localStorage === 'undefined') return null;
+  const invoiceId = localStorage.getItem(BILLING_COMPLETION_STORAGE_KEY)?.trim();
+  return invoiceId || null;
+};
+
+export const persistBillingCompletion = (invoiceId: string) => {
+  const normalized = invoiceId.trim();
+  if (normalized) localStorage.setItem(BILLING_COMPLETION_STORAGE_KEY, normalized);
+};
+
+export const clearBillingCompletion = () => {
+  localStorage.removeItem(BILLING_COMPLETION_STORAGE_KEY);
+};
+
 export const buildInvoiceItems = (cart: BillingCartItem[]) =>
   cart.map((item) => {
     const lineSubtotal = Number(item.unit_price) * Number(item.quantity);

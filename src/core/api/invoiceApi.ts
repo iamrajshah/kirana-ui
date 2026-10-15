@@ -1,5 +1,46 @@
 import { apiSlice } from './apiSlice';
-import type { ApiResponse, HeldBill, Invoice } from '../types';
+import type { ApiResponse, FinalizedDocumentDto, HeldBill, Invoice } from '../types';
+
+export interface InvoiceQuote {
+  fingerprint: string;
+  document_mode: 'SIMPLE_RECEIPT' | 'GST_TAX_INVOICE';
+  settings_version: number;
+  subtotal_amount: string;
+  item_discount_amount: string;
+  bill_discount_amount: string;
+  discount_amount: string;
+  taxable_amount: string;
+  cgst_amount: string;
+  sgst_amount: string;
+  igst_amount: string;
+  gst_amount: string;
+  total_amount: string;
+  lines: Array<{
+    variant_id: string;
+    quantity: number;
+    unit_price: string;
+    line_total_amount: string;
+  }>;
+}
+
+export interface InvoiceQuotePayload {
+  customer_id?: string | null;
+  place_of_supply_code?: string;
+  discount_amount?: number;
+  items: Array<{
+    variant_id: string;
+    quantity: number;
+    price?: number;
+    discount_amount?: number;
+  }>;
+}
+
+export interface NonDocumentDto {
+  kind: 'NON_DOCUMENT';
+  reason: 'NOT_ISSUED';
+  invoice_id: string;
+  status: string;
+}
 
 interface InvoicesResponse {
   success: boolean;
@@ -25,6 +66,9 @@ interface CreateInvoicePayload {
   idempotency_key?: string;
   status?: 'DRAFT' | 'FINALIZED'; // Default: DRAFT
   counter_label?: string;
+  place_of_supply_code?: string;
+  quote_fingerprint?: string;
+  quoted_payable?: string;
 }
 
 interface UpdateInvoicePayload {
@@ -66,6 +110,15 @@ export const invoiceApi = apiSlice.injectEndpoints({
       query: (id) => `/invoices/${id}`,
       providesTags: (result, error, id) => [{ type: 'Invoice', id }],
     }),
+    getFinalizedDocument: builder.query<ApiResponse<FinalizedDocumentDto | NonDocumentDto>, string>(
+      {
+        query: (id) => `/invoices/${id}/document`,
+        providesTags: (result, error, id) => [{ type: 'Invoice', id }],
+      }
+    ),
+    quoteInvoice: builder.mutation<ApiResponse<InvoiceQuote>, InvoiceQuotePayload>({
+      query: (body) => ({ url: '/invoices/quote', method: 'POST', body }),
+    }),
     getHeldBills: builder.query<ApiResponse<HeldBill[]>, { take?: number } | void>({
       query: (params = {}) => ({ url: '/invoices/held', params: params || {} }),
       providesTags: ['Invoice'],
@@ -97,12 +150,18 @@ export const invoiceApi = apiSlice.injectEndpoints({
     }),
     finalizeInvoice: builder.mutation<
       ApiResponse<Invoice>,
-      { id: string; expected_version?: number }
+      {
+        id: string;
+        expected_version?: number;
+        place_of_supply_code?: string;
+        quote_fingerprint?: string;
+        quoted_payable?: string;
+      }
     >({
-      query: ({ id, expected_version }) => ({
+      query: ({ id, ...body }) => ({
         url: `/invoices/${id}/finalize`,
         method: 'POST',
-        body: expected_version === undefined ? {} : { expected_version },
+        body,
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: 'Invoice', id },
@@ -155,6 +214,8 @@ export const invoiceApi = apiSlice.injectEndpoints({
 export const {
   useGetInvoicesQuery,
   useGetInvoiceByIdQuery,
+  useGetFinalizedDocumentQuery,
+  useQuoteInvoiceMutation,
   useGetHeldBillsQuery,
   useCreateInvoiceMutation,
   useUpdateInvoiceMutation,
