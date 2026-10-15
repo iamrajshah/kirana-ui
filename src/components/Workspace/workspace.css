@@ -30,7 +30,7 @@
 
 .workspace-main ion-page,
 .workspace-main .ion-page {
-  background: transparent;
+  background: var(--kirana-shell-background, var(--ion-background-color));
 }
 
 .workspace-header {
