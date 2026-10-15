@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import type { Category } from '@core/api/categoryApi';
-import type { Product } from '@core/types';
+import type { Product, UqcCode } from '@core/types';
 import type { Packaging } from '@core/api/productApi';
 import { apiErrorMessage } from '@core/services/notificationService';
 import { Navbar } from '@components/Navbar';
@@ -89,6 +89,9 @@ export const ProductsPage: React.FC = () => {
   const [price, setPrice] = useState('');
   const [gstPercent, setGstPercent] = useState('');
   const [sku, setSku] = useState('');
+  const [hsnCode, setHsnCode] = useState('');
+  const [uqcCode, setUqcCode] = useState('');
+  const [unitLabel, setUnitLabel] = useState('');
 
   const total = data?.meta?.total || 0;
   const currentBatchSize = data?.data?.length || 0;
@@ -132,6 +135,9 @@ export const ProductsPage: React.FC = () => {
     setPrice('');
     setGstPercent('');
     setSku('');
+    setHsnCode('');
+    setUqcCode('');
+    setUnitLabel('');
   };
 
   const handleCreateProduct = async () => {
@@ -151,6 +157,7 @@ export const ProductsPage: React.FC = () => {
       const productResult = await createProduct({
         name: productName,
         category_id: categoryId,
+        hsn_code: hsnCode.trim() || null,
       }).unwrap();
 
       await createVariant({
@@ -161,6 +168,8 @@ export const ProductsPage: React.FC = () => {
           packaging: (packaging as Packaging | null) || null,
           price: parseFloat(price),
           gst_percent: gstPercent ? parseFloat(gstPercent) : null,
+          uqc_code: (uqcCode as UqcCode) || null,
+          unit_label: unitLabel.trim() || null,
           sku: sku || null,
         },
       }).unwrap();
@@ -362,8 +371,24 @@ export const ProductsPage: React.FC = () => {
                 />
 
                 <Input label={t('products.priceLabel')} type="number" value={price} onChange={setPrice} placeholder={t('products.enterPricePlaceholder')} />
-                <Input label={t('products.gstLabel')} type="number" value={gstPercent} onChange={setGstPercent} placeholder={t('products.enterGSTPercentage')} />
                 <Input label={t('products.skuLabel')} value={sku} onChange={setSku} placeholder={t('products.enterSKUCode')} />
+
+                <details className="product-tax-details">
+                  <summary>{t('taxFields.productDetails')}</summary>
+                  <p>{t('taxFields.productDetailsHint')}</p>
+                  <Input label={t('taxFields.hsnCode')} value={hsnCode} onChange={setHsnCode} maxLength={8} inputMode="numeric" />
+                  <Input label={t('products.gstLabel')} type="number" value={gstPercent} onChange={setGstPercent} placeholder={t('products.enterGSTPercentage')} />
+                  <Select
+                    label={t('taxFields.uqcCode')}
+                    value={uqcCode}
+                    onChange={setUqcCode}
+                    options={[
+                      { value: '', label: t('common.notAvailable') },
+                      ...['BAG','BAL','BDL','BOX','BTL','CTN','DOZ','GMS','KGS','LTR','MLT','MTR','NOS','PAC','PCS','SET'].map((value) => ({ value, label: value })),
+                    ]}
+                  />
+                  <Input label={t('taxFields.unitLabel')} value={unitLabel} onChange={setUnitLabel} maxLength={30} />
+                </details>
 
                 <div style={{ marginTop: '24px' }}>
                   <Button

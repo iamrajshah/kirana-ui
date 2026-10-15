@@ -1001,6 +1001,53 @@
     "card": "Card",
     "bankTransfer": "Bank Transfer"
   },
+  "taxFields": {
+    "customerDetails": "GST & address details (optional)",
+    "customerDetailsHint": "Add these only when the customer needs a GST invoice.",
+    "productDetails": "GST product details (optional)",
+    "productDetailsHint": "Simple receipts work without these fields. GST invoices require accurate product tax data.",
+    "gstin": "Customer GSTIN", "addressLine1": "Address line 1", "addressLine2": "Address line 2", "city": "City", "state": "State", "stateCode": "GST state code", "postalCode": "PIN code", "hsnCode": "HSN code", "uqcCode": "UQC code", "unitLabel": "Unit label", "unitOfQuantity": "Unit of quantity"
+  },
+  "documentSettings": {
+    "title": "Bill & GST settings",
+    "description": "Choose what future customer bills look like. Existing bills keep their original format.",
+    "documentMode": "Default bill format",
+    "simpleReceipt": "Simple receipt",
+    "gstTaxInvoice": "GST tax invoice",
+    "paperWidth": "Default thermal paper",
+    "paper": { "MM58": "58 mm (compact)", "MM80": "80 mm (recommended)" },
+    "footer": "Receipt footer (optional)",
+    "gstDetails": "GST invoice profile",
+    "gstDetailsHint": "These legal details are required before GST invoices can be activated.",
+    "supplierName": "Legal shop name",
+    "gstin": "GSTIN",
+    "addressLine1": "Address line 1",
+    "addressLine2": "Address line 2 (optional)",
+    "city": "City",
+    "state": "State",
+    "stateCode": "GST state code",
+    "postalCode": "PIN code",
+    "phone": "Shop phone (optional)",
+    "authorizedSignatory": "Authorized signatory",
+    "activationBlocked": "Complete these items to activate GST invoices:",
+    "blockers": {
+      "supplier_name": "Legal shop name",
+      "address_line1": "Address line 1",
+      "city": "City",
+      "state": "State",
+      "state_code": "GST state code",
+      "postal_code": "PIN code",
+      "gstin": "GSTIN",
+      "authorized_signatory": "Authorized signatory",
+      "gstin_state_mismatch": "GSTIN must begin with the selected state code",
+      "capability": "GST invoice documents are not enabled on this server yet"
+    },
+    "save": "Save bill settings",
+    "saving": "Saving…",
+    "saved": "Bill settings saved",
+    "saveFailed": "Couldn't save bill settings",
+    "loadFailed": "Couldn't load bill settings"
+  },
   "foundation": {
     "login": {
       "selectLanguage": "Select language",

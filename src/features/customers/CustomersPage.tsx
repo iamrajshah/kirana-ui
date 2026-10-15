@@ -87,6 +87,14 @@ export const CustomersPage: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [creditBalance, setCreditBalance] = useState('0');
+  const [showTaxDetails, setShowTaxDetails] = useState(false);
+  const [addressLine1, setAddressLine1] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
+  const [city, setCity] = useState('');
+  const [stateName, setStateName] = useState('');
+  const [stateCode, setStateCode] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [gstin, setGstin] = useState('');
   const [formErrors, setFormErrors] = useState<Partial<Record<PartyFieldError, string>>>({});
 
   const handleCreateCustomer = async () => {
@@ -106,6 +114,15 @@ export const CustomersPage: React.FC = () => {
       return;
     }
     setFormErrors({});
+    const taxFields = {
+      address_line1: addressLine1.trim() || null,
+      address_line2: addressLine2.trim() || null,
+      city: city.trim() || null,
+      state: stateName.trim() || null,
+      state_code: stateCode.trim() || null,
+      postal_code: postalCode.trim() || null,
+      gstin: gstin.trim().toUpperCase() || null,
+    };
     try {
       if (editingCustomer) {
         await updateCustomer({
@@ -113,6 +130,7 @@ export const CustomersPage: React.FC = () => {
           name,
           phone,
           email: email || undefined,
+          ...taxFields,
         }).unwrap();
         notificationService.success(t('customers.customerUpdated'));
       } else {
@@ -121,6 +139,7 @@ export const CustomersPage: React.FC = () => {
           phone,
           email: email || undefined,
           opening_balance: Number(creditBalance),
+          ...taxFields,
         }).unwrap();
         notificationService.success(t('customers.customerCreated'));
       }
@@ -139,6 +158,14 @@ export const CustomersPage: React.FC = () => {
     setPhone(customer.phone || '');
     setEmail(customer.email || '');
     setCreditBalance(customer.credit_balance?.toString() || '0');
+    setAddressLine1(customer.address_line1 || '');
+    setAddressLine2(customer.address_line2 || '');
+    setCity(customer.city || '');
+    setStateName(customer.state || '');
+    setStateCode(customer.state_code || '');
+    setPostalCode(customer.postal_code || '');
+    setGstin(customer.gstin || '');
+    setShowTaxDetails(Boolean(customer.gstin || customer.address_line1));
     setShowModal(true);
   };
 
@@ -148,6 +175,14 @@ export const CustomersPage: React.FC = () => {
     setPhone('');
     setEmail('');
     setCreditBalance('0');
+    setShowTaxDetails(false);
+    setAddressLine1('');
+    setAddressLine2('');
+    setCity('');
+    setStateName('');
+    setStateCode('');
+    setPostalCode('');
+    setGstin('');
     setFormErrors({});
   };
 
@@ -350,6 +385,21 @@ export const CustomersPage: React.FC = () => {
                   inputMode="decimal"
                 />
               )}
+              <details
+                className="customer-tax-details"
+                open={showTaxDetails}
+                onToggle={(event) => setShowTaxDetails(event.currentTarget.open)}
+              >
+                <summary>{t('taxFields.customerDetails')}</summary>
+                <p>{t('taxFields.customerDetailsHint')}</p>
+                <Input label={t('taxFields.gstin')} value={gstin} onChange={(value) => setGstin(value.toUpperCase())} maxLength={15} />
+                <Input label={t('taxFields.addressLine1')} value={addressLine1} onChange={setAddressLine1} />
+                <Input label={t('taxFields.addressLine2')} value={addressLine2} onChange={setAddressLine2} />
+                <Input label={t('taxFields.city')} value={city} onChange={setCity} />
+                <Input label={t('taxFields.state')} value={stateName} onChange={setStateName} />
+                <Input label={t('taxFields.stateCode')} value={stateCode} onChange={setStateCode} maxLength={2} inputMode="numeric" />
+                <Input label={t('taxFields.postalCode')} value={postalCode} onChange={setPostalCode} maxLength={6} inputMode="numeric" />
+              </details>
               <Button
                 onClick={handleCreateCustomer}
                 loading={creating || updating}

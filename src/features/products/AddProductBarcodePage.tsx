@@ -23,6 +23,8 @@ import { checkmarkCircle, search, add } from 'ionicons/icons';
 import {
   useLazyLookupBarcodeQuery,
   useCreateProductFromBarcodeMutation,
+  useUpdateProductMutation,
+  useUpdateVariantMutation,
 } from '@core/api/productApi';
 import { useGetCategoriesQuery } from '@core/api/categoryApi';
 import {
@@ -33,8 +35,9 @@ import {
   ProductPreviewCard,
   AddCategoryModal,
 } from '@components';
-import type { BarcodeLookupData } from '@core/types';
+import type { BarcodeLookupData, UqcCode } from '@core/types';
 import { useTranslation } from 'react-i18next';
+import './stock-workspace.css';
 
 export const AddProductBarcodePage: React.FC = () => {
   const history = useHistory();
@@ -59,6 +62,10 @@ export const AddProductBarcodePage: React.FC = () => {
   const [unit, setUnit] = useState('');
   const [unitValue, setUnitValue] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [hsnCode, setHsnCode] = useState('');
+  const [gstPercent, setGstPercent] = useState('');
+  const [uqcCode, setUqcCode] = useState('');
+  const [unitLabel, setUnitLabel] = useState('');
 
   // Toasts
   const [showSuccess, setShowSuccess] = useState(false);
@@ -71,6 +78,8 @@ export const AddProductBarcodePage: React.FC = () => {
   // API
   const [lookupBarcode, { isLoading: scanning }] = useLazyLookupBarcodeQuery();
   const [createProduct, { isLoading: creating }] = useCreateProductFromBarcodeMutation();
+  const [updateProduct, { isLoading: updatingProduct }] = useUpdateProductMutation();
+  const [updateVariant, { isLoading: updatingVariant }] = useUpdateVariantMutation();
   const { data: categoriesData } = useGetCategoriesQuery();
 
   const categories = categoriesData?.data || [];
@@ -181,7 +190,22 @@ export const AddProductBarcodePage: React.FC = () => {
         },
       };
       
-      await createProduct(payload).unwrap();
+      const created = await createProduct(payload).unwrap();
+      const followUpUpdates: Promise<unknown>[] = [];
+      if (hsnCode.trim()) {
+        followUpUpdates.push(updateProduct({ id: created.data.product.id, data: { hsn_code: hsnCode.trim() } }).unwrap());
+      }
+      if (gstPercent || uqcCode || unitLabel.trim()) {
+        followUpUpdates.push(updateVariant({
+          id: created.data.variant.id,
+          data: {
+            gst_percent: gstPercent ? parseFloat(gstPercent) : null,
+            uqc_code: (uqcCode as UqcCode) || null,
+            unit_label: unitLabel.trim() || null,
+          },
+        }).unwrap());
+      }
+      await Promise.all(followUpUpdates);
 
       setShowSuccess(true);
       
@@ -210,6 +234,10 @@ export const AddProductBarcodePage: React.FC = () => {
     setUnit('');
     setUnitValue('');
     setQuantity('');
+    setHsnCode('');
+    setGstPercent('');
+    setUqcCode('');
+    setUnitLabel('');
   };
 
   return (
@@ -455,6 +483,22 @@ export const AddProductBarcodePage: React.FC = () => {
                           type="number"
                         />
                       </div>
+                      <details className="product-tax-details">
+                        <summary>{t('taxFields.productDetails')}</summary>
+                        <p>{t('taxFields.productDetailsHint')}</p>
+                        <Input label={t('taxFields.hsnCode')} value={hsnCode} onChange={setHsnCode} maxLength={8} inputMode="numeric" />
+                        <Input label={t('products.gstLabel')} value={gstPercent} onChange={setGstPercent} type="number" />
+                        <Select
+                          label={t('taxFields.uqcCode')}
+                          value={uqcCode}
+                          onChange={setUqcCode}
+                          options={[
+                            { value: '', label: t('common.notAvailable') },
+                            ...['BAG','BAL','BDL','BOX','BTL','CTN','DOZ','GMS','KGS','LTR','MLT','MTR','NOS','PAC','PCS','SET'].map((value) => ({ value, label: value })),
+                          ]}
+                        />
+                        <Input label={t('taxFields.unitLabel')} value={unitLabel} onChange={setUnitLabel} maxLength={30} />
+                      </details>
                     </div>
 
                     {/* Inventory Section */}
@@ -482,10 +526,10 @@ export const AddProductBarcodePage: React.FC = () => {
                       <IonButton
                         expand="block"
                         onClick={handleSubmit}
-                        disabled={creating}
+                        disabled={creating || updatingProduct || updatingVariant}
                         className="flex-1"
                       >
-                        {creating ? t('common.creating') : t('products.createProductButton')}
+                        {creating || updatingProduct || updatingVariant ? t('common.creating') : t('products.createProductButton')}
                       </IonButton>
                     </div>
                   </div>

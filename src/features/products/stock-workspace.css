@@ -190,3 +190,22 @@
   padding-top: 12px;
   border-top: 1px solid var(--ion-border-color, #d9e0e7);
 }
+.product-tax-details {
+  border: 1px solid color-mix(in srgb, var(--ion-color-medium) 25%, transparent);
+  border-radius: 12px;
+  margin-top: 1rem;
+  padding: 0.9rem;
+}
+
+.product-tax-details summary {
+  color: var(--ion-color-primary);
+  cursor: pointer;
+  font-weight: 700;
+  min-height: 44px;
+  padding-top: 0.6rem;
+}
+
+.product-tax-details > p {
+  color: var(--ion-color-medium);
+  font-size: 0.9rem;
+}

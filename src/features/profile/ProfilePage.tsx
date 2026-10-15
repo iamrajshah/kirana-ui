@@ -27,12 +27,15 @@ import { useUpdateProfileMutation } from '@core/api/userApi';
 import { useAppSelector } from '@core/hooks';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/useTheme';
+import { DocumentSettingsCard } from './DocumentSettingsCard';
+import { canEditTenantDocumentSettings } from './documentSettingsAccess';
 import './ProfilePage.css';
 
 export const ProfilePage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const user = useAppSelector((state) => state.auth.user);
   const { theme, toggleTheme } = useTheme();
+  const canManageTenantSettings = canEditTenantDocumentSettings(user?.roles || []);
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -152,6 +155,8 @@ export const ProfilePage: React.FC = () => {
             </IonButton>
           </IonCardContent>
         </IonCard>
+
+        {canManageTenantSettings && <DocumentSettingsCard />}
 
         <IonCard>
           <IonCardHeader>

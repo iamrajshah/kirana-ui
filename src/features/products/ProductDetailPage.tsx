@@ -31,7 +31,7 @@ import {
 import { useGetCategoriesQuery } from '@core/api/categoryApi';
 import { Loading, EmptyState, Input, Select, Button } from '@components';
 import { formatCurrency } from '@utils/helpers';
-import type { ProductVariant } from '@core/types';
+import type { ProductVariant, UqcCode } from '@core/types';
 import { useAppSelector } from '@core/hooks';
 import { selectCurrentUser } from '@core/auth/authSlice';
 import { APP_NAME } from '@core/constants';
@@ -58,6 +58,10 @@ export const ProductDetailPage: React.FC = () => {
   const [editCategoryId, setEditCategoryId] = useState<number | null>(null);
   const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
   const [editSellingPrice, setEditSellingPrice] = useState('');
+  const [editHsnCode, setEditHsnCode] = useState('');
+  const [editGstPercent, setEditGstPercent] = useState('');
+  const [editUqcCode, setEditUqcCode] = useState('');
+  const [editUnitLabel, setEditUnitLabel] = useState('');
   const [barcodeVariant, setBarcodeVariant] = useState<ProductVariant | null>(null);
 
   const categories = categoriesData?.data || [];
@@ -70,6 +74,7 @@ export const ProductDetailPage: React.FC = () => {
           ? parseInt(data.data.category_id)
           : data.data.category_id
       );
+      setEditHsnCode(data.data.hsn_code || '');
       setShowEditModal(true);
     }
   };
@@ -86,6 +91,9 @@ export const ProductDetailPage: React.FC = () => {
     }
     setEditingVariant(variant);
     setEditSellingPrice(variant.selling_price?.toString() || variant.price.toString());
+    setEditGstPercent(variant.gst_percent?.toString() || '');
+    setEditUqcCode(variant.uqc_code || '');
+    setEditUnitLabel(variant.unit_label || '');
     setShowVariantEditModal(true);
   };
 
@@ -102,7 +110,12 @@ export const ProductDetailPage: React.FC = () => {
     try {
       await updateVariant({
         id: editingVariant.id,
-        data: { selling_price: sellingPrice },
+        data: {
+          selling_price: sellingPrice,
+          gst_percent: editGstPercent ? parseFloat(editGstPercent) : null,
+          uqc_code: (editUqcCode as UqcCode) || null,
+          unit_label: editUnitLabel.trim() || null,
+        },
       }).unwrap();
 
       setShowSuccess(true);
@@ -123,6 +136,7 @@ export const ProductDetailPage: React.FC = () => {
         data: {
           name: editName,
           category_id: editCategoryId,
+          hsn_code: editHsnCode.trim() || null,
         },
       }).unwrap();
 
@@ -193,6 +207,12 @@ export const ProductDetailPage: React.FC = () => {
                     </p>
                   </IonLabel>
                 </IonItem>
+                {product.hsn_code && (
+                  <IonItem>
+                    <IonLabel>{t('taxFields.hsnCode')}</IonLabel>
+                    <IonLabel slot="end">{product.hsn_code}</IonLabel>
+                  </IonItem>
+                )}
                 <IonItem>
                   <IonLabel style={{ color: 'var(--ion-text-color)' }}>
                     {t('common.status')}
@@ -290,6 +310,12 @@ export const ProductDetailPage: React.FC = () => {
                           <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>
                             {variant.gst_percent}%
                           </IonLabel>
+                        </IonItem>
+                      )}
+                      {(variant.uqc_code || variant.unit_label) && (
+                        <IonItem>
+                          <IonLabel>{t('taxFields.unitOfQuantity')}</IonLabel>
+                          <IonLabel slot="end">{[variant.uqc_code, variant.unit_label].filter(Boolean).join(' · ')}</IonLabel>
                         </IonItem>
                       )}
                       {variant.sku && (
@@ -399,6 +425,8 @@ export const ProductDetailPage: React.FC = () => {
                   placeholder={t('common.placeholders.selectCategory')}
                 />
 
+                <Input label={t('taxFields.hsnCode')} value={editHsnCode} onChange={setEditHsnCode} maxLength={8} inputMode="numeric" />
+
                 <div style={{ marginTop: '24px' }}>
                   <Button
                     onClick={handleUpdateProduct}
@@ -475,6 +503,18 @@ export const ProductDetailPage: React.FC = () => {
                   onChange={setEditSellingPrice}
                   placeholder={t('products.enterPrice')}
                 />
+
+                <Input label={t('products.gstLabel')} type="number" value={editGstPercent} onChange={setEditGstPercent} />
+                <Select
+                  label={t('taxFields.uqcCode')}
+                  value={editUqcCode}
+                  onChange={setEditUqcCode}
+                  options={[
+                    { value: '', label: t('common.notAvailable') },
+                    ...['BAG','BAL','BDL','BOX','BTL','CTN','DOZ','GMS','KGS','LTR','MLT','MTR','NOS','PAC','PCS','SET'].map((value) => ({ value, label: value })),
+                  ]}
+                />
+                <Input label={t('taxFields.unitLabel')} value={editUnitLabel} onChange={setEditUnitLabel} maxLength={30} />
 
                 <div style={{ marginTop: '24px' }}>
                   <Button

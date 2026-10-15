@@ -37,6 +37,13 @@ export interface Customer {
   name: string;
   phone: string;
   email?: string;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  state_code?: string | null;
+  postal_code?: string | null;
+  gstin?: string | null;
   credit_balance: number;
   is_active: boolean;
   created_at: string;
@@ -51,6 +58,7 @@ export interface Category {
 export interface Product {
   id: string;
   name: string;
+  hsn_code?: string | null;
   category_id: string;
   category?: Category;
   is_active: boolean;
@@ -69,11 +77,54 @@ export interface ProductVariant {
   selling_price?: number; // Added for editable selling price
   mrp_price?: number;
   gst_percent?: number;
+  uqc_code?: UqcCode | null;
+  unit_label?: string | null;
   is_active: boolean;
   product?: Product;
   inventory?: Inventory;
   barcodes?: BarcodeInfo[];
 }
+
+export type DocumentMode = 'SIMPLE_RECEIPT' | 'GST_TAX_INVOICE';
+export type ReceiptPaperWidth = 'MM58' | 'MM80';
+export type UqcCode =
+  | 'BAG' | 'BAL' | 'BDL' | 'BOX' | 'BTL' | 'CTN' | 'DOZ' | 'GMS'
+  | 'KGS' | 'LTR' | 'MLT' | 'MTR' | 'NOS' | 'PAC' | 'PCS' | 'SET';
+
+export interface TenantDocumentSettings {
+  id: string | null;
+  tenant_id: string;
+  document_mode: DocumentMode;
+  supplier_name: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  state_code: string | null;
+  postal_code: string | null;
+  gstin: string | null;
+  phone: string | null;
+  footer: string | null;
+  authorized_signatory: string | null;
+  default_paper_width: ReceiptPaperWidth;
+  settings_version: number;
+  created_at: string | null;
+  updated_at: string | null;
+  capabilities: {
+    receipt_documents_enabled: boolean;
+    supported_paper_widths: readonly ReceiptPaperWidth[];
+    per_print_override: boolean;
+  };
+}
+
+export type UpdateTenantDocumentSettings = Partial<
+  Pick<
+    TenantDocumentSettings,
+    | 'document_mode' | 'supplier_name' | 'address_line1' | 'address_line2'
+    | 'city' | 'state' | 'state_code' | 'postal_code' | 'gstin' | 'phone'
+    | 'footer' | 'authorized_signatory' | 'default_paper_width'
+  >
+>;
 
 export interface Inventory {
   variant_id: string;
