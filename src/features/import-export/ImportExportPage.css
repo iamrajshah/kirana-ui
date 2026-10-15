@@ -1,5 +1,6 @@
 .import-section,
-.export-section {
+.export-section,
+.backup-section {
   margin-top: 20px;
 }
 
@@ -14,6 +15,131 @@
   overflow-x: auto;
 }
 
+.backup-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.backup-card {
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--ion-color-medium) 20%, transparent);
+  overflow: hidden;
+}
+
+.backup-card::before {
+  content: '';
+  display: block;
+  height: 4px;
+  background: var(--ion-color-primary);
+}
+
+.backup-card--restore::before {
+  background: var(--ion-color-warning);
+}
+
+.backup-card__icon {
+  width: 34px;
+  height: 34px;
+  padding: 9px;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  color: var(--ion-color-primary);
+  background: color-mix(in srgb, var(--ion-color-primary) 12%, transparent);
+}
+
+.backup-card--restore .backup-card__icon {
+  color: var(--ion-color-warning-shade);
+  background: color-mix(in srgb, var(--ion-color-warning) 18%, transparent);
+}
+
+.backup-card ion-note {
+  display: block;
+  margin: 10px 0 20px;
+  line-height: 1.5;
+}
+
+.backup-file-input {
+  width: 100%;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px dashed var(--ion-color-medium);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ion-background-color) 88%, var(--ion-color-primary) 12%);
+}
+
+.backup-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  color: var(--ion-color-medium);
+}
+
+.backup-preview {
+  margin: 18px 0 0;
+}
+
+.backup-preview__title,
+.backup-preview__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 20px;
+}
+
+.backup-preview__meta {
+  justify-content: flex-start;
+  color: var(--ion-color-medium-shade);
+}
+
+.backup-counts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.backup-count {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ion-color-primary) 8%, var(--ion-card-background));
+}
+
+.backup-warning {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  margin: 18px 0;
+  border: 1px solid color-mix(in srgb, var(--ion-color-danger) 30%, transparent);
+  border-radius: 12px;
+  color: var(--ion-color-danger-shade);
+  background: color-mix(in srgb, var(--ion-color-danger) 8%, var(--ion-card-background));
+}
+
+.backup-warning ion-icon {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+}
+
+.backup-warning p {
+  margin: 4px 0 0;
+}
+
+.backup-confirmation,
+.backup-acknowledgement {
+  --background: transparent;
+  margin: 8px 0;
+}
+
+.backup-acknowledgement ion-checkbox {
+  margin-right: 12px;
+}
+
 @media (min-width: 768px) {
   .export-buttons {
     display: grid;
@@ -21,7 +147,16 @@
   }
 
   .import-section,
-  .export-section {
+  .export-section,
+  .backup-section {
     max-width: 1100px;
+  }
+
+  .backup-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .backup-counts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

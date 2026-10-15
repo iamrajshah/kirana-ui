@@ -1,7 +1,7 @@
 .dashboard-page {
   display: grid;
   align-content: start;
-  gap: 22px;
+  gap: 20px;
 }
 
 .dashboard-page .workspace-header {
@@ -16,12 +16,20 @@
 
 .dashboard-metric {
   min-width: 0;
-  padding: 18px;
+  padding: 20px;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.dashboard-metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px var(--kirana-shadow-color);
 }
 
 .dashboard-metric h3 {
   margin: 0 0 12px;
-  color: var(--ion-color-medium);
+  color: var(--ion-text-color-secondary);
   font-size: 0.88rem;
   font-weight: 650;
   line-height: 1.35;
@@ -45,16 +53,31 @@
 
 .dashboard-metric--sales {
   grid-column: 1 / -1;
-  border-color: var(--ion-color-primary);
-  background: var(--ion-color-primary-tint);
+  overflow: hidden;
+  border-color: transparent;
+  background:
+    radial-gradient(circle at 92% 12%, rgba(239, 255, 249, 0.2), transparent 38%),
+    linear-gradient(135deg, var(--kirana-nav-background), var(--ion-color-primary));
+  box-shadow: 0 18px 40px rgba(var(--ion-color-primary-rgb), 0.22);
+}
+
+.dashboard-metric--sales h3,
+.dashboard-metric--sales .dashboard-metric-value,
+.dashboard-metric--sales .dashboard-metric-note {
+  color: var(--kirana-nav-foreground);
+}
+
+.dashboard-metric--sales h3,
+.dashboard-metric--sales .dashboard-metric-note {
+  opacity: 0.78;
 }
 
 .dashboard-metric--pending {
-  border-top: 3px solid var(--ion-color-warning);
+  border-top: 4px solid var(--ion-color-warning);
 }
 
 .dashboard-metric--stock {
-  border-top: 3px solid var(--ion-color-danger);
+  border-top: 4px solid var(--ion-color-danger);
 }
 
 .dashboard-secondary h2,
@@ -80,7 +103,7 @@
 .dashboard-decision-state p,
 .dashboard-decision-empty {
   margin: 0;
-  color: var(--ion-color-medium);
+  color: var(--ion-text-color-secondary);
   font-size: 0.86rem;
   line-height: 1.45;
 }
@@ -92,10 +115,11 @@
 
 .dashboard-decision-group {
   min-width: 0;
-  padding: 14px;
-  border: 1px solid var(--ion-color-light-shade);
-  border-radius: 14px;
-  background: var(--ion-card-background, var(--ion-background-color));
+  padding: 16px;
+  border: 1px solid var(--ion-border-color);
+  border-radius: 18px;
+  background: var(--kirana-surface-raised, var(--ion-card-background));
+  box-shadow: 0 14px 34px var(--kirana-shadow-color);
 }
 
 .dashboard-decision-group > h3 {
@@ -115,10 +139,10 @@
   min-width: 0;
   gap: 8px;
   padding: 13px;
-  border: 1px solid var(--ion-color-light-shade);
+  border: 1px solid var(--ion-border-color);
   border-left: 4px solid var(--ion-color-primary);
   border-radius: 12px;
-  background: var(--ion-color-light);
+  background: var(--kirana-surface-soft, var(--ion-color-light));
 }
 
 .dashboard-decision-card--stock {
@@ -195,7 +219,7 @@
 .dashboard-decision-empty {
   padding: 12px;
   border-radius: 10px;
-  background: var(--ion-color-light);
+  background: var(--kirana-surface-soft, var(--ion-color-light));
 }
 
 .dashboard-secondary-grid {
@@ -211,12 +235,13 @@
   min-height: 44px;
   padding: 10px 16px;
   border: 1px solid var(--ion-color-primary);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--ion-color-primary);
   color: var(--ion-color-primary-contrast);
   cursor: pointer;
   font: inherit;
   font-weight: 650;
+  box-shadow: 0 10px 22px rgba(var(--ion-color-primary-rgb), 0.18);
 }
 
 .dashboard-shortcuts button:focus-visible,

@@ -39,7 +39,7 @@ import type {
   SupplierLedgerSummary,
 } from '@core/api/reportsApi';
 import { Loading, EmptyState } from '@components';
-import { formatCurrency, formatNumber } from '@utils/helpers';
+import { formatCurrency, formatDate, formatNumber } from '@utils/helpers';
 import './ReportsPage.css';
 
 const reportOptions = [
@@ -95,10 +95,7 @@ export const ReportsPage: React.FC = () => {
     isLoading: salesLoading,
     isError: salesError,
     refetch: refetchSales,
-  } = useGetSalesReportQuery(
-    { groupBy: 'day' },
-    { skip: selectedReport !== 'sales' }
-  );
+  } = useGetSalesReportQuery({ groupBy: 'day' }, { skip: selectedReport !== 'sales' });
   const {
     data: outstandingData,
     isLoading: outstandingLoading,
@@ -136,10 +133,7 @@ export const ReportsPage: React.FC = () => {
     isLoading: topSellingLoading,
     isError: topSellingError,
     refetch: refetchTopSelling,
-  } = useGetTopSellingQuery(
-    { limit: 20 },
-    { skip: selectedReport !== 'topSelling' }
-  );
+  } = useGetTopSellingQuery({ limit: 20 }, { skip: selectedReport !== 'topSelling' });
 
   const {
     data: supplierOutstandingData,
@@ -164,10 +158,7 @@ export const ReportsPage: React.FC = () => {
     isLoading: topPayablesLoading,
     isError: topPayablesError,
     refetch: refetchTopPayables,
-  } = useGetTopPayablesQuery(
-    { limit: 10 },
-    { skip: selectedReport !== 'topPayables' }
-  );
+  } = useGetTopPayablesQuery({ limit: 10 }, { skip: selectedReport !== 'topPayables' });
   const {
     data: supplierLedgerData,
     isLoading: supplierLedgerLoading,
@@ -182,10 +173,7 @@ export const ReportsPage: React.FC = () => {
     isLoading: purchaseTrendLoading,
     isError: purchaseTrendError,
     refetch: refetchPurchaseTrend,
-  } = useGetPurchaseTrendQuery(
-    { months: 12 },
-    { skip: selectedReport !== 'purchaseTrend' }
-  );
+  } = useGetPurchaseTrendQuery({ months: 12 }, { skip: selectedReport !== 'purchaseTrend' });
 
   const reportRequests: Record<ReportId, { isError?: boolean; refetch?: () => unknown }> = {
     sales: { isError: salesError, refetch: refetchSales },
@@ -246,7 +234,7 @@ export const ReportsPage: React.FC = () => {
         {salesBreakdown.map((item, index) => (
           <IonItem key={index}>
             <IonLabel>
-              <h2 className="font-semibold">{item.date}</h2>
+              <h2 className="font-semibold">{formatDate(item.date)}</h2>
               <p className="text-sm text-gray-600">
                 {t('reports.invoiceCount')} {item.invoice_count}
               </p>
@@ -742,7 +730,9 @@ export const ReportsPage: React.FC = () => {
               <IonLabel>
                 <h2 className="font-semibold">{ledger.supplier_name}</h2>
                 <p className="text-sm text-gray-600">{ledger.supplier_phone}</p>
-                <p className="text-xs text-gray-500">{ledger.transaction_count} {t('reports.transactions')}</p>
+                <p className="text-xs text-gray-500">
+                  {ledger.transaction_count} {t('reports.transactions')}
+                </p>
               </IonLabel>
               <div slot="end" className="text-right">
                 <div className="text-sm text-gray-600">

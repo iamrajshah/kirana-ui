@@ -10,7 +10,19 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--ion-text-color);
-  background-color: var(--ion-background-color);
+  background:
+    radial-gradient(circle at 88% 0, var(--kirana-shell-glow), transparent 32rem),
+    var(--kirana-shell-background, var(--ion-background-color));
+}
+
+ion-app {
+  background: var(--kirana-shell-background, var(--ion-background-color));
+}
+
+ion-card {
+  border: 1px solid color-mix(in srgb, var(--ion-border-color) 82%, transparent);
+  border-radius: 18px;
+  box-shadow: 0 14px 34px var(--kirana-shadow-color);
 }
 
 /* Touch-friendly minimum sizes */
@@ -166,13 +178,6 @@ body.dark input[type='password']::placeholder,
 body.dark input[type='tel']::placeholder,
 body.dark textarea::placeholder {
   color: var(--ion-color-medium) !important;
-}
-
-/* Fix buttons in dark mode */
-body.dark button {
-  background-color: var(--ion-item-background);
-  color: var(--ion-text-color);
-  border-color: var(--ion-border-color);
 }
 
 body.dark button.bg-white {

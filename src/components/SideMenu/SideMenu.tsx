@@ -1,7 +1,15 @@
 import React from 'react';
 import {
-  IonMenu, IonHeader, IonToolbar, IonTitle, IonContent, IonList,
-  IonItem, IonIcon, IonLabel, IonMenuToggle,
+  IonMenu,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonList,
+  IonItem,
+  IonIcon,
+  IonLabel,
+  IonMenuToggle,
 } from '@ionic/react';
 import { useHistory, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
@@ -21,8 +29,18 @@ export const SideMenu: React.FC = () => {
   return (
     <IonMenu contentId="main-content" type="overlay" className="workspace-menu">
       <IonHeader>
-        <IonToolbar color="primary">
-          <IonTitle>{t('common.appName')}</IonTitle>
+        <IonToolbar className="workspace-menu-toolbar">
+          <IonTitle>
+            <span className="workspace-menu-brand" aria-label={t('common.appName')}>
+              <span className="workspace-menu-brand__mark" aria-hidden="true">
+                क
+              </span>
+              <span className="workspace-menu-brand__copy">
+                <strong>{t('common.appName')}</strong>
+                <small>{user?.tenant?.name || t('common.store')}</small>
+              </span>
+            </span>
+          </IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent>
@@ -38,7 +56,9 @@ export const SideMenu: React.FC = () => {
                     button
                     detail={false}
                     aria-current={location.pathname === item.href ? 'page' : undefined}
-                    className={location.pathname === item.href ? 'workspace-menu-active' : undefined}
+                    className={
+                      location.pathname === item.href ? 'workspace-menu-active' : undefined
+                    }
                     onClick={() => history.push(item.href)}
                   >
                     <IonIcon icon={item.icon} slot="start" />

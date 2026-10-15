@@ -19,6 +19,7 @@ import { selectCurrentUser, logout } from '@core/auth/authSlice';
 import { useHistory } from 'react-router';
 import { ROUTES } from '@core/constants';
 import { useTranslation } from 'react-i18next';
+import './Navbar.css';
 
 interface NavbarProps {
   title: string;
@@ -55,39 +56,30 @@ export const Navbar: React.FC<NavbarProps> = ({ title, backHref }) => {
   };
 
   return (
-    <IonHeader>
-      <IonToolbar>
+    <IonHeader className="bazaar-navbar">
+      <IonToolbar className="bazaar-navbar__toolbar">
         <IonButtons slot="start">
           {backHref ? <IonBackButton defaultHref={backHref} /> : <IonMenuButton />}
         </IonButtons>
-        <IonTitle className="px-1 sm:px-4">{title}</IonTitle>
+        <IonTitle className="bazaar-navbar__title px-1 sm:px-4">
+          <span>{title}</span>
+        </IonTitle>
         {user && (
-          <div slot="end" className="mr-1 flex items-center gap-1 sm:mr-3 sm:gap-2">
+          <div
+            slot="end"
+            className="bazaar-navbar__account mr-1 flex items-center gap-1 sm:mr-3 sm:gap-2"
+          >
             <div
               ref={popoverRef}
               onClick={handleUserClick}
-              className="hidden cursor-pointer rounded px-2 py-1 text-right transition-colors sm:block"
-              style={{
-                transition: 'background-color 0.2s',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              className="bazaar-navbar__store hidden cursor-pointer rounded px-2 py-1 text-right transition-colors sm:block"
             >
-              <div style={{ fontWeight: 600, fontSize: '14px' }}>
+              <div className="bazaar-navbar__store-name">
                 {user.tenant?.name || t('common.store')}
               </div>
-              <div
-                style={{
-                  fontSize: '11px',
-                  color: 'var(--ion-color-medium)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-end',
-                  gap: '4px',
-                }}
-              >
+              <div className="bazaar-navbar__user-name">
                 {user.name || user.email}
-                <IonIcon icon={chevronDown} style={{ fontSize: '12px' }} />
+                <IonIcon icon={chevronDown} />
               </div>
             </div>
             <IonButtons>
@@ -95,7 +87,7 @@ export const Navbar: React.FC<NavbarProps> = ({ title, backHref }) => {
                 onClick={handleUserClick}
                 fill="clear"
                 aria-label={t('profile.accountMenu')}
-                className="min-h-touch min-w-touch"
+                className="bazaar-navbar__profile min-h-touch min-w-touch"
               >
                 <IonIcon slot="icon-only" icon={person} />
               </IonButton>
