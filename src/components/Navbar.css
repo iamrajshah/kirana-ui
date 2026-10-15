@@ -1,0 +1,98 @@
+.bazaar-navbar {
+  box-shadow: 0 8px 28px var(--kirana-shadow-color);
+}
+
+.bazaar-navbar__toolbar {
+  --min-height: 66px;
+  --background: color-mix(in srgb, var(--kirana-surface-raised) 94%, transparent);
+  --border-color: color-mix(in srgb, var(--ion-border-color) 80%, transparent);
+  --color: var(--ion-text-color);
+  backdrop-filter: blur(18px);
+}
+
+.bazaar-navbar__title {
+  color: var(--ion-text-color);
+  font-size: 1rem;
+  font-weight: 760;
+  letter-spacing: -0.015em;
+}
+
+.bazaar-navbar__title span {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.bazaar-navbar__title span::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ion-color-primary);
+  box-shadow: 0 0 0 5px rgba(var(--ion-color-primary-rgb), 0.12);
+  content: '';
+}
+
+.bazaar-navbar__account {
+  height: 100%;
+}
+
+.bazaar-navbar__store {
+  border-radius: 12px;
+}
+
+.bazaar-navbar__store:hover {
+  background: var(--kirana-surface-soft);
+}
+
+.bazaar-navbar__store-name {
+  max-width: 190px;
+  overflow: hidden;
+  color: var(--ion-text-color);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bazaar-navbar__user-name {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  color: var(--ion-text-color-secondary);
+  font-size: 0.68rem;
+}
+
+.bazaar-navbar__user-name ion-icon {
+  font-size: 0.72rem;
+}
+
+.bazaar-navbar__profile {
+  --background: var(--kirana-surface-soft);
+  --background-hover: color-mix(in srgb, var(--ion-color-primary) 10%, var(--kirana-surface-soft));
+  --border-radius: 13px;
+  --color: var(--ion-color-primary);
+}
+
+.bazaar-navbar ion-menu-button,
+.bazaar-navbar ion-back-button {
+  --color: var(--ion-color-primary);
+}
+
+.bazaar-navbar ion-popover {
+  --background: var(--kirana-surface-raised);
+}
+
+@media (max-width: 575px) {
+  .bazaar-navbar__toolbar {
+    --min-height: 58px;
+  }
+
+  .bazaar-navbar__title {
+    font-size: 0.95rem;
+  }
+
+  .bazaar-navbar__title span::before {
+    display: none;
+  }
+}

@@ -1,14 +1,71 @@
 .workspace-menu ion-content {
-  --background: var(--ion-item-background, var(--ion-background-color, #fff));
+  --background: linear-gradient(
+    180deg,
+    var(--kirana-nav-background),
+    var(--kirana-nav-background-deep)
+  );
+  --color: var(--kirana-nav-foreground);
+}
+
+.workspace-menu-toolbar {
+  --min-height: 82px;
+  --background: var(--kirana-nav-background);
+  --border-color: rgba(239, 255, 249, 0.12);
+  --color: var(--kirana-nav-foreground);
+}
+
+.workspace-menu-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.workspace-menu-brand__mark {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border: 1px solid rgba(239, 255, 249, 0.18);
+  border-radius: 13px;
+  background: rgba(239, 255, 249, 0.13);
+  color: var(--kirana-nav-foreground);
+  font-size: 1.35rem;
+  box-shadow: 0 10px 24px rgba(3, 30, 22, 0.22);
+}
+
+.workspace-menu-brand__copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  text-align: left;
+}
+
+.workspace-menu-brand__copy strong {
+  overflow: hidden;
+  color: var(--kirana-nav-foreground);
+  font-size: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-menu-brand__copy small {
+  overflow: hidden;
+  color: var(--kirana-nav-muted);
+  font-size: 0.68rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .workspace-menu ion-list {
+  background: transparent;
   padding: 8px 0 4px;
 }
 
 .workspace-menu-heading {
   padding: 12px 24px 4px;
-  color: var(--ion-color-medium);
+  color: var(--kirana-nav-muted);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -16,20 +73,28 @@
 }
 
 .workspace-menu ion-item {
+  --background: transparent;
+  --color: var(--kirana-nav-muted);
+  --min-height: 48px;
+  --ripple-color: rgba(239, 255, 249, 0.18);
   --padding-start: 16px;
   --inner-padding-end: 16px;
   margin: 4px 8px;
-  border-radius: 8px;
+  border-radius: 13px;
+  font-size: 0.91rem;
+  font-weight: 600;
 }
 
 .workspace-menu ion-item:hover,
 .workspace-menu ion-item.workspace-menu-active {
-  --background: var(--ion-color-light);
+  --background: rgba(239, 255, 249, 0.13);
+  --color: var(--kirana-nav-foreground);
 }
 
 .workspace-menu ion-icon {
   margin-right: 16px;
-  font-size: 24px;
+  color: currentColor;
+  font-size: 21px;
 }
 
 .workspace-main {
@@ -37,6 +102,45 @@
   width: 100%;
   height: 100%;
   min-width: 0;
+}
+
+.workspace-bottom-tabs {
+  --background: color-mix(in srgb, var(--kirana-nav-background) 96%, transparent);
+  --border: 0;
+  min-height: calc(66px + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(239, 255, 249, 0.12);
+  box-shadow: 0 -12px 32px rgba(3, 30, 22, 0.2);
+}
+
+.workspace-bottom-tabs ion-tab-button {
+  --background: transparent;
+  --color: var(--kirana-nav-muted);
+  --color-selected: var(--kirana-nav-foreground);
+  max-width: none;
+  font-weight: 650;
+}
+
+.workspace-bottom-tabs ion-tab-button.tab-selected::before {
+  position: absolute;
+  top: 5px;
+  width: 32px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--ion-color-primary);
+  content: '';
+}
+
+.workspace-bottom-tabs ion-tab-button[tab='billing'] {
+  --color: var(--kirana-nav-foreground);
+  --color-selected: var(--kirana-nav-foreground);
+}
+
+.workspace-bottom-tabs ion-tab-button[tab='billing'] ion-icon {
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  box-shadow: 0 8px 18px rgba(var(--ion-color-primary-rgb), 0.3);
 }
 
 @media (min-width: 992px) {
@@ -48,7 +152,8 @@
 
   .workspace-menu {
     --width: 248px;
-    border-right: 1px solid var(--ion-border-color, #e5e7eb);
+    border-right: 0;
+    box-shadow: 12px 0 32px rgba(3, 30, 22, 0.12);
   }
 
   /*
