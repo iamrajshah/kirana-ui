@@ -22,6 +22,7 @@ import {
 import {
   cloudUpload,
   cloudDownload,
+  server,
   document as documentIcon,
   checkmarkCircle,
   closeCircle,
@@ -44,11 +45,17 @@ import {
   filterImportJobsByType,
   hasActiveImportJobs,
 } from './importExport.logic';
+import { BackupRestorePanel } from './BackupRestorePanel';
+import { useAppSelector } from '@core/hooks';
+import { selectCurrentUser } from '@core/auth/authSlice';
 
-type TabType = 'import' | 'export';
+type TabType = 'import' | 'export' | 'backup';
 
 export const ImportExportPage: React.FC = () => {
   const { t } = useTranslation();
+  const currentUser = useAppSelector(selectCurrentUser);
+  const isOwner = currentUser?.roles?.includes('OWNER') ?? false;
+  const shopName = currentUser?.tenant?.name ?? '';
   const [selectedTab, setSelectedTab] = useState<TabType>('import');
   const [selectedImportType, setSelectedImportType] = useState<ImportType>('CUSTOMER');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -204,6 +211,12 @@ export const ImportExportPage: React.FC = () => {
               <IonLabel>{t('importExport.export')}</IonLabel>
               <IonIcon icon={cloudDownload} />
             </IonSegmentButton>
+            {isOwner && (
+              <IonSegmentButton value="backup">
+                <IonLabel>{t('importExport.backup')}</IonLabel>
+                <IonIcon icon={server} />
+              </IonSegmentButton>
+            )}
           </IonSegment>
 
           {selectedTab === 'import' && (
@@ -507,6 +520,8 @@ export const ImportExportPage: React.FC = () => {
               </IonCard>
             </div>
           )}
+
+          {selectedTab === 'backup' && isOwner && <BackupRestorePanel shopName={shopName} />}
 
           <IonToast
             isOpen={showSuccess}
