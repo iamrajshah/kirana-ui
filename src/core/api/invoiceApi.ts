@@ -1,9 +1,9 @@
 import { apiSlice } from './apiSlice';
-import type { ApiResponse, FinalizedDocumentDto, HeldBill, Invoice } from '../types';
+import type { ApiResponse, DocumentMode, FinalizedDocumentDto, HeldBill, Invoice } from '../types';
 
 export interface InvoiceQuote {
   fingerprint: string;
-  document_mode: 'SIMPLE_RECEIPT' | 'GST_TAX_INVOICE';
+  document_mode: DocumentMode;
   settings_version: number;
   subtotal_amount: string;
   item_discount_amount: string;

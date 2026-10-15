@@ -30,6 +30,7 @@ import { apiErrorMessage } from '@core/services/notificationService';
 import type { PaymentMode } from '@core/types';
 import { formatCurrency, formatDateTime, generateIdempotencyKey } from '@utils/helpers';
 import {
+  getReceiptOutputFeedback,
   mapReceiptDocument,
   ReceiptDocument,
   type ReceiptOutputAction,
@@ -156,15 +157,14 @@ const InvoiceDetailPage: React.FC = () => {
   }
 
   if (receipt && finalizedDocument) {
-    const outputMessage =
-      receiptOutput.state.phase === 'generating' || receiptOutput.state.phase === 'handing-off'
-        ? t('invoiceDetail.preparingOutput')
-        : receiptOutput.state.phase === 'cancelled' ||
-            (receiptOutput.state.phase === 'completed' && receiptOutput.state.fallbackDownloaded)
-          ? t('invoiceDetail.pdfDownloaded')
-          : receiptOutput.state.phase === 'recoverable-error'
-            ? t('invoiceDetail.outputFailed')
-            : null;
+    const outputFeedback = getReceiptOutputFeedback(receiptOutput.state);
+    const outputMessage = outputFeedback
+      ? t({
+          working: 'invoiceDetail.preparingOutput',
+          downloaded: 'invoiceDetail.pdfDownloaded',
+          error: 'invoiceDetail.outputFailed',
+        }[outputFeedback])
+      : null;
     const mayCollect =
       Number(receipt.payment.remaining) > 0 &&
       receipt.customer.kind === 'named' &&

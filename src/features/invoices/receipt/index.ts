@@ -1,7 +1,11 @@
 export { ReceiptDocument } from './ReceiptDocument';
 export { defaultReceiptLabels } from './receiptLabels';
 export { mapReceiptDocument } from './receiptMapper';
-export { createReceiptOutputService, receiptOutputService } from './outputService';
+export {
+  createReceiptOutputService,
+  getReceiptOutputFeedback,
+  receiptOutputService,
+} from './outputService';
 export { useReceiptOutput } from './useReceiptOutput';
 export type {
   FinalizedDocumentDto,
@@ -13,6 +17,7 @@ export type {
 } from './types';
 export type {
   ReceiptOutputAction,
+  ReceiptOutputFeedback,
   ReceiptOutputService,
   ReceiptOutputState,
 } from './outputService';

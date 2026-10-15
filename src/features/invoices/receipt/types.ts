@@ -1,9 +1,13 @@
-import type { FinalizedDocumentDto } from '@core/types';
+import type {
+  DocumentMode,
+  FinalizedDocumentDto,
+  FinalizedDocumentPaymentStatus,
+} from '@core/types';
 
 export type { FinalizedDocumentDto } from '@core/types';
 
-export type ReceiptDocumentMode = 'SIMPLE_RECEIPT' | 'GST_TAX_INVOICE';
-export type ReceiptPaymentStatus = 'PAID' | 'PARTIALLY_PAID' | 'AMOUNT_DUE';
+export type ReceiptDocumentMode = DocumentMode;
+export type ReceiptPaymentStatus = FinalizedDocumentPaymentStatus;
 export type ReceiptPaperWidth = '58mm' | '80mm';
 
 export interface ReceiptLabels {

@@ -8,6 +8,7 @@ export type ReceiptOutputState =
   | { phase: 'completed'; action: ReceiptOutputAction; fallbackDownloaded?: boolean }
   | { phase: 'cancelled'; action: ReceiptOutputAction; fallbackDownloaded: boolean }
   | { phase: 'recoverable-error'; action: ReceiptOutputAction; message: string };
+export type ReceiptOutputFeedback = 'working' | 'downloaded' | 'error' | null;
 
 interface SharePayload {
   title: string;
@@ -64,6 +65,18 @@ const defaultDependencies: OutputDependencies = {
 const isCancellation = (error: unknown) =>
   error instanceof DOMException && error.name === 'AbortError';
 
+export const getReceiptOutputFeedback = (state: ReceiptOutputState): ReceiptOutputFeedback => {
+  if (state.phase === 'generating' || state.phase === 'handing-off') return 'working';
+  if (
+    state.phase === 'cancelled' ||
+    (state.phase === 'completed' && state.fallbackDownloaded)
+  ) {
+    return 'downloaded';
+  }
+  if (state.phase === 'recoverable-error') return 'error';
+  return null;
+};
+
 export const createReceiptOutputService = (overrides: Partial<OutputDependencies> = {}) => {
   const dependencies: OutputDependencies = {
     ...defaultDependencies,
@@ -75,6 +88,19 @@ export const createReceiptOutputService = (overrides: Partial<OutputDependencies
   const setState = (next: ReceiptOutputState) => {
     state = next;
     listeners.forEach((listener) => listener(state));
+  };
+  const downloadShareFallback = (
+    blob: Blob,
+    fileName: string,
+    action: ReceiptOutputAction,
+    error?: unknown
+  ) => {
+    dependencies.download(blob, fileName);
+    setState(
+      error && isCancellation(error)
+        ? { phase: 'cancelled', action, fallbackDownloaded: true }
+        : { phase: 'completed', action, fallbackDownloaded: true }
+    );
   };
 
   const run = async (
@@ -106,12 +132,7 @@ export const createReceiptOutputService = (overrides: Partial<OutputDependencies
           await dependencies.nativeShare(blob, fileName, `${receipt.title} ${receipt.invoiceNumber}`);
           setState({ phase: 'completed', action });
         } catch (error) {
-          dependencies.download(blob, fileName);
-          setState(
-            isCancellation(error)
-              ? { phase: 'cancelled', action, fallbackDownloaded: true }
-              : { phase: 'completed', action, fallbackDownloaded: true }
-          );
+          downloadShareFallback(blob, fileName, action, error);
         }
         return state;
       }
@@ -123,8 +144,7 @@ export const createReceiptOutputService = (overrides: Partial<OutputDependencies
         files: [file],
       };
       if (!dependencies.webShare.canShare(payload)) {
-        dependencies.download(blob, fileName);
-        setState({ phase: 'completed', action, fallbackDownloaded: true });
+        downloadShareFallback(blob, fileName, action);
         return state;
       }
 
@@ -132,12 +152,7 @@ export const createReceiptOutputService = (overrides: Partial<OutputDependencies
         await dependencies.webShare.share(payload);
         setState({ phase: 'completed', action });
       } catch (error) {
-        dependencies.download(blob, fileName);
-        setState(
-          isCancellation(error)
-            ? { phase: 'cancelled', action, fallbackDownloaded: true }
-            : { phase: 'completed', action, fallbackDownloaded: true }
-        );
+        downloadShareFallback(blob, fileName, action, error);
       }
       return state;
     } catch (error) {

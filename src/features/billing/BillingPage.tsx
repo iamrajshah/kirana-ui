@@ -60,6 +60,7 @@ import {
   type UnknownBarcodeProductInput,
 } from './UnknownBarcodeResolution';
 import {
+  getReceiptOutputFeedback,
   mapReceiptDocument,
   useReceiptOutput,
   type ReceiptOutputAction,
@@ -342,18 +343,25 @@ export const BillingPage: React.FC = () => {
     setQuoteError(null);
     if (!cartItems.length || completionInvoiceId) return;
 
+    let cancelled = false;
+    let request: ReturnType<typeof quoteInvoice> | null = null;
     const timer = window.setTimeout(async () => {
       try {
-        const result = await quoteInvoice(quotePayload).unwrap();
-        if (generation !== quoteGenerationRef.current || !result.data) return;
+        request = quoteInvoice(quotePayload);
+        const result = await request.unwrap();
+        if (cancelled || generation !== quoteGenerationRef.current || !result.data) return;
         setActiveQuote(result.data);
         setActiveQuoteKey(quoteKey);
       } catch (error: unknown) {
-        if (generation !== quoteGenerationRef.current) return;
+        if (cancelled || generation !== quoteGenerationRef.current) return;
         setQuoteError(apiErrorMessage(error, quoteUnavailableMessage, true));
       }
     }, 250);
-    return () => window.clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      request?.abort?.();
+    };
   }, [
     cartItems.length,
     completionInvoiceId,
@@ -854,15 +862,14 @@ export const BillingPage: React.FC = () => {
     history.replace(ROUTES.BILLING);
   };
 
-  const completionOutputMessage =
-    receiptOutput.state.phase === 'generating' || receiptOutput.state.phase === 'handing-off'
-      ? t('billing.completion.preparingOutput')
-      : receiptOutput.state.phase === 'cancelled' ||
-          (receiptOutput.state.phase === 'completed' && receiptOutput.state.fallbackDownloaded)
-        ? t('billing.completion.pdfDownloaded')
-        : receiptOutput.state.phase === 'recoverable-error'
-          ? t('billing.completion.outputFailed')
-          : null;
+  const completionOutputFeedback = getReceiptOutputFeedback(receiptOutput.state);
+  const completionOutputMessage = completionOutputFeedback
+    ? t({
+        working: 'billing.completion.preparingOutput',
+        downloaded: 'billing.completion.pdfDownloaded',
+        error: 'billing.completion.outputFailed',
+      }[completionOutputFeedback])
+    : null;
 
   return (
     <IonPage>
