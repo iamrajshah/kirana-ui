@@ -1,6 +1,23 @@
 import { apiSlice } from './apiSlice';
 import type { ApiResponse } from '../types';
 
+export type ImportType = 'CUSTOMER' | 'PRODUCT' | 'INVENTORY' | 'CATEGORY';
+export type ExportType =
+  | 'customers'
+  | 'products'
+  | 'inventory'
+  | 'categories'
+  | 'invoices'
+  | 'ledger';
+export type ExportFormat = 'CSV' | 'EXCEL';
+
+export const createImportFormData = (file: File, type: ImportType): FormData => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('type', type);
+  return formData;
+};
+
 export interface ImportJob {
   id: string;
   file_name?: string;
@@ -33,21 +50,15 @@ export interface ImportJobDetails extends ImportJob {
 export const importExportApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // Import endpoints
-    uploadImportFile: builder.mutation<ApiResponse<ImportJob>, { file: File; importType: string }>({
-      query: ({ file, importType }) => {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('importType', importType);
-        
-        return {
-          url: '/import/upload',
-          method: 'POST',
-          body: formData,
-        };
-      },
+    uploadImportFile: builder.mutation<ApiResponse<ImportJob>, { file: File; type: ImportType }>({
+      query: ({ file, type }) => ({
+        url: '/import/upload',
+        method: 'POST',
+        body: createImportFormData(file, type),
+      }),
       invalidatesTags: ['Import'],
     }),
-    
+
     getImportJobs: builder.query<ApiResponse<ImportJob[]>, { page?: number; limit?: number }>({
       query: (params) => ({
         url: '/import',
@@ -55,12 +66,12 @@ export const importExportApi = apiSlice.injectEndpoints({
       }),
       providesTags: ['Import'],
     }),
-    
+
     getImportJob: builder.query<ApiResponse<ImportJobDetails>, string>({
       query: (jobId) => `/import/${jobId}`,
       providesTags: ['Import'],
     }),
-    
+
     commitImportJob: builder.mutation<ApiResponse<ImportJob>, string>({
       query: (jobId) => ({
         url: `/import/${jobId}/commit`,
@@ -68,45 +79,13 @@ export const importExportApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Import', 'Product', 'Customer', 'Inventory'],
     }),
-    
-    // Export endpoints - return blob data, let component handle download
-    exportCustomers: builder.query<Blob, { format?: 'CSV' | 'EXCEL' }>({
-      query: ({ format = 'CSV' }) => ({
-        url: '/import/export/customers',
+
+    exportData: builder.mutation<string, { type: ExportType; format?: ExportFormat }>({
+      query: ({ type, format = 'CSV' }) => ({
+        url: `/import/export/${type}`,
         params: { format },
-        responseHandler: async (response) => response.blob(),
-      }),
-    }),
-    
-    exportProducts: builder.query<Blob, { format?: 'CSV' | 'EXCEL' }>({
-      query: ({ format = 'CSV' }) => ({
-        url: '/import/export/products',
-        params: { format },
-        responseHandler: async (response) => response.blob(),
-      }),
-    }),
-    
-    exportInventory: builder.query<Blob, { format?: 'CSV' | 'EXCEL' }>({
-      query: ({ format = 'CSV' }) => ({
-        url: '/import/export/inventory',
-        params: { format },
-        responseHandler: async (response) => response.blob(),
-      }),
-    }),
-    
-    exportInvoices: builder.query<Blob, { format?: 'CSV' | 'EXCEL' }>({
-      query: ({ format = 'CSV' }) => ({
-        url: '/import/export/invoices',
-        params: { format },
-        responseHandler: async (response) => response.blob(),
-      }),
-    }),
-    
-    exportLedger: builder.query<Blob, { format?: 'CSV' | 'EXCEL' }>({
-      query: ({ format = 'CSV' }) => ({
-        url: '/import/export/ledger',
-        params: { format },
-        responseHandler: async (response) => response.blob(),
+        responseHandler: async (response) =>
+          response.ok ? URL.createObjectURL(await response.blob()) : response.text(),
       }),
     }),
   }),
@@ -117,9 +96,5 @@ export const {
   useGetImportJobsQuery,
   useGetImportJobQuery,
   useCommitImportJobMutation,
-  useLazyExportCustomersQuery,
-  useLazyExportProductsQuery,
-  useLazyExportInventoryQuery,
-  useLazyExportInvoicesQuery,
-  useLazyExportLedgerQuery,
+  useExportDataMutation,
 } = importExportApi;
