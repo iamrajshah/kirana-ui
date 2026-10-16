@@ -33,8 +33,9 @@ import {
   ProductPreviewCard,
   AddCategoryModal,
 } from '@components';
-import type { BarcodeLookupData } from '@core/types';
+import type { BarcodeLookupData, UqcCode } from '@core/types';
 import { useTranslation } from 'react-i18next';
+import './stock-workspace.css';
 
 export const AddProductBarcodePage: React.FC = () => {
   const history = useHistory();
@@ -59,6 +60,10 @@ export const AddProductBarcodePage: React.FC = () => {
   const [unit, setUnit] = useState('');
   const [unitValue, setUnitValue] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [hsnCode, setHsnCode] = useState('');
+  const [gstPercent, setGstPercent] = useState('');
+  const [uqcCode, setUqcCode] = useState('');
+  const [unitLabel, setUnitLabel] = useState('');
 
   // Toasts
   const [showSuccess, setShowSuccess] = useState(false);
@@ -167,6 +172,7 @@ export const AddProductBarcodePage: React.FC = () => {
         product: {
           name: productName,
           categoryId: categoryId,
+          hsnCode: hsnCode.trim() || null,
         },
         variant: {
           sku: sku || null,
@@ -175,6 +181,9 @@ export const AddProductBarcodePage: React.FC = () => {
           unit: unit || null,
           unitValue: unitValue ? parseFloat(unitValue) : null,
           imageUrl: foundProduct?.image_url || null,
+          gstPercent: gstPercent ? parseFloat(gstPercent) : null,
+          uqcCode: (uqcCode as UqcCode) || null,
+          unitLabel: unitLabel.trim() || null,
         },
         inventory: {
           quantity: parseInt(quantity),
@@ -210,6 +219,10 @@ export const AddProductBarcodePage: React.FC = () => {
     setUnit('');
     setUnitValue('');
     setQuantity('');
+    setHsnCode('');
+    setGstPercent('');
+    setUqcCode('');
+    setUnitLabel('');
   };
 
   return (
@@ -455,6 +468,22 @@ export const AddProductBarcodePage: React.FC = () => {
                           type="number"
                         />
                       </div>
+                      <details className="product-tax-details">
+                        <summary>{t('taxFields.productDetails')}</summary>
+                        <p>{t('taxFields.productDetailsHint')}</p>
+                        <Input label={t('taxFields.hsnCode')} value={hsnCode} onChange={setHsnCode} maxLength={8} inputMode="numeric" />
+                        <Input label={t('products.gstLabel')} value={gstPercent} onChange={setGstPercent} type="number" />
+                        <Select
+                          label={t('taxFields.uqcCode')}
+                          value={uqcCode}
+                          onChange={setUqcCode}
+                          options={[
+                            { value: '', label: t('common.notAvailable') },
+                            ...['BAG','BAL','BDL','BOX','BTL','CTN','DOZ','GMS','KGS','LTR','MLT','MTR','NOS','PAC','PCS','SET'].map((value) => ({ value, label: value })),
+                          ]}
+                        />
+                        <Input label={t('taxFields.unitLabel')} value={unitLabel} onChange={setUnitLabel} maxLength={30} />
+                      </details>
                     </div>
 
                     {/* Inventory Section */}

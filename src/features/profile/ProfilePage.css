@@ -17,3 +17,57 @@
 .info-value {
   color: var(--ion-color-dark);
 }
+
+.document-settings-card ion-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.document-settings-card ion-card-header p,
+.document-settings-gst > p {
+  color: var(--ion-color-medium);
+  margin-bottom: 0;
+}
+
+.document-settings-gst {
+  border: 1px solid color-mix(in srgb, var(--ion-color-primary) 24%, transparent);
+  border-radius: 14px;
+  margin: 1rem 0;
+  padding: 1rem;
+}
+
+.document-settings-gst legend {
+  color: var(--ion-text-color);
+  font-weight: 700;
+  padding: 0 0.4rem;
+}
+
+.document-settings-grid {
+  display: grid;
+  gap: 0 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 1rem;
+}
+
+.document-settings-notice {
+  border-radius: 10px;
+  margin: 0.75rem 0;
+  padding: 0.8rem 1rem;
+}
+
+.document-settings-error {
+  background: color-mix(in srgb, var(--ion-color-danger) 12%, transparent);
+  color: var(--ion-color-danger-shade);
+}
+
+.document-settings-success {
+  background: color-mix(in srgb, var(--ion-color-success) 12%, transparent);
+  color: var(--ion-color-success-shade);
+}
+
+@media (max-width: 720px) {
+  .document-settings-grid {
+    grid-template-columns: 1fr;
+  }
+}

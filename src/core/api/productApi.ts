@@ -9,6 +9,7 @@ import type {
   CreateProductFromBarcodeRequest,
   BarcodeProductResponse,
   StoreBarcodeInfo,
+  UqcCode,
 } from '../types';
 
 export interface BillingSearchVariant {
@@ -30,11 +31,13 @@ export type Packaging = 'POUCH' | 'BOTTLE' | 'CAN' | 'BOX' | 'PACKET' | 'JAR' | 
 interface CreateProductRequest {
   name: string;
   category_id?: number | null;
+  hsn_code?: string | null;
 }
 
 interface UpdateProductRequest {
   name?: string;
   category_id?: number | null;
+  hsn_code?: string | null;
 }
 
 interface CreateVariantRequest {
@@ -43,6 +46,8 @@ interface CreateVariantRequest {
   packaging?: Packaging | null;
   price: number;
   gst_percent?: number | null;
+  uqc_code?: UqcCode | null;
+  unit_label?: string | null;
   sku?: string | null;
 }
 
@@ -101,7 +106,7 @@ export const productApi = apiSlice.injectEndpoints({
     }),
     updateVariant: builder.mutation<
       ApiResponse<ProductVariant>,
-      { id: string; data: { selling_price?: number; price?: number } }
+      { id: string; data: { selling_price?: number; price?: number; gst_percent?: number | null; uqc_code?: UqcCode | null; unit_label?: string | null } }
     >({
       query: ({ id, data }) => ({
         url: `/variants/${id}`,

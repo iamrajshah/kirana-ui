@@ -37,6 +37,13 @@ export interface Customer {
   name: string;
   phone: string;
   email?: string;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  state_code?: string | null;
+  postal_code?: string | null;
+  gstin?: string | null;
   credit_balance: number;
   is_active: boolean;
   created_at: string;
@@ -51,6 +58,7 @@ export interface Category {
 export interface Product {
   id: string;
   name: string;
+  hsn_code?: string | null;
   category_id: string;
   category?: Category;
   is_active: boolean;
@@ -69,11 +77,78 @@ export interface ProductVariant {
   selling_price?: number; // Added for editable selling price
   mrp_price?: number;
   gst_percent?: number;
+  uqc_code?: UqcCode | null;
+  unit_label?: string | null;
   is_active: boolean;
   product?: Product;
   inventory?: Inventory;
   barcodes?: BarcodeInfo[];
 }
+
+export type DocumentMode = 'SIMPLE_RECEIPT' | 'GST_TAX_INVOICE';
+export type ReceiptPaperWidth = 'MM58' | 'MM80';
+export type UqcCode =
+  | 'BAG'
+  | 'BAL'
+  | 'BDL'
+  | 'BOX'
+  | 'BTL'
+  | 'CTN'
+  | 'DOZ'
+  | 'GMS'
+  | 'KGS'
+  | 'LTR'
+  | 'MLT'
+  | 'MTR'
+  | 'NOS'
+  | 'PAC'
+  | 'PCS'
+  | 'SET';
+
+export interface TenantDocumentSettings {
+  id: string | null;
+  tenant_id: string;
+  document_mode: DocumentMode;
+  supplier_name: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  state_code: string | null;
+  postal_code: string | null;
+  gstin: string | null;
+  phone: string | null;
+  footer: string | null;
+  authorized_signatory: string | null;
+  default_paper_width: ReceiptPaperWidth;
+  settings_version: number;
+  created_at: string | null;
+  updated_at: string | null;
+  capabilities: {
+    receipt_documents_enabled: boolean;
+    supported_paper_widths: readonly ReceiptPaperWidth[];
+    per_print_override: boolean;
+  };
+}
+
+export type UpdateTenantDocumentSettings = Partial<
+  Pick<
+    TenantDocumentSettings,
+    | 'document_mode'
+    | 'supplier_name'
+    | 'address_line1'
+    | 'address_line2'
+    | 'city'
+    | 'state'
+    | 'state_code'
+    | 'postal_code'
+    | 'gstin'
+    | 'phone'
+    | 'footer'
+    | 'authorized_signatory'
+    | 'default_paper_width'
+  >
+>;
 
 export interface Inventory {
   variant_id: string;
@@ -149,6 +224,76 @@ export interface HeldBill extends Invoice {
 }
 
 export type PaymentMode = 'CASH' | 'UPI' | 'CARD' | 'BANK' | 'ADJUSTMENT';
+
+export type FinalizedDocumentPaymentStatus = 'PAID' | 'PARTIALLY_PAID' | 'AMOUNT_DUE';
+
+export interface DocumentPartyDto {
+  id?: string | null;
+  name: string | null;
+  phone: string | null;
+  address: string | null;
+  state: string | null;
+  state_code: string | null;
+  gstin: string | null;
+  signatory?: string | null;
+}
+
+export interface FinalizedDocumentDto {
+  kind: 'FINALIZED_DOCUMENT';
+  invoice_id: string;
+  invoice_number: string | null;
+  issued_at: string | null;
+  document_mode: DocumentMode;
+  legacy: boolean;
+  cancellation: { cancelled: boolean; marker: string | null };
+  supplier: DocumentPartyDto;
+  customer: DocumentPartyDto | null;
+  place_of_supply: { name: string | null; state_code: string | null } | null;
+  totals: {
+    subtotal_amount: string;
+    item_discount_amount: string;
+    bill_discount_amount: string;
+    discount_amount: string;
+    gst_amount: string;
+    total_amount: string;
+  };
+  items: Array<{
+    id?: string;
+    variant_id: string | null;
+    product_name: string | null;
+    sku: string | null;
+    hsn_code: string | null;
+    uqc_code: string | null;
+    unit_label: string | null;
+    quantity: number;
+    unit_price: string;
+    gross_amount: string;
+    item_discount_amount: string;
+    allocated_bill_discount_amount: string;
+    taxable_amount: string;
+    gst_rate: string | null;
+    cgst_amount: string | null;
+    sgst_amount: string | null;
+    igst_amount: string | null;
+    line_total_amount: string;
+  }>;
+  footer: string | null;
+  payment: {
+    status: FinalizedDocumentPaymentStatus;
+    paid_amount: string;
+    remaining_amount: string;
+    modes: string[];
+    last_allocation_at: string | null;
+    as_of: string;
+    allocations: Array<{
+      payment_id?: string;
+      amount: string;
+      payment_mode: string | null;
+      reference_note: string | null;
+      created_at: string | null;
+    }>;
+  };
+}
 
 export interface Payment {
   id: string;
@@ -327,6 +472,7 @@ export interface CreateProductFromBarcodeRequest {
   product: {
     name: string;
     categoryId?: number | null;
+    hsnCode?: string | null;
   };
   variant: {
     sku?: string | null;
@@ -335,6 +481,9 @@ export interface CreateProductFromBarcodeRequest {
     unit?: string | null;
     unitValue?: number | null;
     imageUrl?: string | null;
+    gstPercent?: number | null;
+    uqcCode?: UqcCode | null;
+    unitLabel?: string | null;
   };
   inventory: {
     quantity: number;

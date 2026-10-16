@@ -1,6 +1,25 @@
 import { apiSlice } from './apiSlice';
 import type { ApiResponse, PaginatedApiResponse, Customer } from '../types';
 
+export type CustomerTaxFields = Pick<
+  Customer,
+  'address_line1' | 'address_line2' | 'city' | 'state' | 'state_code' | 'postal_code' | 'gstin'
+>;
+
+export type CreateCustomerRequest = {
+  name: string;
+  phone: string;
+  email?: string;
+  opening_balance?: number;
+} & Partial<CustomerTaxFields>;
+
+export type UpdateCustomerRequest = {
+  id: string;
+  name?: string;
+  phone?: string;
+  email?: string;
+} & Partial<CustomerTaxFields>;
+
 export interface LedgerEntry {
   id: string;
   entry_type: 'OPENING_BALANCE' | 'INVOICE' | 'PAYMENT' | 'CREDIT_NOTE' | 'ADJUSTMENT';
@@ -50,7 +69,7 @@ export const customerApi = apiSlice.injectEndpoints({
     }),
     createCustomer: builder.mutation<
       ApiResponse<Customer>,
-      { name: string; phone: string; email?: string; opening_balance?: number }
+      CreateCustomerRequest
     >({
       query: (body) => ({
         url: '/customers',
@@ -61,7 +80,7 @@ export const customerApi = apiSlice.injectEndpoints({
     }),
     updateCustomer: builder.mutation<
       ApiResponse<Customer>,
-      { id: string; name?: string; phone?: string; email?: string }
+      UpdateCustomerRequest
     >({
       query: ({ id, ...body }) => ({
         url: `/customers/${id}`,
