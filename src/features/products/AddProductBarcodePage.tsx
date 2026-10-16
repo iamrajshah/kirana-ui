@@ -23,8 +23,6 @@ import { checkmarkCircle, search, add } from 'ionicons/icons';
 import {
   useLazyLookupBarcodeQuery,
   useCreateProductFromBarcodeMutation,
-  useUpdateProductMutation,
-  useUpdateVariantMutation,
 } from '@core/api/productApi';
 import { useGetCategoriesQuery } from '@core/api/categoryApi';
 import {
@@ -78,8 +76,6 @@ export const AddProductBarcodePage: React.FC = () => {
   // API
   const [lookupBarcode, { isLoading: scanning }] = useLazyLookupBarcodeQuery();
   const [createProduct, { isLoading: creating }] = useCreateProductFromBarcodeMutation();
-  const [updateProduct, { isLoading: updatingProduct }] = useUpdateProductMutation();
-  const [updateVariant, { isLoading: updatingVariant }] = useUpdateVariantMutation();
   const { data: categoriesData } = useGetCategoriesQuery();
 
   const categories = categoriesData?.data || [];
@@ -176,6 +172,7 @@ export const AddProductBarcodePage: React.FC = () => {
         product: {
           name: productName,
           categoryId: categoryId,
+          hsnCode: hsnCode.trim() || null,
         },
         variant: {
           sku: sku || null,
@@ -184,28 +181,16 @@ export const AddProductBarcodePage: React.FC = () => {
           unit: unit || null,
           unitValue: unitValue ? parseFloat(unitValue) : null,
           imageUrl: foundProduct?.image_url || null,
+          gstPercent: gstPercent ? parseFloat(gstPercent) : null,
+          uqcCode: (uqcCode as UqcCode) || null,
+          unitLabel: unitLabel.trim() || null,
         },
         inventory: {
           quantity: parseInt(quantity),
         },
       };
       
-      const created = await createProduct(payload).unwrap();
-      const followUpUpdates: Promise<unknown>[] = [];
-      if (hsnCode.trim()) {
-        followUpUpdates.push(updateProduct({ id: created.data.product.id, data: { hsn_code: hsnCode.trim() } }).unwrap());
-      }
-      if (gstPercent || uqcCode || unitLabel.trim()) {
-        followUpUpdates.push(updateVariant({
-          id: created.data.variant.id,
-          data: {
-            gst_percent: gstPercent ? parseFloat(gstPercent) : null,
-            uqc_code: (uqcCode as UqcCode) || null,
-            unit_label: unitLabel.trim() || null,
-          },
-        }).unwrap());
-      }
-      await Promise.all(followUpUpdates);
+      await createProduct(payload).unwrap();
 
       setShowSuccess(true);
       
@@ -526,10 +511,10 @@ export const AddProductBarcodePage: React.FC = () => {
                       <IonButton
                         expand="block"
                         onClick={handleSubmit}
-                        disabled={creating || updatingProduct || updatingVariant}
+                        disabled={creating}
                         className="flex-1"
                       >
-                        {creating || updatingProduct || updatingVariant ? t('common.creating') : t('products.createProductButton')}
+                        {creating ? t('common.creating') : t('products.createProductButton')}
                       </IonButton>
                     </div>
                   </div>

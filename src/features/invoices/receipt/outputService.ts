@@ -165,8 +165,15 @@ export const createReceiptOutputService = (overrides: Partial<OutputDependencies
     }
   };
 
+  const reset = () => {
+    if (state.phase === 'generating' || state.phase === 'handing-off') return false;
+    setState({ phase: 'idle', action: null });
+    return true;
+  };
+
   return {
     run,
+    reset,
     getState: () => state,
     subscribe: (listener: (state: ReceiptOutputState) => void) => {
       listeners.add(listener);

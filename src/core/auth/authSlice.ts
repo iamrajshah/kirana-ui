@@ -146,6 +146,8 @@ const authSlice = createSlice({
       localStorage.removeItem(STORAGE_KEYS.USER);
       localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      localStorage.removeItem('kirana_billing_completion_invoice');
+      localStorage.removeItem('kirana_billing_pending_checkout');
     },
   },
 });

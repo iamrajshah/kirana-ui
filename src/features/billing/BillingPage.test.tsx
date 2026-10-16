@@ -18,10 +18,11 @@ const mocks = vi.hoisted(() => ({
   createProductFromBarcode: vi.fn(),
   notifyError: vi.fn(),
   notifySuccess: vi.fn(),
-  user: { id: '7', name: 'Rajesh', roles: ['CASHIER'] } as {
+  user: { id: '7', name: 'Rajesh', roles: ['CASHIER'], tenant: { id: '1' } } as {
     id: string;
     name: string;
     roles: string[];
+    tenant: { id: string };
   },
   search: '?edit=edit-1',
   invoice: {} as Record<string, unknown>,
@@ -29,6 +30,7 @@ const mocks = vi.hoisted(() => ({
   documentError: false,
   refetchDocument: vi.fn(),
   settingsMode: 'SIMPLE_RECEIPT' as 'SIMPLE_RECEIPT' | 'GST_TAX_INVOICE',
+  settingsLoading: false,
 }));
 
 const apiTrigger = (operation: ReturnType<typeof vi.fn>) => (payload: unknown) => ({
@@ -130,6 +132,7 @@ vi.mock('@core/api/invoiceApi', () => ({
 
 vi.mock('@core/api/tenantSettingsApi', () => ({
   useGetTenantSettingsQuery: () => ({
+    isLoading: mocks.settingsLoading,
     data: {
       data: {
         document_mode: mocks.settingsMode,
@@ -209,6 +212,7 @@ beforeEach(() => {
   mocks.document = null;
   mocks.documentError = false;
   mocks.settingsMode = 'SIMPLE_RECEIPT';
+  mocks.settingsLoading = false;
   mocks.invoice = {
     id: 'edit-1',
     customer: null,
@@ -232,7 +236,7 @@ beforeEach(() => {
   mocks.renewHeldBill.mockResolvedValue({ data: { id: 'edit-1', version: 3 } });
   mocks.cancelInvoice.mockResolvedValue({ data: { id: 'edit-1' } });
   mocks.scanBarcode.mockResolvedValue(matchedBarcode);
-  mocks.user = { id: '7', name: 'Rajesh', roles: ['CASHIER'] };
+  mocks.user = { id: '7', name: 'Rajesh', roles: ['CASHIER'], tenant: { id: '1' } };
   mocks.createProductFromBarcode.mockResolvedValue({
     data: {
       barcode: { id: 'barcode-9', barcode: '8901234567890', is_active: true },
@@ -460,7 +464,7 @@ describe('BillingPage', () => {
     });
 
     it('lets an owner save an unknown product and adds it to the current bill', async () => {
-      mocks.user = { id: '7', name: 'Rajesh', roles: ['OWNER'] };
+      mocks.user = { id: '7', name: 'Rajesh', roles: ['OWNER'], tenant: { id: '1' } };
       mocks.scanBarcode.mockResolvedValueOnce({ success: true, found: false });
 
       render(<BillingPage />);
@@ -615,6 +619,17 @@ describe('BillingPage', () => {
   });
 
   describe('checkout recovery', () => {
+    it('blocks checkout until tenant document settings are known', async () => {
+      mocks.settingsLoading = true;
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+
+      expect(
+        (screen.getByRole('button', { name: 'billing.payCash' }) as HTMLButtonElement).disabled
+      ).toBe(true);
+      expect(mocks.finalizeInvoice).not.toHaveBeenCalled();
+    });
+
     it('keeps the finalized invoice as a completion state until New Sale', async () => {
       mocks.createPayment.mockResolvedValueOnce({ data: { id: 'payment-1' } });
       mocks.document = {
@@ -661,7 +676,9 @@ describe('BillingPage', () => {
       fireEvent.click(screen.getByRole('button', { name: 'billing.payCash' }));
 
       expect(await screen.findByText('billing.completion.title')).toBeTruthy();
-      expect(localStorage.getItem('kirana_billing_completion_invoice')).toBe('edit-1');
+      expect(
+        JSON.parse(localStorage.getItem('kirana_billing_completion_invoice') || '{}')
+      ).toMatchObject({ invoiceId: 'edit-1', userId: '7', tenantId: '1' });
       expect(screen.queryByText('Rice')).toBeNull();
 
       fireEvent.click(screen.getByRole('button', { name: 'billing.completion.newSale' }));
@@ -671,7 +688,10 @@ describe('BillingPage', () => {
     });
 
     it('restores a saved completion by invoice identity and retries only the document read', () => {
-      localStorage.setItem('kirana_billing_completion_invoice', '42');
+      localStorage.setItem(
+        'kirana_billing_completion_invoice',
+        JSON.stringify({ version: 1, invoiceId: '42', userId: '7', tenantId: '1' })
+      );
       mocks.documentError = true;
       mocks.search = '';
 
@@ -760,6 +780,9 @@ describe('BillingPage', () => {
         1,
         expect.objectContaining({ invoice_id: 'edit-1', amount: 100, payment_mode: 'CASH' })
       );
+      expect(
+        JSON.parse(localStorage.getItem('kirana_billing_pending_checkout') || '{}')
+      ).toMatchObject({ invoiceId: 'edit-1', payable: 100, userId: '7' });
 
       fireEvent.click(screen.getByRole('button', { name: 'retry payment' }));
 
@@ -768,7 +791,11 @@ describe('BillingPage', () => {
         2,
         expect.objectContaining({ invoice_id: 'edit-1', amount: 100, payment_mode: 'CASH' })
       );
+      expect(mocks.createPayment.mock.calls[1][0].idempotency_key).toBe(
+        mocks.createPayment.mock.calls[0][0].idempotency_key
+      );
       await waitFor(() => expect(screen.queryByLabelText('payment-recovery')).toBeNull());
+      expect(localStorage.getItem('kirana_billing_pending_checkout')).toBeNull();
       expect(mocks.historyReplace).toHaveBeenCalledWith('/billing');
     });
 

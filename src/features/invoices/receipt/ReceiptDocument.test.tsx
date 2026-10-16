@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
 import { ReceiptDocument } from './ReceiptDocument';
 import type { ReceiptViewModel } from './types';
 import { defaultReceiptLabels } from './receiptLabels';
@@ -38,6 +38,8 @@ const receipt = (mode: ReceiptViewModel['mode'] = 'SIMPLE_RECEIPT'): ReceiptView
   footer: 'Thank you',
 });
 
+afterEach(cleanup);
+
 describe('ReceiptDocument', () => {
   it('renders authoritative item, total, and current payment values', () => {
     render(<ReceiptDocument receipt={receipt()} />);
@@ -57,5 +59,14 @@ describe('ReceiptDocument', () => {
     expect(screen.getByText('HSN')).toBeTruthy();
     expect(screen.getByText('1006')).toBeTruthy();
     expect(screen.getByText('GSTIN: 27AAAAA0000A1Z5')).toBeTruthy();
+  });
+
+  it('keeps simple quantities printable and falls back to UQC for the unit', () => {
+    const simple = receipt();
+    simple.items[0] = { ...simple.items[0], unitLabel: null, uqcCode: 'KGS' };
+    const { container } = render(<ReceiptDocument receipt={simple} />);
+
+    expect(container.querySelector('article')?.className).toContain('sale-receipt--simple');
+    expect(container.textContent).toContain('2 KGS');
   });
 });

@@ -21,7 +21,7 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
   const isGst = receipt.mode === 'GST_TAX_INVOICE';
 
   return (
-    <article className={`sale-receipt ${className}`.trim()} aria-label={`${receipt.title} ${receipt.invoiceNumber}`}>
+    <article className={`sale-receipt sale-receipt--${isGst ? 'gst' : 'simple'} ${className}`.trim()} aria-label={`${receipt.title} ${receipt.invoiceNumber}`}>
       {receipt.cancellationMarker && (
         <div className="sale-receipt__cancelled" role="status">
           {receipt.cancellationMarker}
@@ -72,7 +72,7 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
           <div className="sale-receipt__item" role="row" key={item.key}>
             <span role="cell"><b>{item.name}</b>{item.sku && <small>{item.sku}</small>}</span>
             {isGst && <span role="cell">{item.hsnCode ?? '—'}</span>}
-            <span role="cell">{item.quantity}{item.unitLabel ? ` ${item.unitLabel}` : ''}</span>
+            <span role="cell">{item.quantity}{item.unitLabel || item.uqcCode ? ` ${item.unitLabel || item.uqcCode}` : ''}</span>
             <span role="cell">{money(item.unitPrice)}</span>
             {isGst && <span role="cell">{item.gstRate ?? '0.00'}%</span>}
             <span role="cell">{money(item.lineTotal)}</span>

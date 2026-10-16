@@ -123,8 +123,8 @@
     padding: 1.5mm 0;
     font-size: 7pt;
   }
-  .sale-receipt__item > :nth-child(2),
-  .sale-receipt__item > :nth-child(5) { display: none; }
+  .sale-receipt--gst .sale-receipt__item > :nth-child(2),
+  .sale-receipt--gst .sale-receipt__item > :nth-child(5) { display: none; }
   .sale-receipt__summary { margin-top: 2mm; }
   .sale-receipt__payment { padding: 2mm; border: 1px solid #555; background: #fff !important; color: #000 !important; }
   .sale-receipt__footer { margin-top: 3mm; }

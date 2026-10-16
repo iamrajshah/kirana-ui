@@ -11,5 +11,6 @@ export const useReceiptOutput = (providedService?: ReceiptOutputService) => {
     state,
     isBusy: state.phase === 'generating' || state.phase === 'handing-off',
     run: service.run,
+    reset: service.reset,
   };
 };

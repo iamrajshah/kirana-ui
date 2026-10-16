@@ -1,12 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   BILLING_COMPLETION_STORAGE_KEY,
+  BILLING_PENDING_CHECKOUT_STORAGE_KEY,
   buildInvoiceItems,
   calculateBillingTotals,
   clearBillingCompletion,
+  clearPendingBillingCheckout,
   loadBillingCompletion,
+  loadPendingBillingCheckout,
   persistBillingCompletion,
+  persistPendingBillingCheckout,
 } from './billing.logic';
+
+const owner = { userId: '7', tenantId: '1' };
 
 const cart = [
   {
@@ -45,21 +51,56 @@ describe('billing calculations', () => {
 });
 
 describe('billing completion recovery', () => {
-  it('persists only the finalized invoice identity', () => {
+  it('persists finalized invoice identity for the active tenant and user', () => {
     localStorage.clear();
 
-    persistBillingCompletion('42');
+    persistBillingCompletion('42', owner);
 
-    expect(localStorage.getItem(BILLING_COMPLETION_STORAGE_KEY)).toBe('42');
-    expect(loadBillingCompletion()).toBe('42');
+    expect(JSON.parse(localStorage.getItem(BILLING_COMPLETION_STORAGE_KEY) || '{}')).toMatchObject({
+      version: 1,
+      invoiceId: '42',
+      ...owner,
+    });
+    expect(loadBillingCompletion(owner)).toBe('42');
+    expect(loadBillingCompletion({ userId: '8', tenantId: '1' })).toBeNull();
   });
 
-  it('ignores malformed state and clears only after an explicit new sale', () => {
+  it('ignores malformed or unavailable storage and clears explicitly', () => {
     localStorage.setItem(BILLING_COMPLETION_STORAGE_KEY, '   ');
-    expect(loadBillingCompletion()).toBeNull();
+    expect(loadBillingCompletion(owner)).toBeNull();
 
-    persistBillingCompletion('84');
+    persistBillingCompletion('84', owner);
     clearBillingCompletion();
-    expect(loadBillingCompletion()).toBeNull();
+    expect(loadBillingCompletion(owner)).toBeNull();
+  });
+
+  it('restores a finalized invoice awaiting payment with the same retry key', () => {
+    const pending = {
+      invoiceId: '84',
+      payable: 118,
+      customerId: '12',
+      paymentIdempotencyKey: 'retry-key',
+    };
+
+    persistPendingBillingCheckout(pending, owner);
+
+    expect(loadPendingBillingCheckout(owner)).toEqual(pending);
+    expect(loadPendingBillingCheckout({ userId: '8', tenantId: '1' })).toBeNull();
+    clearPendingBillingCheckout();
+    expect(localStorage.getItem(BILLING_PENDING_CHECKOUT_STORAGE_KEY)).toBeNull();
+  });
+
+  it('treats blocked browser storage as unavailable instead of throwing', () => {
+    const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementationOnce(() => {
+      throw new DOMException('Blocked', 'SecurityError');
+    });
+    expect(loadBillingCompletion(owner)).toBeNull();
+    getItem.mockRestore();
+
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementationOnce(() => {
+      throw new DOMException('Full', 'QuotaExceededError');
+    });
+    expect(persistBillingCompletion('99', owner)).toBe(false);
+    setItem.mockRestore();
   });
 });

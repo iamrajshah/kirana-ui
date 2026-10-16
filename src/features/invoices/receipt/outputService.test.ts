@@ -91,4 +91,21 @@ describe('receipt output service', () => {
     await first;
     expect(service.getState()).toMatchObject({ phase: 'completed', action: 'pdf' });
   });
+
+  it('resets completed feedback but refuses to reset active output', async () => {
+    let finish!: (value: Blob) => void;
+    const service = createReceiptOutputService({
+      createPdf: () => new Promise<Blob>((resolve) => (finish = resolve)),
+      download: vi.fn(),
+      webShare: { canShare: () => false, share: vi.fn() },
+      isNative: () => false,
+    });
+
+    const output = service.run('pdf', receipt);
+    expect(service.reset()).toBe(false);
+    finish(pdf);
+    await output;
+    expect(service.reset()).toBe(true);
+    expect(service.getState()).toEqual({ phase: 'idle', action: null });
+  });
 });

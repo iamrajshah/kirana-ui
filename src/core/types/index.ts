@@ -472,6 +472,7 @@ export interface CreateProductFromBarcodeRequest {
   product: {
     name: string;
     categoryId?: number | null;
+    hsnCode?: string | null;
   };
   variant: {
     sku?: string | null;
@@ -480,6 +481,9 @@ export interface CreateProductFromBarcodeRequest {
     unit?: string | null;
     unitValue?: number | null;
     imageUrl?: string | null;
+    gstPercent?: number | null;
+    uqcCode?: UqcCode | null;
+    unitLabel?: string | null;
   };
   inventory: {
     quantity: number;

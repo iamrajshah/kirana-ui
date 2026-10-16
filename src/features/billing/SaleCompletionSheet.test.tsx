@@ -83,4 +83,25 @@ describe('SaleCompletionSheet', () => {
     expect(onViewBill).toHaveBeenCalledOnce();
     expect(onNewSale).toHaveBeenCalledOnce();
   });
+
+  it('keeps New Sale disabled while a receipt handoff is active', () => {
+    render(
+      <SaleCompletionSheet
+        invoiceId="42"
+        receipt={receipt}
+        isLoading={false}
+        isError={false}
+        outputBusy
+        onRetry={vi.fn()}
+        onViewBill={vi.fn()}
+        onNewSale={vi.fn()}
+        onOutput={vi.fn()}
+      />
+    );
+
+    expect(
+      (screen.getByRole('button', { name: 'billing.completion.newSale' }) as HTMLButtonElement)
+        .disabled
+    ).toBe(true);
+  });
 });

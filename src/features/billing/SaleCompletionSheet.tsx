@@ -118,7 +118,12 @@ export const SaleCompletionSheet: React.FC<SaleCompletionSheetProps> = ({
           <button type="button" onClick={onViewBill}>
             {t('billing.completion.viewBill')}
           </button>
-          <button type="button" className="sale-completion__new" onClick={onNewSale}>
+          <button
+            type="button"
+            className="sale-completion__new"
+            disabled={outputBusy}
+            onClick={onNewSale}
+          >
             {t('billing.completion.newSale')}
           </button>
         </div>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   IonAlert,
   IonBackButton,
@@ -54,6 +54,7 @@ const InvoiceDetailPage: React.FC = () => {
   const [showCancelAlert, setShowCancelAlert] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [toast, setToast] = useState<{ color: 'success' | 'danger'; message: string } | null>(null);
+  const paymentIdempotencyKey = useRef(generateIdempotencyKey());
 
   const finalizedDocument =
     documentQuery.data?.data.kind === 'FINALIZED_DOCUMENT' ? documentQuery.data.data : null;
@@ -85,8 +86,9 @@ const InvoiceDetailPage: React.FC = () => {
         amount,
         payment_mode: mode,
         reference_note: reference,
-        idempotency_key: generateIdempotencyKey(),
+        idempotency_key: paymentIdempotencyKey.current,
       }).unwrap();
+      paymentIdempotencyKey.current = generateIdempotencyKey();
       setShowPaymentModal(false);
       setToast({ color: 'success', message: t('invoiceDetail.paymentRecordedSuccess') });
       if (receipt) await documentQuery.refetch();

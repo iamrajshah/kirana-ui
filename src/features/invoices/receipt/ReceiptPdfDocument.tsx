@@ -129,7 +129,7 @@ export const ReceiptPdfDocument: React.FC<{ receipt: ReceiptViewModel }> = ({ re
           <View style={styles.row} key={item.key} wrap={false}>
             <View style={styles.item}><Text>{item.name}</Text>{item.sku && <Text>{item.sku}</Text>}</View>
             {gst && <Text style={[styles.cell, styles.hsn]}>{item.hsnCode ?? '—'}</Text>}
-            <Text style={styles.cell}>{item.quantity}{item.unitLabel ? ` ${item.unitLabel}` : ''}</Text>
+            <Text style={styles.cell}>{item.quantity}{item.unitLabel || item.uqcCode ? ` ${item.unitLabel || item.uqcCode}` : ''}</Text>
             <Text style={styles.cell}>{money(item.unitPrice)}</Text>
             {gst && <Text style={styles.cell}>{item.gstRate ?? '0.00'}%</Text>}
             <Text style={styles.cell}>{money(item.lineTotal)}</Text>

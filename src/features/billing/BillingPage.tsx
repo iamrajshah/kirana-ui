@@ -50,8 +50,11 @@ import {
   buildInvoiceItems,
   calculateBillingTotals,
   clearBillingCompletion,
+  clearPendingBillingCheckout,
   loadBillingCompletion,
+  loadPendingBillingCheckout,
   persistBillingCompletion,
+  persistPendingBillingCheckout,
 } from './billing.logic';
 import { HeldBillsPanel } from './HeldBillsPanel';
 import { SaleCompletionSheet } from './SaleCompletionSheet';
@@ -76,6 +79,13 @@ export const BillingPage: React.FC = () => {
   const location = useLocation();
   const history = useHistory();
   const currentUser = useAppSelector(selectCurrentUser);
+  const billingStorageOwner = {
+    userId: currentUser?.id || '',
+    tenantId: currentUser?.tenant?.id || null,
+  };
+  const restoredPendingCheckout = useRef(
+    currentUser ? loadPendingBillingCheckout(billingStorageOwner) : null
+  ).current;
   const query = new URLSearchParams(location.search);
   const editInvoiceId = query.get('edit');
   const focusedHeldBillId = query.get('held');
@@ -100,7 +110,8 @@ export const BillingPage: React.FC = () => {
     refetch: refetchInvoice,
   } = useGetInvoiceByIdQuery(editInvoiceId || '', { skip: !editInvoiceId });
   const { data: heldBillsData } = useGetHeldBillsQuery({ take: 50 });
-  const { data: tenantSettingsData } = useGetTenantSettingsQuery();
+  const { data: tenantSettingsData, isLoading: tenantSettingsLoading } =
+    useGetTenantSettingsQuery();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [barcodeInput, setBarcodeInput] = useState('');
@@ -123,11 +134,18 @@ export const BillingPage: React.FC = () => {
   const heldMutationPendingRef = useRef(false);
   const [pendingBarcodeCount, setPendingBarcodeCount] = useState(0);
   const [billDiscount, setBillDiscount] = useState(0);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(null);
-  const [pendingPayable, setPendingPayable] = useState<number | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(Boolean(restoredPendingCheckout));
+  const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(
+    restoredPendingCheckout?.invoiceId ?? null
+  );
+  const [pendingPayable, setPendingPayable] = useState<number | null>(
+    restoredPendingCheckout?.payable ?? null
+  );
+  const [pendingCustomerId, setPendingCustomerId] = useState<string | null>(
+    restoredPendingCheckout?.customerId ?? null
+  );
   const [completionInvoiceId, setCompletionInvoiceId] = useState<string | null>(() =>
-    loadBillingCompletion()
+    currentUser ? loadBillingCompletion(billingStorageOwner) : null
   );
   const [activeQuote, setActiveQuote] = useState<InvoiceQuote | null>(null);
   const [activeQuoteKey, setActiveQuoteKey] = useState<string | null>(null);
@@ -135,8 +153,12 @@ export const BillingPage: React.FC = () => {
   const [placeOfSupplyCode, setPlaceOfSupplyCode] = useState('');
   const [showHeldBills, setShowHeldBills] = useState(Boolean(focusedHeldBillId));
   const [counterLabel, setCounterLabel] = useState<string | null>(() => {
-    const stored = localStorage.getItem(COUNTER_LABEL_STORAGE_KEY)?.trim();
-    return stored && stored.length <= 32 ? stored : null;
+    try {
+      const stored = localStorage.getItem(COUNTER_LABEL_STORAGE_KEY)?.trim();
+      return stored && stored.length <= 32 ? stored : null;
+    } catch {
+      return null;
+    }
   });
   const [counterLabelDraft, setCounterLabelDraft] = useState('');
   const [showCounterDialog, setShowCounterDialog] = useState(false);
@@ -147,7 +169,9 @@ export const BillingPage: React.FC = () => {
   const loadedInvoiceSnapshotRef = useRef<string | null>(null);
   const heldBillsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const invoiceIdempotencyKey = useRef(generateIdempotencyKey());
-  const paymentIdempotencyKey = useRef(generateIdempotencyKey());
+  const paymentIdempotencyKey = useRef(
+    restoredPendingCheckout?.paymentIdempotencyKey ?? generateIdempotencyKey()
+  );
   const quoteGenerationRef = useRef(0);
 
   const {
@@ -210,7 +234,8 @@ export const BillingPage: React.FC = () => {
     barcodeWorkPending ||
     creatingBarcodeProduct;
   const checkoutQuoteReady =
-    !isGstMode || Boolean(activeQuote && activeQuoteKey === quoteKey && !quoting && !quoteError);
+    !tenantSettingsLoading &&
+    (!isGstMode || Boolean(activeQuote && activeQuoteKey === quoteKey && !quoting && !quoteError));
   const updateActiveHeldVersion = useCallback((version: number | undefined) => {
     activeHeldVersionRef.current = version;
     setActiveHeldVersion(version);
@@ -328,12 +353,6 @@ export const BillingPage: React.FC = () => {
     const timer = window.setTimeout(() => searchCustomers(customerSearchTerm), 250);
     return () => window.clearTimeout(timer);
   }, [customerSearchTerm, searchCustomers]);
-
-  useEffect(() => {
-    if (!isGstMode || placeOfSupplyCode) return;
-    const defaultCode = selectedCustomer?.state_code || tenantSettings?.state_code;
-    if (defaultCode) setPlaceOfSupplyCode(defaultCode);
-  }, [isGstMode, placeOfSupplyCode, selectedCustomer?.state_code, tenantSettings?.state_code]);
 
   useEffect(() => {
     quoteGenerationRef.current += 1;
@@ -532,6 +551,7 @@ export const BillingPage: React.FC = () => {
     setShowPaymentModal(false);
     setPendingInvoiceId(null);
     setPendingPayable(null);
+    setPendingCustomerId(null);
     setActiveQuote(null);
     setActiveQuoteKey(null);
     setQuoteError(null);
@@ -599,7 +619,11 @@ export const BillingPage: React.FC = () => {
       notificationService.error(t('billing.heldBills.counterInvalid'));
       return;
     }
-    localStorage.setItem(COUNTER_LABEL_STORAGE_KEY, nextLabel);
+    try {
+      localStorage.setItem(COUNTER_LABEL_STORAGE_KEY, nextLabel);
+    } catch {
+      // The active counter still works for this session when browser storage is unavailable.
+    }
     setCounterLabel(nextLabel);
     closeCounterDialog(nextLabel);
   };
@@ -646,7 +670,9 @@ export const BillingPage: React.FC = () => {
     reference?: string
   ) => {
     await createPayment({
-      ...(customerId ? { customer_id: customerId } : {}),
+      ...(pendingCustomerId || customerId
+        ? { customer_id: pendingCustomerId || customerId }
+        : {}),
       invoice_id: invoiceId,
       amount,
       payment_mode: mode,
@@ -655,8 +681,22 @@ export const BillingPage: React.FC = () => {
     }).unwrap();
   };
 
+  const rememberPendingCheckout = (invoiceId: string, payable: number) => {
+    const checkout = {
+      invoiceId,
+      payable,
+      customerId: customerId || null,
+      paymentIdempotencyKey: paymentIdempotencyKey.current,
+    };
+    persistPendingBillingCheckout(checkout, billingStorageOwner);
+    setPendingInvoiceId(invoiceId);
+    setPendingPayable(payable);
+    setPendingCustomerId(checkout.customerId);
+  };
+
   const showCompletion = (invoiceId: string) => {
-    persistBillingCompletion(invoiceId);
+    clearPendingBillingCheckout();
+    persistBillingCompletion(invoiceId, billingStorageOwner);
     setCompletionInvoiceId(invoiceId);
     setShowPaymentModal(false);
     resetForm();
@@ -716,7 +756,10 @@ export const BillingPage: React.FC = () => {
       const quote = result.data;
       if (!quote) throw new Error(t('billing.quoteUnavailable'));
       const displayedQuote = activeQuoteKey === quoteKey ? activeQuote : null;
-      if (isGstMode && (!displayedQuote || displayedQuote.fingerprint !== quote.fingerprint)) {
+      if (
+        quote.document_mode === 'GST_TAX_INVOICE' &&
+        (!displayedQuote || displayedQuote.fingerprint !== quote.fingerprint)
+      ) {
         setActiveQuote(quote);
         setActiveQuoteKey(quoteKey);
         notificationService.error(t('billing.quoteChangedReview'));
@@ -766,14 +809,13 @@ export const BillingPage: React.FC = () => {
       if (!quote) return;
       invoiceId = await createFinalInvoice(quote);
       const payable = Number(quote.total_amount);
-      setPendingPayable(payable);
+      rememberPendingCheckout(invoiceId, payable);
       if (quickMode) {
         try {
           await recordPayment(invoiceId, payable, quickMode);
           completePayment(invoiceId);
           return;
         } catch (paymentError) {
-          setPendingInvoiceId(invoiceId);
           setShowPaymentModal(true);
           notificationService.error(
             apiErrorMessage(paymentError, t('billing.paymentFailed'), true)
@@ -781,7 +823,6 @@ export const BillingPage: React.FC = () => {
           return;
         }
       }
-      setPendingInvoiceId(invoiceId);
       setShowPaymentModal(true);
     } catch (error: unknown) {
       if (isConflictError(error)) setHeldConflict(true);
@@ -820,6 +861,9 @@ export const BillingPage: React.FC = () => {
       }).unwrap();
       setShowPaymentModal(false);
       setPendingInvoiceId(null);
+      setPendingPayable(null);
+      setPendingCustomerId(null);
+      clearPendingBillingCheckout();
       invoiceIdempotencyKey.current = generateIdempotencyKey();
       paymentIdempotencyKey.current = generateIdempotencyKey();
       if (editInvoiceId) history.replace(ROUTES.BILLING);
@@ -856,7 +900,10 @@ export const BillingPage: React.FC = () => {
   };
 
   const startNewSale = () => {
+    if (receiptOutput.isBusy) return;
     clearBillingCompletion();
+    clearPendingBillingCheckout();
+    receiptOutput.reset();
     setCompletionInvoiceId(null);
     resetForm();
     history.replace(ROUTES.BILLING);
@@ -977,9 +1024,7 @@ export const BillingPage: React.FC = () => {
                           detail
                           onClick={() => {
                             setSelectedCustomer(customer);
-                            setPlaceOfSupplyCode(
-                              customer.state_code || tenantSettings?.state_code || ''
-                            );
+                            setPlaceOfSupplyCode('');
                             setCustomerSearchTerm('');
                             setShowCustomerSearch(false);
                           }}
@@ -999,6 +1044,7 @@ export const BillingPage: React.FC = () => {
                       color="danger"
                       onClick={() => {
                         setSelectedCustomer(null);
+                        setPlaceOfSupplyCode('');
                         setShowCustomerSearch(false);
                       }}
                     >
@@ -1370,7 +1416,7 @@ export const BillingPage: React.FC = () => {
             invoiceAmount={pendingPayable ?? displayedTotals.total}
             paidAmount={0}
             isLoading={paying}
-            allowPartial={Boolean(customerId)}
+            allowPartial={Boolean(pendingCustomerId || customerId)}
           />
         )}
 
