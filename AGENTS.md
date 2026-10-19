@@ -5,7 +5,8 @@ Generated from the skills in the `kirana-skill` repo. Do not edit directly; run
 
 Two git repos, one product: `kirana-ui` (Ionic POS) and `kirana-server` (Express API).
 Not microservices. **Jira project KIR is the source of truth.** Developer work runs
-through Compound Engineering `lfg`. Default integration branch is `dev`.
+through Compound Engineering `lfg`; QA work uses evidence-based bug triage. Default
+integration branch is `dev`.
 
 ## Before starting anything
 
@@ -15,7 +16,7 @@ kirana-skill/kirana-start/scripts/preflight.sh
 
 ## kirana-start
 
-**When to use:** Start Kirana POS development from a Jira issue and take it through the Compound Engineering workflow to a reviewed pull request. Use when someone says kirana-start, asks what to work on, names a KIR issue, or wants the Jira-to-PR demo. This is the Developer lane; it does not replace QA or product-management workflows.
+**When to use:** Start Kirana POS work by choosing a role, then route Developer work from Jira through Compound Engineering or QA work through evidence-based bug triage. Use when someone says kirana-start, asks what to work on, names a KIR issue, wants the Jira-to-PR demo, or wants to review test bugs before creating Jira issues.
 
 The entry point for Kirana work.
 
@@ -29,11 +30,22 @@ Two repos, one product: `kirana-ui` (POS) and `kirana-server` (API). Not microse
 kirana-skill/kirana-start/scripts/preflight.sh
 ```
 
-Failures stop the run. Use `/kirana-config`, then rerun preflight. Compound Engineering and authenticated Jira/GitHub access are required for the demo; MySQL is required only when the selected work needs the local API.
+If preflight reports a configuration failure, handle it automatically instead of telling the user to invoke `/kirana-config` or run terminal commands. Run `kirana-skill/kirana-config/scripts/setup.sh`, then re-run preflight. A warning that authentication **could not be verified because the network is unavailable** is not evidence of bad credentials. Retry `gh auth status` and/or `kirana-skill/kirana-start/scripts/jira.sh check` with network access, using the host's network escalation when needed. Only launch `gh auth login` or `kirana-skill/kirana-config/scripts/setup.sh --auth` after a network-enabled check confirms missing or rejected credentials. Never overwrite an existing Jira token merely because a sandbox cannot reach Jira. Launch any required authentication command yourself and wait at its interactive prompt. Never ask the user to paste a token or run the command manually; only ask them to complete the local browser or credential prompt when that interaction is required. Re-run preflight after configuration and continue automatically once it passes. Compound Engineering and authenticated Jira/GitHub access are required for the demo; MySQL is required only when the selected work needs the local API.
 
-### Step 2 — establish the lane and pick the issue
+### Step 2 — choose the lane
 
-Ask who is working. The supported demo lane is **Developer**. If they choose another role, explain that its lane is not configured rather than pretending to run it.
+Always show the role menu and wait for the user to choose. Do not infer the lane from the previous session, issue type, spreadsheet, or current Jira assignment.
+
+1. **Developer** — configured: select or create Jira work, then implement through Compound Engineering.
+2. **QA** — configured: inspect evidence, triage bug candidates, and prepare Jira Bug drafts.
+3. **Product / Business Analyst** — visible but not configured.
+4. **Project Manager / Scrum Master** — visible but not configured.
+
+If an unconfigured lane is selected, say that it is not configured and return to the role menu. Do not simulate that role's workflow.
+
+### Step 3 — enter the selected lane
+
+#### Developer lane
 
 List the current sprint and the developer's assigned issues:
 
@@ -43,13 +55,35 @@ kirana-skill/kirana-start/scripts/jira.sh mine
 kirana-skill/kirana-start/scripts/jira.sh list
 ```
 
+After the issue results, always show these choices:
+
+1. Select an existing Jira issue.
+2. **Create a new Jira issue.**
+3. Refresh the issue list.
+4. Return to the role menu.
+
 If they name a key, read it with `jira.sh issue KIR-N` and treat its description and acceptance criteria as the contract.
 
-Do not silently create, transition, assign, or comment on Jira. The helper previews writes and requires `--confirm` after the user approves the exact preview. For new work, preview `jira.sh create Task|Bug "title" "description"`; after approval, rerun with `--confirm`.
+For new work, collect issue type, title, description, and acceptance criteria. Show the complete draft first. Only after the user approves the draft, preview `jira.sh create Task|Bug "title" "description"`. The helper still writes nothing at this stage. Run it with `--confirm` only after the user separately approves the helper's exact preview.
 
-Start the selected issue by previewing `jira.sh start KIR-N`; after approval, rerun it with `--confirm`.
+Start the selected issue with `jira.sh start KIR-N`. This automatically assigns the current Jira user and moves a `To Do` issue to `In Progress`; an issue already `In Progress` continues without another prompt. Other statuses stop for review.
 
-### Step 3 — choose the repo and branch
+Continue with [Developer execution](#developer-execution).
+
+#### QA lane
+
+Read `kirana-skill/kirana-start/reference/qa.md` and follow it. Start by offering:
+
+1. Review an existing Jira bug.
+2. Review a bug spreadsheet or supplied test evidence.
+3. **Draft a new Jira Bug.**
+4. Return to the role menu.
+
+QA triage is read-only until the user selects a candidate and authorizes bug creation. When the user supplies a complete bug report and asks to create it, or approves the complete draft, run the Jira helper with `--confirm` without asking for separate preview approval. Ask only for missing required details or an unresolved material change to the requested bug. Never create bugs merely because a spreadsheet row looks valid. Do not start implementation, create a branch, or invoke `lfg` from the QA lane.
+
+### Developer execution
+
+#### Step 4 — choose the repo and branch
 
 | Change lives in | Repo |
 | --- | --- |
@@ -63,9 +97,11 @@ Default base branch is `dev`. Create:
 kirana-skill/kirana-start/scripts/branch.sh <ui|server> <KIR-key> <short-slug>
 ```
 
-Do not create a branch on a dirty tree without parking or committing (ask them).
+Inspect the selected repo with `git status --short` before branching. If it has any uncommitted changes, leave that checkout and its workflow untouched. `branch.sh` creates a separate worktree from the latest `dev` for the selected Jira issue and prints its path. Continue all implementation there without asking to commit, stash, or park the existing changes. Reuse an already-created worktree for the same issue when available.
 
-### Step 4 — run Compound Engineering
+Every unrelated Jira issue gets its own branch and Compound Engineering run. Do not add a second issue to the current feature branch; start it in its own worktree from an up-to-date `dev`.
+
+#### Step 5 — run Compound Engineering
 
 State this clearly in the demo: **"Kirana orchestration is now handing the Jira issue to Compound Engineering."** Then invoke the installed `lfg` skill with an issue packet containing:
 
@@ -81,9 +117,9 @@ Read `kirana-context/` before changing tenant, ledger, invoice, or barcode behav
 
 Read `kirana-skill/kirana-start/reference/dev.md` for the definition of done.
 
-### Step 5 — PR, merge, and Jira close-out
+#### Step 6 — PR, merge, and Jira close-out
 
-The CE run ends with an open PR into `dev`; it does not merge. Present the PR URL and test/CI evidence. Merge only when the user explicitly asks for that PR to be merged.
+The CE run ends with an open PR into `dev`; it does not merge. Present the PR URL and test/CI evidence. Ask for explicit confirmation immediately before merging the PR.
 
 `finish.sh` is a recovery path if CE completed the code but could not ship:
 
@@ -93,18 +129,20 @@ kirana-skill/kirana-start/scripts/finish.sh <ui|server>
 
 It pushes the current branch and opens a PR **into `dev`**. Do not run it if `lfg` already created the PR.
 
-After the PR is actually merged, preview `jira.sh done KIR-N <PR-URL>` and, after approval, rerun with `--confirm`. Never mark Jira Done merely because a PR exists.
+After the PR is actually merged, verify GitHub reports the PR as `MERGED`, then run `jira.sh done KIR-N <PR-URL>`. The helper adds the merge comment and moves Jira to `Done` automatically; it refuses to write if GitHub has not confirmed the merge. Never mark Jira Done merely because a PR exists.
 
 ### Demo narration
 
 Show these checkpoints rather than hiding the orchestration:
 
-1. Free Jira sprint and selected KIR issue.
-2. Repo and `KIR-N-slug` branch from `dev`.
-3. Compound Engineering route selected by `lfg`.
-4. Local verification and CE code-review result.
-5. Open GitHub PR into `dev` and CI result.
-6. Explicit merge decision, followed by Jira Done.
+1. Role menu and selected lane.
+2. Jira issues plus the Create a new Jira issue option.
+3. Free Jira sprint and selected KIR issue.
+4. Repo and `KIR-N-slug` branch from `dev`.
+5. Compound Engineering route selected by `lfg`.
+6. Local verification and CE code-review result.
+7. Open GitHub PR into `dev` and CI result.
+8. Explicit merge decision, followed by Jira Done.
 
 ## kirana-platform
 
@@ -152,14 +190,15 @@ If the UI talks to Railway instead of localhost: `VITE_API_BASE_URL` is unset an
 
 **When to use:** Set up or repair what kirana-start needs — Node, gh, sibling repos, Compound Engineering, Cursor install. Use when someone says kirana-config, cannot get preflight to pass, or is on a new machine.
 
-Run the installer, then preflight.
+Run the installer, then preflight. Keep existing credentials. If preflight cannot verify authentication because of a network restriction, retry the GitHub and Jira checks with network access before starting a login flow. Run `setup.sh --auth` only when Jira credentials are absent or a network-enabled check rejects them.
 
 ```bash
 kirana-skill/kirana-config/scripts/setup.sh
-kirana-skill/kirana-config/scripts/setup.sh --auth
 kirana-skill/install.sh --cursor --codex
 kirana-skill/kirana-start/scripts/preflight.sh
 ```
+
+When Jira credentials need repair, run `kirana-skill/kirana-config/scripts/setup.sh --auth` and wait at its local hidden-token prompt. When GitHub credentials need repair, run `gh auth login` and wait for browser sign-in. Do not ask the user to paste credentials into chat.
 
 ### Expected siblings
 
@@ -195,7 +234,14 @@ git -C kirana-skill pull --ff-only
 kirana-skill/install.sh --cursor --codex
 ```
 
-If the tree is dirty or you are on a skill feature branch, do not pull. Say so and leave it.
+Inspect the branch and working tree before reloading. If the checkout is clean and on `main`, use the commands above. Otherwise, complete the reload from a temporary worktree without changing the current branch, index, or local files:
+
+1. Fetch `origin/main`. If fetching fails, report the actual network or authentication error and stop; do not claim a successful reload.
+2. Create a temporary detached worktree from the freshly fetched `origin/main` outside the normal sibling workspace.
+3. Run that worktree's `export.sh --check`. Install its generated Cursor rules/commands and `AGENTS.md` into the original workspace and both app repos. Do not run `install.sh` directly from the temporary worktree: it derives destinations from its own parent. Copy only the same generated paths that `install.sh --cursor --codex` installs.
+4. Verify the installed generated files match the temporary worktree, report the installed commit, and remove the temporary worktree after successful installation. On failure, preserve useful recovery artifacts and report the incomplete step.
+
+A dirty tree or feature branch is not a reason to refuse a reload. Do not stash, reset, commit, or switch the user's existing checkout merely to reload. Leave any existing named stashes untouched and report them when relevant.
 
 Cursor: new chat to pick up changed rule text. Codex: new session.
 
@@ -217,7 +263,7 @@ Paths are relative to the parent folder that contains the four siblings.
 
 | Path | What |
 | --- | --- |
-| `kirana-skill/kirana-start/reference/` | Dev lane |
+| `kirana-skill/kirana-start/reference/` | Developer and QA lanes |
 | `kirana-skill/kirana-start/scripts/` | `preflight.sh`, `jira.sh`, `branch.sh`, `finish.sh` |
 | `kirana-skill/kirana-platform/recipes/` | Trace a request; add a column |
 | `kirana-context/` | Product knowledge |

@@ -13,7 +13,14 @@ git -C kirana-skill pull --ff-only
 kirana-skill/install.sh --cursor --codex
 ```
 
-If the tree is dirty or you are on a skill feature branch, do not pull. Say so and leave it.
+Inspect the branch and working tree before reloading. If the checkout is clean and on `main`, use the commands above. Otherwise, complete the reload from a temporary worktree without changing the current branch, index, or local files:
+
+1. Fetch `origin/main`. If fetching fails, report the actual network or authentication error and stop; do not claim a successful reload.
+2. Create a temporary detached worktree from the freshly fetched `origin/main` outside the normal sibling workspace.
+3. Run that worktree's `export.sh --check`. Install its generated Cursor rules/commands and `AGENTS.md` into the original workspace and both app repos. Do not run `install.sh` directly from the temporary worktree: it derives destinations from its own parent. Copy only the same generated paths that `install.sh --cursor --codex` installs.
+4. Verify the installed generated files match the temporary worktree, report the installed commit, and remove the temporary worktree after successful installation. On failure, preserve useful recovery artifacts and report the incomplete step.
+
+A dirty tree or feature branch is not a reason to refuse a reload. Do not stash, reset, commit, or switch the user's existing checkout merely to reload. Leave any existing named stashes untouched and report them when relevant.
 
 Cursor: new chat to pick up changed rule text. Codex: new session.
 

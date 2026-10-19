@@ -1,5 +1,5 @@
 ---
-description: Start Kirana POS development from a Jira issue and take it through the Compound Engineering workflow to a reviewed pull request. Use when someone says kirana-start, asks what to work on, names a KIR issue, or wants the Jira-to-PR demo. This is the Developer lane; it does not replace QA or product-management workflows.
+description: Start Kirana POS work by choosing a role, then route Developer work from Jira through Compound Engineering or QA work through evidence-based bug triage. Use when someone says kirana-start, asks what to work on, names a KIR issue, wants the Jira-to-PR demo, or wants to review test bugs before creating Jira issues.
 ---
 
 The person invoked `/kirana-start` from the Cursor slash menu.
