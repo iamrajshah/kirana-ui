@@ -105,20 +105,20 @@
     <div class="inner">
       <p class="eyebrow">Compound Engineering · Ideation</p>
       <h1>What Kirana should do next</h1>
-      <p class="lede">A ranked, evidence-backed set of directions after the foundation and fast walk-in billing work. The goal is an owner-first product that remains quick at the counter and credible on mobile and web.</p>
+      <p class="lede">An updated, evidence-backed product direction after barcode billing, held bills, the Decision Inbox, Modern Bazaar UI, import/export and tenant recovery became real. The next phase should make every sale provable, every stock movement traceable and every closing routine simpler for the owner-cashier.</p>
       <div class="metadata" aria-label="Document metadata">
-        <span class="pill">Date · <time datetime="2026-10-12">2026-10-12</time></span>
+        <span class="pill">Date · <time datetime="2026-10-15">2026-10-15</time></span>
         <span class="pill">Topic · kirana-next-phase</span>
         <span class="pill">Mode · repo-grounded</span>
-        <span class="pill">Focus · post-foundation product direction</span>
+        <span class="pill">Focus · high-value improvements after current implementation</span>
       </div>
     </div>
   </header>
 
   <main>
     <div class="stats" aria-label="Ideation statistics">
-      <span class="pill">38 generated</span>
-      <span class="pill">12 distinct after dedupe</span>
+      <span class="pill">40 generated</span>
+      <span class="pill">15 distinct after dedupe</span>
       <span class="pill">7 survived critique</span>
       <span class="pill">5 product axes covered</span>
     </div>
@@ -137,10 +137,10 @@
       <h2>Grounding Context</h2>
       <div class="grounding">
         <div class="grounding-grid">
-          <article><h3>Already strong</h3><p>Responsive Ionic shell, role protection, lazy loading, four-language coverage, walk-in billing, Cash/UPI quick checkout, idempotency, draft invoices and payment recovery.</p></article>
-          <article><h3>Visible friction</h3><p>The owner dashboard is aggregate-only, the Billing scan affordance is disconnected, and draft resumption is buried in Invoices.</p></article>
-          <article><h3>Reusable substrate</h3><p>Stock movements, suppliers, purchases, customer contacts, orders, ledger records and draft invoices reduce the cost of the strongest next ideas.</p></article>
-          <article><h3>Important constraint</h3><p>Railway/MySQL remain stopped. Contract and UI work can use mocks, but database-backed features need a disposable migrated MySQL environment before end-to-end claims.</p></article>
+          <article><h3>Now delivered</h3><p>Barcode-to-catalog resolution, configurable store labels, cross-counter held bills, bounded owner decisions, responsive Modern Bazaar UI, reliable navigation, import/export and guarded tenant backup/restore.</p></article>
+          <article><h3>Counter gap</h3><p>Billing is fast and idempotent, but UPI selection is not durable proof of settlement and invoice detail has no complete print, download or share handoff.</p></article>
+          <article><h3>Stock gap</h3><p>Inventory is still one aggregate quantity per variant. Packed and expiry dates print on labels but are not stored as received batches, so FEFO, wastage and traceability are impossible.</p></article>
+          <article><h3>Owner gap</h3><p>Ledgers and reports are strong, but cash has no day/shift custody, supplier reordering remains manual, and operational exceptions disappear into bounded cards or short-lived toasts.</p></article>
         </div>
       </div>
     </section>
@@ -149,11 +149,11 @@
       <p class="eyebrow">Coverage</p>
       <h2>Topic Axes</h2>
       <div class="axes">
-        <div class="axis">Owner decisions<br>and exceptions</div>
-        <div class="axis">Checkout throughput<br>and continuity</div>
-        <div class="axis">Cash and shift<br>accountability</div>
-        <div class="axis">Inventory replenishment<br>decisions</div>
-        <div class="axis">WhatsApp and<br>assisted orders</div>
+        <div class="axis">Counter payment<br>and customer handoff</div>
+        <div class="axis">Stock lifecycle<br>and replenishment</div>
+        <div class="axis">Cash, credit and<br>staff accountability</div>
+        <div class="axis">Continuity, recovery<br>and offline operation</div>
+        <div class="axis">Owner control<br>and daily decisions</div>
       </div>
     </section>
 
@@ -161,82 +161,82 @@
       <p class="eyebrow">Survivors</p>
       <h2>Ranked Ideas</h2>
       <ol class="idea-nav">
-        <li><a href="#i1">I1. Owner Decision Inbox</a></li>
-        <li><a href="#i2">I2. Ambient Scan-to-Catalog</a></li>
-        <li><a href="#i3">I3. Held-Bill Relay</a></li>
-        <li><a href="#i4">I4. 90-Second Shift Close</a></li>
-        <li><a href="#i5">I5. Reorder Confidence Queue</a></li>
-        <li><a href="#i6">I6. WhatsApp List Compiler</a></li>
-        <li><a href="#i7">I7. Bounded Emergency Offline Mode</a></li>
+        <li><a href="#i1">I1. Provable Sale Closure</a></li>
+        <li><a href="#i2">I2. Batch-Aware Stock Journal</a></li>
+        <li><a href="#i3">I3. Solo-Owner Day Close</a></li>
+        <li><a href="#i4">I4. Explainable Supplier Cart</a></li>
+        <li><a href="#i5">I5. Provider-Free WhatsApp Compiler</a></li>
+        <li><a href="#i6">I6. Persistent Owner Action Queue</a></li>
+        <li><a href="#i7">I7. Safe Offline Sales Outbox</a></li>
       </ol>
 
       <article class="idea" id="i1">
-        <div class="idea-head"><span class="rank">1</span><div class="title-wrap"><h3>I1. Owner Decision Inbox</h3><div class="chips"><span class="chip">Owner decisions</span><span class="chip conf">Confidence 94%</span><span class="chip cx">Complexity Medium</span></div></div></div>
+        <div class="idea-head"><span class="rank">1</span><div class="title-wrap"><h3>I1. Provable Sale Closure</h3><div class="chips"><span class="chip">Counter payment</span><span class="chip conf">Confidence 95%</span><span class="chip cx">Complexity Medium–High</span></div></div></div>
         <dl>
-          <dt>Description</dt><dd>Replace aggregate-only owner oversight with three ranked, record-linked decisions: money to collect, stock likely to run out, and counter activity needing review. Every item explains why it matters now and provides one primary action plus snooze, assign, or dismiss-with-reason.</dd>
-          <dt>Basis</dt><dd><strong>direct:</strong> the current dashboard service returns six aggregate values with no invoice, customer, supplier, product, or staff identifiers. The existing owner demo already frames Today as the three things needing attention.</dd>
-          <dt>Rationale</dt><dd>This changes Kirana from software containing reports into a daily operating assistant. It also gives future shifts, reorders, held bills and collections one owner-facing destination instead of separate dashboards.</dd>
-          <dt>Downsides</dt><dd>Requires new exception contracts and careful ranking. Poor recommendations will erode trust, so early rules must be explainable and owner feedback must be captured.</dd>
+          <dt>Description</dt><dd>Give each sale a visible lifecycle: payment initiated, awaiting confirmation, confirmed or manually verified, followed by print, download, share, reopen or start-next-sale actions. Keep payment truth and receipt rendering as separate contracts so a delayed UPI confirmation cannot falsely mark a bill paid and a printer failure cannot lose the sale.</dd>
+          <dt>Basis</dt><dd><strong>direct + external:</strong> invoice and payment writes already use stable idempotency keys, but customer UPI presents a QR without a matching confirmation route and invoice detail has no receipt print/share/download action. Mature POS systems distinguish pending payment from completed customer handoff.</dd>
+          <dt>Rationale</dt><dd>This closes the most important remaining counter loop: the cashier can always answer whether money arrived, recover after a partial failure and hand over a receipt without reconstructing the transaction.</dd>
+          <dt>Downsides</dt><dd>Provider-confirmed UPI needs a gateway contract and reconciliation. A first release should support explicit manual verification with actor/reference evidence and receipt printing independently.</dd>
         </dl>
       </article>
 
       <article class="idea" id="i2">
-        <div class="idea-head"><span class="rank">2</span><div class="title-wrap"><h3>I2. Ambient Scan-to-Catalog</h3><div class="chips"><span class="chip">Checkout</span><span class="chip conf">Confidence 96%</span><span class="chip cx">Complexity Small–Medium</span></div></div></div>
+        <div class="idea-head"><span class="rank">2</span><div class="title-wrap"><h3>I2. Batch-Aware Stock Movement Journal</h3><div class="chips"><span class="chip">Stock lifecycle</span><span class="chip conf">Confidence 94%</span><span class="chip cx">Complexity High</span></div></div></div>
         <dl>
-          <dt>Description</dt><dd>Connect camera, keyboard-wedge, manual-code and search input to one Billing lookup path. Known products add instantly; unknown barcodes become a small non-blocking resolution card that an OWNER or MANAGER can approve, improving the tenant catalog for the next scan.</dd>
-          <dt>Basis</dt><dd><strong>direct:</strong> Billing renders a scan button without a handler, while a working Capacitor scanner and local-first barcode lookup already exist. Barcode creation is already limited to OWNER/MANAGER.</dd>
-          <dt>Rationale</dt><dd>This is the clearest immediate counter win and turns a current dead affordance into a compounding catalog-quality loop.</dd>
-          <dt>Downsides</dt><dd>Desktop scanner focus and unknown-product permissions need explicit behavior. External barcode matches remain suggestions, never automatic product truth.</dd>
+          <dt>Description</dt><dd>Record stock changes as movements and optionally associate received quantities with a batch carrying purchase cost, packed date, expiry and supplier reference. Keep the cashier view simple while inventory highlights sell-first stock, expired stock and batch history.</dd>
+          <dt>Basis</dt><dd><strong>direct + external:</strong> current inventory is one aggregate quantity per variant, purchase receipt increments that quantity, and barcode packed/expiry dates are transient print settings. FEFO-style batch handling is an established pattern for expiring retail stock.</dd>
+          <dt>Rationale</dt><dd>One truthful stock history unlocks expiry warnings, wastage, returns, valuation, profit accuracy and reliable store-packed labels instead of building each feature on a different approximation.</dd>
+          <dt>Downsides</dt><dd>This is a meaningful schema and migration change. Batch capture must be optional for ordinary products and fast during purchasing or it will become unwanted warehouse ceremony.</dd>
         </dl>
       </article>
 
       <article class="idea" id="i3">
-        <div class="idea-head"><span class="rank">3</span><div class="title-wrap"><h3>I3. Held-Bill Relay</h3><div class="chips"><span class="chip">Checkout</span><span class="chip conf">Confidence 93%</span><span class="chip cx">Complexity Medium</span></div></div></div>
+        <div class="idea-head"><span class="rank">3</span><div class="title-wrap"><h3>I3. Solo-Owner Day Close</h3><div class="chips"><span class="chip">Cash accountability</span><span class="chip conf">Confidence 92%</span><span class="chip cx">Complexity High</span></div></div></div>
         <dl>
-          <dt>Description</dt><dd>Promote DRAFT invoices into visible cashier work packets with customer cue, amount, item count, age, source, counter, holder and version. A short edit lease provides read-only visibility elsewhere and an explicit manager takeover instead of silent last-write-wins behavior.</dd>
-          <dt>Basis</dt><dd><strong>direct:</strong> drafts can already be saved, updated, resumed and finalized, but resumption is buried under invoice filters and the model has no ownership or collision semantics.</dd>
-          <dt>Rationale</dt><dd>The same relay can later receive interrupted sales, WhatsApp lists and customer-app orders, making it a reusable continuity primitive rather than another cart store.</dd>
-          <dt>Downsides</dt><dd>Requires durable actor/version metadata and lease expiry rules. Cross-counter concurrency must be tested against real MySQL before claiming production readiness.</dd>
+          <dt>Description</dt><dd>Treat the default session as the owner’s business day: optional opening cash, cash in/out, expected cash, counted closing cash, variance and a short explanation. Staff/counter handovers activate only when the shop uses them; the owner-cashier path can auto-start on the first cash transaction.</dd>
+          <dt>Basis</dt><dd><strong>direct + external:</strong> Kirana’s cashbook groups by payment mode but has no cashier, counter, device or shift custody. Invoices already carry creator and counter provenance, and teller/register sessions provide a proven reconciliation model.</dd>
+          <dt>Rationale</dt><dd>The owner gets an answer to “the system says ₹8,420—why is the drawer ₹8,170?” without being forced to configure an enterprise staffing workflow.</dd>
+          <dt>Downsides</dt><dd>Payments and commercial events need durable actor/session attribution. Cash refunds, paid-in/out reasons and handover semantics must be settled before reports can be trusted.</dd>
         </dl>
       </article>
 
       <article class="idea" id="i4">
-        <div class="idea-head"><span class="rank">4</span><div class="title-wrap"><h3>I4. 90-Second Shift Close</h3><div class="chips"><span class="chip">Cash accountability</span><span class="chip conf">Confidence 92%</span><span class="chip cx">Complexity High</span></div></div></div>
+        <div class="idea-head"><span class="rank">4</span><div class="title-wrap"><h3>I4. Explainable Supplier Cart</h3><div class="chips"><span class="chip">Replenishment</span><span class="chip conf">Confidence 91%</span><span class="chip cx">Complexity Medium–High</span></div></div></div>
         <dl>
-          <dt>Description</dt><dd>Model cash as custody: opening float, named shift, cash sales/refunds, paid-in/out events, blind closing count, expected-versus-actual variance, explanation and owner approval. UPI/Card/Bank remain visible for reconciliation but never inflate physical drawer cash.</dd>
-          <dt>Basis</dt><dd><strong>direct + external:</strong> Kirana already groups daily payments by mode but lacks shifts and durable payment actor attribution. Bank-teller session patterns map directly to expected cash, blind count, variance and supervisory sign-off.</dd>
-          <dt>Rationale</dt><dd>This gives the owner an end-of-day proof rather than another sales report and creates the trustworthy attribution required for staff performance.</dd>
-          <dt>Downsides</dt><dd>Needs new server models and migration. The experience must adapt for a solo owner so opening/closing ceremony does not become enterprise-style busywork.</dd>
+          <dt>Description</dt><dd>Turn low-stock signals into reviewable supplier-grouped carts. Each line shows current stock, recent movement, suggested quantity, pack rounding, cost evidence and confidence; missing supplier or pack information stays in an explicit Owner decision lane instead of being guessed.</dd>
+          <dt>Basis</dt><dd><strong>direct + external:</strong> Kirana already has thresholds, sales movement, purchases and suppliers, but no supplier-item profile, pack size, lead time or preferred supplier. Lightspeed, Zoho and Shopify show the value of calculated need plus supplier and item importance.</dd>
+          <dt>Rationale</dt><dd>The app progresses from saying “stock is low” to preparing tomorrow’s supplier calls while keeping scarce-cash decisions with the shopkeeper.</dd>
+          <dt>Downsides</dt><dd>Initial suggestions will have limited confidence. Supplier-item metadata should be learned during ordinary purchase work rather than introduced as a large setup exercise.</dd>
         </dl>
       </article>
 
       <article class="idea" id="i5">
-        <div class="idea-head"><span class="rank">5</span><div class="title-wrap"><h3>I5. Reorder Confidence Queue</h3><div class="chips"><span class="chip">Replenishment</span><span class="chip conf">Confidence 88%</span><span class="chip cx">Complexity Medium–High</span></div></div></div>
+        <div class="idea-head"><span class="rank">5</span><div class="title-wrap"><h3>I5. Provider-Free WhatsApp List Compiler</h3><div class="chips"><span class="chip">Customer intake</span><span class="chip conf">Confidence 90%</span><span class="chip cx">Complexity Medium</span></div></div></div>
         <dl>
-          <dt>Description</dt><dd>Rank reviewable replenishment suggestions by on-hand quantity, sales movement, last purchase, supplier history, urgency and confidence. Approved lines become editable supplier-grouped purchase drafts; the system never places an order autonomously.</dd>
-          <dt>Basis</dt><dd><strong>direct:</strong> thresholds, stock movements, top-selling quantities, suppliers, purchase history and purchase-cart creation already exist. The missing data—lead time, pack size, preferred supplier—can be shown as confidence limits.</dd>
-          <dt>Rationale</dt><dd>It changes low-stock warnings into decisions about scarce cash while keeping the shopkeeper in control and making every suggestion explainable.</dd>
-          <dt>Downsides</dt><dd>Early recommendations will be approximate. Seasonal demand, informal supplier terms and missing purchase history must reduce confidence rather than be guessed.</dd>
+          <dt>Description</dt><dd>Add Paste or Share List first: preserve the customer’s original text, propose catalog matches with confidence and alternatives, flag unclear units or substitutions, then create one held bill only after staff confirmation. Add screenshot OCR next; Meta transport remains an optional paid upgrade.</dd>
+          <dt>Basis</dt><dd><strong>direct + external:</strong> held bills already provide durable claim/resume/takeover, while Meta APIs and on-device OCR make later text/image intake possible. Starting with paste/share proves the workflow without recurring provider charges.</dd>
+          <dt>Rationale</dt><dd>This removes retyping from a behavior customers already use while ensuring unstructured chat never bypasses catalog, stock, tenant or invoice controls.</dd>
+          <dt>Downsides</dt><dd>Matching must expose uncertainty rather than invent products. Multilingual quantities, local product nicknames and substitutions require careful evaluation before image/OCR intake expands.</dd>
         </dl>
       </article>
 
       <article class="idea" id="i6">
-        <div class="idea-head"><span class="rank">6</span><div class="title-wrap"><h3>I6. WhatsApp List Compiler</h3><div class="chips"><span class="chip">Assisted orders</span><span class="chip conf">Confidence 82%</span><span class="chip cx">Complexity High</span></div></div></div>
+        <div class="idea-head"><span class="rank">6</span><div class="title-wrap"><h3>I6. Persistent Owner Action Queue</h3><div class="chips"><span class="chip">Owner control</span><span class="chip conf">Confidence 84%</span><span class="chip cx">Complexity Medium</span></div></div></div>
         <dl>
-          <dt>Description</dt><dd>Preserve the incoming text or photo, propose product/variant matches, flag uncertain quantities and substitutions, and require staff review before producing one held bill. Start with paste/import or a structured link; full WhatsApp API transport can follow after the workflow proves useful.</dd>
-          <dt>Basis</dt><dd><strong>direct + external:</strong> tenant-scoped customer phones and customer cart → order → draft-invoice conversion already exist. WhatsApp commerce is common in India, but Kirana currently has no transport, consent, template or message log.</dd>
-          <dt>Rationale</dt><dd>The valuable automation is eliminating retyping without letting unstructured chat bypass stock, customer, invoice or tenant controls.</dd>
-          <dt>Downsides</dt><dd>Staff-side order creation and matching require new contracts. Full outbound reminders need consent, approved templates, delivery logs and provider cost analysis.</dd>
+          <dt>Description</dt><dd>Evolve operational exceptions—not ordinary success/error feedback—into durable records with reason, priority, age, ownership, snooze, deep link and resolution evidence. Feed it from overdue dues, held bills, cash variance, failed sync, expiring stock, approval requests and stale backups.</dd>
+          <dt>Basis</dt><dd><strong>direct + reasoned:</strong> the current Decision Inbox proves that record-linked actions work but covers only three bounded groups; notifications are transient in-memory events. Durable exceptions give new features one owner-facing workflow instead of more dashboards.</dd>
+          <dt>Rationale</dt><dd>The owner can leave the counter, return later and still know the few unresolved actions protecting the most money today.</dd>
+          <dt>Downsides</dt><dd>A queue becomes noise if every event creates work. Producers need strict thresholds, deduplication and clear automatic resolution; normal confirmation toasts remain transient.</dd>
         </dl>
       </article>
 
       <article class="idea" id="i7">
-        <div class="idea-head"><span class="rank">7</span><div class="title-wrap"><h3>I7. Bounded Emergency Offline Mode</h3><div class="chips"><span class="chip">Checkout continuity</span><span class="chip conf">Confidence 86%</span><span class="chip cx">Complexity Very High</span></div></div></div>
+        <div class="idea-head"><span class="rank">7</span><div class="title-wrap"><h3>I7. Safe Offline Sales Outbox</h3><div class="chips"><span class="chip">Continuity</span><span class="chip conf">Confidence 87%</span><span class="chip cx">Complexity Very High</span></div></div></div>
         <dl>
-          <dt>Description</dt><dd>Permit only clearly safe offline actions—paid-in-full walk-in sales against a local catalog snapshot—and show every local envelope as queued, syncing, conflicted or completed. Reconnect replays through stable idempotency identities; credit, returns and stock-sensitive administration remain unavailable.</dd>
-          <dt>Basis</dt><dd><strong>direct + external:</strong> invoice/payment idempotency exists, while network failure currently becomes a generic notification and no local queue exists. Mature offline POS systems expose constrained modes and visible unsynced work.</dd>
-          <dt>Rationale</dt><dd>This preserves the revenue path during outages without pretending the full POS and ledgers can safely operate offline.</dd>
-          <dt>Downsides</dt><dd>Requires secure local storage, device identity, catalog snapshots, transactional outbox semantics, conflict handling and substantial reconnection testing. It should follow—not precede—the simpler operational primitives.</dd>
+          <dt>Description</dt><dd>Allow only paid-in-full walk-in sales from a versioned local catalog snapshot when connectivity fails. Store each bill in a durable outbox with Pending, Syncing, Synced or Needs attention states and replay it through the existing invoice/payment idempotency keys.</dd>
+          <dt>Basis</dt><dd><strong>direct + external:</strong> Kirana already has stable invoice and payment idempotency but no business outbox, service-worker transaction queue or IndexedDB persistence. Mature POS systems expose offline mode, limits and pending work explicitly.</dd>
+          <dt>Rationale</dt><dd>A short outage stops being a shop-closing event without pretending that credit, returns, purchasing or stock administration can safely operate without server authority.</dd>
+          <dt>Downsides</dt><dd>This is the most expensive survivor: secure storage, device identity, catalog snapshots, conflict handling and reconnection tests are mandatory. It should remain last in the sequence.</dd>
         </dl>
       </article>
     </section>
@@ -248,28 +248,28 @@
         <svg viewBox="0 0 880 210" role="img" aria-label="Suggested sequence from quick counter win to owner system and later infrastructure">
           <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#176b47"/></marker></defs>
           <rect x="18" y="52" width="175" height="104" rx="16" fill="#e3f4e9" stroke="#176b47"/>
-          <text x="105" y="83" text-anchor="middle" font-weight="800" fill="#14583c">Quick counter win</text>
-          <text x="105" y="111" text-anchor="middle" fill="#17211b">Ambient scan</text>
-          <text x="105" y="134" text-anchor="middle" fill="#17211b">+ catalog resolution</text>
+          <text x="105" y="83" text-anchor="middle" font-weight="800" fill="#14583c">Close every sale</text>
+          <text x="105" y="111" text-anchor="middle" fill="#17211b">Payment proof</text>
+          <text x="105" y="134" text-anchor="middle" fill="#17211b">+ receipt handoff</text>
           <path d="M 201 104 H 244" stroke="#176b47" stroke-width="3" marker-end="url(#arrow)"/>
           <rect x="254" y="34" width="210" height="140" rx="16" fill="#e5f2fb" stroke="#245a82"/>
-          <text x="359" y="66" text-anchor="middle" font-weight="800" fill="#245a82">Next product move</text>
-          <text x="359" y="96" text-anchor="middle" fill="#17211b">Owner decision inbox</text>
-          <text x="359" y="121" text-anchor="middle" fill="#17211b">+ held-bill relay</text>
-          <text x="359" y="146" text-anchor="middle" fill="#17211b">+ role-aware priorities</text>
+          <text x="359" y="66" text-anchor="middle" font-weight="800" fill="#245a82">Owner trust</text>
+          <text x="359" y="96" text-anchor="middle" fill="#17211b">Batch-aware stock</text>
+          <text x="359" y="121" text-anchor="middle" fill="#17211b">+ solo-owner close</text>
+          <text x="359" y="146" text-anchor="middle" fill="#17211b">+ supplier carts</text>
           <path d="M 472 104 H 515" stroke="#176b47" stroke-width="3" marker-end="url(#arrow)"/>
           <rect x="525" y="34" width="160" height="140" rx="16" fill="#fff1cd" stroke="#8a5b08"/>
-          <text x="605" y="66" text-anchor="middle" font-weight="800" fill="#8a5b08">Owner operations</text>
-          <text x="605" y="98" text-anchor="middle" fill="#17211b">Shift close</text>
-          <text x="605" y="123" text-anchor="middle" fill="#17211b">Reorder queue</text>
-          <text x="605" y="148" text-anchor="middle" fill="#17211b">Assisted orders</text>
+          <text x="605" y="66" text-anchor="middle" font-weight="800" fill="#8a5b08">Assisted work</text>
+          <text x="605" y="98" text-anchor="middle" fill="#17211b">WhatsApp paste</text>
+          <text x="605" y="123" text-anchor="middle" fill="#17211b">+ action queue</text>
+          <text x="605" y="148" text-anchor="middle" fill="#17211b">+ explainable alerts</text>
           <path d="M 693 104 H 736" stroke="#176b47" stroke-width="3" marker-end="url(#arrow)"/>
           <rect x="746" y="52" width="116" height="104" rx="16" fill="#fae8e4" stroke="#9a3e32"/>
           <text x="804" y="83" text-anchor="middle" font-weight="800" fill="#9a3e32">Later</text>
-          <text x="804" y="112" text-anchor="middle" fill="#17211b">Bounded</text>
-          <text x="804" y="135" text-anchor="middle" fill="#17211b">offline mode</text>
+          <text x="804" y="112" text-anchor="middle" fill="#17211b">Safe offline</text>
+          <text x="804" y="135" text-anchor="middle" fill="#17211b">sales outbox</text>
         </svg>
-        <p>Directional only — this shows sequencing logic, not committed scope or an implementation specification. The quick scan fix can land independently; the Owner Decision Inbox is the strongest next product conversation.</p>
+        <p>Directional only — this shows sequencing logic, not committed scope or an implementation specification. Provable Sale Closure is the strongest immediate product conversation; the Safe Offline Sales Outbox remains last because it depends on disciplined payment, device and replay contracts.</p>
       </div>
     </section>
 
@@ -279,11 +279,14 @@
       <table>
         <thead><tr><th>#</th><th>Idea</th><th>Reason rejected</th></tr></thead>
         <tbody>
-          <tr><td>1</td><td>Transaction provenance spine</td><td>Useful substrate, but actor/device/shift/origin/sync were bundled beyond current evidence. Required fields should emerge from Held Bills, Shifts and Offline contracts.</td></tr>
-          <tr><td>2</td><td>Role-and-time-horizon home</td><td>Overlaps Owner Decision Inbox; retained as a design principle inside it rather than a separate initiative.</td></tr>
-          <tr><td>3</td><td>Payment secondary-inspection lane</td><td>Failed-payment recovery is grounded, but ambiguous-payment attempts require a model that does not yet exist.</td></tr>
-          <tr><td>4</td><td>Receipt-to-repeat loop</td><td>Too bundled and prerequisite-heavy; keep as a later extension of the WhatsApp List Compiler.</td></tr>
-          <tr><td>5</td><td>Automatic cart parking</td><td>A tactical Held-Bill Relay variant without a defensible abandonment trigger, expiry or deduplication contract.</td></tr>
+          <tr><td>1</td><td>Ambient Scan-to-Catalog</td><td>No longer a candidate: camera/manual/counter scanner lookup and unknown-barcode product resolution are implemented.</td></tr>
+          <tr><td>2</td><td>Held-Bill Relay</td><td>No longer a candidate: cross-counter claim, release, resume, lease renewal, takeover and version conflict handling are implemented.</td></tr>
+          <tr><td>3</td><td>Supplier–Item Ordering Profile</td><td>Strong enabling data, but not a meeting-worthy standalone move; folded into Explainable Supplier Cart.</td></tr>
+          <tr><td>4</td><td>Goods-Arrived Receiving Tray</td><td>Atomic posting is grounded, but no current evidence shows incomplete deliveries are a recurring enough pain for a separate tray.</td></tr>
+          <tr><td>5</td><td>Manager PIN for Money Exceptions</td><td>Ungated discounts are real, but the proposal bundled already-authorized actions and over-weighted the secondary manager persona.</td></tr>
+          <tr><td>6</td><td>Durable Job and Artifact Registry</td><td>Import and storage weaknesses are real, but one registry across imports, exports and backups hides materially different lifecycles.</td></tr>
+          <tr><td>7</td><td>Backup Fire-Drill Certificate</td><td>Freshness/history are useful, but a verified rehearsal requires an isolated restore environment not currently present.</td></tr>
+          <tr><td>8</td><td>Exception-Driven Cycle Counts</td><td>Plausible from existing movements, but the evidence does not yet show material stock-discrepancy or counting pain.</td></tr>
         </tbody>
       </table>
     </section>
@@ -292,11 +295,11 @@
       <p class="eyebrow">External grounding</p>
       <h2>References</h2>
       <div class="callout">
-        <p><a href="https://squareup.com/help/us/en/article/5618-get-started-with-the-square-dashboard-app">Square Dashboard</a> · <a href="https://squareup.com/help/us/en/article/8344-start-and-end-a-cash-drawer-session">Square cash sessions</a> · <a href="https://www.shopify.com/pos/features">Shopify POS</a> · <a href="https://help.shopify.com/en/manual/sell-in-person/shopify-pos/selling-offline/offline-checkout">Shopify offline checkout</a> · <a href="https://x-series-support.lightspeedhq.com/hc/en-us/articles/25534272395163-Selling-in-offline-mode">Lightspeed offline selling</a> · <a href="https://www.zoho.com/us/inventory/help/items/replenishments.html">Zoho replenishment</a> · <a href="https://about.fb.com/news/2023/09/whatsapp-new-experiences-for-people-and-businesses/">Meta WhatsApp commerce</a> · <a href="https://www.pib.gov.in/PressReleasePage.aspx?PRID=2228651&amp;lang=1&amp;reg=3">India small-merchant UPI study</a>.</p>
+        <p><a href="https://www.odoo.com/documentation/19.0/applications/sales/point_of_sale/use.html">Odoo POS workflow</a> · <a href="https://squareup.com/help/gb/en/article/7777-process-card-payments-with-offline-mode">Square offline payments</a> · <a href="https://retail-support.lightspeedhq.com/hc/en-us/articles/115000271633-Setting-reorder-points-and-desired-inventory-levels">Lightspeed reorder points</a> · <a href="https://www.zoho.com/us/inventory/kb/items/item-preferred-vendor.html">Zoho preferred vendors</a> · <a href="https://help.shopify.com/en/manual/inventory-and-locations/fundamentals/abc-analysis">Shopify ABC analysis</a> · <a href="https://khatabook.com/en/">Khatabook</a> · <a href="https://vyaparapp.in/free/inventory-management-software/retail">Vyapar</a> · <a href="https://developers.facebook.com/docs/whatsapp/cloud-api/">Meta WhatsApp Cloud API</a> · <a href="https://developers.google.com/ml-kit/vision/text-recognition/v2/android">Google ML Kit OCR</a> · <a href="https://help.tallysolutions.com/backup-and-restore-tps/">TallyPrime backup</a> · <a href="https://www.npci.org.in/what-we-do/upi/faqs">NPCI UPI FAQ</a>.</p>
       </div>
     </section>
   </main>
 
-  <footer class="composition-signal">Composed 2026-10-12T17:20+05:30 by <code>ce-ideate</code> from the Kirana POS repositories, current conversation context, five evidence dossiers, and external product research.</footer>
+  <footer class="composition-signal">Updated 2026-10-15T18:15+05:30 by <code>ce-ideate</code> from the Kirana POS repositories, five evidence dossiers, prior ideation and current external product research.</footer>
 </body>
 </html>

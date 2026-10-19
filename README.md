@@ -23,12 +23,21 @@ Maintainer: [Rajesh Shah (@iamrajshah)](https://github.com/iamrajshah)
 - Customers, invoices, payments, products, categories, inventory, suppliers,
   purchases, reports, imports, users, profile, and barcode flows.
 - Owner/manager-generated EAN-13 labels for loose or store-packed product
-  variants. Labels print in batches and scan through the ordinary billing flow.
+  variants. Configurable, previewed labels print in paginated batches and scan
+  through the ordinary billing flow.
+- Owner-only, tenant-scoped JSON backup preview and transactional restore.
+- Durable Simple Receipt or GST Tax Invoice snapshots with a sale completion
+  sheet, historical receipt workspace, print, PDF, and device-share recovery.
 - English, Hindi, Marathi, and Gujarati translation resources.
 - Ionic/Capacitor foundations for web and Android/iOS packaging.
 
 Offline billing queue, optional cashier shift cash, smart reorder, and WhatsApp
 list-to-cart are planned product work. They are not production-ready features yet.
+
+The demo UI is deployed manually to
+[kirana-ui.netlify.app](https://kirana-ui.netlify.app). Automatic Netlify builds
+are paused to conserve the demo allowance; merge does not mean the UI has been
+published. See the handbook for the release checklist and current baseline.
 
 Read [`HANDBOOK.md`](HANDBOOK.md) for the product reasoning, implemented
 workflows, safety invariants, and working rules for humans and AI agents.
@@ -127,6 +136,8 @@ submission remain separate deployment steps.
 
 - Branch from `dev`; keep one coherent product change per branch and PR.
 - Inspect `git status --short` before editing and preserve unrelated work.
+- If it is dirty, use the isolated worktree created by `kirana-start`; do not
+  stash or mix the current work with a new issue.
 - Put visible text in all four locale files instead of hardcoding it in a screen.
 - Maintain at least 48px touch targets for cashier actions.
 - Keep walk-in payment and customer-credit behavior aligned with the server API.
