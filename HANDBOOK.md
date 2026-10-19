@@ -20,6 +20,15 @@ workflow should remain understandable in English, Hindi, Marathi, and Gujarati.
 
 ## What we have developed
 
+### Current release snapshot — 19 October 2026
+
+The `dev` branch at `de0505a` is the verified demo baseline. It combines the
+Modern Bazaar responsive shell, reliable navigation, fast billing, barcode
+labels, tenant backup/restore, and provable sale closure. The public demo is
+served by Netlify and talks to the Railway API/MySQL environment. Netlify
+automatic builds are intentionally paused to conserve the demo allowance;
+publish the UI manually only after a reviewed release batch is ready.
+
 ### Fast billing
 
 - A walk-in cash or UPI sale does not require customer creation.
@@ -57,6 +66,43 @@ totals:
 Each group shows at most three records and links to the screen where the action
 can be completed. If one group fails, the other groups and the dashboard totals
 remain usable. Cashiers continue to see their normal operational dashboard.
+
+### Store barcode labels
+
+- Owners and managers can generate one stable EAN-13 barcode for an existing
+  product variant; repeated generation returns the same code.
+- The same code works through the ordinary billing scanner. Price is display
+  content, not encoded identity, so a price change does not require a new code.
+- Labels can be printed in large batches across multiple pages. Print layout is
+  paginated rather than silently capping a requested quantity.
+- Shop name, product and variant, price, packed date, expiry date, batch/lot,
+  MRP, and free text are configurable. The on-screen preview uses the same
+  choices as printing so the operator can catch clipping before wasting labels.
+- Packed and expiry values are currently label metadata, not inventory batches.
+  True expiry tracking remains future stock-ledger work.
+
+### Tenant backup and restore
+
+- An OWNER can download a versioned JSON backup of the current tenant's business
+  records and preview a backup before restoring it.
+- Restore requires the current shop name plus an explicit replacement
+  acknowledgement. The server validates ownership, format, checksum, references,
+  and record limits before one transactional replacement.
+- Staff accounts, passwords, roles, permissions, audit history, and import files
+  are deliberately excluded. The file contains customer and supplier data and
+  must be stored securely.
+
+### Provable sale closure
+
+- A successfully finalized sale opens a completion sheet without clearing the
+  evidence the cashier needs for customer handoff.
+- The same frozen sale document is available later from invoice history.
+- Simple Receipt and GST Tax Invoice are tenant-configurable; the server rollout
+  capability still controls whether GST documents may be activated.
+- Print, PDF, and device share are recoverable output actions. A failed print or
+  cancelled share does not create, repeat, or reverse the sale.
+- Historical facts remain frozen while the payment summary can show later credit
+  collections and the current remaining balance.
 
 ## Why it works this way
 
@@ -110,7 +156,8 @@ remain usable. Cashiers continue to see their normal operational dashboard.
 1. Read this handbook plus `kirana-context/README.md` and `GLOSSARY.md` before
    changing billing, tenant, ledger, inventory, or barcode behaviour.
 2. Start from `dev` and use one coherent feature branch.
-3. Inspect `git status --short`; preserve unrelated work.
+3. Inspect `git status --short`. If the checkout is dirty, leave it untouched and
+   use the isolated worktree printed by `kirana-start`; never mix two issues.
 4. Add or strengthen focused tests before behaviour changes where practical.
 5. Keep API types aligned with `kirana-server`.
 6. Run focused tests during development, then the full relevant tests, lint, and
@@ -131,21 +178,28 @@ Normal UI tests mock the API and do not require MySQL. A live end-to-end run nee
 the server, a migrated MySQL database, and `VITE_API_BASE_URL` pointing to the
 server's `/api/v1` base URL.
 
-## Free demo deployment
+## Demo deployment
 
-Cloudflare Pages is the preferred free demo host for this Vite UI. Connect the
-GitHub repository, build with `npm run build`, publish `dist`, and set
-`VITE_API_BASE_URL` to the public API URL ending in `/api/v1`. Use the generated
-`*.pages.dev` address until a custom domain is worth configuring.
+- **UI:** [kirana-ui.netlify.app](https://kirana-ui.netlify.app), built from
+  `dev` with `npm run build` and `dist` as the publish directory.
+- **API:** Railway, with the browser base URL ending in `/api/v1`.
+- **Database:** Railway MySQL, migrated by the server release process.
+- **Release policy:** Netlify automatic builds remain stopped. Verify locally
+  against the Railway API, combine UI changes into a release batch, then trigger
+  one manual production deploy. Server changes deploy through Railway only after
+  their PR is approved and merged.
 
-Free-tier terms change, so verify the current
-[Cloudflare Pages limits](https://developers.cloudflare.com/pages/platform/limits/)
-before relying on it for production. The sibling server handbook records the API
-and database recommendation.
+The fallback production API URL in source is a convenience for this demo, not a
+recommended production configuration. A production release should inject
+`VITE_API_BASE_URL`, use monitored paid infrastructure, and define rollback,
+backup retention, secrets rotation, and availability targets.
 
 ## Deliberately later
 
-Offline billing requires an explicit reconciliation design and should not be
-represented as ready. Smart reorder suggestions and WhatsApp list-to-cart are
-valuable follow-on features. Shift opening/closing may remain optional because
-many target shops have the same owner operating the counter.
+Offline billing requires an explicit outbox, conflict, stock, and payment
+reconciliation design and should not be represented as ready. Smart reorder
+suggestions and WhatsApp paste-to-bill are valuable follow-on features. Direct
+WhatsApp ingestion additionally needs provider, consent, privacy, and cost
+decisions. Shift opening/closing should remain optional because many target
+shops have the same owner operating the counter. Batch-aware stock and expiry
+management is also pending; label dates alone do not change inventory truth.
