@@ -190,7 +190,7 @@ export const CustomerLedgerPage: React.FC = () => {
                               {entry.reference_id && (
                                 <p className="entry-reference" style={{ color: 'var(--ion-color-primary)', fontWeight: '500' }}>
                                   {entry.entry_type === 'INVOICE'
-                                    ? t('customers.ledger.invoiceReference')
+                                    ? t('customers.ledger.viewBill')
                                     : t('customers.ledger.reference')}{entry.reference_id}
                                 </p>
                               )}
@@ -240,7 +240,7 @@ export const CustomerLedgerPage: React.FC = () => {
                               {entry.reference_id && (
                                 <p className="entry-reference" style={{ color: 'var(--ion-color-primary)', fontWeight: '500' }}>
                                   {entry.entry_type === 'INVOICE'
-                                    ? t('customers.ledger.invoiceReference')
+                                    ? t('customers.ledger.viewBill')
                                     : t('customers.ledger.reference')}{entry.reference_id}
                                 </p>
                               )}

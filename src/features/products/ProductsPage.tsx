@@ -30,6 +30,7 @@ import { useGetCategoriesQuery } from '@core/api/categoryApi';
 import { SearchBar, Loading, EmptyState, Input, Select, Button, AddCategoryModal } from '@components';
 import { formatCurrency } from '@utils/helpers';
 import { ROUTES } from '@core/constants';
+import { filterProducts } from '@utils/localSearch';
 import './stock-workspace.css';
 
 export const ProductsPage: React.FC = () => {
@@ -39,8 +40,8 @@ export const ProductsPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [skip, setSkip] = useState(0);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const take = 50;
-  const { data, isLoading, isFetching, isError, refetch } = useGetProductsQuery({ search, skip, take });
+  const take = 1000;
+  const { data, isLoading, isFetching, isError, refetch } = useGetProductsQuery({ skip, take });
   const { data: categoriesData } = useGetCategoriesQuery();
   const [createProduct, { isLoading: creating }] = useCreateProductMutation();
   const [createVariant, { isLoading: creatingVariant }] = useCreateVariantMutation();
@@ -54,11 +55,6 @@ export const ProductsPage: React.FC = () => {
     { value: 'JAR', label: t('products.packagingJar') },
     { value: 'LOOSE', label: t('products.packagingLoose') },
   ];
-
-  useEffect(() => {
-    setSkip(0);
-    setAllProducts([]);
-  }, [search]);
 
   // Accumulate products as they're fetched
   useEffect(() => {
@@ -97,11 +93,15 @@ export const ProductsPage: React.FC = () => {
   const currentBatchSize = data?.data?.length || 0;
   const hasMore = allProducts.length < total && currentBatchSize === take;
 
-  // Group products by category
+  const visibleProducts = useMemo(
+    () => filterProducts(allProducts, search),
+    [allProducts, search]
+  );
+
   const groupedProducts = useMemo(() => {
     const groups: Record<string, Product[]> = {};
     
-    allProducts.forEach((product) => {
+    visibleProducts.forEach((product) => {
       const categoryName = product.category?.name || t('products.uncategorized');
       if (!groups[categoryName]) {
         groups[categoryName] = [];
@@ -110,7 +110,7 @@ export const ProductsPage: React.FC = () => {
     });
     
     return groups;
-  }, [allProducts, t]);
+  }, [visibleProducts, t]);
 
   const categoryNames = useMemo(() => {
     return Object.keys(groupedProducts).sort();
@@ -220,7 +220,7 @@ export const ProductsPage: React.FC = () => {
               <p>{t('products.loadError')}</p>
               <Button onClick={() => refetch()}>{t('common.retry')}</Button>
             </div>
-          ) : allProducts.length === 0 ? (
+          ) : visibleProducts.length === 0 ? (
             <EmptyState message={t('products.noProductsFound')} />
           ) : (
             <>

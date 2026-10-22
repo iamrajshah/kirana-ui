@@ -149,11 +149,11 @@ vi.mock('@core/api/paymentApi', () => ({
 }));
 
 vi.mock('@core/api/customerApi', () => ({
-  useLazySearchCustomersQuery: () => [vi.fn(), { data: undefined, isLoading: false }],
+  useGetCustomersQuery: () => ({ data: { data: [] }, isLoading: false, isFetching: false }),
 }));
 
 vi.mock('@core/api/productApi', () => ({
-  useLazySearchVariantsQuery: () => [vi.fn(), { data: undefined, isLoading: false }],
+  useGetBillingCatalogQuery: () => ({ data: { data: [] }, isLoading: false, isFetching: false }),
   useLazyScanBarcodeQuery: () => [apiTrigger(mocks.scanBarcode), { isFetching: false }],
   useCreateProductFromBarcodeMutation: () => [
     apiTrigger(mocks.createProductFromBarcode),

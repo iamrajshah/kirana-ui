@@ -74,6 +74,10 @@ export const productApi = apiSlice.injectEndpoints({
       }),
       providesTags: ['Product'],
     }),
+    getBillingCatalog: builder.query<ApiResponse<BillingSearchVariant[]>, void>({
+      query: () => '/products/catalog',
+      providesTags: ['Product', 'Inventory'],
+    }),
     createProduct: builder.mutation<ApiResponse<Product>, CreateProductRequest>({
       query: (body) => ({
         url: '/products',
@@ -152,6 +156,7 @@ export const {
   useGetProductByIdQuery,
   useSearchVariantsQuery,
   useLazySearchVariantsQuery,
+  useGetBillingCatalogQuery,
   useCreateProductMutation,
   useCreateVariantMutation,
   useUpdateProductMutation,

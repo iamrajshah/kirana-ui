@@ -47,14 +47,16 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-it('shows scan and manual product actions while keeping the product search query', () => {
+it('shows product actions and filters the fetched index without another search request', () => {
   render(<ProductsPage />);
   fireEvent.click(screen.getByRole('button', { name: 'products.scanBarcode' }));
   expect(state.push).toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'products.addManually' }));
   expect(screen.getByText('products.createProductTitle')).toBeTruthy();
   fireEvent.change(screen.getByRole('textbox', { name: 'search' }), { target: { value: 'rice' } });
-  expect(state.query).toHaveBeenCalledWith(expect.objectContaining({ search: 'rice' }));
+  expect(screen.getByText('Rice')).toBeTruthy();
+  expect(state.query.mock.calls.every(([args]) => !('search' in (args as object)))).toBe(true);
+  expect(state.query).toHaveBeenLastCalledWith({ skip: 0, take: 1000 });
 });
 
 it('offers retry rather than an empty catalog on request failure', () => {

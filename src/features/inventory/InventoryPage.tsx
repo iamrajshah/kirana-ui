@@ -20,12 +20,13 @@ import { useGetInventoryQuery, useUpdateInventoryMutation } from '@core/api/inve
 import { SearchBar, Loading, EmptyState, Input, Button } from '@components';
 import { formatNumber } from '@utils/helpers';
 import type { Inventory } from '@core/types';
+import { filterInventory } from '@utils/localSearch';
 import '../products/stock-workspace.css';
 
 export const InventoryPage: React.FC = () => {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
-  const { data, isLoading, isError, refetch } = useGetInventoryQuery({ search });
+  const { data, isLoading, isError, refetch } = useGetInventoryQuery({});
   const [updateInventory, { isLoading: updating }] = useUpdateInventoryMutation();
 
   const [showModal, setShowModal] = useState(false);
@@ -37,12 +38,16 @@ export const InventoryPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
 
   const inventory = useMemo(() => data?.data ?? [], [data?.data]);
+  const visibleInventory = useMemo(
+    () => filterInventory(inventory, search),
+    [inventory, search]
+  );
 
   // Group inventory by category
   const groupedInventory = useMemo(() => {
     const groups: Record<string, Inventory[]> = {};
 
-    inventory.forEach((item) => {
+    visibleInventory.forEach((item) => {
       const categoryName = item.variant?.product?.category?.name || t('products.uncategorized');
       if (!groups[categoryName]) {
         groups[categoryName] = [];
@@ -51,7 +56,7 @@ export const InventoryPage: React.FC = () => {
     });
 
     return groups;
-  }, [inventory, t]);
+  }, [visibleInventory, t]);
 
   const categoryNames = useMemo(() => {
     return Object.keys(groupedInventory).sort();
@@ -115,7 +120,7 @@ export const InventoryPage: React.FC = () => {
               <p>{t('inventory.loadError')}</p>
               <Button onClick={() => refetch()}>{t('common.retry')}</Button>
             </div>
-          ) : inventory.length === 0 ? (
+          ) : visibleInventory.length === 0 ? (
             <EmptyState message={t('inventory.noInventoryItems')} />
           ) : (
             <div>

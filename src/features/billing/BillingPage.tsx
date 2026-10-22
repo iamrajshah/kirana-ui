@@ -32,11 +32,11 @@ import {
 } from '@core/api/invoiceApi';
 import { useGetTenantSettingsQuery } from '@core/api/tenantSettingsApi';
 import { useCreatePaymentMutation } from '@core/api/paymentApi';
-import { useLazySearchCustomersQuery } from '@core/api/customerApi';
+import { useGetCustomersQuery } from '@core/api/customerApi';
 import {
   useCreateProductFromBarcodeMutation,
+  useGetBillingCatalogQuery,
   useLazyScanBarcodeQuery,
-  useLazySearchVariantsQuery,
   type BillingSearchVariant,
 } from '@core/api/productApi';
 import notificationService, { apiErrorMessage } from '@core/services/notificationService';
@@ -46,6 +46,7 @@ import { useAppSelector } from '@core/hooks';
 import type { Customer, HeldBill, PaymentMode } from '@core/types';
 import { formatCurrency, generateIdempotencyKey } from '@utils/helpers';
 import type { BillingCartItem } from './billing.logic';
+import { filterBillingCatalog, filterCustomers } from '@utils/localSearch';
 import {
   buildInvoiceItems,
   calculateBillingTotals,
@@ -90,13 +91,19 @@ export const BillingPage: React.FC = () => {
   const editInvoiceId = query.get('edit');
   const focusedHeldBillId = query.get('held');
 
-  const [searchVariants, { data: variantsData, isLoading: searchLoading }] =
-    useLazySearchVariantsQuery();
+  const {
+    data: billingCatalogData,
+    isLoading: billingCatalogLoading,
+    isFetching: billingCatalogFetching,
+  } = useGetBillingCatalogQuery();
   const [scanBarcode, { isFetching: barcodeLoading }] = useLazyScanBarcodeQuery();
   const [createProductFromBarcode, { isLoading: creatingBarcodeProduct }] =
     useCreateProductFromBarcodeMutation();
-  const [searchCustomers, { data: customersData, isLoading: customersLoading }] =
-    useLazySearchCustomersQuery();
+  const {
+    data: customersData,
+    isLoading: customersLoading,
+    isFetching: customersFetching,
+  } = useGetCustomersQuery({ skip: 0, take: 1000 });
   const [createInvoice, { isLoading: creating }] = useCreateInvoiceMutation();
   const [quoteInvoice, { isLoading: quoting }] = useQuoteInvoiceMutation();
   const [cancelInvoice, { isLoading: cancelling }] = useCancelInvoiceMutation();
@@ -193,6 +200,16 @@ export const BillingPage: React.FC = () => {
   const receiptOutput = useReceiptOutput();
 
   const customerId = selectedCustomer?.id || '';
+  const matchingVariants = useMemo(
+    () => filterBillingCatalog(billingCatalogData?.data ?? [], searchTerm),
+    [billingCatalogData?.data, searchTerm]
+  );
+  const matchingCustomers = useMemo(
+    () => filterCustomers(customersData?.data ?? [], customerSearchTerm).slice(0, 20),
+    [customerSearchTerm, customersData?.data]
+  );
+  const searchLoading = billingCatalogLoading || billingCatalogFetching;
+  const customerIndexLoading = customersLoading || customersFetching;
   const totals = useMemo(
     () => calculateBillingTotals(cartItems, billDiscount, 'amount', 0),
     [billDiscount, cartItems]
@@ -341,18 +358,6 @@ export const BillingPage: React.FC = () => {
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, [activeHeldVersion, currentUser, editInvoiceId, invoiceData, renewHeldBill]);
-
-  useEffect(() => {
-    if (searchTerm.length < 2) return;
-    const timer = window.setTimeout(() => searchVariants({ search: searchTerm }), 250);
-    return () => window.clearTimeout(timer);
-  }, [searchTerm, searchVariants]);
-
-  useEffect(() => {
-    if (customerSearchTerm.length < 2) return;
-    const timer = window.setTimeout(() => searchCustomers(customerSearchTerm), 250);
-    return () => window.clearTimeout(timer);
-  }, [customerSearchTerm, searchCustomers]);
 
   useEffect(() => {
     quoteGenerationRef.current += 1;
@@ -1013,12 +1018,12 @@ export const BillingPage: React.FC = () => {
                     onChange={setCustomerSearchTerm}
                     placeholder={t('billing.searchCustomerPlaceholder')}
                   />
-                  {customersLoading && (
+                  {customerIndexLoading && (
                     <p className="p-2 text-sm text-gray-500">{t('common.loading')}</p>
                   )}
-                  {customersData?.data && customerSearchTerm && (
+                  {customerSearchTerm && (
                     <IonList className="max-h-52 overflow-auto">
-                      {customersData.data.map((customer) => (
+                      {matchingCustomers.map((customer) => (
                         <IonItem
                           key={customer.id}
                           button
@@ -1112,9 +1117,9 @@ export const BillingPage: React.FC = () => {
                   {searchLoading && (
                     <p className="p-3 text-center text-sm text-gray-500">{t('common.loading')}</p>
                   )}
-                  {searchTerm && variantsData?.data && (
+                  {searchTerm && (
                     <IonList className="max-h-64 overflow-auto">
-                      {variantsData.data.map((variant) => (
+                      {matchingVariants.map((variant) => (
                         <IonItem
                           key={variant.id}
                           button

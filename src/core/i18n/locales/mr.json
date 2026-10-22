@@ -357,6 +357,7 @@
       "noDebitEntries": "कोणत्याही डेबिट नोंदी नाहीत",
       "noCreditEntries": "कोणत्याही क्रेडिट नोंदी नाहीत",
       "invoiceReference": "📄 चलन #",
+      "viewBill": "बिल पहा #",
       "reference": "संदर्भ: #"
     }
   },

@@ -24,6 +24,7 @@ import { SideMenu } from '@components';
 import { PrivateRoute } from './PrivateRoute';
 import { RoutePageSuspense } from './RoutePageSuspense';
 import { scheduleRoutePreload, type RouteLoader } from './routePreload';
+import { BackgroundDataWarmup } from './BackgroundDataWarmup';
 import '@components/Workspace/workspace.css';
 
 const DashboardPage = lazy(() =>
@@ -154,13 +155,15 @@ export const MainLayout: React.FC = () => {
   );
 
   return (
-    <IonSplitPane
-      contentId="main-content"
-      when="(min-width: 992px)"
-      className="workspace-split-pane"
-    >
-      <SideMenu />
-      <div id="main-content" className="workspace-main">
+    <>
+      <BackgroundDataWarmup />
+      <IonSplitPane
+        contentId="main-content"
+        when="(min-width: 992px)"
+        className="workspace-split-pane"
+      >
+        <SideMenu />
+        <div id="main-content" className="workspace-main">
         <IonTabs className="workspace-tabs">
           <IonRouterOutlet>
             <Route exact path={ROUTES.PROFILE} render={() => renderPage(ProfilePage)} />
@@ -209,7 +212,8 @@ export const MainLayout: React.FC = () => {
             ))}
           </IonTabBar>
         </IonTabs>
-      </div>
-    </IonSplitPane>
+        </div>
+      </IonSplitPane>
+    </>
   );
 };
