@@ -22,14 +22,46 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
+const notifyApiError = (error: FetchBaseQueryError): void => {
+  if (error.status === 'FETCH_ERROR') {
+    notificationService.error(
+      'Network error. Please check your connection and server configuration.'
+    );
+  } else if (error.status === 'PARSING_ERROR') {
+    notificationService.error('Server response error. Please try again.');
+  } else if (error.status === 403) {
+    notificationService.error('Access denied. You do not have permission.');
+  } else if (error.status === 404) {
+    notificationService.error('Resource not found.');
+  } else if (error.status === 500) {
+    notificationService.error('Server error. Please try again later.');
+  } else {
+    const errorData = error.data;
+    if (
+      errorData &&
+      typeof errorData === 'object' &&
+      'message' in errorData &&
+      typeof errorData.message === 'string' &&
+      errorData.message
+    ) {
+      notificationService.error(errorData.message);
+    } else {
+      notificationService.error('An error occurred. Please try again.');
+    }
+  }
+};
+
 const baseQueryWithReauth: BaseQueryFn<ApiRequestArgs, unknown, FetchBaseQueryError> = async (
   args,
   api,
   extraOptions
 ) => {
   const suppressErrorToast = typeof args === 'object' && args.suppressErrorToast === true;
-  const requestArgs = typeof args === 'object' ? { ...args } : args;
-  if (typeof requestArgs === 'object') delete requestArgs.suppressErrorToast;
+  const hasRequestPolicy = typeof args === 'object' && 'suppressErrorToast' in args;
+  const requestArgs = hasRequestPolicy ? { ...args } : args;
+  if (hasRequestPolicy && typeof requestArgs === 'object') {
+    delete requestArgs.suppressErrorToast;
+  }
   let result = await baseQuery(requestArgs, api, extraOptions);
 
   if (result.error) {
@@ -64,36 +96,8 @@ const baseQueryWithReauth: BaseQueryFn<ApiRequestArgs, unknown, FetchBaseQueryEr
         notificationService.error('Session expired. Please login again.');
         api.dispatch(logout());
       }
-    } else if (suppressErrorToast) {
-      // Cache warming is best-effort. Screens using the data still receive the
-      // rejected query state and can render their own actionable error.
-    } else if (result.error.status === 'FETCH_ERROR') {
-      // CORS or network errors
-      notificationService.error(
-        'Network error. Please check your connection and server configuration.'
-      );
-    } else if (result.error.status === 'PARSING_ERROR') {
-      notificationService.error('Server response error. Please try again.');
-    } else if (result.error.status === 403) {
-      notificationService.error('Access denied. You do not have permission.');
-    } else if (result.error.status === 404) {
-      notificationService.error('Resource not found.');
-    } else if (result.error.status === 500) {
-      notificationService.error('Server error. Please try again later.');
-    } else {
-      // Generic error - show message from server if available
-      const errorData = result.error.data;
-      if (
-        errorData &&
-        typeof errorData === 'object' &&
-        'message' in errorData &&
-        typeof errorData.message === 'string' &&
-        errorData.message
-      ) {
-        notificationService.error(errorData.message);
-      } else {
-        notificationService.error('An error occurred. Please try again.');
-      }
+    } else if (!suppressErrorToast) {
+      notifyApiError(result.error);
     }
   }
 

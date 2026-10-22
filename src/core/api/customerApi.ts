@@ -55,7 +55,7 @@ export const customerApi = apiSlice.injectEndpoints({
       serializeQueryArgs: ({ endpointName, queryArgs }) => {
         const params = { ...(queryArgs ?? {}) };
         delete params.suppressErrorToast;
-        return `${endpointName}-${JSON.stringify(params)}`;
+        return { endpointName, ...params };
       },
       providesTags: ['Customer'],
     }),
