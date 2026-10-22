@@ -357,6 +357,7 @@
       "noDebitEntries": "No debit entries",
       "noCreditEntries": "No credit entries",
       "invoiceReference": "📄 Invoice #",
+      "viewBill": "View bill #",
       "reference": "Ref: #"
     }
   },

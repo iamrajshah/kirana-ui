@@ -87,7 +87,7 @@ export const customerApi = apiSlice.injectEndpoints({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'Customer', id }],
+      invalidatesTags: (_result, _error, { id }) => ['Customer', { type: 'Customer', id }],
     }),
     getCustomerLedger: builder.query<
       ApiResponse<CustomerLedgerResponse>,

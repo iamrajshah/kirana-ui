@@ -33,7 +33,7 @@ import './PaymentsPage.css';
 export const PaymentsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { data, isLoading, isError, refetch } = useGetPaymentsQuery({});
-  const { data: customersData } = useGetCustomersQuery({ take: 1000 });
+  const { data: customersData } = useGetCustomersQuery({ skip: 0, take: 1000 });
   const [createPayment, { isLoading: creating }] = useCreatePaymentMutation();
 
   const [showModal, setShowModal] = useState(false);

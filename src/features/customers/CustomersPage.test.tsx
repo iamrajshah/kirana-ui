@@ -7,6 +7,7 @@ const query = vi.hoisted(() => ({
   data: { data: [{ id: 'customer-1', name: 'Asha Stores', phone: '9876543210', email: '', credit_balance: 120, is_active: true, created_at: '2026-10-12' }], meta: { total: 1 } } as unknown,
   isError: false,
   refetch: vi.fn(),
+  args: vi.fn(),
 }));
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
@@ -14,7 +15,10 @@ vi.mock('react-router', () => ({ useHistory: () => ({ push: vi.fn() }) }));
 vi.mock('@core/hooks', () => ({ useAppSelector: () => ({ roles: ['OWNER'] }) }));
 vi.mock('@core/auth/authSlice', () => ({ selectCurrentUser: vi.fn() }));
 vi.mock('@core/api/customerApi', () => ({
-  useGetCustomersQuery: () => ({ ...query, isLoading: false, isFetching: false }),
+  useGetCustomersQuery: (args: unknown) => {
+    query.args(args);
+    return { ...query, isLoading: false, isFetching: false };
+  },
   useCreateCustomerMutation: () => [vi.fn(), { isLoading: false }],
   useUpdateCustomerMutation: () => [vi.fn(), { isLoading: false }],
 }));
@@ -44,6 +48,7 @@ beforeEach(() => {
   query.data = { data: [{ id: 'customer-1', name: 'Asha Stores', phone: '9876543210', email: '', credit_balance: 120, is_active: true, created_at: '2026-10-12' }], meta: { total: 1 } };
   query.isError = false;
   query.refetch.mockClear();
+  query.args.mockClear();
 });
 afterEach(cleanup);
 
@@ -51,6 +56,16 @@ it('shows a visible customer edit action without requiring a swipe', async () =>
   render(<CustomersPage />);
   fireEvent.click(screen.getByRole('button', { name: 'common.edit' }));
   expect(await screen.findByText('customers.editCustomer')).toBeTruthy();
+});
+
+it('filters customers locally without sending each search value to the API', () => {
+  render(<CustomersPage />);
+  fireEvent.change(screen.getByRole('textbox', { name: 'search' }), {
+    target: { value: 'asha' },
+  });
+  expect(screen.getByText('Asha Stores')).toBeTruthy();
+  expect(query.args.mock.calls.every(([args]) => !('search' in (args as object)))).toBe(true);
+  expect(query.args).toHaveBeenLastCalledWith({ skip: 0, take: 1000 });
 });
 
 it('distinguishes a failed fetch from an empty customer search and offers retry', () => {

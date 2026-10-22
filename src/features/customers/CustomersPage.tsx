@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import type { Customer } from '@core/types';
 import {
   IonContent,
@@ -38,6 +38,7 @@ import { hasPermission } from '@core/permissions/permissions';
 import notificationService from '@core/services/notificationService';
 import './CustomersPage.css';
 import { validatePartyForm, type PartyFieldError } from '@utils/formValidation';
+import { filterCustomers } from '@utils/localSearch';
 
 export const CustomersPage: React.FC = () => {
   const { t } = useTranslation();
@@ -50,21 +51,14 @@ export const CustomersPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [skip, setSkip] = useState(0);
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
-  const take = 50;
+  const take = 1000;
 
   const { data, isLoading, isFetching, isError, refetch } = useGetCustomersQuery({
-    search,
     skip,
     take,
   });
   const [createCustomer, { isLoading: creating }] = useCreateCustomerMutation();
   const [updateCustomer, { isLoading: updating }] = useUpdateCustomerMutation();
-
-  // Reset pagination when search changes
-  useEffect(() => {
-    setSkip(0);
-    setAllCustomers([]);
-  }, [search]);
 
   // Accumulate customers as they're fetched
   useEffect(() => {
@@ -189,6 +183,10 @@ export const CustomersPage: React.FC = () => {
   const total = data?.meta?.total || 0;
   const currentBatchSize = data?.data?.length || 0;
   const hasMore = allCustomers.length < total && currentBatchSize === take;
+  const visibleCustomers = useMemo(
+    () => filterCustomers(allCustomers, search),
+    [allCustomers, search]
+  );
 
   const loadMore = async (e: CustomEvent) => {
     if (hasMore && !isFetching) {
@@ -229,7 +227,7 @@ export const CustomersPage: React.FC = () => {
                 {t('common.retry')}
               </Button>
             </div>
-          ) : allCustomers.length === 0 ? (
+          ) : visibleCustomers.length === 0 ? (
             <EmptyState
               message={search ? t('customers.noCustomersSearch') : t('customers.noCustomers')}
               action={
@@ -244,7 +242,7 @@ export const CustomersPage: React.FC = () => {
           ) : (
             <>
               <IonList className="workspace-grid customers-grid">
-                {allCustomers.map((customer) => (
+                {visibleCustomers.map((customer) => (
                   <div key={customer.id} className="workspace-record customer-record">
                     <IonItemSliding>
                       <IonItem
