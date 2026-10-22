@@ -360,7 +360,7 @@ export const BillingPage: React.FC = () => {
     setActiveQuote(null);
     setActiveQuoteKey(null);
     setQuoteError(null);
-    if (!cartItems.length || completionInvoiceId) return;
+    if (!isGstMode || !cartItems.length || completionInvoiceId) return;
 
     let cancelled = false;
     let request: ReturnType<typeof quoteInvoice> | null = null;
@@ -384,6 +384,7 @@ export const BillingPage: React.FC = () => {
   }, [
     cartItems.length,
     completionInvoiceId,
+    isGstMode,
     quoteInvoice,
     quoteKey,
     quotePayload,
