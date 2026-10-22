@@ -74,8 +74,15 @@ export const productApi = apiSlice.injectEndpoints({
       }),
       providesTags: ['Product'],
     }),
-    getBillingCatalog: builder.query<ApiResponse<BillingSearchVariant[]>, void>({
-      query: () => '/products/catalog',
+    getBillingCatalog: builder.query<
+      ApiResponse<BillingSearchVariant[]>,
+      { suppressErrorToast?: boolean } | void
+    >({
+      query: (options) => ({
+        url: '/products/catalog',
+        suppressErrorToast: options ? options.suppressErrorToast : undefined,
+      }),
+      serializeQueryArgs: ({ endpointName }) => endpointName,
       providesTags: ['Product', 'Inventory'],
     }),
     createProduct: builder.mutation<ApiResponse<Product>, CreateProductRequest>({
@@ -110,7 +117,16 @@ export const productApi = apiSlice.injectEndpoints({
     }),
     updateVariant: builder.mutation<
       ApiResponse<ProductVariant>,
-      { id: string; data: { selling_price?: number; price?: number; gst_percent?: number | null; uqc_code?: UqcCode | null; unit_label?: string | null } }
+      {
+        id: string;
+        data: {
+          selling_price?: number;
+          price?: number;
+          gst_percent?: number | null;
+          uqc_code?: UqcCode | null;
+          unit_label?: string | null;
+        };
+      }
     >({
       query: ({ id, data }) => ({
         url: `/variants/${id}`,
