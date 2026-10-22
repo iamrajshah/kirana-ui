@@ -10,11 +10,17 @@ export const BackgroundDataWarmup = () => {
   useEffect(
     () =>
       scheduleBackgroundDataWarmup(() => {
-        dispatch(productApi.util.prefetch('getBillingCatalog', undefined, { ifOlderThan: 60 }));
+        dispatch(
+          productApi.util.prefetch(
+            'getBillingCatalog',
+            { suppressErrorToast: true },
+            { ifOlderThan: 60 }
+          )
+        );
         dispatch(
           customerApi.util.prefetch(
             'getCustomers',
-            { skip: 0, take: 1000 },
+            { skip: 0, take: 1000, suppressErrorToast: true },
             { ifOlderThan: 60 }
           )
         );

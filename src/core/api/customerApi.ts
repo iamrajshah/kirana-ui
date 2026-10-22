@@ -45,18 +45,21 @@ export const customerApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getCustomers: builder.query<
       PaginatedApiResponse<Customer>,
-      { skip?: number; take?: number; search?: string }
+      { skip?: number; take?: number; search?: string; suppressErrorToast?: boolean }
     >({
-      query: (params = {}) => ({
+      query: ({ suppressErrorToast, ...params } = {}) => ({
         url: '/customers',
         params,
+        suppressErrorToast,
       }),
+      serializeQueryArgs: ({ endpointName, queryArgs }) => {
+        const params = { ...(queryArgs ?? {}) };
+        delete params.suppressErrorToast;
+        return { endpointName, ...params };
+      },
       providesTags: ['Customer'],
     }),
-    searchCustomers: builder.query<
-      PaginatedApiResponse<Customer>,
-      string
-    >({
+    searchCustomers: builder.query<PaginatedApiResponse<Customer>, string>({
       query: (searchQuery) => ({
         url: '/customers',
         params: { search: searchQuery, take: 10 },
@@ -67,10 +70,7 @@ export const customerApi = apiSlice.injectEndpoints({
       query: (id) => `/customers/${id}`,
       providesTags: (_result, _error, id) => [{ type: 'Customer', id }],
     }),
-    createCustomer: builder.mutation<
-      ApiResponse<Customer>,
-      CreateCustomerRequest
-    >({
+    createCustomer: builder.mutation<ApiResponse<Customer>, CreateCustomerRequest>({
       query: (body) => ({
         url: '/customers',
         method: 'POST',
@@ -78,10 +78,7 @@ export const customerApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Customer'],
     }),
-    updateCustomer: builder.mutation<
-      ApiResponse<Customer>,
-      UpdateCustomerRequest
-    >({
+    updateCustomer: builder.mutation<ApiResponse<Customer>, UpdateCustomerRequest>({
       query: ({ id, ...body }) => ({
         url: `/customers/${id}`,
         method: 'PATCH',
