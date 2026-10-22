@@ -56,7 +56,9 @@ const baseQueryWithReauth: BaseQueryFn<ApiRequestArgs, unknown, FetchBaseQueryEr
   api,
   extraOptions
 ) => {
-  const suppressErrorToast = typeof args === 'object' && args.suppressErrorToast === true;
+  const requestsSilentInitialFailure =
+    typeof args === 'object' && args.suppressErrorToast === true;
+  const suppressErrorToast = requestsSilentInitialFailure && api.forced !== true;
   const hasRequestPolicy = typeof args === 'object' && 'suppressErrorToast' in args;
   const requestArgs = hasRequestPolicy ? { ...args } : args;
   if (hasRequestPolicy && typeof requestArgs === 'object') {
