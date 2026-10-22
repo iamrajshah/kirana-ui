@@ -276,6 +276,36 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('BillingPage', () => {
+  describe('quote refresh', () => {
+    it('keeps simple-receipt quantity edits local until checkout', async () => {
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+
+      fireEvent.change(screen.getAllByRole('spinbutton')[0], { target: { value: '2' } });
+      await new Promise((resolve) => window.setTimeout(resolve, 350));
+
+      expect(mocks.quoteInvoice).not.toHaveBeenCalled();
+    });
+
+    it('refreshes the authoritative quote after a GST quantity edit', async () => {
+      mocks.settingsMode = 'GST_TAX_INVOICE';
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+      await waitFor(() => expect(mocks.quoteInvoice).toHaveBeenCalled());
+      mocks.quoteInvoice.mockClear();
+
+      fireEvent.change(screen.getAllByRole('spinbutton')[0], { target: { value: '2' } });
+
+      await waitFor(() =>
+        expect(mocks.quoteInvoice).toHaveBeenCalledWith(
+          expect.objectContaining({
+            items: [expect.objectContaining({ quantity: 2 })],
+          })
+        )
+      );
+    });
+  });
+
   describe('held bill continuity', () => {
     it('opens the held-bill panel focused on a dashboard-linked bill', () => {
       mocks.search = '?held=held-9';
@@ -708,10 +738,10 @@ describe('BillingPage', () => {
       render(<BillingPage />);
       await screen.findByText('Rice');
 
-      await waitFor(() => expect(mocks.quoteInvoice).toHaveBeenCalled());
       fireEvent.click(screen.getByRole('button', { name: 'billing.payCash' }));
 
       await waitFor(() => expect(mocks.finalizeInvoice).toHaveBeenCalled());
+      expect(mocks.quoteInvoice).toHaveBeenCalledOnce();
       expect(mocks.finalizeInvoice).toHaveBeenCalledWith(
         expect.objectContaining({
           id: 'edit-1',
