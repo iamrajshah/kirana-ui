@@ -20,6 +20,7 @@ vi.mock('@ionic/react', () => ({
   IonInput: ({ label, type, value }: { label: string; type: string; value: string }) => (
     <input aria-label={label} type={type} value={value} readOnly />
   ),
+  IonIcon: ({ icon }: { icon: string }) => <img src={icon} alt="" />,
 }));
 
 afterEach(cleanup);
@@ -38,8 +39,9 @@ describe('Input password visibility', () => {
     fireEvent.click(toggle);
 
     expect(input.getAttribute('type')).toBe('text');
-    expect(visibilityIcon?.getAttribute('src')).toBe('eye');
-    expect(screen.getByRole('button', { name: 'Hide password' })).toBe(toggle);
+    const updatedToggle = screen.getByRole('button', { name: 'Hide password' });
+    expect(updatedToggle.querySelector('img')?.getAttribute('src')).toBe('eye');
+    expect(updatedToggle).toBe(toggle);
   });
 
   it('keeps each password field visibility independent', () => {

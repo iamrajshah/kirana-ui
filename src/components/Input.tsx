@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { IonInput } from '@ionic/react';
+import { IonIcon, IonInput } from '@ionic/react';
 import { eye, eyeOff } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 
@@ -75,16 +75,15 @@ export const Input: React.FC<InputProps> = ({
               background: 'transparent',
             }}
           >
-            {/* IonIcon can retain its previous shadow-DOM SVG when its icon prop changes. */}
-            <img
-              src={showPassword ? eye : eyeOff}
-              alt=""
+            <IonIcon
+              key={showPassword ? 'visible' : 'hidden'}
+              icon={showPassword ? eye : eyeOff}
               aria-hidden="true"
               style={{
                 width: '22px',
                 height: '22px',
                 display: 'block',
-                opacity: 0.55,
+                color: 'var(--ion-color-medium)',
                 pointerEvents: 'none',
               }}
             />

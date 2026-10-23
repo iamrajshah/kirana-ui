@@ -74,7 +74,14 @@
   --kirana-nav-muted: rgba(239, 255, 249, 0.7);
   --kirana-surface-raised: #ffffff;
   --kirana-surface-soft: #e4efe9;
+  --kirana-surface-accent: rgba(8, 127, 91, 0.08);
+  --kirana-surface-accent-strong: rgba(8, 127, 91, 0.14);
+  --kirana-divider: rgba(41, 68, 59, 0.14);
   --kirana-shadow-color: rgba(37, 74, 61, 0.12);
+  --kirana-shadow-strong: rgba(15, 23, 42, 0.16);
+  --kirana-hero-start: #064e3b;
+  --kirana-hero-middle: #047857;
+  --kirana-hero-end: #0f766e;
 }
 
 /* Dark mode */
@@ -114,12 +121,12 @@ body.dark {
   --ion-color-danger-shade: #da6363;
   --ion-color-danger-tint: #f97f7f;
 
-  --ion-color-medium: #64748b;
-  --ion-color-medium-rgb: 100, 116, 139;
-  --ion-color-medium-contrast: #ffffff;
-  --ion-color-medium-contrast-rgb: 255, 255, 255;
-  --ion-color-medium-shade: #58667a;
-  --ion-color-medium-tint: #748297;
+  --ion-color-medium: #a8bbb4;
+  --ion-color-medium-rgb: 168, 187, 180;
+  --ion-color-medium-contrast: #071813;
+  --ion-color-medium-contrast-rgb: 7, 24, 19;
+  --ion-color-medium-shade: #94a59e;
+  --ion-color-medium-tint: #b1c2bc;
 
   --ion-color-light: #1c312a;
   --ion-color-light-rgb: 28, 49, 42;
@@ -157,5 +164,12 @@ body.dark {
   --kirana-nav-muted: rgba(239, 255, 249, 0.68);
   --kirana-surface-raised: #13231e;
   --kirana-surface-soft: #1c312a;
+  --kirana-surface-accent: rgba(52, 211, 153, 0.1);
+  --kirana-surface-accent-strong: rgba(52, 211, 153, 0.18);
+  --kirana-divider: rgba(157, 180, 171, 0.2);
   --kirana-shadow-color: rgba(0, 0, 0, 0.3);
+  --kirana-shadow-strong: rgba(0, 0, 0, 0.48);
+  --kirana-hero-start: #082f25;
+  --kirana-hero-middle: #0b4a39;
+  --kirana-hero-end: #115e4a;
 }
