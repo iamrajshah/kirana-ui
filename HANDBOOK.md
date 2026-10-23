@@ -29,6 +29,18 @@ served by Netlify and talks to the Railway API/MySQL environment. Netlify
 automatic builds are intentionally paused to conserve the demo allowance;
 publish the UI manually only after a reviewed release batch is ready.
 
+### Platform-managed shop onboarding
+
+- `/platform/login` is a separate operator entry point, not a fourth shop role.
+- Platform Admin can create a shop and its first OWNER, monitor setup milestones,
+  and suspend or reactivate access without entering invoices, khata, or stock.
+- Platform and POS tokens use different storage keys and are not interchangeable.
+- A new owner receives a temporary password and is sent to Change Password before
+  other protected screens become available.
+- The profile permits name and phone changes but displays login email as read-only.
+- Setup progress is derived from password change, products, staff, and first sale;
+  it is not a manually maintained checklist.
+
 ### Fast billing
 
 - A walk-in cash or UPI sale does not require customer creation.
@@ -123,6 +135,8 @@ remain usable. Cashiers continue to see their normal operational dashboard.
 - CASHIER gets billing-focused navigation and cannot receive access merely because
   a menu item was accidentally rendered.
 - Route protection is authoritative; hiding a button is only presentation.
+- Platform routes stay outside the tenant application shell, and Platform Admin
+  credentials never grant access to shop screens.
 - Mobile keeps the small set of primary destinations. Less frequent setup belongs
   under More/Settings.
 - Dashboard deep links must take the operator to the relevant customer, product,

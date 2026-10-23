@@ -36,6 +36,8 @@ export const ROUTES = {
   PROFILE: '/profile',
   CHANGE_PASSWORD: '/change-password',
   ABOUT: '/about',
+  PLATFORM_LOGIN: '/platform/login',
+  PLATFORM_TENANTS: '/platform/tenants',
 } as const;
 
 // Storage Keys
@@ -44,6 +46,9 @@ export const STORAGE_KEYS = {
   REFRESH_TOKEN: 'refresh_token',
   USER: 'user',
   LANGUAGE: 'language',
+  MUST_CHANGE_PASSWORD: 'must_change_password',
+  PLATFORM_ACCESS_TOKEN: 'platform_access_token',
+  PLATFORM_ADMIN: 'platform_admin',
 } as const;
 
 // Payment Modes

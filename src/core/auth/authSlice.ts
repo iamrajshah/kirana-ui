@@ -10,6 +10,7 @@ interface AuthState {
   profileUpdateSequence: number;
   lastAppliedProfileUpdateSequence: number;
   profileUpdateRequests: Record<string, number>;
+  mustChangePassword?: boolean;
 }
 
 interface CredentialsPayload {
@@ -25,6 +26,7 @@ interface CredentialsPayload {
   };
   access_token?: string;
   refresh_token?: string;
+  isFirstLogin?: boolean;
 }
 
 type CurrentUserProfileUpdate = Pick<User, 'id'> &
@@ -49,6 +51,7 @@ const initialState: AuthState = {
   profileUpdateSequence: 0,
   lastAppliedProfileUpdateSequence: 0,
   profileUpdateRequests: {},
+  mustChangePassword: localStorage.getItem(STORAGE_KEYS.MUST_CHANGE_PASSWORD) === 'true',
 };
 
 const authSlice = createSlice({
@@ -99,10 +102,17 @@ const authSlice = createSlice({
       state.user = user;
       state.accessToken = access_token;
       state.refreshToken = refresh_token;
+      if (payload.isFirstLogin !== undefined) {
+        state.mustChangePassword = payload.isFirstLogin === true;
+      }
 
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
       localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, access_token);
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
+      localStorage.setItem(
+        STORAGE_KEYS.MUST_CHANGE_PASSWORD,
+        String(state.mustChangePassword)
+      );
     },
     beginCurrentUserProfileUpdate: (state, action: PayloadAction<ProfileUpdateRequest>) => {
       if (!state.user || action.payload.userId !== state.user.id) return;
@@ -134,6 +144,10 @@ const authSlice = createSlice({
     finishCurrentUserProfileUpdate: (state, action: PayloadAction<ProfileUpdateRequest>) => {
       delete state.profileUpdateRequests[action.payload.requestId];
     },
+    completeFirstLogin: (state) => {
+      state.mustChangePassword = false;
+      localStorage.setItem(STORAGE_KEYS.MUST_CHANGE_PASSWORD, 'false');
+    },
     logout: (state) => {
       state.user = null;
       state.accessToken = null;
@@ -142,10 +156,12 @@ const authSlice = createSlice({
       state.profileUpdateSequence = 0;
       state.lastAppliedProfileUpdateSequence = 0;
       state.profileUpdateRequests = {};
+      state.mustChangePassword = false;
 
       localStorage.removeItem(STORAGE_KEYS.USER);
       localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.MUST_CHANGE_PASSWORD);
       localStorage.removeItem('kirana_billing_completion_invoice');
       localStorage.removeItem('kirana_billing_pending_checkout');
     },
@@ -157,6 +173,7 @@ export const {
   beginCurrentUserProfileUpdate,
   updateCurrentUser,
   finishCurrentUserProfileUpdate,
+  completeFirstLogin,
   logout,
 } = authSlice.actions;
 export default authSlice.reducer;
@@ -164,4 +181,6 @@ export default authSlice.reducer;
 // Selectors
 export const selectCurrentUser = (state: { auth: AuthState }) => state.auth.user;
 export const selectIsAuthenticated = (state: { auth: AuthState }) => !!state.auth.accessToken;
+export const selectMustChangePassword = (state: { auth: AuthState }) =>
+  state.auth.mustChangePassword === true;
 export const selectUserRole = (state: { auth: AuthState }) => state.auth.user?.roles?.[0];

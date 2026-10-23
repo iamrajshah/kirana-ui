@@ -28,6 +28,7 @@ export interface AuthResponse {
       accessToken: string;
       refreshToken: string;
     };
+    isFirstLogin?: boolean;
   };
   message: string;
 }

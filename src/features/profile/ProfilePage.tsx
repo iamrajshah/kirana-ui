@@ -39,7 +39,6 @@ export const ProfilePage: React.FC = () => {
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
@@ -64,14 +63,13 @@ export const ProfilePage: React.FC = () => {
     if (user) {
       setName(user.name || '');
       setPhone(user.phone || '');
-      setEmail(user.email || '');
     }
   }, [user]);
 
   const handleUpdateProfile = async () => {
     if (updateInFlight.current) return;
 
-    if (!name.trim() && !phone.trim() && !email.trim()) {
+    if (!name.trim() && !phone.trim()) {
       setErrorMessage(t('foundation.profile.oneFieldRequired'));
       setShowError(true);
       return;
@@ -79,10 +77,9 @@ export const ProfilePage: React.FC = () => {
 
     try {
       updateInFlight.current = true;
-      const updateData: { name?: string; phone?: string; email?: string } = {};
+      const updateData: { name?: string; phone?: string } = {};
       if (name.trim() !== user?.name) updateData.name = name.trim();
       if (phone.trim() !== user?.phone) updateData.phone = phone.trim();
-      if (email.trim() !== user?.email) updateData.email = email.trim();
 
       if (Object.keys(updateData).length === 0) {
         setErrorMessage(t('foundation.profile.noChanges'));
@@ -138,11 +135,15 @@ export const ProfilePage: React.FC = () => {
             />
             <Input
               label={t('profile.email')}
-              value={email}
-              onChange={setEmail}
+              value={user?.email || ''}
+              onChange={() => undefined}
               type="email"
               placeholder={t('profile.emailPlaceholder')}
+              disabled
             />
+            <p className="text-sm" style={{ color: 'var(--ion-color-medium)' }}>
+              {t('profile.emailReadOnly')}
+            </p>
 
             <IonButton
               onClick={handleUpdateProfile}
@@ -166,6 +167,7 @@ export const ProfilePage: React.FC = () => {
             <IonIcon icon={languageIcon} slot="start" />
             <IonLabel>{t('profile.language')}</IonLabel>
             <IonSelect
+              aria-label={t('profile.selectLanguage')}
               value={i18n.language}
               placeholder={t('profile.selectLanguage')}
               onIonChange={(e) => handleLanguageChange(e.detail.value)}

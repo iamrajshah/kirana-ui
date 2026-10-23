@@ -8,6 +8,9 @@ Maintainer: [Rajesh Shah (@iamrajshah)](https://github.com/iamrajshah)
 ## What is implemented
 
 - Responsive owner, manager, and cashier navigation.
+- A separate `/platform/login` operator portal for creating shop tenants,
+  issuing the first OWNER account, following setup progress, and controlling
+  shop access without opening tenant business data.
 - Fast walk-in billing: product search is available immediately and a customer is
   optional for full Cash, UPI, Card, or Bank payment.
 - Optional customer attachment for credit history, partial payment, and reminders.
@@ -29,6 +32,8 @@ Maintainer: [Rajesh Shah (@iamrajshah)](https://github.com/iamrajshah)
 - Durable Simple Receipt or GST Tax Invoice snapshots with a sale completion
   sheet, historical receipt workspace, print, PDF, and device-share recovery.
 - English, Hindi, Marathi, and Gujarati translation resources.
+- Immutable login email in Profile; owners can still update their name and
+  phone. Newly provisioned owners must replace their temporary password first.
 - Ionic/Capacitor foundations for web and Android/iOS packaging.
 
 Offline billing queue, optional cashier shift cash, smart reorder, and WhatsApp
@@ -105,6 +110,11 @@ VITE_API_BASE_URL=http://localhost:3000/api/v1
 ```
 
 Never commit `.env`, tokens, or credentials.
+
+Platform Admin uses separate browser credentials from the POS session. Open
+`/platform/login`; the corresponding admin must first be bootstrapped by a
+trusted server operator. Creating a shop displays its temporary owner password
+once, so share it through a secure channel.
 
 ## Verification
 

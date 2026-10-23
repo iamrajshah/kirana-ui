@@ -1,0 +1,118 @@
+.platform-login-shell {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(16, 185, 129, 0.18), transparent 32%),
+    linear-gradient(145deg, var(--ion-background-color), rgba(5, 150, 105, 0.08));
+}
+
+.platform-login-card {
+  width: min(100%, 430px);
+  padding: 32px;
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  border-radius: 24px;
+  background: var(--ion-card-background);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.14);
+}
+
+.platform-brand-mark {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  color: white;
+  background: linear-gradient(135deg, #059669, #0f766e);
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.platform-eyebrow {
+  margin: 16px 0 4px;
+  color: var(--ion-color-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.platform-page {
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: clamp(20px, 4vw, 48px);
+}
+
+.platform-hero,
+.platform-card-heading,
+.platform-progress-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+}
+
+.platform-hero {
+  padding: clamp(24px, 4vw, 44px);
+  border-radius: 28px;
+  color: white;
+  background: linear-gradient(125deg, #064e3b, #047857 56%, #0f766e);
+  box-shadow: 0 20px 55px rgba(6, 78, 59, 0.2);
+}
+
+.platform-hero .platform-eyebrow,
+.platform-hero p { color: rgba(255, 255, 255, 0.78); }
+.platform-hero h1 { margin: 4px 0 8px; font-size: clamp(1.8rem, 4vw, 3rem); }
+
+.platform-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  margin: 28px 0;
+}
+
+.platform-search .mb-4 { margin-bottom: 0; }
+
+.platform-tenant-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 20px;
+}
+
+.platform-tenant-card { margin: 0; border-radius: 20px; }
+.platform-card-heading h2 { margin: 0 0 4px; color: var(--ion-text-color); }
+.platform-card-heading p { margin: 0; }
+
+.platform-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 20px 0;
+}
+
+.platform-metrics span {
+  padding: 10px;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 0.78rem;
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.platform-progress-label { margin-bottom: 8px; }
+.platform-step-list { display: grid; gap: 8px; margin: 16px 0 20px; }
+.platform-step-list span { display: flex; align-items: center; gap: 8px; opacity: 0.58; }
+.platform-step-list span.complete { color: var(--ion-color-success); opacity: 1; }
+.platform-form-note { color: var(--ion-color-medium); font-size: 0.9rem; }
+
+.platform-credentials dl { display: grid; grid-template-columns: auto 1fr; gap: 12px 20px; }
+.platform-credentials dt { color: var(--ion-color-medium); }
+.platform-credentials dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+
+@media (max-width: 640px) {
+  .platform-hero { align-items: stretch; flex-direction: column; }
+  .platform-search { grid-template-columns: 1fr; }
+  .platform-metrics { grid-template-columns: 1fr; }
+  .platform-login-card { padding: 24px; border-radius: 20px; }
+}
