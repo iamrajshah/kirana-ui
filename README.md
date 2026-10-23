@@ -9,8 +9,9 @@ Maintainer: [Rajesh Shah (@iamrajshah)](https://github.com/iamrajshah)
 
 - Responsive owner, manager, and cashier navigation.
 - A separate `/platform/login` operator portal for creating shop tenants,
-  issuing the first OWNER account, following setup progress, and controlling
-  shop access without opening tenant business data.
+  issuing the first OWNER account, inspecting staff/setup details, resetting an
+  owner's temporary password, following setup progress, and controlling shop
+  access without opening tenant business data.
 - Fast walk-in billing: product search is available immediately and a customer is
   optional for full Cash, UPI, Card, or Bank payment.
 - Optional customer attachment for credit history, partial payment, and reminders.
@@ -33,7 +34,8 @@ Maintainer: [Rajesh Shah (@iamrajshah)](https://github.com/iamrajshah)
   sheet, historical receipt workspace, print, PDF, and device-share recovery.
 - English, Hindi, Marathi, and Gujarati translation resources.
 - Immutable login email in Profile; owners can still update their name and
-  phone. Newly provisioned owners must replace their temporary password first.
+  phone. Newly provisioned or reset owners must replace their temporary password
+  first, and the login page explains this handoff.
 - Ionic/Capacitor foundations for web and Android/iOS packaging.
 
 Offline billing queue, optional cashier shift cash, smart reorder, and WhatsApp

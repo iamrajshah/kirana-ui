@@ -33,10 +33,14 @@ publish the UI manually only after a reviewed release batch is ready.
 
 - `/platform/login` is a separate operator entry point, not a fourth shop role.
 - Platform Admin can create a shop and its first OWNER, monitor setup milestones,
-  and suspend or reactivate access without entering invoices, khata, or stock.
+  inspect labelled shop/staff details, reset an owner's temporary password, and
+  suspend or reactivate access without entering invoices, khata, or stock.
 - Platform and POS tokens use different storage keys and are not interchangeable.
 - A new owner receives a temporary password and is sent to Change Password before
   other protected screens become available.
+- A reset displays the temporary credential once to Platform Admin. The original
+  password is never visible or recoverable, and the owner must replace the reset
+  password after signing in. Share it outside ordinary logs and source control.
 - The profile permits name and phone changes but displays login email as read-only.
 - Setup progress is derived from password change, products, staff, and first sale;
   it is not a manually maintained checklist.
