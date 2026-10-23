@@ -36,6 +36,7 @@ import { formatCurrency, debounce } from '@utils/helpers';
 import notificationService from '@core/services/notificationService';
 import { ROUTES } from '@core/constants';
 import { reconcilePurchaseFirmId, resolvePurchaseFirmId } from './purchaseFirmSelection';
+import './CreatePurchasePage.css';
 
 interface CartItem {
   variant_id: string;
@@ -450,19 +451,10 @@ const CreatePurchasePage: React.FC = () => {
               </div>
 
               {pending > 0 && (
-                <div
-                  style={{
-                    padding: '12px',
-                    background: 'var(--ion-color-danger-tint)',
-                    borderRadius: '8px',
-                    marginTop: '16px',
-                  }}
-                >
-                  <IonText color="danger">
-                    <p style={{ margin: 0 }}>
-                      {t('purchases.pendingAmount')} <strong>{formatCurrency(pending)}</strong>
-                    </p>
-                  </IonText>
+                <div className="purchase-pending-notice" role="status">
+                  <p>
+                    {t('purchases.pendingAmount')} <strong>{formatCurrency(pending)}</strong>
+                  </p>
                 </div>
               )}
 
