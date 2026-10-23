@@ -26,7 +26,7 @@ export const protectedPageRoutes: readonly ProtectedPageRouteAccess[] = [
   { id: 'supplier-ledger', path: '/suppliers/:id/ledger', permission: 'suppliers' },
   { id: 'invoice-detail', path: '/invoices/:id', permission: 'invoices' },
   { id: 'purchase-create', path: ROUTES.PURCHASE_CREATE, permission: 'purchases' },
-  { id: 'purchase-detail', path: '/purchases/:id', permission: 'purchases' },
+  { id: 'purchase-detail', path: '/purchases/:id(\\d+)', permission: 'purchases' },
 ];
 
 export const protectedMainLayoutRoutes: readonly ProtectedRouteAccess[] = [

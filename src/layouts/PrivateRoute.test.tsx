@@ -84,7 +84,7 @@ describe('protected route configuration', () => {
       ['/suppliers/:id/ledger', 'suppliers'],
       ['/invoices/:id', 'invoices'],
       [ROUTES.PURCHASE_CREATE, 'purchases'],
-      ['/purchases/:id', 'purchases'],
+      ['/purchases/:id(\\d+)', 'purchases'],
       [ROUTES.DASHBOARD, 'dashboard'],
       [ROUTES.BILLING, 'billing'],
       [ROUTES.CUSTOMERS, 'customers'],
