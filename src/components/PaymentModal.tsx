@@ -23,6 +23,7 @@ interface PaymentModalProps {
   onClose: () => void;
   onPayment: (amount: number, mode: PaymentMode, reference?: string) => void | Promise<void>;
   invoiceAmount: number;
+  previousBalance?: number;
   paidAmount?: number;
   isLoading?: boolean;
   allowPartial?: boolean;
@@ -33,6 +34,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   onClose,
   onPayment,
   invoiceAmount,
+  previousBalance = 0,
   paidAmount = 0,
   isLoading = false,
   allowPartial = true,
@@ -44,6 +46,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [paymentType, setPaymentType] = useState<'full' | 'partial'>('full');
 
   const balanceAmount = invoiceAmount - paidAmount;
+  const previousOutstanding = Math.max(0, previousBalance);
+  const customerAdvance = Math.max(0, -previousBalance);
+  const totalCustomerDue = previousOutstanding + balanceAmount;
   const effectivePaymentType = allowPartial ? paymentType : 'full';
 
   const handleSubmit = async () => {
@@ -113,6 +118,33 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               <span>{t('payment.balanceAmount')}</span>
               <span style={{ color: '#3880ff' }}>{formatCurrency(balanceAmount)}</span>
             </div>
+            {previousBalance !== 0 && (
+              <>
+                <div className="flex justify-between text-sm">
+                  <span style={{ color: '#666' }}>
+                    {previousBalance < 0
+                      ? t('billing.customerAdvance')
+                      : t('billing.previousKhata')}
+                  </span>
+                  <span className="font-semibold">
+                    {formatCurrency(previousBalance < 0 ? customerAdvance : previousOutstanding)}
+                  </span>
+                </div>
+                {previousBalance > 0 ? (
+                  <div className="flex justify-between text-sm font-bold">
+                    <span>{t('billing.totalCustomerDue')}</span>
+                    <span>{formatCurrency(totalCustomerDue)}</span>
+                  </div>
+                ) : (
+                  <p className="text-xs" style={{ color: '#666' }}>
+                    {t('billing.advanceNotApplied')}
+                  </p>
+                )}
+                <p className="text-xs" style={{ color: '#666' }}>
+                  {t('billing.currentBillPaymentOnly')}
+                </p>
+              </>
+            )}
           </div>
         </div>
 
