@@ -1,5 +1,5 @@
 import React, { type PropsWithChildren } from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { PaymentsPage } from './PaymentsPage';
 
@@ -13,7 +13,9 @@ vi.mock('@core/api/paymentApi', () => ({
   useGetPaymentsQuery: () => ({ ...query, isLoading: false }),
   useCreatePaymentMutation: () => [createPayment, { isLoading: false }],
 }));
-vi.mock('@core/api/customerApi', () => ({ useGetCustomersQuery: () => ({ data: { data: [] } }) }));
+const customersQuery = vi.hoisted(() => ({ data: { data: [] as Array<{ id: string; name: string; phone: string }> } }));
+
+vi.mock('@core/api/customerApi', () => ({ useGetCustomersQuery: () => customersQuery }));
 vi.mock('@core/api/invoiceApi', () => ({
   useLazyGetPendingInvoicesByCustomerQuery: () => [vi.fn(), { data: undefined, isLoading: false }],
 }));
@@ -37,7 +39,29 @@ vi.mock('@components', () => ({
   SearchBar: ({ onChange }: { onChange: (value: string) => void }) => (
     <input aria-label="payment-search" onChange={(event) => onChange(event.target.value)} />
   ),
-  Select: ({ label }: { label: string }) => <select aria-label={label} />,
+  Select: ({
+    label,
+    value,
+    onChange,
+    options = [],
+  }: {
+    label: string;
+    value?: string;
+    onChange?: (value: string) => void;
+    options?: Array<{ value: string; label: string }>;
+  }) => (
+    <select
+      aria-label={label}
+      value={value}
+      onChange={(event) => onChange?.(event.target.value)}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  ),
   Button: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
     <button onClick={onClick}>{children}</button>
   ),
@@ -60,7 +84,11 @@ vi.mock('@ionic/react', () => {
     IonIcon: Container,
     IonFab: Container,
     IonFabButton: Container,
-    IonModal: Container,
+    IonModal: ({ children, isOpen }: PropsWithChildren<{ isOpen?: boolean }>) => (
+      <div data-testid="payment-modal" data-open={String(Boolean(isOpen))}>
+        {children}
+      </div>
+    ),
     IonButtons: Container,
     IonToast: ({ message, isOpen }: { message: string; isOpen: boolean }) =>
       isOpen ? <div>{message}</div> : null,
@@ -80,6 +108,7 @@ beforeEach(() => {
   query.isError = false;
   query.refetch.mockClear();
   createPayment.mockClear();
+  customersQuery.data = { data: [] };
 });
 afterEach(cleanup);
 
@@ -154,4 +183,27 @@ it('keeps manual collection tied to a selected customer', () => {
   fireEvent.click(screen.getByRole('button', { name: 'common.save' }));
   expect(screen.getByText('payments.selectCustomerError')).toBeTruthy();
   expect(createPayment).not.toHaveBeenCalled();
+});
+
+it('keeps the Ionic modal mounted while its successful dismissal completes', async () => {
+  query.data = { data: [] };
+  customersQuery.data = {
+    data: [{ id: 'customer-1', name: 'Amit Patel', phone: '9000000201' }],
+  };
+  createPayment.mockReturnValue({ unwrap: () => Promise.resolve({ data: { id: 'payment-1' } }) });
+
+  render(<PaymentsPage />);
+
+  expect(screen.getByTestId('payment-modal').getAttribute('data-open')).toBe('false');
+  fireEvent.click(screen.getAllByRole('button', { name: 'payments.recordPayment' })[0]);
+  fireEvent.change(screen.getByLabelText('billing.selectCustomer'), {
+    target: { value: 'customer-1' },
+  });
+  fireEvent.change(screen.getByLabelText('common.amount'), { target: { value: '100' } });
+  fireEvent.click(screen.getByRole('button', { name: 'common.save' }));
+
+  await waitFor(() => {
+    expect(screen.getByTestId('payment-modal').getAttribute('data-open')).toBe('false');
+  });
+  expect(screen.getByText('payments.paymentRecorded')).toBeTruthy();
 });

@@ -99,7 +99,6 @@ export const PaymentsPage: React.FC = () => {
 
       setShowSuccess(true);
       setShowModal(false);
-      resetForm();
     } catch (err) {
       const error = err as { status?: number; data?: { message?: string }; message?: string };
       const errMsg = error?.data?.message || error?.message || t('payments.saveError');
@@ -278,14 +277,13 @@ export const PaymentsPage: React.FC = () => {
         </IonFab>
 
         {/* Record Payment Modal */}
-        {showModal && (
-          <IonModal
-            isOpen={true}
-            onDidDismiss={() => {
-              setShowModal(false);
-              resetForm();
-            }}
-          >
+        <IonModal
+          isOpen={showModal}
+          onDidDismiss={() => {
+            setShowModal(false);
+            resetForm();
+          }}
+        >
             <IonPage>
               <IonHeader>
                 <IonToolbar>
@@ -294,7 +292,6 @@ export const PaymentsPage: React.FC = () => {
                     <IonButton
                       onClick={() => {
                         setShowModal(false);
-                        resetForm();
                       }}
                     >
                       <IonIcon icon={close} />
@@ -372,8 +369,7 @@ export const PaymentsPage: React.FC = () => {
                 </Button>
               </IonContent>
             </IonPage>
-          </IonModal>
-        )}
+        </IonModal>
 
         <IonToast
           isOpen={showSuccess}
