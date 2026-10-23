@@ -3,40 +3,64 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { apiSlice } from './apiSlice';
+import { dashboardApi } from './dashboardApi';
 import { firmApi } from './firmApi';
 import { purchaseApi } from './purchaseApi';
 import { supplierApi } from './supplierApi';
 
-const createStore = () => configureStore({
-  reducer: { [apiSlice.reducerPath]: apiSlice.reducer },
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware({
-    immutableCheck: false,
-    serializableCheck: false,
-  }).concat(apiSlice.middleware),
-});
+const createStore = () =>
+  configureStore({
+    reducer: { [apiSlice.reducerPath]: apiSlice.reducer },
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({
+        immutableCheck: false,
+        serializableCheck: false,
+      }).concat(apiSlice.middleware),
+  });
 
 describe('multi-firm API contracts', () => {
   const requests: Array<{ url: string; method: string; body?: unknown }> = [];
+  let failNextPurchase = false;
 
   beforeEach(() => {
     requests.length = 0;
+    failNextPurchase = false;
     const NativeRequest = Request;
-    vi.stubGlobal('Request', class extends NativeRequest {
-      constructor(input: RequestInfo | URL, init?: RequestInit) {
-        super(input, init ? { ...init, signal: undefined } : init);
+    vi.stubGlobal(
+      'Request',
+      class extends NativeRequest {
+        constructor(input: RequestInfo | URL, init?: RequestInit) {
+          super(input, init ? { ...init, signal: undefined } : init);
+        }
       }
-    });
-    vi.stubGlobal('fetch', vi.fn(async (request: Request) => {
-      requests.push({
-        url: request.url,
-        method: request.method,
-        body: ['POST', 'PATCH'].includes(request.method) ? await request.clone().json() : undefined,
-      });
-      const data = request.url.includes('/default-sales')
-        ? { id: '3', code: 'KJS', legal_name: 'Kantilal Jadhavji Shop', display_name: 'Kantilal Jadhavji Shop', is_active: true, is_default_sales: true }
-        : { firms: [], entries: [], balance: 0 };
-      return Response.json({ success: true, data });
-    }));
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (request: Request) => {
+        requests.push({
+          url: request.url,
+          method: request.method,
+          body: ['POST', 'PATCH'].includes(request.method)
+            ? await request.clone().json()
+            : undefined,
+        });
+        if (failNextPurchase && request.method === 'POST' && request.url.includes('/purchases')) {
+          failNextPurchase = false;
+          return Response.json({ success: false, message: 'Purchase rejected' }, { status: 500 });
+        }
+        const data = request.url.includes('/default-sales')
+          ? {
+              id: '3',
+              code: 'KJS',
+              legal_name: 'Kantilal Jadhavji Shop',
+              display_name: 'Kantilal Jadhavji Shop',
+              is_active: true,
+              is_default_sales: true,
+            }
+          : { firms: [], entries: [], balance: 0 };
+        return Response.json({ success: true, data });
+      })
+    );
   });
 
   afterEach(() => {
@@ -66,13 +90,17 @@ describe('multi-firm API contracts', () => {
 
   it('sends the owner-selected firm with a purchase', async () => {
     const store = createStore();
-    await store.dispatch(purchaseApi.endpoints.createPurchase.initiate({
-      supplier_id: 8,
-      firm_id: 2,
-      invoice_number: 'GEM-10',
-      invoice_date: '2026-10-23',
-      items: [{ variant_id: 4, quantity: 2, unit_price: 100 }],
-    })).unwrap();
+    await store
+      .dispatch(
+        purchaseApi.endpoints.createPurchase.initiate({
+          supplier_id: 8,
+          firm_id: 2,
+          invoice_number: 'GEM-10',
+          invoice_date: '2026-10-23',
+          items: [{ variant_id: 4, quantity: 2, unit_price: 100 }],
+        })
+      )
+      .unwrap();
 
     expect(requests[0].method).toBe('POST');
     expect((requests[0].body as { firm_id: number }).firm_id).toBe(2);
@@ -80,12 +108,72 @@ describe('multi-firm API contracts', () => {
     store.dispatch(apiSlice.util.resetApiState());
   });
 
+  it('refreshes an active dashboard after a purchase changes payable and stock totals', async () => {
+    const store = createStore();
+    const dashboardQuery = store.dispatch(dashboardApi.endpoints.getDashboardStats.initiate());
+    await dashboardQuery.unwrap();
+
+    await store
+      .dispatch(
+        purchaseApi.endpoints.createPurchase.initiate({
+          supplier_id: 8,
+          firm_id: 2,
+          invoice_number: 'GEM-11',
+          invoice_date: '2026-10-23',
+          items: [{ variant_id: 4, quantity: 2, unit_price: 100 }],
+        })
+      )
+      .unwrap();
+
+    await vi.waitFor(() => {
+      expect(requests.filter(({ url }) => url.includes('/dashboard/stats'))).toHaveLength(2);
+    });
+    dashboardQuery.unsubscribe();
+    store.dispatch(apiSlice.util.resetApiState());
+  });
+
+  it('keeps the dashboard cache when a purchase is rejected', async () => {
+    const store = createStore();
+    const dashboardQuery = store.dispatch(dashboardApi.endpoints.getDashboardStats.initiate());
+    await dashboardQuery.unwrap();
+    failNextPurchase = true;
+
+    await expect(
+      store
+        .dispatch(
+          purchaseApi.endpoints.createPurchase.initiate({
+            supplier_id: 8,
+            firm_id: 2,
+            invoice_number: 'GEM-FAILED',
+            invoice_date: '2026-10-23',
+            items: [{ variant_id: 4, quantity: 2, unit_price: 100 }],
+          })
+        )
+        .unwrap()
+    ).rejects.toBeTruthy();
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(requests.filter(({ url }) => url.includes('/dashboard/stats'))).toHaveLength(1);
+    dashboardQuery.unsubscribe();
+    store.dispatch(apiSlice.util.resetApiState());
+  });
+
   it('scopes supplier ledger and payment requests to the chosen firm', async () => {
     const store = createStore();
-    await store.dispatch(supplierApi.endpoints.getSupplierLedger.initiate({ id: '8', firm_id: '2' })).unwrap();
-    await store.dispatch(supplierApi.endpoints.makeSupplierPayment.initiate({
-      id: '8', firm_id: 2, amount: 600, payment_mode: 'BANK', description: 'Gemini settlement',
-    })).unwrap();
+    await store
+      .dispatch(supplierApi.endpoints.getSupplierLedger.initiate({ id: '8', firm_id: '2' }))
+      .unwrap();
+    await store
+      .dispatch(
+        supplierApi.endpoints.makeSupplierPayment.initiate({
+          id: '8',
+          firm_id: 2,
+          amount: 600,
+          payment_mode: 'BANK',
+          description: 'Gemini settlement',
+        })
+      )
+      .unwrap();
 
     expect(requests[0].url).toContain('/suppliers/8/ledger?page=1&limit=50&firm_id=2');
     expect(requests[1].method).toBe('POST');

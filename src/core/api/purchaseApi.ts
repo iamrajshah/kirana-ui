@@ -44,7 +44,13 @@ export const purchaseApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getPurchases: builder.query<
       PaginatedApiResponse<Purchase>,
-      { page?: number; limit?: number; supplier_id?: string; firm_id?: string; status?: 'PAID' | 'UNPAID' | 'PARTIAL' } | void
+      {
+        page?: number;
+        limit?: number;
+        supplier_id?: string;
+        firm_id?: string;
+        status?: 'PAID' | 'UNPAID' | 'PARTIAL';
+      } | void
     >({
       query: (params) => ({
         url: '/purchases',
@@ -73,13 +79,16 @@ export const purchaseApi = apiSlice.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['Purchase', 'Supplier', 'Inventory', 'Report'],
+      invalidatesTags: (_result, error) => [
+        'Purchase',
+        'Supplier',
+        'Inventory',
+        'Report',
+        ...(error ? [] : (['Dashboard'] as const)),
+      ],
     }),
   }),
 });
 
-export const {
-  useGetPurchasesQuery,
-  useGetPurchaseByIdQuery,
-  useCreatePurchaseMutation,
-} = purchaseApi;
+export const { useGetPurchasesQuery, useGetPurchaseByIdQuery, useCreatePurchaseMutation } =
+  purchaseApi;

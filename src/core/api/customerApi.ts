@@ -76,7 +76,7 @@ export const customerApi = apiSlice.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['Customer'],
+      invalidatesTags: (_result, error) => ['Customer', ...(error ? [] : (['Dashboard'] as const))],
     }),
     updateCustomer: builder.mutation<ApiResponse<Customer>, UpdateCustomerRequest>({
       query: ({ id, ...body }) => ({
@@ -84,7 +84,11 @@ export const customerApi = apiSlice.injectEndpoints({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: (_result, _error, { id }) => ['Customer', { type: 'Customer', id }],
+      invalidatesTags: (_result, error, { id }) => [
+        'Customer',
+        ...(error ? [] : (['Dashboard'] as const)),
+        { type: 'Customer', id },
+      ],
     }),
     getCustomerLedger: builder.query<
       ApiResponse<CustomerLedgerResponse>,
