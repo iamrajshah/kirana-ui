@@ -16,6 +16,7 @@ export const defaultReceiptLabels: ReceiptLabels = {
   discount: 'Discount',
   gst: 'GST',
   total: 'Total',
+  savings: 'You saved on MRP',
   paid: 'Paid',
   remaining: 'Remaining',
   paymentMode: 'Payment',

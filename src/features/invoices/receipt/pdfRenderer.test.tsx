@@ -17,11 +17,11 @@ const receiptFor = (name: string, footer: string): ReceiptViewModel => ({
   placeOfSupply: null,
   items: [{
     key: '1', name: footer, sku: null, hsnCode: null, uqcCode: null, unitLabel: null,
-    quantity: 1, unitPrice: '10.00', grossAmount: '10.00', discountAmount: '0.00',
+    quantity: 1, unitPrice: '10.00', mrpUnitPrice: null, mrpSavings: null, grossAmount: '10.00', discountAmount: '0.00',
     taxableAmount: '10.00', gstRate: null, cgstAmount: null, sgstAmount: null,
     igstAmount: null, lineTotal: '10.00',
   }],
-  totals: { subtotal: '10.00', itemDiscount: '0.00', billDiscount: '0.00', discount: '0.00', gst: '0.00', total: '10.00' },
+  totals: { subtotal: '10.00', itemDiscount: '0.00', billDiscount: '0.00', discount: '0.00', gst: '0.00', total: '10.00', mrpSavings: null },
   payment: { status: 'PAID', statusLabel: 'Paid', paid: '10.00', remaining: '0.00', modes: ['CASH'], lastAllocationAt: null, asOf: '2026-10-15T10:31:00.000Z', allocations: [] },
   footer,
 });

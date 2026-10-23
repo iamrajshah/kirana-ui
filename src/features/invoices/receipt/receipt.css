@@ -76,6 +76,14 @@
 .sale-receipt__summary dl > div { display: flex; justify-content: space-between; gap: 20px; padding: 5px 0; }
 .sale-receipt__summary dd { margin: 0; font-weight: 700; }
 .sale-receipt__grand-total { border-top: 2px solid currentColor; margin-top: 4px; font-size: 19px; }
+.sale-receipt__summary dl > .sale-receipt__savings {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #ecfdf5;
+  color: #047857;
+  font-weight: 800;
+}
 
 .sale-receipt__payment { display: flex; flex-direction: column; gap: 4px; padding: 14px; border-radius: 12px; background: #fff7ed; color: #9a3412; }
 .sale-receipt__payment--paid { background: #ecfdf5; color: #047857; }

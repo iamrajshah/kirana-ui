@@ -767,6 +767,30 @@ describe('BillingPage', () => {
       expect(mocks.createPayment).not.toHaveBeenCalled();
     });
 
+    it('does not replace the active billing route while presenting payment completion', async () => {
+      mocks.search = '';
+      localStorage.setItem(
+        'kirana_billing_pending_checkout',
+        JSON.stringify({
+          version: 1,
+          invoiceId: '42',
+          payable: 100,
+          customerId: null,
+          paymentIdempotencyKey: 'payment-key',
+          userId: '7',
+          tenantId: '1',
+        })
+      );
+      mocks.createPayment.mockResolvedValueOnce({ data: { id: 'payment-1' } });
+
+      render(<BillingPage />);
+      fireEvent.click(screen.getByRole('button', { name: 'retry payment' }));
+
+      expect(await screen.findByText('billing.completion.title')).toBeTruthy();
+      expect(mocks.historyReplace).not.toHaveBeenCalled();
+      expect(screen.queryByLabelText('payment-recovery')).toBeNull();
+    });
+
     it('uses an authoritative quote before finalization and payment', async () => {
       mocks.createPayment.mockResolvedValueOnce({ data: { id: 'payment-1' } });
       render(<BillingPage />);

@@ -747,7 +747,9 @@ export const BillingPage: React.FC = () => {
     setCompletionInvoiceId(invoiceId);
     setShowPaymentModal(false);
     resetForm();
-    history.replace(ROUTES.BILLING);
+    if (editInvoiceId || focusedHeldBillId || location.search) {
+      history.replace(ROUTES.BILLING);
+    }
   };
 
   const completePayment = (invoiceId: string) => {
@@ -983,8 +985,12 @@ export const BillingPage: React.FC = () => {
         }
       />
       <IonContent>
-        {invoiceLoading && <Loading isOpen message={t('billing.loadingInvoice')} />}
-        {isBusy && <Loading isOpen message={t('billing.processingBill')} />}
+        <Loading
+          isOpen={!completionInvoiceId && (invoiceLoading || isBusy)}
+          message={
+            invoiceLoading ? t('billing.loadingInvoice') : t('billing.processingBill')
+          }
+        />
 
         {completionInvoiceId ? (
           <SaleCompletionSheet

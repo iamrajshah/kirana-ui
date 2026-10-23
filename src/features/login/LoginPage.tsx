@@ -6,21 +6,22 @@ import { useLoginMutation } from '@core/api/authApi';
 import { useAppDispatch } from '@hooks/useAppDispatch';
 import { setCredentials } from '@core/auth/authSlice';
 import { Button, Input } from '@components';
-import { APP_NAME } from '@core/constants';
+import { APP_NAME, ROUTES } from '@core/constants';
 import { isValidEmail, isValidPhone } from '@utils/helpers';
 import { apiErrorMessage } from '@core/services/notificationService';
 import { useTheme } from '../../contexts/useTheme';
+import { useHistory } from 'react-router-dom';
 
 export const LoginPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const dispatch = useAppDispatch();
-  const [login] = useLoginMutation();
+  const history = useHistory();
+  const [login, { isLoading }] = useLoginMutation();
   const { theme, toggleTheme } = useTheme();
 
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const languages = [
     { code: 'en', name: 'English' },
@@ -36,7 +37,6 @@ export const LoginPage: React.FC = () => {
 
   const handleLogin = async () => {
     setError('');
-    setSuccess('');
 
     if (!emailOrPhone || !password) {
       setError(t('auth.fillAllFields'));
@@ -53,12 +53,8 @@ export const LoginPage: React.FC = () => {
       const response = await login(credentials).unwrap();
       
       if (response.success && response.data) {
-        setSuccess(t('auth.loginSuccess'));
         dispatch(setCredentials(response.data));
-        
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 1000);
+        history.replace(ROUTES.DASHBOARD);
       } else {
         setError(response.message || t('auth.loginError'));
       }
@@ -161,6 +157,7 @@ export const LoginPage: React.FC = () => {
                   type="submit"
                   fullWidth
                   size="large"
+                  loading={isLoading}
                 >
                   {t('auth.loginButton')}
                 </Button>
@@ -188,15 +185,6 @@ export const LoginPage: React.FC = () => {
           message={error}
           duration={4000}
           color="danger"
-          position="top"
-        />
-        
-        <IonToast
-          isOpen={!!success}
-          onDidDismiss={() => setSuccess('')}
-          message={success}
-          duration={2000}
-          color="success"
           position="top"
         />
       </IonContent>

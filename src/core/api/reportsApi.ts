@@ -167,18 +167,22 @@ export const reportsApi = apiSlice.injectEndpoints({
         url: '/reports/sales',
         params: params || {},
       }),
+      providesTags: ['Report'],
     }),
     getOutstandingCustomers: builder.query<ApiResponse<OutstandingCustomersData>, void>({
       query: () => '/reports/outstanding-customers',
+      providesTags: ['Report'],
     }),
     getInventorySummary: builder.query<ApiResponse<InventorySummaryData>, void>({
       query: () => '/reports/inventory-summary',
+      providesTags: ['Report'],
     }),
     getDailyCashbook: builder.query<ApiResponse<DailyCashbook>, { date?: string } | void>({
       query: (params) => ({
         url: '/reports/daily-cashbook',
         params: params || {},
       }),
+      providesTags: ['Report'],
     }),
     getProfitLoss: builder.query<
       ApiResponse<ProfitLoss>,
@@ -188,12 +192,14 @@ export const reportsApi = apiSlice.injectEndpoints({
         url: '/reports/profit-loss',
         params: params || {},
       }),
+      providesTags: ['Report'],
     }),
     getTopSelling: builder.query<ApiResponse<TopSellingData>, { limit?: number } | void>({
       query: (params) => ({
         url: '/reports/top-selling',
         params: params || {},
       }),
+      providesTags: ['Report'],
     }),
     // Supplier & Purchase Reports
     getSupplierOutstanding: builder.query<
@@ -204,6 +210,7 @@ export const reportsApi = apiSlice.injectEndpoints({
         url: '/reports/supplier-outstanding',
         params: params || {},
       }),
+      providesTags: ['Report'],
     }),
     getPurchaseRegister: builder.query<
       PurchaseRegisterResponse,
@@ -213,12 +220,14 @@ export const reportsApi = apiSlice.injectEndpoints({
         url: '/reports/purchase-register',
         params: params || {},
       }),
+      providesTags: ['Report'],
     }),
     getTopPayables: builder.query<ApiResponse<TopPayable[]>, { limit?: number } | void>({
       query: (params) => ({
         url: '/reports/top-payables',
         params: params || {},
       }),
+      providesTags: ['Report'],
     }),
     getSupplierLedgerSummary: builder.query<
       PaginatedApiResponse<SupplierLedgerSummary>,
@@ -228,6 +237,7 @@ export const reportsApi = apiSlice.injectEndpoints({
         url: '/reports/supplier-ledger-summary',
         params: params || {},
       }),
+      providesTags: ['Report'],
     }),
     getPurchaseTrend: builder.query<
       ApiResponse<PurchaseTrendMonth[]>,
@@ -237,6 +247,7 @@ export const reportsApi = apiSlice.injectEndpoints({
         url: '/reports/purchase-trend',
         params: params || {},
       }),
+      providesTags: ['Report'],
     }),
     getSupplierPaymentHistory: builder.query<
       ApiResponse<SupplierPaymentHistory[]>,

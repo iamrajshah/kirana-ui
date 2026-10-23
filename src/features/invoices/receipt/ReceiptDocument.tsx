@@ -86,6 +86,12 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
           {Number(receipt.totals.discount) > 0 && <div><dt>{labels.discount}</dt><dd>−{money(receipt.totals.discount)}</dd></div>}
           {isGst && <div><dt>{labels.gst}</dt><dd>{money(receipt.totals.gst)}</dd></div>}
           <div className="sale-receipt__grand-total"><dt>{labels.total}</dt><dd>{money(receipt.totals.total)}</dd></div>
+          {receipt.totals.mrpSavings && Number(receipt.totals.mrpSavings) > 0 && (
+            <div className="sale-receipt__savings">
+              <dt>{labels.savings}</dt>
+              <dd>{money(receipt.totals.mrpSavings)}</dd>
+            </div>
+          )}
         </dl>
         <div className={`sale-receipt__payment sale-receipt__payment--${receipt.payment.status.toLowerCase()}`}>
           <strong>{receipt.payment.statusLabel}</strong>

@@ -29,11 +29,11 @@ const receipt = (mode: ReceiptViewModel['mode'] = 'SIMPLE_RECEIPT'): ReceiptView
   placeOfSupply: mode === 'GST_TAX_INVOICE' ? { name: 'Maharashtra', stateCode: '27' } : null,
   items: [{
     key: '1', name: 'Rice', sku: 'RICE', hsnCode: mode === 'GST_TAX_INVOICE' ? '1006' : null,
-    uqcCode: 'KGS', unitLabel: 'kg', quantity: 2, unitPrice: '60.00', grossAmount: '120.00',
+    uqcCode: 'KGS', unitLabel: 'kg', quantity: 2, unitPrice: '60.00', mrpUnitPrice: null, mrpSavings: null, grossAmount: '120.00',
     discountAmount: '0.00', taxableAmount: '120.00', gstRate: mode === 'GST_TAX_INVOICE' ? '5.00' : null,
     cgstAmount: '3.00', sgstAmount: '3.00', igstAmount: '0.00', lineTotal: '126.00',
   }],
-  totals: { subtotal: '120.00', itemDiscount: '0.00', billDiscount: '0.00', discount: '0.00', gst: '6.00', total: '126.00' },
+  totals: { subtotal: '120.00', itemDiscount: '0.00', billDiscount: '0.00', discount: '0.00', gst: '6.00', total: '126.00', mrpSavings: null },
   payment: { status: 'PARTIALLY_PAID', statusLabel: 'Partially paid', paid: '50.00', remaining: '76.00', modes: ['CASH'], lastAllocationAt: null, asOf: '2026-10-15T11:00:00.000Z', allocations: [] },
   footer: 'Thank you',
 });
@@ -68,5 +68,18 @@ describe('ReceiptDocument', () => {
 
     expect(container.querySelector('article')?.className).toContain('sale-receipt--simple');
     expect(container.textContent).toContain('2 KGS');
+  });
+
+  it('highlights a positive MRP saving without showing an empty claim', () => {
+    const saved = receipt();
+    saved.totals.mrpSavings = '50.00';
+    const { rerender } = render(<ReceiptDocument receipt={saved} />);
+
+    expect(screen.getByText('You saved on MRP')).toBeTruthy();
+    expect(screen.getByText('₹50.00')).toBeTruthy();
+
+    saved.totals.mrpSavings = null;
+    rerender(<ReceiptDocument receipt={saved} />);
+    expect(screen.queryByText('You saved on MRP')).toBeNull();
   });
 });

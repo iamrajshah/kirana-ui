@@ -69,7 +69,7 @@ export const purchaseApi = apiSlice.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['Purchase', 'Supplier', 'Inventory'],
+      invalidatesTags: ['Purchase', 'Supplier', 'Inventory', 'Report'],
     }),
   }),
 });
