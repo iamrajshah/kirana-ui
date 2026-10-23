@@ -26,6 +26,30 @@ export interface PlatformTenant {
   };
 }
 
+export interface PlatformTenantDetails {
+  id: string;
+  name: string;
+  status: 'ACTIVE' | 'SUSPENDED';
+  createdAt: string;
+  contact: {
+    ownerName: string | null;
+    phone: string;
+    email: string | null;
+    gstNumber: string | null;
+  };
+  counts: { users: number; products: number; invoices: number };
+  staff: Array<{
+    id: string;
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    active: boolean;
+    mustChangePassword: boolean;
+    createdAt: string | null;
+    roles: string[];
+  }>;
+}
+
 interface ApiEnvelope<T> {
   success: boolean;
   message?: string;
@@ -70,6 +94,10 @@ export const platformApi = {
     return platformRequest<PlatformTenant[]>(`/platform/tenants${query}`);
   },
 
+  getTenantDetails(id: string, signal?: AbortSignal) {
+    return platformRequest<PlatformTenantDetails>(`/platform/tenants/${id}`, { signal });
+  },
+
   createTenant(input: {
     shopName: string;
     ownerName: string;
@@ -95,5 +123,21 @@ export const platformApi = {
       `/platform/tenants/${id}/status`,
       { method: 'PATCH', body: JSON.stringify({ status }) }
     );
+  },
+
+  resetOwnerPassword(id: string, temporaryPassword: string) {
+    return platformRequest<{
+      tenant: { id: string; name: string };
+      owner: {
+        id: string;
+        name: string | null;
+        email: string | null;
+        phone: string | null;
+        mustChangePassword: boolean;
+      };
+    }>(`/platform/tenants/${id}/owner-password`, {
+      method: 'PATCH',
+      body: JSON.stringify({ temporaryPassword }),
+    });
   },
 };

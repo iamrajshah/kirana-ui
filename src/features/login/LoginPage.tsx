@@ -54,7 +54,9 @@ export const LoginPage: React.FC = () => {
       
       if (response.success && response.data) {
         dispatch(setCredentials(response.data));
-        history.replace(ROUTES.DASHBOARD);
+        history.replace(
+          response.data.isFirstLogin ? ROUTES.CHANGE_PASSWORD : ROUTES.DASHBOARD
+        );
       } else {
         setError(response.message || t('auth.loginError'));
       }
@@ -151,6 +153,10 @@ export const LoginPage: React.FC = () => {
                 placeholder={t('common.placeholders.password')}
                 required
               />
+
+              <p className="mt-1 text-sm" style={{ color: 'var(--ion-color-medium)' }}>
+                {t('auth.temporaryPasswordHelp')}
+              </p>
 
               <div className="mt-4">
                 <Button

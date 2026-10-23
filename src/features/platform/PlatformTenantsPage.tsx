@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   IonBadge,
   IonAlert,
@@ -16,11 +16,11 @@ import {
   IonToast,
   IonToolbar,
 } from '@ionic/react';
-import { add, checkmarkCircle, close, logOut, pauseCircle, search } from 'ionicons/icons';
+import { add, calendar, checkmarkCircle, close, eye, key, logOut, pauseCircle, search } from 'ionicons/icons';
 import { useHistory } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@components';
-import { platformApi, PlatformTenant } from '@core/api/platformApi';
+import { platformApi, PlatformTenant, PlatformTenantDetails } from '@core/api/platformApi';
 import { ROUTES, STORAGE_KEYS } from '@core/constants';
 import './platform.css';
 
@@ -48,8 +48,22 @@ export const PlatformTenantsPage: React.FC = () => {
     phone: string;
     password: string;
   } | null>(null);
+  const [detailTarget, setDetailTarget] = useState<PlatformTenant | null>(null);
+  const [tenantDetails, setTenantDetails] = useState<PlatformTenantDetails | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [temporaryPassword, setTemporaryPassword] = useState('');
+  const [resettingPassword, setResettingPassword] = useState(false);
+  const [passwordResetCredentials, setPasswordResetCredentials] = useState<{
+    shop: string;
+    email: string | null;
+    phone: string | null;
+    password: string;
+  } | null>(null);
   const [statusTarget, setStatusTarget] = useState<PlatformTenant | null>(null);
   const [error, setError] = useState('');
+  const detailRequest = useRef<AbortController | null>(null);
 
   const loadTenants = useCallback(async (term = '') => {
     setLoading(true);
@@ -124,6 +138,67 @@ export const PlatformTenantsPage: React.FC = () => {
     }
   };
 
+  const loadTenantDetails = useCallback(async (tenantId: string) => {
+    detailRequest.current?.abort();
+    const controller = new AbortController();
+    detailRequest.current = controller;
+    setDetailLoading(true);
+    setDetailError('');
+    try {
+      setTenantDetails(await platformApi.getTenantDetails(tenantId, controller.signal));
+    } catch (requestError) {
+      if (requestError instanceof DOMException && requestError.name === 'AbortError') return;
+      setDetailError(
+        requestError instanceof Error ? requestError.message : t('platform.detailsFailed')
+      );
+    } finally {
+      if (detailRequest.current === controller) setDetailLoading(false);
+    }
+  }, [t]);
+
+  useEffect(() => () => detailRequest.current?.abort(), []);
+
+  const openTenantDetails = (tenant: PlatformTenant) => {
+    setDetailTarget(tenant);
+    setTenantDetails(null);
+    setDetailError('');
+    setShowPasswordReset(false);
+    setTemporaryPassword('');
+    void loadTenantDetails(tenant.id);
+  };
+
+  const closeTenantDetails = () => {
+    detailRequest.current?.abort();
+    detailRequest.current = null;
+    setDetailTarget(null);
+    setTenantDetails(null);
+    setDetailError('');
+    setShowPasswordReset(false);
+    setTemporaryPassword('');
+  };
+
+  const resetOwnerPassword = async () => {
+    if (!detailTarget || resettingPassword || temporaryPassword.length < 8) return;
+    setResettingPassword(true);
+    setError('');
+    try {
+      const result = await platformApi.resetOwnerPassword(detailTarget.id, temporaryPassword);
+      setPasswordResetCredentials({
+        shop: result.tenant.name,
+        email: result.owner.email,
+        phone: result.owner.phone,
+        password: temporaryPassword,
+      });
+      setShowPasswordReset(false);
+      setTemporaryPassword('');
+      await Promise.all([loadTenantDetails(detailTarget.id), loadTenants(searchTerm)]);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : t('platform.passwordResetFailed'));
+    } finally {
+      setResettingPassword(false);
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem(STORAGE_KEYS.PLATFORM_ACCESS_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.PLATFORM_ADMIN);
@@ -193,8 +268,11 @@ export const PlatformTenantsPage: React.FC = () => {
                         {tenant.status}
                       </IonBadge>
                     </div>
-                    <p>{tenant.owner?.phone}</p>
-                    <p>{tenant.owner?.email}</p>
+                    <dl className="platform-card-contact">
+                      <div><dt>{t('platform.ownerPhone')}</dt><dd>{tenant.owner?.phone || t('common.notAvailable')}</dd></div>
+                      <div><dt>{t('platform.ownerEmail')}</dt><dd>{tenant.owner?.email || t('common.notAvailable')}</dd></div>
+                      <div><dt>{t('platform.createdOn')}</dt><dd>{new Date(tenant.createdAt).toLocaleDateString()}</dd></div>
+                    </dl>
                     <div className="platform-metrics">
                       <span>{t('platform.staffCount', { count: tenant.counts.users })}</span>
                       <span>{t('platform.productCount', { count: tenant.counts.products })}</span>
@@ -215,6 +293,13 @@ export const PlatformTenantsPage: React.FC = () => {
                     </div>
                     <IonButton
                       expand="block"
+                      onClick={() => openTenantDetails(tenant)}
+                    >
+                      <IonIcon icon={eye} slot="start" />
+                      {t('platform.viewDetails')}
+                    </IonButton>
+                    <IonButton
+                      expand="block"
                       fill="outline"
                       color={tenant.status === 'ACTIVE' ? 'danger' : 'success'}
                       onClick={() => setStatusTarget(tenant)}
@@ -229,6 +314,124 @@ export const PlatformTenantsPage: React.FC = () => {
             </section>
           )}
         </main>
+
+        <IonModal isOpen={!!detailTarget} onDidDismiss={closeTenantDetails}>
+          <IonHeader>
+            <IonToolbar>
+              <IonTitle>{detailTarget?.name}</IonTitle>
+              <IonButtons slot="end">
+                <IonButton onClick={closeTenantDetails} aria-label={t('common.close')}>
+                  <IonIcon icon={close} />
+                </IonButton>
+              </IonButtons>
+            </IonToolbar>
+          </IonHeader>
+          <IonContent className="ion-padding">
+            {detailLoading ? (
+              <div className="workspace-state" role="status">{t('common.loading')}</div>
+            ) : detailError || !tenantDetails ? (
+              <div className="workspace-state" role="alert">
+                <p>{detailError || t('platform.detailsFailed')}</p>
+                {detailTarget && (
+                  <IonButton onClick={() => void loadTenantDetails(detailTarget.id)}>
+                    {t('common.retry')}
+                  </IonButton>
+                )}
+              </div>
+            ) : (
+              <div className="platform-detail-shell">
+                <section className="platform-detail-summary">
+                  <div className="platform-card-heading">
+                    <div>
+                      <p className="platform-eyebrow">{t('platform.shopDetails')}</p>
+                      <h2>{tenantDetails.name}</h2>
+                    </div>
+                    <IonBadge color={tenantDetails.status === 'ACTIVE' ? 'success' : 'medium'}>
+                      {tenantDetails.status}
+                    </IonBadge>
+                  </div>
+                  <dl className="platform-detail-grid">
+                    <div><dt>{t('platform.shopId')}</dt><dd>{tenantDetails.id}</dd></div>
+                    <div><dt>{t('platform.ownerName')}</dt><dd>{tenantDetails.contact.ownerName || t('common.notAvailable')}</dd></div>
+                    <div><dt>{t('platform.shopPhone')}</dt><dd>{tenantDetails.contact.phone}</dd></div>
+                    <div><dt>{t('platform.shopEmail')}</dt><dd>{tenantDetails.contact.email || t('common.notAvailable')}</dd></div>
+                    <div><dt>{t('platform.gstNumberLabel')}</dt><dd>{tenantDetails.contact.gstNumber || t('common.notAvailable')}</dd></div>
+                    <div><dt>{t('platform.createdOn')}</dt><dd><IonIcon icon={calendar} /> {new Date(tenantDetails.createdAt).toLocaleString()}</dd></div>
+                  </dl>
+                  <div className="platform-metrics">
+                    <span>{t('platform.staffCount', { count: tenantDetails.counts.users })}</span>
+                    <span>{t('platform.productCount', { count: tenantDetails.counts.products })}</span>
+                    <span>{t('platform.billCount', { count: tenantDetails.counts.invoices })}</span>
+                  </div>
+                </section>
+
+                <section>
+                  <div className="platform-detail-heading">
+                    <div>
+                      <p className="platform-eyebrow">{t('platform.staffAccounts')}</p>
+                      <h2>{t('platform.peopleWithAccess')}</h2>
+                    </div>
+                    <IonButton fill="outline" onClick={() => setShowPasswordReset(true)}>
+                      <IonIcon icon={key} slot="start" />
+                      {t('platform.resetOwnerPassword')}
+                    </IonButton>
+                  </div>
+                  <div className="platform-staff-list">
+                    {tenantDetails.staff.map((staff) => (
+                      <article key={staff.id} className="platform-staff-row">
+                        <div>
+                          <strong>{staff.name || t('common.notAvailable')}</strong>
+                          <span>{staff.roles.join(', ') || t('common.notAvailable')}</span>
+                        </div>
+                        <div>
+                          <span>{staff.email || t('common.notAvailable')}</span>
+                          <span>{staff.phone || t('common.notAvailable')}</span>
+                        </div>
+                        <div className="platform-staff-status">
+                          <IonBadge color={staff.active ? 'success' : 'medium'}>
+                            {staff.active ? t('platform.active') : t('platform.inactive')}
+                          </IonBadge>
+                          {staff.roles.includes('OWNER') && (
+                            <span>{staff.mustChangePassword
+                              ? t('platform.passwordChangePending')
+                              : t('platform.passwordChanged')}</span>
+                          )}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+
+                {showPasswordReset && (
+                  <section className="platform-reset-panel">
+                    <h2>{t('platform.resetOwnerPassword')}</h2>
+                    <p>{t('platform.resetPasswordWarning')}</p>
+                    <Input
+                      label={t('platform.newTemporaryPassword')}
+                      value={temporaryPassword}
+                      onChange={setTemporaryPassword}
+                      type="password"
+                      required
+                    />
+                    <p className="platform-form-note">{t('platform.passwordRequirements')}</p>
+                    <div className="platform-reset-actions">
+                      <IonButton fill="clear" onClick={() => setShowPasswordReset(false)}>
+                        {t('common.cancel')}
+                      </IonButton>
+                      <IonButton
+                        color="warning"
+                        disabled={resettingPassword || temporaryPassword.length < 8}
+                        onClick={() => void resetOwnerPassword()}
+                      >
+                        {resettingPassword ? t('platform.resettingPassword') : t('platform.confirmPasswordReset')}
+                      </IonButton>
+                    </div>
+                  </section>
+                )}
+              </div>
+            )}
+          </IonContent>
+        </IonModal>
 
         <IonModal isOpen={showCreate} onDidDismiss={() => setShowCreate(false)}>
           <IonHeader>
@@ -267,6 +470,24 @@ export const PlatformTenantsPage: React.FC = () => {
                 <dt>{t('platform.temporaryPassword')}</dt><dd>{createdCredentials?.password}</dd>
               </dl>
               <IonButton expand="block" onClick={() => setCreatedCredentials(null)}>{t('common.close')}</IonButton>
+            </div>
+          </IonContent>
+        </IonModal>
+
+        <IonModal isOpen={!!passwordResetCredentials} onDidDismiss={() => setPasswordResetCredentials(null)}>
+          <IonHeader>
+            <IonToolbar><IonTitle>{t('platform.passwordResetSuccess')}</IonTitle></IonToolbar>
+          </IonHeader>
+          <IonContent className="ion-padding">
+            <div className="platform-credentials">
+              <h2>{passwordResetCredentials?.shop}</h2>
+              <p>{t('platform.shareResetCredentials')}</p>
+              <dl>
+                <dt>{t('platform.loginEmail')}</dt><dd>{passwordResetCredentials?.email || t('common.notAvailable')}</dd>
+                <dt>{t('platform.phone')}</dt><dd>{passwordResetCredentials?.phone || t('common.notAvailable')}</dd>
+                <dt>{t('platform.temporaryPassword')}</dt><dd>{passwordResetCredentials?.password}</dd>
+              </dl>
+              <IonButton expand="block" onClick={() => setPasswordResetCredentials(null)}>{t('common.close')}</IonButton>
             </div>
           </IonContent>
         </IonModal>

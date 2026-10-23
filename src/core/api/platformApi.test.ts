@@ -47,4 +47,27 @@ describe('platformApi', () => {
     expect(localStorage.getItem(STORAGE_KEYS.PLATFORM_ADMIN)).toBeNull();
     expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBe('pos-token');
   });
+
+  it('loads tenant details and resets an owner password through platform endpoints', async () => {
+    localStorage.setItem(STORAGE_KEYS.PLATFORM_ACCESS_TOKEN, 'platform-token');
+    vi.mocked(fetch).mockImplementation(async () =>
+      new Response(JSON.stringify({ success: true, data: {} }), {
+        headers: { 'content-type': 'application/json' },
+      })
+    );
+
+    await platformApi.getTenantDetails('11');
+    await platformApi.resetOwnerPassword('11', 'Welcome1!');
+
+    expect(fetch).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('/platform/tenants/11'),
+      expect.objectContaining({ headers: expect.objectContaining({ authorization: 'Bearer platform-token' }) })
+    );
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('/platform/tenants/11/owner-password'),
+      expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ temporaryPassword: 'Welcome1!' }) })
+    );
+  });
 });
