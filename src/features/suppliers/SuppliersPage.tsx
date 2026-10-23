@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Supplier } from '../../core/api/supplierApi';
+import type { Supplier, SupplierPaymentMode } from '../../core/api/supplierApi';
 import {
   IonPage,
   IonContent,
@@ -45,6 +45,15 @@ import { hasPermission } from '../../core/permissions/permissions';
 import notificationService from '@core/services/notificationService';
 import '../products/stock-workspace.css';
 import { validatePartyForm, type PartyFieldError } from '@utils/formValidation';
+import { useGetFirmsQuery } from '@core/api/firmApi';
+import {
+  balanceForFirm,
+  buildSupplierPaymentPayload,
+  hasPayableFirmBalance,
+  payableFirmBalances,
+  paymentFitsFirmBalance,
+  preferredPayableFirmId,
+} from './supplierFirmPayment';
 
 const SuppliersPage: React.FC = () => {
   const { t } = useTranslation();
@@ -68,17 +77,21 @@ const SuppliersPage: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
+  const [defaultFirmId, setDefaultFirmId] = useState('');
   const [formErrors, setFormErrors] = useState<Partial<Record<PartyFieldError, string>>>({});
 
   // Payment form state
   const [paymentAmount, setPaymentAmount] = useState('');
-  const [paymentMode, setPaymentMode] = useState('CASH');
+  const [paymentMode, setPaymentMode] = useState<SupplierPaymentMode>('CASH');
   const [paymentNotes, setPaymentNotes] = useState('');
+  const [paymentFirmId, setPaymentFirmId] = useState('');
 
   const { data, isLoading, isFetching, isError, refetch } = useGetSuppliersQuery({ page, limit });
   const [createSupplier, { isLoading: creating }] = useCreateSupplierMutation();
   const [updateSupplier, { isLoading: updating }] = useUpdateSupplierMutation();
   const [makePayment, { isLoading: processingPayment }] = useMakeSupplierPaymentMutation();
+  const { data: firmsData } = useGetFirmsQuery({ active: true });
+  const firms = firmsData?.data.firms || [];
 
   // Accumulate suppliers as they're fetched
   useEffect(() => {
@@ -135,6 +148,7 @@ const SuppliersPage: React.FC = () => {
           phone: phone.trim(),
           email: email.trim() || undefined,
           address: address.trim() || undefined,
+          default_purchase_firm_id: defaultFirmId ? parseInt(defaultFirmId) : null,
         }).unwrap();
         notificationService.success(t('suppliers.supplierUpdated'));
       } else {
@@ -143,6 +157,7 @@ const SuppliersPage: React.FC = () => {
           phone: phone.trim(),
           email: email.trim() || undefined,
           address: address.trim() || undefined,
+          default_purchase_firm_id: defaultFirmId ? parseInt(defaultFirmId) : null,
         }).unwrap();
         notificationService.success(t('suppliers.supplierCreated'));
       }
@@ -161,6 +176,7 @@ const SuppliersPage: React.FC = () => {
     setPhone(supplier.phone || '');
     setEmail(supplier.email || '');
     setAddress(supplier.address || '');
+    setDefaultFirmId(supplier.default_purchase_firm_id || '');
     setShowModal(true);
   };
 
@@ -170,6 +186,7 @@ const SuppliersPage: React.FC = () => {
     setPhone('');
     setEmail('');
     setAddress('');
+    setDefaultFirmId('');
     setFormErrors({});
   };
 
@@ -178,10 +195,12 @@ const SuppliersPage: React.FC = () => {
     setPaymentMode('CASH');
     setPaymentNotes('');
     setPaymentSupplier(null);
+    setPaymentFirmId('');
   };
 
   const handleMakePayment = (supplier: Supplier) => {
     setPaymentSupplier(supplier);
+    setPaymentFirmId(preferredPayableFirmId(supplier));
     setShowPaymentModal(true);
   };
 
@@ -190,14 +209,25 @@ const SuppliersPage: React.FC = () => {
       notificationService.warning(t('suppliers.enterValidAmount'));
       return;
     }
+    if (!paymentFirmId) {
+      notificationService.warning(t('suppliers.selectPaymentFirm'));
+      return;
+    }
+    if (!paymentFitsFirmBalance(paymentSupplier.balances_by_firm, paymentFirmId, parseFloat(paymentAmount))) {
+      notificationService.warning(t('suppliers.paymentExceedsFirmBalance'));
+      return;
+    }
 
     try {
-      await makePayment({
-        id: paymentSupplier.id,
-        amount: parseFloat(paymentAmount),
-        payment_mode: paymentMode as 'CASH' | 'UPI' | 'CARD' | 'BANK',
-        description: paymentNotes.trim() || undefined,
-      }).unwrap();
+      await makePayment(
+        buildSupplierPaymentPayload(
+          paymentSupplier.id,
+          paymentFirmId,
+          parseFloat(paymentAmount),
+          paymentMode,
+          paymentNotes
+        )
+      ).unwrap();
 
       notificationService.success(t('suppliers.paymentRecordedSuccess'));
       resetPaymentForm();
@@ -211,7 +241,11 @@ const SuppliersPage: React.FC = () => {
   const filteredSuppliers = allSuppliers.filter(
     (supplier) =>
       supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      supplier.phone.includes(searchTerm)
+      supplier.phone?.includes(searchTerm)
+  );
+  const selectedPaymentFirmBalance = balanceForFirm(
+    paymentSupplier?.balances_by_firm,
+    paymentFirmId
   );
 
   return (
@@ -268,6 +302,9 @@ const SuppliersPage: React.FC = () => {
                           <h2>{supplier.name}</h2>
                           <p>{supplier.phone}</p>
                           {supplier.email && <p>{supplier.email}</p>}
+                          {supplier.default_purchase_firm && (
+                            <p>{t('suppliers.defaultPurchaseFirm')}: {supplier.default_purchase_firm.display_name}</p>
+                          )}
                           {supplier.balance !== 0 && (
                             <p className={supplier.balance > 0 ? 'stock-warning' : undefined}>
                               {supplier.balance > 0
@@ -275,11 +312,20 @@ const SuppliersPage: React.FC = () => {
                                 : `${t('suppliers.advance')}: ${formatCurrency(Math.abs(supplier.balance))}`}
                             </p>
                           )}
+                          {(supplier.balances_by_firm || []).map((item) => (
+                            <p key={item.firm_id}>
+                              {item.firm.display_name}
+                              {!item.firm.is_active ? ` (${t('firms.inactive')})` : ''}: {' '}
+                              {item.balance > 0
+                                ? `${t('suppliers.amountOwed')} ${formatCurrency(item.balance)}`
+                                : `${t('suppliers.advance')} ${formatCurrency(Math.abs(item.balance))}`}
+                            </p>
+                          ))}
                         </IonLabel>
                       </IonItem>
                       {hasUpdatePermission && (
                         <IonItemOptions side="end">
-                          {supplier.balance > 0 && (
+                          {hasPayableFirmBalance(supplier.balances_by_firm) && (
                             <IonItemOption
                               color="success"
                               onClick={() => handleMakePayment(supplier)}
@@ -307,7 +353,7 @@ const SuppliersPage: React.FC = () => {
                       </IonButton>
                       {hasUpdatePermission && (
                         <div className="workspace-actions">
-                          {supplier.balance > 0 && (
+                          {hasPayableFirmBalance(supplier.balances_by_firm) && (
                             <IonButton fill="outline" onClick={() => handleMakePayment(supplier)}>
                               {t('suppliers.makePayment')}
                             </IonButton>
@@ -394,6 +440,23 @@ const SuppliersPage: React.FC = () => {
                 onChange={setAddress}
                 maxLength={500}
               />
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
+                  {t('suppliers.defaultPurchaseFirm')}
+                </label>
+                <IonSelect
+                  aria-label={t('suppliers.defaultPurchaseFirm')}
+                  value={defaultFirmId}
+                  placeholder={t('suppliers.noDefaultFirm')}
+                  onIonChange={(event) => setDefaultFirmId(event.detail.value)}
+                  interface="popover"
+                >
+                  <IonSelectOption value="">{t('suppliers.noDefaultFirm')}</IonSelectOption>
+                  {firms.map((firm) => (
+                    <IonSelectOption key={firm.id} value={firm.id}>{firm.display_name}</IonSelectOption>
+                  ))}
+                </IonSelect>
+              </div>
               <Button
                 onClick={handleCreateSupplier}
                 loading={creating || updating}
@@ -452,8 +515,27 @@ const SuppliersPage: React.FC = () => {
                   }}
                 >
                   <span>{t('suppliers.outstandingBalance')}</span>:{' '}
-                  {formatCurrency(paymentSupplier.balance)}
+                  {formatCurrency(selectedPaymentFirmBalance)}
                 </p>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
+                  {t('suppliers.paymentFirm')}
+                </label>
+                <IonSelect
+                  aria-label={t('suppliers.paymentFirm')}
+                  value={paymentFirmId}
+                  placeholder={t('suppliers.selectPaymentFirm')}
+                  onIonChange={(event) => { setPaymentFirmId(event.detail.value); setPaymentAmount(''); }}
+                  interface="popover"
+                >
+                  {payableFirmBalances(paymentSupplier.balances_by_firm).map((item) => (
+                    <IonSelectOption key={item.firm_id} value={item.firm_id}>
+                      {item.firm.display_name} · {formatCurrency(item.balance)}
+                    </IonSelectOption>
+                  ))}
+                </IonSelect>
               </div>
 
               <div
@@ -474,9 +556,9 @@ const SuppliersPage: React.FC = () => {
                     required
                   />
                 </div>
-                {paymentSupplier.balance > 0 && (
+                {paymentFirmId && selectedPaymentFirmBalance > 0 && (
                   <IonButton
-                    onClick={() => setPaymentAmount(paymentSupplier.balance.toString())}
+                    onClick={() => setPaymentAmount(selectedPaymentFirmBalance.toString())}
                     style={{ marginBottom: '0' }}
                   >
                     {t('suppliers.ledger.payFull')}
@@ -490,7 +572,7 @@ const SuppliersPage: React.FC = () => {
                 </label>
                 <IonSelect
                   value={paymentMode}
-                  onIonChange={(e) => setPaymentMode(e.detail.value)}
+                  onIonChange={(e) => setPaymentMode(e.detail.value as SupplierPaymentMode)}
                   interface="popover"
                   style={{
                     border: '1px solid var(--ion-color-medium)',
@@ -517,7 +599,7 @@ const SuppliersPage: React.FC = () => {
               <Button
                 onClick={handleSubmitPayment}
                 loading={processingPayment}
-                disabled={!paymentAmount || parseFloat(paymentAmount) <= 0}
+                disabled={!paymentFirmId || !paymentAmount || parseFloat(paymentAmount) <= 0}
                 fullWidth
                 size="large"
               >

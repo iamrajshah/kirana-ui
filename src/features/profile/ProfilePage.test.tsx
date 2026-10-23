@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfilePage } from './ProfilePage';
+
+const profileState = vi.hoisted(() => ({ roles: ['OWNER'] as string[] }));
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -17,7 +19,7 @@ vi.mock('@core/hooks', () => ({
     name: 'Rajesh',
     phone: '9876543210',
     email: 'rajesh@example.com',
-    roles: ['OWNER'],
+    roles: profileState.roles,
     tenant: { id: '1', name: 'Shah Kirana', status: 'ACTIVE' },
   }),
 }));
@@ -25,10 +27,13 @@ vi.mock('@core/hooks', () => ({
 vi.mock('@core/api/userApi', () => ({ useUpdateProfileMutation: () => [vi.fn(), { isLoading: false }] }));
 vi.mock('../../contexts/useTheme', () => ({ useTheme: () => ({ theme: 'light', toggleTheme: vi.fn() }) }));
 vi.mock('./DocumentSettingsCard', () => ({ DocumentSettingsCard: () => null }));
+vi.mock('./FirmSettingsCard', () => ({ FirmSettingsCard: () => <div>firm-settings</div> }));
 
 describe('ProfilePage', () => {
+  afterEach(cleanup);
   beforeEach(() => {
     vi.clearAllMocks();
+    profileState.roles = ['OWNER'];
   });
 
   it('shows login email as read-only profile information', () => {
@@ -37,5 +42,16 @@ describe('ProfilePage', () => {
     expect(screen.getByText('profile.emailReadOnly')).toBeTruthy();
     const emailInput = document.querySelector('ion-input[type="email"]');
     expect(emailInput?.hasAttribute('disabled')).toBe(true);
+  });
+
+  it('keeps firm management owner-only', () => {
+    profileState.roles = ['MANAGER'];
+    render(<ProfilePage />);
+    expect(screen.queryByText('firm-settings')).toBeNull();
+  });
+
+  it('shows firm management to an owner', () => {
+    render(<ProfilePage />);
+    expect(screen.getByText('firm-settings')).toBeTruthy();
   });
 });

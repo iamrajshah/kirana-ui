@@ -18,6 +18,44 @@
   color: var(--ion-color-dark);
 }
 
+.firm-settings-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.firm-settings-row {
+  align-items: center;
+  background: var(--ion-color-light);
+  border: 1px solid var(--ion-color-light-shade);
+  border-radius: 12px;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 0.9rem;
+}
+
+.firm-settings-row p {
+  color: var(--ion-color-medium-shade);
+  margin: 0.25rem 0;
+}
+
+.firm-settings-row ion-badge + ion-badge {
+  margin-left: 0.4rem;
+}
+
+.firm-settings-form-actions {
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+@media (max-width: 640px) {
+  .firm-settings-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
 .document-settings-card ion-card-title {
   display: flex;
   align-items: center;

@@ -1,5 +1,6 @@
 import { apiSlice } from './apiSlice';
 import type { ApiResponse, PaginatedApiResponse } from '../types';
+import type { FirmSummary } from './firmApi';
 
 export interface PurchaseItem {
   variant_id: number;
@@ -16,6 +17,8 @@ export interface Purchase {
   paid_amount: number;
   status: 'PAID' | 'UNPAID' | 'PARTIAL';
   created_at: string;
+  firm_id: string;
+  firm?: FirmSummary;
   suppliers?: {
     id: string;
     name: string;
@@ -41,7 +44,7 @@ export const purchaseApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getPurchases: builder.query<
       PaginatedApiResponse<Purchase>,
-      { page?: number; limit?: number; supplier_id?: string; status?: 'PAID' | 'UNPAID' | 'PARTIAL' } | void
+      { page?: number; limit?: number; supplier_id?: string; firm_id?: string; status?: 'PAID' | 'UNPAID' | 'PARTIAL' } | void
     >({
       query: (params) => ({
         url: '/purchases',
@@ -57,6 +60,7 @@ export const purchaseApi = apiSlice.injectEndpoints({
       ApiResponse<Purchase>,
       {
         supplier_id: number;
+        firm_id: number;
         invoice_number?: string;
         invoice_date: string;
         items: PurchaseItem[];

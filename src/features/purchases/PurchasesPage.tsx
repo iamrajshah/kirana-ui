@@ -16,6 +16,8 @@ import {
   IonFab,
   IonFabButton,
   IonButton,
+  IonSelect,
+  IonSelectOption,
   RefresherEventDetail,
 } from '@ionic/react';
 import { add, documentText } from 'ionicons/icons';
@@ -31,6 +33,7 @@ import { hasPermission } from '../../core/permissions/permissions';
 import { ROUTES } from '@core/constants';
 import '../products/stock-workspace.css';
 import { purchaseMatchesSearch } from '@utils/formValidation';
+import { useGetFirmsQuery } from '@core/api/firmApi';
 
 const PurchasesPage: React.FC = () => {
   const { t } = useTranslation();
@@ -39,8 +42,10 @@ const PurchasesPage: React.FC = () => {
   const userRoles = user?.roles || [];
   const hasCreatePermission = hasPermission(userRoles, 'PURCHASE_CREATE');
   const [searchTerm, setSearchTerm] = useState('');
+  const [firmId, setFirmId] = useState('');
 
-  const { data, isLoading, isError, refetch } = useGetPurchasesQuery({});
+  const { data, isLoading, isError, refetch } = useGetPurchasesQuery(firmId ? { firm_id: firmId } : {});
+  const { data: firmsData } = useGetFirmsQuery({ active: true });
 
   const purchases = data?.data || [];
 
@@ -91,6 +96,18 @@ const PurchasesPage: React.FC = () => {
               onIonInput={(e) => setSearchTerm(e.detail.value || '')}
               placeholder={t('purchases.searchPurchases')}
             />
+            <IonSelect
+              aria-label={t('purchases.filterByFirm')}
+              value={firmId}
+              onIonChange={(event) => setFirmId(event.detail.value)}
+              interface="popover"
+              placeholder={t('purchases.allFirms')}
+            >
+              <IonSelectOption value="">{t('purchases.allFirms')}</IonSelectOption>
+              {(firmsData?.data.firms || []).map((firm) => (
+                <IonSelectOption key={firm.id} value={firm.id}>{firm.display_name}</IonSelectOption>
+              ))}
+            </IonSelect>
           </div>
 
           {isLoading ? (
@@ -143,6 +160,11 @@ const PurchasesPage: React.FC = () => {
                       <div style={{ marginBottom: '12px' }}>
                         <p style={{ margin: 0, fontWeight: '500' }}>{purchase.suppliers.name}</p>
                       </div>
+                    )}
+                    {purchase.firm && (
+                      <p style={{ margin: '0 0 12px', color: 'var(--ion-color-medium-shade)' }}>
+                        {t('purchases.firmLabel')}: <strong>{purchase.firm.display_name}</strong>
+                      </p>
                     )}
 
                     <div className="stock-purchase-summary">
