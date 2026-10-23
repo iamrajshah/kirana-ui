@@ -1,0 +1,25 @@
+.purchase-pending-notice {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid rgba(var(--ion-color-danger-rgb), 0.35);
+  border-radius: 8px;
+  background: rgba(var(--ion-color-danger-rgb), 0.1);
+  color: var(--ion-text-color);
+}
+
+.purchase-pending-notice p {
+  margin: 0;
+}
+
+.purchase-pending-notice strong {
+  color: #9f1d2c;
+}
+
+body.dark .purchase-pending-notice {
+  border-color: rgba(var(--ion-color-danger-rgb), 0.5);
+  background: rgba(var(--ion-color-danger-rgb), 0.18);
+}
+
+body.dark .purchase-pending-notice strong {
+  color: var(--ion-color-danger);
+}
