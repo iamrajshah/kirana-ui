@@ -1,5 +1,14 @@
 import { apiSlice } from './apiSlice';
 import type { ApiResponse, PaginatedApiResponse } from '../types';
+import type { FirmSummary } from './firmApi';
+
+export interface SupplierFirmBalance {
+  firm_id: string;
+  firm: FirmSummary;
+  balance: number;
+}
+
+export type SupplierPaymentMode = 'CASH' | 'UPI' | 'CARD' | 'BANK';
 
 export interface Supplier {
   id: string;
@@ -10,6 +19,9 @@ export interface Supplier {
   is_active: boolean;
   created_at: string;
   balance?: number;
+  default_purchase_firm_id?: string | null;
+  default_purchase_firm?: FirmSummary | null;
+  balances_by_firm?: SupplierFirmBalance[];
 }
 
 export interface SupplierLedgerEntry {
@@ -22,20 +34,16 @@ export interface SupplierLedgerEntry {
   payment_mode?: string;
   description?: string;
   created_at: string;
+  firm_id: string;
+  firm?: FirmSummary;
 }
 
 export interface SupplierLedgerResponse {
   entries: SupplierLedgerEntry[];
-  supplier: {
-    id: string;
-    name: string;
-  };
-  balance: number;
-  pagination: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
+  summary: {
+    totalCredit: number;
+    totalDebit: number;
+    balance: number;
   };
 }
 
@@ -73,7 +81,7 @@ export const supplierApi = apiSlice.injectEndpoints({
     }),
     createSupplier: builder.mutation<
       ApiResponse<Supplier>,
-      { name: string; phone?: string; email?: string; address?: string }
+      { name: string; phone?: string; email?: string; address?: string; default_purchase_firm_id?: number | null }
     >({
       query: (body) => ({
         url: '/suppliers',
@@ -84,7 +92,7 @@ export const supplierApi = apiSlice.injectEndpoints({
     }),
     updateSupplier: builder.mutation<
       ApiResponse<Supplier>,
-      { id: string; name?: string; phone?: string; email?: string; address?: string }
+      { id: string; name?: string; phone?: string; email?: string; address?: string; default_purchase_firm_id?: number | null }
     >({
       query: ({ id, ...body }) => ({
         url: `/suppliers/${id}`,
@@ -95,28 +103,28 @@ export const supplierApi = apiSlice.injectEndpoints({
     }),
     addSupplierOpeningBalance: builder.mutation<
       ApiResponse<unknown>,
-      { id: string; amount: number }
+      { id: string; firm_id: number; amount: number }
     >({
-      query: ({ id, amount }) => ({
+      query: ({ id, firm_id, amount }) => ({
         url: `/suppliers/${id}/opening-balance`,
         method: 'POST',
-        body: { amount },
+        body: { firm_id, amount },
       }),
       invalidatesTags: (_result, _error, { id }) => [{ type: 'Supplier', id }, 'Report'],
     }),
     getSupplierLedger: builder.query<
       ApiResponse<SupplierLedgerResponse>,
-      { id: string; page?: number; limit?: number }
+      { id: string; page?: number; limit?: number; firm_id?: string }
     >({
-      query: ({ id, page = 1, limit = 50 }) => ({
+      query: ({ id, page = 1, limit = 50, firm_id }) => ({
         url: `/suppliers/${id}/ledger`,
-        params: { page, limit },
+        params: { page, limit, ...(firm_id ? { firm_id } : {}) },
       }),
       providesTags: (_result, _error, { id }) => [{ type: 'Supplier', id }],
     }),
     makeSupplierPayment: builder.mutation<
       ApiResponse<unknown>,
-      { id: string; amount: number; payment_mode: 'CASH' | 'UPI' | 'CARD' | 'BANK'; description?: string }
+      { id: string; firm_id: number; amount: number; payment_mode: SupplierPaymentMode; description?: string }
     >({
       query: ({ id, ...body }) => ({
         url: `/suppliers/${id}/payments`,

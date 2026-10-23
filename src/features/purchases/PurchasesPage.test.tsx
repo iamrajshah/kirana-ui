@@ -16,6 +16,7 @@ vi.mock('@core/hooks', () => ({ useAppSelector: () => ({ roles: ['OWNER'] }) }))
 vi.mock('@core/auth/authSlice', () => ({ selectCurrentUser: vi.fn() }));
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('../../core/api/purchaseApi', () => ({ useGetPurchasesQuery: () => ({ ...state, isLoading: false }) }));
+vi.mock('@core/api/firmApi', () => ({ useGetFirmsQuery: () => ({ data: { data: { firms: [] } } }) }));
 vi.mock('@ionic/react', () => {
   const Container = ({ children }: PropsWithChildren) => <div>{children}</div>;
   return {
@@ -23,6 +24,7 @@ vi.mock('@ionic/react', () => {
     IonCardTitle: Container, IonCardContent: Container, IonBadge: Container, IonIcon: Container,
     IonSpinner: Container, IonRefresher: Container, IonRefresherContent: Container,
     IonText: Container, IonFab: Container, IonFabButton: Container, IonToolbar: Container,
+    IonSelect: Container, IonSelectOption: Container,
     IonCard: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => <button onClick={onClick}>{children}</button>,
     IonSearchbar: ({ onIonInput }: { onIonInput: (event: { detail: { value: string } }) => void }) => <input aria-label="search" onChange={(event) => onIonInput({ detail: { value: event.target.value } })} />,
     IonButton: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => <button onClick={onClick}>{children}</button>,

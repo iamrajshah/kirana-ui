@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { BillingSearchVariant } from '@core/api/productApi';
 import {
   IonPage,
@@ -29,11 +29,13 @@ import { Navbar } from '@components/Navbar';
 
 import { useGetSuppliersQuery } from '../../core/api/supplierApi';
 import { useCreatePurchaseMutation } from '../../core/api/purchaseApi';
+import { useGetFirmsQuery } from '../../core/api/firmApi';
 import { useLazySearchVariantsQuery } from '../../core/api/productApi';
 import { SearchBar, Input, Button, EmptyState } from '../../components';
 import { formatCurrency, debounce } from '@utils/helpers';
 import notificationService from '@core/services/notificationService';
 import { ROUTES } from '@core/constants';
+import { reconcilePurchaseFirmId, resolvePurchaseFirmId } from './purchaseFirmSelection';
 
 interface CartItem {
   variant_id: string;
@@ -50,21 +52,35 @@ const CreatePurchasePage: React.FC = () => {
   const [searchVariants, { data: variantsData, isLoading: searchLoading }] =
     useLazySearchVariantsQuery();
   const { data: suppliersData } = useGetSuppliersQuery({});
+  const { data: firmsData, isLoading: firmsLoading } = useGetFirmsQuery({ active: true });
   const [createPurchase, { isLoading: creating }] = useCreatePurchaseMutation();
 
-  const suppliers = suppliersData?.data || [];
+  const suppliers = useMemo(() => suppliersData?.data || [], [suppliersData]);
   const variants = variantsData?.data || [];
+  const firms = useMemo(() => firmsData?.data.firms || [], [firmsData]);
 
   // Form state
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
+  const [selectedFirmId, setSelectedFirmId] = useState('');
+  const [firmWasOverridden, setFirmWasOverridden] = useState(false);
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMode, setPaymentMode] = useState('CASH');
   const [showSupplierModal, setShowSupplierModal] = useState(false);
   const [supplierSearch, setSupplierSearch] = useState('');
+
+  useEffect(() => {
+    if (!selectedSupplierId || firms.length === 0) return;
+    const supplier = suppliers.find((item) => item.id === selectedSupplierId);
+    if (supplier) {
+      setSelectedFirmId((currentFirmId) =>
+        reconcilePurchaseFirmId(supplier, firms, currentFirmId, firmWasOverridden)
+      );
+    }
+  }, [firmWasOverridden, firms, selectedSupplierId, suppliers]);
 
   const filteredSuppliers = suppliers.filter((supplier) => {
     const term = supplierSearch.trim().toLowerCase();
@@ -136,6 +152,11 @@ const CreatePurchasePage: React.FC = () => {
       return;
     }
 
+    if (!selectedFirmId) {
+      notificationService.warning(t('purchases.selectFirm'));
+      return;
+    }
+
     if (cart.length === 0) {
       notificationService.warning(t('purchases.addProducts'));
       return;
@@ -150,6 +171,7 @@ const CreatePurchasePage: React.FC = () => {
 
       await createPurchase({
         supplier_id: parseInt(selectedSupplierId),
+        firm_id: parseInt(selectedFirmId),
         invoice_number: invoiceNumber.trim(),
         invoice_date: invoiceDate,
         items,
@@ -162,6 +184,8 @@ const CreatePurchasePage: React.FC = () => {
       // Reset form
       setCart([]);
       setSelectedSupplierId('');
+      setSelectedFirmId('');
+      setFirmWasOverridden(false);
       setInvoiceNumber('');
       setInvoiceDate(new Date().toISOString().split('T')[0]);
       setPaymentAmount('');
@@ -176,7 +200,7 @@ const CreatePurchasePage: React.FC = () => {
   };
 
   // Check if form is valid
-  const isFormValid = selectedSupplierId && invoiceNumber.trim() && cart.length > 0;
+  const isFormValid = selectedSupplierId && selectedFirmId && invoiceNumber.trim() && cart.length > 0;
 
   const subtotal = calculateSubtotal();
   const pending = calculatePending();
@@ -203,6 +227,32 @@ const CreatePurchasePage: React.FC = () => {
               placeholder={t('purchases.enterSupplierInvoiceNumber')}
               required
             />
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
+                {t('purchases.purchaseFirm')}
+              </label>
+              <IonSelect
+                aria-label={t('purchases.purchaseFirm')}
+                value={selectedFirmId}
+                disabled={firmsLoading}
+                placeholder={t('purchases.selectFirmPlaceholder')}
+                onIonChange={(event) => {
+                  setSelectedFirmId(event.detail.value);
+                  setFirmWasOverridden(true);
+                }}
+                interface="popover"
+              >
+                {firms.map((firm) => (
+                  <IonSelectOption key={firm.id} value={firm.id}>
+                    {firm.display_name}
+                  </IonSelectOption>
+                ))}
+              </IonSelect>
+              {selectedSupplierId && suppliers.find((supplier) => supplier.id === selectedSupplierId)?.default_purchase_firm && (
+                <IonText color="medium"><small>{t('purchases.supplierDefaultFirm')}</small></IonText>
+              )}
+            </div>
 
             <Input
               label={t('purchases.invoiceDateLabel')}
@@ -462,6 +512,9 @@ const CreatePurchasePage: React.FC = () => {
                     button
                     onClick={() => {
                       setSelectedSupplierId(supplier.id);
+                      setFirmWasOverridden(false);
+                      const defaultFirmId = resolvePurchaseFirmId(supplier, firms);
+                      setSelectedFirmId(defaultFirmId);
                       setShowSupplierModal(false);
                     }}
                     color={selectedSupplierId === supplier.id ? 'light' : undefined}

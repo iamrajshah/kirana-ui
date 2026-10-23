@@ -1,5 +1,9 @@
-import React, { useState } from 'react';
-import type { SupplierLedgerEntry } from '../../core/api/supplierApi';
+import React, { useEffect, useState } from 'react';
+import type {
+  SupplierFirmBalance,
+  SupplierLedgerEntry,
+  SupplierPaymentMode,
+} from '../../core/api/supplierApi';
 import {
   IonPage,
   IonHeader,
@@ -56,6 +60,17 @@ import notificationService from '@core/services/notificationService';
 import { PrimaryBankAccountCard, BankAccountModal, BankAccountFormModal } from './components';
 import type { BankAccountFormData } from './components';
 import './SupplierLedgerPage.css';
+import { useGetFirmsQuery } from '@core/api/firmApi';
+
+const EMPTY_FIRM_BALANCES: SupplierFirmBalance[] = [];
+import {
+  balanceForFirm,
+  buildSupplierPaymentPayload,
+  hasPayableFirmBalance,
+  payableFirmBalances,
+  paymentFitsFirmBalance,
+  preferredPayableFirmId,
+} from './supplierFirmPayment';
 
 const SupplierLedgerPage: React.FC = () => {
   const { t } = useTranslation();
@@ -76,15 +91,18 @@ const SupplierLedgerPage: React.FC = () => {
 
   // Payment form state
   const [amount, setAmount] = useState('');
-  const [paymentMode, setPaymentMode] = useState('CASH');
+  const [paymentMode, setPaymentMode] = useState<SupplierPaymentMode>('CASH');
   const [notes, setNotes] = useState('');
+  const [firmFilterId, setFirmFilterId] = useState('');
+  const [paymentFirmId, setPaymentFirmId] = useState('');
 
   const { data: supplierData, isLoading: loadingSupplier } = useGetSupplierByIdQuery(id!);
   const {
     data: ledgerData,
     isLoading: loadingLedger,
     refetch,
-  } = useGetSupplierLedgerQuery({ id: id!, page: 1, limit: 50 });
+  } = useGetSupplierLedgerQuery({ id: id!, page: 1, limit: 50, firm_id: firmFilterId || undefined });
+  const { data: firmsData } = useGetFirmsQuery();
   const { data: bankAccountsData } = useGetBankAccountsQuery(id!);
   const [makePayment, { isLoading: processingPayment }] = useMakeSupplierPaymentMutation();
   const [createBankAccount, { isLoading: creatingBankAccount }] = useCreateBankAccountMutation();
@@ -94,9 +112,18 @@ const SupplierLedgerPage: React.FC = () => {
 
   const supplier = supplierData?.data;
   const entries = ledgerData?.data?.entries || [];
-  const balance = ledgerData?.data?.balance || 0;
+  const balance = ledgerData?.data?.summary.balance || 0;
   const bankAccounts = bankAccountsData?.data || [];
   const primaryBankAccount = bankAccounts.find((acc) => acc.is_primary) || null;
+  const firms = firmsData?.data.firms || [];
+  const firmBalances = supplier?.balances_by_firm || EMPTY_FIRM_BALANCES;
+  const selectedFirmBalance = balanceForFirm(firmBalances, paymentFirmId);
+
+  useEffect(() => {
+    if (!paymentFirmId && supplier) {
+      setPaymentFirmId(preferredPayableFirmId(supplier));
+    }
+  }, [firmBalances, paymentFirmId, supplier]);
 
   const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
     await refetch();
@@ -181,14 +208,25 @@ const SupplierLedgerPage: React.FC = () => {
       notificationService.warning(t('suppliers.enterValidAmount'));
       return;
     }
+    if (!paymentFirmId) {
+      notificationService.warning(t('suppliers.selectPaymentFirm'));
+      return;
+    }
+    if (!paymentFitsFirmBalance(firmBalances, paymentFirmId, parseFloat(amount))) {
+      notificationService.warning(t('suppliers.paymentExceedsFirmBalance'));
+      return;
+    }
 
     try {
-      await makePayment({
-        id: id!,
-        amount: parseFloat(amount),
-        payment_mode: paymentMode as 'CASH' | 'UPI' | 'CARD' | 'BANK',
-        description: notes.trim() || undefined,
-      }).unwrap();
+      await makePayment(
+        buildSupplierPaymentPayload(
+          id!,
+          paymentFirmId,
+          parseFloat(amount),
+          paymentMode,
+          notes
+        )
+      ).unwrap();
 
       // Reset form
       setAmount('');
@@ -325,6 +363,40 @@ const SupplierLedgerPage: React.FC = () => {
                   </IonCol>
                 </IonRow>
               </IonGrid>
+              {(firmBalances || []).map((item) => (
+                <div key={item.firm_id} className="summary-item" style={{ marginTop: '8px' }}>
+                  <div className="summary-label">
+                    {item.firm.display_name}
+                    {!item.firm.is_active ? ` (${t('firms.inactive')})` : ''}
+                  </div>
+                  <div className={`summary-value ${item.balance > 0 ? 'credit' : 'debit'}`}>
+                    {formatCurrency(Math.abs(item.balance))}
+                    {item.balance > 0
+                      ? ` ${t('suppliers.ledger.payable')}`
+                      : item.balance < 0
+                        ? ` ${t('suppliers.ledger.advance')}`
+                        : ''}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
+                {t('suppliers.ledger.filterByFirm')}
+              </label>
+              <IonSelect
+                aria-label={t('suppliers.ledger.filterByFirm')}
+                value={firmFilterId}
+                onIonChange={(event) => setFirmFilterId(event.detail.value)}
+                interface="popover"
+              >
+                <IonSelectOption value="">{t('suppliers.ledger.allFirms')}</IonSelectOption>
+                {firms.map((firm) => (
+                  <IonSelectOption key={firm.id} value={firm.id}>
+                    {firm.display_name}{!firm.is_active ? ` (${t('firms.inactive')})` : ''}
+                  </IonSelectOption>
+                ))}
+              </IonSelect>
             </div>
           </IonCardContent>
         </IonCard>
@@ -387,6 +459,7 @@ const SupplierLedgerPage: React.FC = () => {
                                   {entry.ref_id}
                                 </p>
                               )}
+                              {entry.firm && <p>{t('suppliers.ledger.firm')}: {entry.firm.display_name}</p>}
                             </IonLabel>
                             <div slot="end" className="entry-amount credit-amount">
                               {formatCurrency(entry.credit)}
@@ -445,6 +518,7 @@ const SupplierLedgerPage: React.FC = () => {
                                   {entry.description}
                                 </p>
                               )}
+                              {entry.firm && <p>{t('suppliers.ledger.firm')}: {entry.firm.display_name}</p>}
                             </IonLabel>
                             <div slot="end" className="entry-amount debit-amount">
                               {formatCurrency(entry.debit)}
@@ -461,7 +535,7 @@ const SupplierLedgerPage: React.FC = () => {
         )}
 
         {/* Make Payment FAB */}
-        {hasUpdatePermission && balance > 0 && (
+        {hasUpdatePermission && hasPayableFirmBalance(firmBalances) && (
           <IonFab vertical="bottom" horizontal="end" slot="fixed">
             <IonFabButton onClick={() => setShowPaymentModal(true)}>
               <IonIcon icon={cash} />
@@ -483,10 +557,28 @@ const SupplierLedgerPage: React.FC = () => {
               </IonToolbar>
             </IonHeader>
             <IonContent className="ion-padding">
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
+                  {t('suppliers.paymentFirm')}
+                </label>
+                <IonSelect
+                  aria-label={t('suppliers.paymentFirm')}
+                  value={paymentFirmId}
+                  placeholder={t('suppliers.selectPaymentFirm')}
+                  onIonChange={(event) => { setPaymentFirmId(event.detail.value); setAmount(''); }}
+                  interface="popover"
+                >
+                  {payableFirmBalances(firmBalances).map((item) => (
+                    <IonSelectOption key={item.firm_id} value={item.firm_id}>
+                      {item.firm.display_name} · {formatCurrency(item.balance)}
+                    </IonSelectOption>
+                  ))}
+                </IonSelect>
+              </div>
               <IonCard>
                 <IonCardContent>
                   <h2 style={{ margin: '0 0 8px', color: 'var(--ion-color-danger)' }}>
-                    {t('suppliers.outstandingBalance')}: {formatCurrency(balance)}
+                    {t('suppliers.outstandingBalance')}: {formatCurrency(selectedFirmBalance)}
                   </h2>
                 </IonCardContent>
               </IonCard>
@@ -502,9 +594,9 @@ const SupplierLedgerPage: React.FC = () => {
                     required
                   />
                 </div>
-                {balance > 0 && (
+                {paymentFirmId && selectedFirmBalance > 0 && (
                   <IonButton
-                    onClick={() => setAmount(balance.toString())}
+                    onClick={() => setAmount(selectedFirmBalance.toString())}
                     style={{ marginBottom: '0' }}
                   >
                     {t('suppliers.ledger.payFull')}
@@ -518,7 +610,7 @@ const SupplierLedgerPage: React.FC = () => {
                 </label>
                 <IonSelect
                   value={paymentMode}
-                  onIonChange={(e) => setPaymentMode(e.detail.value)}
+                  onIonChange={(e) => setPaymentMode(e.detail.value as SupplierPaymentMode)}
                   interface="popover"
                   style={{
                     border: '1px solid var(--ion-color-medium)',
@@ -529,7 +621,7 @@ const SupplierLedgerPage: React.FC = () => {
                   <IonSelectOption value="CASH">{t('suppliers.ledger.cash')}</IonSelectOption>
                   <IonSelectOption value="UPI">{t('suppliers.ledger.upi')}</IonSelectOption>
                   <IonSelectOption value="CARD">{t('suppliers.ledger.card')}</IonSelectOption>
-                  <IonSelectOption value="BANK_TRANSFER">
+                  <IonSelectOption value="BANK">
                     {t('suppliers.ledger.bankTransfer')}
                   </IonSelectOption>
                 </IonSelect>
@@ -545,7 +637,7 @@ const SupplierLedgerPage: React.FC = () => {
               <Button
                 onClick={handleMakePayment}
                 loading={processingPayment}
-                disabled={!amount || parseFloat(amount) <= 0}
+                disabled={!paymentFirmId || !amount || parseFloat(amount) <= 0}
                 fullWidth
                 size="large"
               >

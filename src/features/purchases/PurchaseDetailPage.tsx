@@ -90,6 +90,16 @@ const PurchaseDetailPage: React.FC = () => {
           </IonCardHeader>
         </IonCard>
 
+        {purchase.firm && (
+          <IonCard>
+            <IonCardHeader><IonCardTitle>{t('purchases.purchaseFirm')}</IonCardTitle></IonCardHeader>
+            <IonCardContent>
+              <strong>{purchase.firm.display_name}</strong>
+              <p>{purchase.firm.legal_name} · {purchase.firm.code}</p>
+            </IonCardContent>
+          </IonCard>
+        )}
+
         {/* Supplier Information */}
         {purchase.supplier && (
           <IonCard>

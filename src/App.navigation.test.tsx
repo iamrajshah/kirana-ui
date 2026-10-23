@@ -1,5 +1,5 @@
 import React, { lazy, useEffect, useState } from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   IonApp,
   IonBackButton,
@@ -25,7 +25,9 @@ import { RoutePageSuspense } from '@layouts/RoutePageSuspense';
 setupIonicReact({ mode: 'md' });
 
 describe('main application navigation', () => {
-  it('keeps one shell mounted while navigating between primary and detail routes', async () => {
+  it.each([1, 2, 3, 4, 5])(
+    'keeps one shell mounted while navigating between primary and detail routes (run %s)',
+    async () => {
     const mounted = vi.fn();
     const unmounted = vi.fn();
 
@@ -134,7 +136,7 @@ describe('main application navigation', () => {
 
     window.history.replaceState({}, '', '/dashboard');
 
-    render(
+    const view = render(
       <IonApp>
         <IonReactRouter>
           <Switch>
@@ -183,5 +185,12 @@ describe('main application navigation', () => {
     expect(mounted).toHaveBeenCalledTimes(1);
     expect(unmounted).not.toHaveBeenCalled();
     expect(document.querySelectorAll('ion-tabs')).toHaveLength(1);
-  });
+
+    await act(async () => {
+      view.unmount();
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    });
+    expect(unmounted).toHaveBeenCalledTimes(1);
+    }
+  );
 });
