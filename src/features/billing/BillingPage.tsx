@@ -72,6 +72,7 @@ import {
 } from '../invoices/receipt';
 
 const COUNTER_LABEL_STORAGE_KEY = 'kirana_counter_label';
+const LONG_BILL_PREVIEW_ITEMS = 5;
 
 const isConflictError = (error: unknown) =>
   typeof error === 'object' && error !== null && 'status' in error && error.status === 409;
@@ -128,6 +129,7 @@ export const BillingPage: React.FC = () => {
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
   const [cartItems, setCartItems] = useState<BillingCartItem[]>([]);
+  const [showAllCartItems, setShowAllCartItems] = useState(false);
   const cartItemsRef = useRef<BillingCartItem[]>([]);
   const replaceCartItems = useCallback(
     (next: BillingCartItem[] | ((current: BillingCartItem[]) => BillingCartItem[])) => {
@@ -138,6 +140,9 @@ export const BillingPage: React.FC = () => {
     },
     []
   );
+  const hasLongBill = cartItems.length > LONG_BILL_PREVIEW_ITEMS;
+  const visibleCartItems =
+    hasLongBill && !showAllCartItems ? cartItems.slice(-LONG_BILL_PREVIEW_ITEMS) : cartItems;
   const [selectedCustomer, setSelectedCustomer] = useState<Pick<
     Customer,
     'id' | 'name' | 'phone' | 'state_code' | 'credit_balance'
@@ -370,6 +375,7 @@ export const BillingPage: React.FC = () => {
     }));
     setBillDiscount(nextDiscount);
     replaceCartItems(nextCartItems);
+    setShowAllCartItems(false);
     updateActiveHeldVersion(invoice.held_at ? invoice.version : undefined);
     setHeldConflict(false);
     loadedInvoiceSnapshotRef.current = JSON.stringify({
@@ -630,6 +636,7 @@ export const BillingPage: React.FC = () => {
   const resetForm = () => {
     billGenerationRef.current += 1;
     replaceCartItems([]);
+    setShowAllCartItems(false);
     setBillDiscount(0);
     setSearchTerm('');
     setBarcodeInput('');
@@ -1266,12 +1273,40 @@ export const BillingPage: React.FC = () => {
                       onClick={() => {
                         billGenerationRef.current += 1;
                         replaceCartItems([]);
+                        setShowAllCartItems(false);
                       }}
                     >
                       {t('billing.clearCart')}
                     </button>
                   )}
                 </div>
+
+                {hasLongBill && (
+                  <div className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-sky-100 bg-sky-50 px-3 py-2">
+                    <p className="text-xs font-semibold text-sky-900">
+                      {showAllCartItems
+                        ? t('billing.allItemsShown', { count: cartItems.length })
+                        : t('billing.showingRecentItems', {
+                            shown: LONG_BILL_PREVIEW_ITEMS,
+                            total: cartItems.length,
+                          })}
+                    </p>
+                    <button
+                      type="button"
+                      className="min-h-touch shrink-0 rounded-lg px-2 text-xs font-bold text-sky-700 underline"
+                      aria-label={
+                        showAllCartItems
+                          ? t('billing.showRecentItems')
+                          : t('billing.reviewAllItems', { count: cartItems.length })
+                      }
+                      onClick={() => setShowAllCartItems((current) => !current)}
+                    >
+                      {showAllCartItems
+                        ? t('billing.showRecentItems')
+                        : t('billing.reviewAllItems', { count: cartItems.length })}
+                    </button>
+                  </div>
+                )}
 
                 {cartItems.length === 0 ? (
                   <div className="mt-2 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 py-12 text-center">
@@ -1280,8 +1315,14 @@ export const BillingPage: React.FC = () => {
                     <p className="mt-1 text-sm text-gray-500">{t('billing.emptyCartHint')}</p>
                   </div>
                 ) : (
-                  <div className="mt-2 space-y-2">
-                    {cartItems.map((item) => {
+                  <div
+                    className={`mt-2 space-y-2 ${
+                      hasLongBill && showAllCartItems
+                        ? 'max-h-[65vh] overflow-y-auto overscroll-contain pr-1'
+                        : ''
+                    }`}
+                  >
+                    {visibleCartItems.map((item) => {
                       const availableQuantity =
                         availableStockByVariant.get(item.variant_id) ?? item.available_quantity;
                       const stockKnown = availableQuantity !== undefined;

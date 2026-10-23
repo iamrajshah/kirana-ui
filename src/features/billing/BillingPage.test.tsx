@@ -306,6 +306,33 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('BillingPage', () => {
+  it('keeps long bills compact until the cashier chooses to review every item', async () => {
+    mocks.invoice = {
+      ...mocks.invoice,
+      items: Array.from({ length: 12 }, (_, index) => ({
+        variant_id: `variant-${index + 1}`,
+        quantity: 1,
+        unit_price: 10,
+        discount_amount: 0,
+        variant: {
+          sku: `SKU-${index + 1}`,
+          product: { name: `Product ${index + 1}` },
+        },
+      })),
+    };
+
+    render(<BillingPage />);
+
+    expect(await screen.findByText('Product 12')).toBeTruthy();
+    expect(screen.getByText('billing.showingRecentItems')).toBeTruthy();
+    expect(screen.queryByText('Product 1')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'billing.reviewAllItems' }));
+
+    expect(await screen.findByText('Product 1')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'billing.showRecentItems' })).toBeTruthy();
+  });
+
   describe('quote refresh', () => {
     it('keeps simple-receipt quantity edits local until checkout', async () => {
       render(<BillingPage />);
