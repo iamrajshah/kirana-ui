@@ -6,12 +6,19 @@ import { protectedMainLayoutRoutes, protectedPageRoutes } from '@core/navigation
 import { ROUTES } from '@core/constants';
 
 const useAppSelector = vi.fn();
+const useLocation = vi.fn();
 
 vi.mock('@hooks/useAppSelector', () => ({ useAppSelector: (selector: unknown) => useAppSelector(selector) }));
-vi.mock('react-router', () => ({ Redirect: ({ to }: { to: string }) => <div data-testid="redirect">{to}</div> }));
+vi.mock('react-router', () => ({
+  Redirect: ({ to }: { to: string }) => <div data-testid="redirect">{to}</div>,
+  useLocation: () => useLocation(),
+}));
 
 describe('PrivateRoute', () => {
-  beforeEach(() => useAppSelector.mockReset());
+  beforeEach(() => {
+    useAppSelector.mockReset();
+    useLocation.mockReturnValue({ pathname: ROUTES.DASHBOARD });
+  });
   afterEach(cleanup);
 
   it('sends signed-out users to login', () => {
@@ -41,6 +48,30 @@ describe('PrivateRoute', () => {
     render(<PrivateRoute permission="billing"><div>billing</div></PrivateRoute>);
 
     expect(screen.getByText('billing')).toBeTruthy();
+  });
+
+  it('forces a first-login owner to change the temporary password', () => {
+    useAppSelector
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce({ roles: ['OWNER'] })
+      .mockReturnValueOnce(true);
+
+    render(<PrivateRoute><div>dashboard</div></PrivateRoute>);
+
+    expect(screen.getByTestId('redirect').textContent).toBe(ROUTES.CHANGE_PASSWORD);
+    expect(screen.queryByText('dashboard')).toBeNull();
+  });
+
+  it('allows the password-change screen during first login', () => {
+    useLocation.mockReturnValue({ pathname: ROUTES.CHANGE_PASSWORD });
+    useAppSelector
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce({ roles: ['OWNER'] })
+      .mockReturnValueOnce(true);
+
+    render(<PrivateRoute><div>change password</div></PrivateRoute>);
+
+    expect(screen.getByText('change password')).toBeTruthy();
   });
 });
 

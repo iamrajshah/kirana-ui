@@ -25,10 +25,13 @@ import { useChangePasswordMutation } from '@core/api/userApi';
 import { useHistory } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ROUTES } from '@core/constants';
+import { useAppDispatch } from '@hooks/useAppDispatch';
+import { completeFirstLogin } from '@core/auth/authSlice';
 import './ChangePasswordPage.css';
 
 export const ChangePasswordPage: React.FC = () => {
   const history = useHistory();
+  const dispatch = useAppDispatch();
   const { t } = useTranslation();
   
   const [currentPassword, setCurrentPassword] = useState('');
@@ -100,6 +103,8 @@ export const ChangePasswordPage: React.FC = () => {
         currentPassword,
         newPassword,
       }).unwrap();
+
+      dispatch(completeFirstLogin());
 
       setShowSuccess(true);
       resetForm();

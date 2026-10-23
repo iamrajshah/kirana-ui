@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { STORAGE_KEYS } from '../constants';
-import authReducer, { beginCurrentUserProfileUpdate, updateCurrentUser } from './authSlice';
+import authReducer, {
+  beginCurrentUserProfileUpdate,
+  completeFirstLogin,
+  setCredentials,
+  updateCurrentUser,
+} from './authSlice';
 
 const currentUser = {
   id: 'owner-1',
@@ -124,5 +129,24 @@ describe('authSlice profile synchronization', () => {
 
     expect(nextState.user).toEqual(currentUser);
     expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || 'null').id).toBe('owner-2');
+  });
+
+  it('forces a temporary-password login to complete password setup', () => {
+    const loginState = authReducer(
+      undefined,
+      setCredentials({
+        user: currentUser,
+        tenant: currentUser.tenant,
+        tokens: { accessToken: 'access-token', refreshToken: 'refresh-token' },
+        isFirstLogin: true,
+      })
+    );
+
+    expect(loginState.mustChangePassword).toBe(true);
+    expect(localStorage.getItem(STORAGE_KEYS.MUST_CHANGE_PASSWORD)).toBe('true');
+
+    const completedState = authReducer(loginState, completeFirstLogin());
+    expect(completedState.mustChangePassword).toBe(false);
+    expect(localStorage.getItem(STORAGE_KEYS.MUST_CHANGE_PASSWORD)).toBe('false');
   });
 });

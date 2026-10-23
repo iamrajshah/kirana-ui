@@ -29,7 +29,6 @@ export interface CreateUserRequest {
 export interface UpdateProfileRequest {
   name?: string;
   phone?: string;
-  email?: string;
 }
 
 type ProfileUser = Pick<User, 'id' | 'name' | 'phone' | 'email'>;
