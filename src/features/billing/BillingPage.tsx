@@ -48,6 +48,7 @@ import { formatCurrency, generateIdempotencyKey } from '@utils/helpers';
 import type { BillingCartItem } from './billing.logic';
 import { filterBillingCatalog, filterCustomers } from '@utils/localSearch';
 import {
+  addBillingCartItem,
   buildInvoiceItems,
   calculateBillingTotals,
   clearBillingCompletion,
@@ -127,6 +128,16 @@ export const BillingPage: React.FC = () => {
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
   const [cartItems, setCartItems] = useState<BillingCartItem[]>([]);
+  const cartItemsRef = useRef<BillingCartItem[]>([]);
+  const replaceCartItems = useCallback(
+    (next: BillingCartItem[] | ((current: BillingCartItem[]) => BillingCartItem[])) => {
+      const resolved = typeof next === 'function' ? next(cartItemsRef.current) : next;
+      cartItemsRef.current = resolved;
+      setCartItems(resolved);
+      return resolved;
+    },
+    []
+  );
   const [selectedCustomer, setSelectedCustomer] = useState<Pick<
     Customer,
     'id' | 'name' | 'phone' | 'state_code'
@@ -204,6 +215,16 @@ export const BillingPage: React.FC = () => {
     () => filterBillingCatalog(billingCatalogData?.data ?? [], searchTerm),
     [billingCatalogData?.data, searchTerm]
   );
+  const availableStockByVariant = useMemo(
+    () =>
+      new Map(
+        (billingCatalogData?.data ?? []).map((variant) => [
+          variant.id,
+          Math.max(0, Number(variant.available_quantity) || 0),
+        ])
+      ),
+    [billingCatalogData?.data]
+  );
   const matchingCustomers = useMemo(
     () => filterCustomers(customersData?.data ?? [], customerSearchTerm).slice(0, 20),
     [customerSearchTerm, customersData?.data]
@@ -253,6 +274,11 @@ export const BillingPage: React.FC = () => {
   const checkoutQuoteReady =
     !tenantSettingsLoading &&
     (!isGstMode || Boolean(activeQuote && activeQuoteKey === quoteKey && !quoting && !quoteError));
+  const stockConflict = cartItems.some((item) => {
+    const availableQuantity =
+      availableStockByVariant.get(item.variant_id) ?? item.available_quantity;
+    return availableQuantity !== undefined && item.quantity > availableQuantity;
+  });
   const updateActiveHeldVersion = useCallback((version: number | undefined) => {
     activeHeldVersionRef.current = version;
     setActiveHeldVersion(version);
@@ -302,7 +328,7 @@ export const BillingPage: React.FC = () => {
       sku: item.variant?.sku || '',
     }));
     setBillDiscount(nextDiscount);
-    setCartItems(nextCartItems);
+    replaceCartItems(nextCartItems);
     updateActiveHeldVersion(invoice.held_at ? invoice.version : undefined);
     setHeldConflict(false);
     loadedInvoiceSnapshotRef.current = JSON.stringify({
@@ -312,7 +338,7 @@ export const BillingPage: React.FC = () => {
       discount_amount: calculateBillingTotals(nextCartItems, nextDiscount, 'amount', 0)
         .billDiscountAmount,
     });
-  }, [editInvoiceId, invoiceData, invoiceLoading, t, updateActiveHeldVersion]);
+  }, [editInvoiceId, invoiceData, invoiceLoading, t, replaceCartItems, updateActiveHeldVersion]);
 
   useEffect(() => {
     const invoice = invoiceData?.data;
@@ -397,30 +423,23 @@ export const BillingPage: React.FC = () => {
   ]);
 
   const addToCart = (
-    value: Pick<BillingSearchVariant, 'id' | 'product_name' | 'price' | 'sku'>
+    value: Pick<
+      BillingSearchVariant,
+      'id' | 'product_name' | 'price' | 'sku' | 'available_quantity'
+    >
   ) => {
-    setCartItems((current) => {
-      const existing = current.find((item) => item.variant_id === value.id);
-      if (existing) {
-        return current.map((item) =>
-          item.variant_id === value.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      const sellingPrice = Number(value.price || 0);
-      return [
-        ...current,
-        {
-          variant_id: value.id,
-          quantity: 1,
-          unit_price: sellingPrice,
-          discount_amount: 0,
-          discount_type: 'amount',
-          product_name: value.product_name || t('billing.unknownProduct'),
-          sku: value.sku || '',
-        },
-      ];
+    const result = addBillingCartItem(cartItemsRef.current, {
+      variant_id: value.id,
+      available_quantity: value.available_quantity,
+      unit_price: Number(value.price || 0),
+      discount_amount: 0,
+      discount_type: 'amount',
+      product_name: value.product_name || t('billing.unknownProduct'),
+      sku: value.sku || '',
     });
-    setSearchTerm('');
+    replaceCartItems(result.cart);
+    if (result.outcome === 'added' || result.outcome === 'incremented') setSearchTerm('');
+    return result.outcome;
   };
 
   const processBarcodeQueue = async () => {
@@ -445,20 +464,29 @@ export const BillingPage: React.FC = () => {
           continue;
         }
 
-        const { product, variant } = result.data;
+        const { inventory, product, variant } = result.data;
         if (product.is_active !== true || variant.is_active !== true) {
           notificationService.error(t('billing.barcodeUnavailable'));
           continue;
         }
 
-        addToCart({
+        const outcome = addToCart({
           id: variant.id,
           product_name: product.name,
           price: Number(variant.selling_price ?? variant.price ?? 0),
           sku: variant.sku || '',
+          available_quantity: inventory?.quantity ?? 0,
         });
         setShowBarcodeTools(false);
-        notificationService.success(t('billing.barcodeAdded'));
+        if (outcome === 'added' || outcome === 'incremented') {
+          notificationService.success(t('billing.barcodeAdded'));
+        } else {
+          notificationService.error(
+            t(outcome === 'out-of-stock' ? 'billing.outOfStock' : 'billing.stockLimit', {
+              count: inventory?.quantity ?? 0,
+            })
+          );
+        }
       } catch (error: unknown) {
         if (
           billingMountedRef.current &&
@@ -492,12 +520,20 @@ export const BillingPage: React.FC = () => {
   };
 
   const updateQuantity = (variantId: string, quantity: number) => {
-    setCartItems((current) => {
+    replaceCartItems((current) => {
       const existing = current.find((item) => item.variant_id === variantId);
       if (!existing) return current;
       if (quantity <= 0) return current.filter((item) => item.variant_id !== variantId);
-      if (existing.quantity === quantity) return current;
-      return current.map((item) => (item.variant_id === variantId ? { ...item, quantity } : item));
+      const availableQuantity =
+        availableStockByVariant.get(existing.variant_id) ?? existing.available_quantity;
+      const boundedQuantity =
+        availableQuantity === undefined
+          ? quantity
+          : Math.min(quantity, Math.max(1, availableQuantity));
+      if (existing.quantity === boundedQuantity) return current;
+      return current.map((item) =>
+        item.variant_id === variantId ? { ...item, quantity: boundedQuantity } : item
+      );
     });
   };
 
@@ -518,14 +554,21 @@ export const BillingPage: React.FC = () => {
       if (!created?.variant?.id || !created.product?.name) {
         throw new Error(t('billing.unknownBarcode.invalidResponse'));
       }
-      addToCart({
+      const outcome = addToCart({
         id: created.variant.id,
         product_name: created.product.name,
         price: Number(created.variant.selling_price ?? created.variant.price ?? input.sellingPrice),
         sku: created.variant.sku || '',
+        available_quantity: created.inventory.quantity,
       });
       setUnknownBarcode(null);
-      notificationService.success(t('billing.unknownBarcode.createdAndAdded'));
+      notificationService.success(
+        t(
+          outcome === 'added' || outcome === 'incremented'
+            ? 'billing.unknownBarcode.createdAndAdded'
+            : 'billing.unknownBarcode.createdOutOfStock'
+        )
+      );
     } catch (error: unknown) {
       notificationService.error(
         apiErrorMessage(error, t('billing.unknownBarcode.createFailed'), true)
@@ -534,7 +577,7 @@ export const BillingPage: React.FC = () => {
   };
 
   const updatePrice = (variantId: string, price: number) => {
-    setCartItems((current) => {
+    replaceCartItems((current) => {
       const existing = current.find((item) => item.variant_id === variantId);
       if (!existing || existing.unit_price === price) return current;
       return current.map((item) =>
@@ -545,7 +588,7 @@ export const BillingPage: React.FC = () => {
 
   const resetForm = () => {
     billGenerationRef.current += 1;
-    setCartItems([]);
+    replaceCartItems([]);
     setBillDiscount(0);
     setSearchTerm('');
     setBarcodeInput('');
@@ -676,9 +719,7 @@ export const BillingPage: React.FC = () => {
     reference?: string
   ) => {
     await createPayment({
-      ...(pendingCustomerId || customerId
-        ? { customer_id: pendingCustomerId || customerId }
-        : {}),
+      ...(pendingCustomerId || customerId ? { customer_id: pendingCustomerId || customerId } : {}),
       invoice_id: invoiceId,
       amount,
       payment_mode: mode,
@@ -721,6 +762,10 @@ export const BillingPage: React.FC = () => {
     }
     if (!cartItems.length) {
       notificationService.error(t('billing.pleaseAddProducts'));
+      return false;
+    }
+    if (stockConflict) {
+      notificationService.error(t('billing.stockChanged'));
       return false;
     }
     return true;
@@ -917,11 +962,13 @@ export const BillingPage: React.FC = () => {
 
   const completionOutputFeedback = getReceiptOutputFeedback(receiptOutput.state);
   const completionOutputMessage = completionOutputFeedback
-    ? t({
-        working: 'billing.completion.preparingOutput',
-        downloaded: 'billing.completion.pdfDownloaded',
-        error: 'billing.completion.outputFailed',
-      }[completionOutputFeedback])
+    ? t(
+        {
+          working: 'billing.completion.preparingOutput',
+          downloaded: 'billing.completion.pdfDownloaded',
+          error: 'billing.completion.outputFailed',
+        }[completionOutputFeedback]
+      )
     : null;
 
   return (
@@ -1119,21 +1166,32 @@ export const BillingPage: React.FC = () => {
                   )}
                   {searchTerm && (
                     <IonList className="max-h-64 overflow-auto">
-                      {matchingVariants.map((variant) => (
-                        <IonItem
-                          key={variant.id}
-                          button
-                          onClick={() => addToCart(variant)}
-                          style={{ '--min-height': '56px' }}
-                        >
-                          <IonLabel>
-                            <h3 className="font-semibold">{variant.product_name}</h3>
-                            <p>{variant.sku}</p>
-                          </IonLabel>
-                          <strong className="mr-2">{formatCurrency(variant.price)}</strong>
-                          <IonIcon icon={add} slot="end" color="primary" />
-                        </IonItem>
-                      ))}
+                      {matchingVariants.map((variant) => {
+                        const outOfStock = variant.available_quantity <= 0;
+                        return (
+                          <IonItem
+                            key={variant.id}
+                            button
+                            disabled={outOfStock}
+                            onClick={() => addToCart(variant)}
+                            style={{ '--min-height': '56px' }}
+                          >
+                            <IonLabel>
+                              <h3 className="font-semibold">{variant.product_name}</h3>
+                              <p>{variant.sku}</p>
+                              <p className={outOfStock ? 'font-semibold text-red-600' : undefined}>
+                                {outOfStock
+                                  ? t('billing.outOfStock')
+                                  : t('billing.availableStock', {
+                                      count: variant.available_quantity,
+                                    })}
+                              </p>
+                            </IonLabel>
+                            <strong className="mr-2">{formatCurrency(variant.price)}</strong>
+                            {!outOfStock && <IonIcon icon={add} slot="end" color="primary" />}
+                          </IonItem>
+                        );
+                      })}
                     </IonList>
                   )}
                 </div>
@@ -1150,7 +1208,7 @@ export const BillingPage: React.FC = () => {
                       disabled={isBusy}
                       onClick={() => {
                         billGenerationRef.current += 1;
-                        setCartItems([]);
+                        replaceCartItems([]);
                       }}
                     >
                       {t('billing.clearCart')}
@@ -1166,82 +1224,130 @@ export const BillingPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="mt-2 space-y-2">
-                    {cartItems.map((item) => (
-                      <IonCard key={item.variant_id} className="m-0 rounded-2xl shadow-sm">
-                        <IonCardContent className="p-3">
-                          <div className="flex items-start gap-3">
-                            <div className="min-w-0 flex-1">
-                              <h3 className="truncate text-sm font-bold text-gray-900 sm:text-base">
-                                {item.product_name}
-                              </h3>
-                              <p className="text-xs text-gray-500">{item.sku}</p>
+                    {cartItems.map((item) => {
+                      const availableQuantity =
+                        availableStockByVariant.get(item.variant_id) ?? item.available_quantity;
+                      const stockKnown = availableQuantity !== undefined;
+                      const exceedsStock = stockKnown && item.quantity > Number(availableQuantity);
+                      const atStockLimit = stockKnown && item.quantity >= Number(availableQuantity);
+                      return (
+                        <IonCard key={item.variant_id} className="m-0 rounded-2xl shadow-sm">
+                          <IonCardContent className="p-3">
+                            <div className="flex items-start gap-3">
+                              <div className="min-w-0 flex-1">
+                                <h3 className="truncate text-sm font-bold text-gray-900 sm:text-base">
+                                  {item.product_name}
+                                </h3>
+                                <p className="text-xs text-gray-500">{item.sku}</p>
+                              </div>
+                              <strong className="text-base text-sky-700">
+                                {formatCurrency(item.unit_price * item.quantity)}
+                              </strong>
+                              <button
+                                type="button"
+                                aria-label={t('billing.removeFromCart')}
+                                className="flex min-h-touch min-w-touch items-center justify-center rounded-xl text-red-600"
+                                onClick={() => updateQuantity(item.variant_id, 0)}
+                              >
+                                <IonIcon icon={trash} />
+                              </button>
                             </div>
-                            <strong className="text-base text-sky-700">
-                              {formatCurrency(item.unit_price * item.quantity)}
-                            </strong>
-                            <button
-                              type="button"
-                              aria-label={t('billing.removeFromCart')}
-                              className="flex min-h-touch min-w-touch items-center justify-center rounded-xl text-red-600"
-                              onClick={() => updateQuantity(item.variant_id, 0)}
-                            >
-                              <IonIcon icon={trash} />
-                            </button>
-                          </div>
-                          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                            <div>
-                              <label className="mb-1 block text-xs font-semibold text-gray-600">
-                                {t('billing.qty')}
+                            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                              <div>
+                                <label className="mb-1 block text-xs font-semibold text-gray-600">
+                                  {t('billing.qty')}
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    aria-label={t('billing.decreaseQuantity', {
+                                      product: item.product_name,
+                                    })}
+                                    className="flex min-h-touch min-w-touch items-center justify-center rounded-xl border border-gray-300 bg-white"
+                                    onClick={() =>
+                                      updateQuantity(item.variant_id, item.quantity - 1)
+                                    }
+                                  >
+                                    <IonIcon icon={remove} />
+                                  </button>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max={availableQuantity}
+                                    aria-label={t('billing.quantityFor', {
+                                      product: item.product_name,
+                                    })}
+                                    value={item.quantity}
+                                    className="min-h-touch w-20 rounded-xl border border-gray-300 px-2 text-center text-base font-bold"
+                                    onChange={(event) =>
+                                      updateQuantity(
+                                        item.variant_id,
+                                        Math.max(1, Number(event.target.value) || 1)
+                                      )
+                                    }
+                                  />
+                                  <button
+                                    type="button"
+                                    aria-label={t('billing.increaseQuantity', {
+                                      product: item.product_name,
+                                    })}
+                                    disabled={atStockLimit}
+                                    className="flex min-h-touch min-w-touch items-center justify-center rounded-xl border border-gray-300 bg-white disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                                    onClick={() =>
+                                      updateQuantity(item.variant_id, item.quantity + 1)
+                                    }
+                                  >
+                                    <IonIcon icon={add} />
+                                  </button>
+                                </div>
+                                {stockKnown && (
+                                  <p
+                                    className={`mt-1 text-xs font-semibold ${
+                                      atStockLimit ? 'text-red-600' : 'text-gray-500'
+                                    }`}
+                                    role={atStockLimit ? 'status' : undefined}
+                                  >
+                                    {atStockLimit
+                                      ? t('billing.stockLimit', {
+                                          count: availableQuantity,
+                                        })
+                                      : t('billing.availableStock', {
+                                          count: availableQuantity,
+                                        })}
+                                  </p>
+                                )}
+                                {exceedsStock && (
+                                  <p
+                                    role="alert"
+                                    className="mt-1 text-xs font-semibold text-red-600"
+                                  >
+                                    {t('billing.reduceQuantityToAvailable', {
+                                      count: availableQuantity,
+                                    })}
+                                  </p>
+                                )}
+                              </div>
+                              <label className="block text-xs font-semibold text-gray-600">
+                                {t('billing.priceLabel')}
+                                <div className="mt-1 flex min-h-touch items-center rounded-xl border border-gray-300 px-3">
+                                  <span className="mr-1">₹</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={item.unit_price}
+                                    className="w-full border-0 bg-transparent text-base font-semibold outline-none"
+                                    onChange={(event) =>
+                                      updatePrice(item.variant_id, Number(event.target.value) || 0)
+                                    }
+                                  />
+                                </div>
                               </label>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  className="flex min-h-touch min-w-touch items-center justify-center rounded-xl border border-gray-300 bg-white"
-                                  onClick={() => updateQuantity(item.variant_id, item.quantity - 1)}
-                                >
-                                  <IonIcon icon={remove} />
-                                </button>
-                                <input
-                                  type="number"
-                                  min="1"
-                                  value={item.quantity}
-                                  className="min-h-touch w-20 rounded-xl border border-gray-300 px-2 text-center text-base font-bold"
-                                  onChange={(event) =>
-                                    updateQuantity(
-                                      item.variant_id,
-                                      Math.max(1, Number(event.target.value) || 1)
-                                    )
-                                  }
-                                />
-                                <button
-                                  type="button"
-                                  className="flex min-h-touch min-w-touch items-center justify-center rounded-xl border border-gray-300 bg-white"
-                                  onClick={() => updateQuantity(item.variant_id, item.quantity + 1)}
-                                >
-                                  <IonIcon icon={add} />
-                                </button>
-                              </div>
                             </div>
-                            <label className="block text-xs font-semibold text-gray-600">
-                              {t('billing.priceLabel')}
-                              <div className="mt-1 flex min-h-touch items-center rounded-xl border border-gray-300 px-3">
-                                <span className="mr-1">₹</span>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  value={item.unit_price}
-                                  className="w-full border-0 bg-transparent text-base font-semibold outline-none"
-                                  onChange={(event) =>
-                                    updatePrice(item.variant_id, Number(event.target.value) || 0)
-                                  }
-                                />
-                              </div>
-                            </label>
-                          </div>
-                        </IonCardContent>
-                      </IonCard>
-                    ))}
+                          </IonCardContent>
+                        </IonCard>
+                      );
+                    })}
                   </div>
                 )}
               </section>
@@ -1321,7 +1427,9 @@ export const BillingPage: React.FC = () => {
                       <IonButton
                         color="success"
                         className="min-h-touch"
-                        disabled={!cartItems.length || isBusy || !checkoutQuoteReady}
+                        disabled={
+                          !cartItems.length || isBusy || !checkoutQuoteReady || stockConflict
+                        }
                         onClick={() => handleCheckout('CASH')}
                       >
                         <IonIcon icon={cash} slot="start" />
@@ -1330,7 +1438,9 @@ export const BillingPage: React.FC = () => {
                       <IonButton
                         color="primary"
                         className="min-h-touch"
-                        disabled={!cartItems.length || isBusy || !checkoutQuoteReady}
+                        disabled={
+                          !cartItems.length || isBusy || !checkoutQuoteReady || stockConflict
+                        }
                         onClick={() => handleCheckout('UPI')}
                       >
                         {t('payment.upi')}
@@ -1338,7 +1448,9 @@ export const BillingPage: React.FC = () => {
                       <IonButton
                         fill="outline"
                         className="min-h-touch"
-                        disabled={!cartItems.length || isBusy || !checkoutQuoteReady}
+                        disabled={
+                          !cartItems.length || isBusy || !checkoutQuoteReady || stockConflict
+                        }
                         onClick={() => handleCheckout()}
                       >
                         <IonIcon icon={card} slot="start" />
@@ -1347,7 +1459,7 @@ export const BillingPage: React.FC = () => {
                       <IonButton
                         fill="clear"
                         className="min-h-touch"
-                        disabled={!cartItems.length || isBusy}
+                        disabled={!cartItems.length || isBusy || stockConflict}
                         onClick={handleSaveAsDraft}
                       >
                         <IonIcon icon={bookmark} slot="start" />
@@ -1358,7 +1470,9 @@ export const BillingPage: React.FC = () => {
                           fill="outline"
                           color="warning"
                           className="col-span-2 min-h-touch"
-                          disabled={!cartItems.length || isBusy || !checkoutQuoteReady}
+                          disabled={
+                            !cartItems.length || isBusy || !checkoutQuoteReady || stockConflict
+                          }
                           onClick={() => void handlePayLater()}
                         >
                           {t('billing.payLater')}
@@ -1383,20 +1497,20 @@ export const BillingPage: React.FC = () => {
               </div>
               <IonButton
                 color="success"
-                disabled={isBusy || !checkoutQuoteReady}
+                disabled={isBusy || !checkoutQuoteReady || stockConflict}
                 onClick={() => handleCheckout('CASH')}
               >
                 {t('billing.cash')}
               </IonButton>
               <IonButton
-                disabled={isBusy || !checkoutQuoteReady}
+                disabled={isBusy || !checkoutQuoteReady || stockConflict}
                 onClick={() => handleCheckout('UPI')}
               >
                 {t('payment.upi')}
               </IonButton>
               <IonButton
                 fill="outline"
-                disabled={isBusy || !checkoutQuoteReady}
+                disabled={isBusy || !checkoutQuoteReady || stockConflict}
                 onClick={() => handleCheckout()}
               >
                 <IonIcon icon={card} slot="icon-only" />
@@ -1404,7 +1518,7 @@ export const BillingPage: React.FC = () => {
               {customerId && (
                 <IonButton
                   color="warning"
-                  disabled={isBusy || !checkoutQuoteReady}
+                  disabled={isBusy || !checkoutQuoteReady || stockConflict}
                   onClick={() => void handlePayLater()}
                 >
                   {t('billing.khata')}

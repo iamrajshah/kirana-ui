@@ -60,7 +60,10 @@ vi.mock('react-router-dom', () => ({
 }));
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string, options?: { product?: string }) =>
+      options?.product ? `${key} ${options.product}` : key,
+  }),
 }));
 
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
@@ -467,6 +470,37 @@ describe('BillingPage', () => {
   });
 
   describe('barcode entry', () => {
+    it('prevents quantity edits from exceeding the scanned product stock', async () => {
+      mocks.scanBarcode.mockResolvedValueOnce({
+        ...matchedBarcode,
+        data: {
+          ...matchedBarcode.data,
+          inventory: { ...matchedBarcode.data.inventory, quantity: 2 },
+        },
+      });
+
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+
+      fireEvent.click(screen.getByRole('button', { name: 'billing.scanBarcode' }));
+      fireEvent.click(screen.getByRole('button', { name: 'camera scan' }));
+
+      await screen.findByText('Tea');
+      const quantity = screen.getByRole('spinbutton', { name: 'billing.quantityFor Tea' });
+
+      fireEvent.change(quantity, { target: { value: '3' } });
+
+      expect((quantity as HTMLInputElement).value).toBe('2');
+      expect(screen.getByText('billing.stockLimit')).toBeTruthy();
+      expect(
+        (
+          screen.getByRole('button', {
+            name: 'billing.increaseQuantity Tea',
+          }) as HTMLButtonElement
+        ).disabled
+      ).toBe(true);
+    });
+
     it('adds a locally matched product after a camera barcode scan', async () => {
       render(<BillingPage />);
       await screen.findByText('Rice');

@@ -2,11 +2,46 @@ export interface BillingCartItem {
   variant_id: string;
   product_name: string;
   sku: string;
+  available_quantity?: number;
   quantity: number;
   unit_price: number;
   discount_amount: number;
   discount_type: 'amount' | 'percent';
 }
+
+export type AddBillingCartItemOutcome = 'added' | 'incremented' | 'at-stock-limit' | 'out-of-stock';
+
+export const addBillingCartItem = (
+  cart: BillingCartItem[],
+  item: Omit<BillingCartItem, 'quantity'>
+): { cart: BillingCartItem[]; outcome: AddBillingCartItemOutcome } => {
+  const availableQuantity = Math.max(0, Number(item.available_quantity) || 0);
+  if (availableQuantity === 0) return { cart, outcome: 'out-of-stock' };
+
+  const existing = cart.find((entry) => entry.variant_id === item.variant_id);
+  if (!existing) {
+    return {
+      cart: [...cart, { ...item, available_quantity: availableQuantity, quantity: 1 }],
+      outcome: 'added',
+    };
+  }
+
+  const refreshedCart = cart.map((entry) =>
+    entry.variant_id === item.variant_id
+      ? { ...entry, available_quantity: availableQuantity }
+      : entry
+  );
+  if (existing.quantity >= availableQuantity) {
+    return { cart: refreshedCart, outcome: 'at-stock-limit' };
+  }
+
+  return {
+    cart: refreshedCart.map((entry) =>
+      entry.variant_id === item.variant_id ? { ...entry, quantity: entry.quantity + 1 } : entry
+    ),
+    outcome: 'incremented',
+  };
+};
 
 export const BILLING_COMPLETION_STORAGE_KEY = 'kirana_billing_completion_invoice';
 export const BILLING_PENDING_CHECKOUT_STORAGE_KEY = 'kirana_billing_pending_checkout';
@@ -66,9 +101,9 @@ const belongsToOwner = (value: Partial<BillingStorageOwner>, owner: BillingStora
   value.userId === owner.userId && value.tenantId === owner.tenantId;
 
 export const loadBillingCompletion = (owner: BillingStorageOwner): string | null => {
-  const stored = readStoredValue(BILLING_COMPLETION_STORAGE_KEY) as
-    | Partial<StoredBillingCompletion>
-    | null;
+  const stored = readStoredValue(
+    BILLING_COMPLETION_STORAGE_KEY
+  ) as Partial<StoredBillingCompletion> | null;
   if (!stored || stored.version !== 1 || !belongsToOwner(stored, owner)) {
     if (stored) removeStoredValue(BILLING_COMPLETION_STORAGE_KEY);
     return null;
@@ -95,9 +130,9 @@ export const clearBillingCompletion = () => {
 export const loadPendingBillingCheckout = (
   owner: BillingStorageOwner
 ): PendingBillingCheckout | null => {
-  const stored = readStoredValue(BILLING_PENDING_CHECKOUT_STORAGE_KEY) as
-    | Partial<StoredPendingBillingCheckout>
-    | null;
+  const stored = readStoredValue(
+    BILLING_PENDING_CHECKOUT_STORAGE_KEY
+  ) as Partial<StoredPendingBillingCheckout> | null;
   if (
     !stored ||
     stored.version !== 1 ||
