@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type PropsWithChildren } from 'react';
 import type { LedgerEntry } from '@core/api/customerApi';
 import { useTranslation } from 'react-i18next';
 import {
@@ -24,9 +24,23 @@ import {
 import { useParams } from 'react-router';
 import { useHistory } from 'react-router';
 import { useGetCustomerByIdQuery, useGetCustomerLedgerQuery } from '@core/api/customerApi';
-import { Loading, EmptyState } from '@components';
+import { EmptyState } from '@components';
 import { formatCurrency, formatDateTime } from '@utils/helpers';
 import './CustomerLedgerPage.css';
+
+const LedgerPageShell: React.FC<PropsWithChildren<{ title: string }>> = ({ title, children }) => (
+  <IonPage>
+    <IonHeader>
+      <IonToolbar>
+        <IonButtons slot="start">
+          <IonBackButton defaultHref="/customers" />
+        </IonButtons>
+        <IonTitle>{title}</IonTitle>
+      </IonToolbar>
+    </IonHeader>
+    <IonContent className="detail-workspace">{children}</IonContent>
+  </IonPage>
+);
 
 export const CustomerLedgerPage: React.FC = () => {
   const { t } = useTranslation();
@@ -49,24 +63,20 @@ export const CustomerLedgerPage: React.FC = () => {
   const summary = ledgerData?.data?.summary;
 
   if (loadingCustomer || loadingLedger) {
-    return <Loading isOpen={true} />;
+    return (
+      <LedgerPageShell title={t('customers.ledger.title')}>
+        <div className="workspace-state" role="status" aria-live="polite">
+          <p>{t('common.loading')}</p>
+        </div>
+      </LedgerPageShell>
+    );
   }
 
   if (!customer) {
     return (
-      <IonPage>
-        <IonHeader>
-          <IonToolbar>
-            <IonButtons slot="start">
-              <IonBackButton defaultHref="/customers" />
-            </IonButtons>
-            <IonTitle>{t('customers.ledger.title')}</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-        <IonContent>
-          <EmptyState message={t('customers.ledger.customerNotFound')} />
-        </IonContent>
-      </IonPage>
+      <LedgerPageShell title={t('customers.ledger.title')}>
+        <EmptyState message={t('customers.ledger.customerNotFound')} />
+      </LedgerPageShell>
     );
   }
 
@@ -96,16 +106,7 @@ export const CustomerLedgerPage: React.FC = () => {
   };
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/customers" />
-          </IonButtons>
-          <IonTitle>{t('customers.ledger.title')}</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent className="detail-workspace">
+    <LedgerPageShell title={t('customers.ledger.title')}>
         {/* Customer Info Card */}
         <IonCard>
           <IonCardHeader>
@@ -258,7 +259,6 @@ export const CustomerLedgerPage: React.FC = () => {
             </IonRow>
           </IonGrid>
         )}
-      </IonContent>
-    </IonPage>
+    </LedgerPageShell>
   );
 };

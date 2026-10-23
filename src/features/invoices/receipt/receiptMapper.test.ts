@@ -129,5 +129,24 @@ describe('mapReceiptDocument', () => {
     expect(receipt.title).toBe('Receipt');
     expect(receipt.cancellationMarker).toBe('CANCELLED — NOT VALID');
   });
+
+  it('maps the immutable MRP saving supplied by the finalized document', () => {
+    const base = documentFixture();
+    const receipt = mapReceiptDocument(
+      documentFixture({
+        totals: { ...base.totals, mrp_savings_amount: '50.00' },
+        items: [
+          {
+            ...base.items[0],
+            mrp_unit_price: '50.00',
+            mrp_savings_amount: '50.00',
+          },
+        ],
+      })
+    );
+
+    expect(receipt.totals.mrpSavings).toBe('50.00');
+    expect(receipt.items[0]).toMatchObject({ mrpUnitPrice: '50.00', mrpSavings: '50.00' });
+  });
 });
 

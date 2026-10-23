@@ -58,6 +58,8 @@ export const mapReceiptDocument = (
     unitLabel: item.unit_label,
     quantity: item.quantity,
     unitPrice: item.unit_price,
+    mrpUnitPrice: item.mrp_unit_price ?? null,
+    mrpSavings: item.mrp_savings_amount ?? null,
     grossAmount: item.gross_amount,
     discountAmount: item.item_discount_amount,
     taxableAmount: item.taxable_amount,
@@ -74,6 +76,7 @@ export const mapReceiptDocument = (
     discount: document.totals.discount_amount,
     gst: document.totals.gst_amount,
     total: document.totals.total_amount,
+    mrpSavings: document.totals.mrp_savings_amount ?? null,
   },
   payment: {
     status: document.payment.status,

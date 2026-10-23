@@ -167,14 +167,8 @@
     box-shadow: 12px 0 32px rgba(3, 30, 22, 0.12);
   }
 
-  /*
-   * The authenticated menu mounts after the split pane has already emitted its
-   * initial visibility event. Keep the desktop container visible even when
-   * Ionic misses that first event; mobile menus still use the normal overlay.
-   */
-  .workspace-menu::part(container) {
-    inset: 0;
-    width: auto;
+  .workspace-split-pane.split-pane-visible .workspace-menu::part(container) {
+    width: 248px;
     transform: none;
     box-shadow: none;
   }

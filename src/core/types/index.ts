@@ -256,6 +256,7 @@ export interface FinalizedDocumentDto {
     discount_amount: string;
     gst_amount: string;
     total_amount: string;
+    mrp_savings_amount?: string | null;
   };
   items: Array<{
     id?: string;
@@ -267,6 +268,8 @@ export interface FinalizedDocumentDto {
     unit_label: string | null;
     quantity: number;
     unit_price: string;
+    mrp_unit_price?: string | null;
+    mrp_savings_amount?: string | null;
     gross_amount: string;
     item_discount_amount: string;
     allocated_bill_discount_amount: string;

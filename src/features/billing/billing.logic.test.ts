@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   BILLING_COMPLETION_STORAGE_KEY,
   BILLING_PENDING_CHECKOUT_STORAGE_KEY,
+  addBillingCartItem,
   buildInvoiceItems,
   calculateBillingTotals,
   clearBillingCompletion,
@@ -27,6 +28,37 @@ const cart = [
 ];
 
 describe('billing calculations', () => {
+  it('stops repeated additions at the latest available stock', () => {
+    const item = {
+      variant_id: '1',
+      product_name: 'Salt',
+      sku: 'SALT-1',
+      available_quantity: 2,
+      unit_price: 25,
+      discount_amount: 0,
+      discount_type: 'amount' as const,
+    };
+
+    const first = addBillingCartItem([], item);
+    const second = addBillingCartItem(first.cart, item);
+    const third = addBillingCartItem(second.cart, item);
+
+    expect(first.outcome).toBe('added');
+    expect(second.outcome).toBe('incremented');
+    expect(third.outcome).toBe('at-stock-limit');
+    expect(third.cart[0]).toMatchObject({ quantity: 2, available_quantity: 2 });
+  });
+
+  it('keeps the latest lower stock limit without increasing the bill quantity', () => {
+    const result = addBillingCartItem([{ ...cart[0], available_quantity: 5 }], {
+      ...cart[0],
+      available_quantity: 1,
+    });
+
+    expect(result.outcome).toBe('at-stock-limit');
+    expect(result.cart[0]).toMatchObject({ quantity: 2, available_quantity: 1 });
+  });
+
   it('converts percentage item discounts into invoice amounts', () => {
     expect(buildInvoiceItems(cart)).toEqual([
       { variant_id: '1', quantity: 2, price: 50, discount_amount: 10 },

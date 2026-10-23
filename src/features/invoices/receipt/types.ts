@@ -26,6 +26,7 @@ export interface ReceiptLabels {
   discount: string;
   gst: string;
   total: string;
+  savings: string;
   paid: string;
   remaining: string;
   paymentMode: string;
@@ -75,6 +76,8 @@ export interface ReceiptViewModel {
     unitLabel: string | null;
     quantity: number;
     unitPrice: string;
+    mrpUnitPrice: string | null;
+    mrpSavings: string | null;
     grossAmount: string;
     discountAmount: string;
     taxableAmount: string;
@@ -91,6 +94,7 @@ export interface ReceiptViewModel {
     discount: string;
     gst: string;
     total: string;
+    mrpSavings: string | null;
   };
   payment: {
     status: ReceiptPaymentStatus;

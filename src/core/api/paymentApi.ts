@@ -35,6 +35,7 @@ export const paymentApi = apiSlice.injectEndpoints({
         'Payment',
         'Invoice',
         'Dashboard',
+        'Report',
         ...(body.customer_id ? (['Customer'] as const) : []),
       ],
     }),

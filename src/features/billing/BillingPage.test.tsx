@@ -60,7 +60,10 @@ vi.mock('react-router-dom', () => ({
 }));
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string, options?: { product?: string }) =>
+      options?.product ? `${key} ${options.product}` : key,
+  }),
 }));
 
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
@@ -467,6 +470,37 @@ describe('BillingPage', () => {
   });
 
   describe('barcode entry', () => {
+    it('prevents quantity edits from exceeding the scanned product stock', async () => {
+      mocks.scanBarcode.mockResolvedValueOnce({
+        ...matchedBarcode,
+        data: {
+          ...matchedBarcode.data,
+          inventory: { ...matchedBarcode.data.inventory, quantity: 2 },
+        },
+      });
+
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+
+      fireEvent.click(screen.getByRole('button', { name: 'billing.scanBarcode' }));
+      fireEvent.click(screen.getByRole('button', { name: 'camera scan' }));
+
+      await screen.findByText('Tea');
+      const quantity = screen.getByRole('spinbutton', { name: 'billing.quantityFor Tea' });
+
+      fireEvent.change(quantity, { target: { value: '3' } });
+
+      expect((quantity as HTMLInputElement).value).toBe('2');
+      expect(screen.getByText('billing.stockLimit')).toBeTruthy();
+      expect(
+        (
+          screen.getByRole('button', {
+            name: 'billing.increaseQuantity Tea',
+          }) as HTMLButtonElement
+        ).disabled
+      ).toBe(true);
+    });
+
     it('adds a locally matched product after a camera barcode scan', async () => {
       render(<BillingPage />);
       await screen.findByText('Rice');
@@ -731,6 +765,30 @@ describe('BillingPage', () => {
       expect(mocks.refetchDocument).toHaveBeenCalledOnce();
       expect(mocks.createInvoice).not.toHaveBeenCalled();
       expect(mocks.createPayment).not.toHaveBeenCalled();
+    });
+
+    it('does not replace the active billing route while presenting payment completion', async () => {
+      mocks.search = '';
+      localStorage.setItem(
+        'kirana_billing_pending_checkout',
+        JSON.stringify({
+          version: 1,
+          invoiceId: '42',
+          payable: 100,
+          customerId: null,
+          paymentIdempotencyKey: 'payment-key',
+          userId: '7',
+          tenantId: '1',
+        })
+      );
+      mocks.createPayment.mockResolvedValueOnce({ data: { id: 'payment-1' } });
+
+      render(<BillingPage />);
+      fireEvent.click(screen.getByRole('button', { name: 'retry payment' }));
+
+      expect(await screen.findByText('billing.completion.title')).toBeTruthy();
+      expect(mocks.historyReplace).not.toHaveBeenCalled();
+      expect(screen.queryByLabelText('payment-recovery')).toBeNull();
     });
 
     it('uses an authoritative quote before finalization and payment', async () => {

@@ -15,10 +15,13 @@ export interface InvoiceQuote {
   igst_amount: string;
   gst_amount: string;
   total_amount: string;
+  mrp_savings_amount?: string | null;
   lines: Array<{
     variant_id: string;
     quantity: number;
     unit_price: string;
+    mrp_unit_price?: string | null;
+    mrp_savings_amount?: string | null;
     line_total_amount: string;
   }>;
 }
@@ -134,6 +137,7 @@ export const invoiceApi = apiSlice.injectEndpoints({
         'Invoice',
         'Inventory',
         'Dashboard',
+        'Report',
         ...(body.customer_id ? (['Customer'] as const) : []),
       ],
     }),
@@ -168,6 +172,7 @@ export const invoiceApi = apiSlice.injectEndpoints({
         'Invoice',
         'Inventory',
         'Customer',
+        'Report',
       ],
     }),
     cancelInvoice: builder.mutation<
@@ -184,6 +189,7 @@ export const invoiceApi = apiSlice.injectEndpoints({
         'Invoice',
         'Inventory',
         'Customer',
+        'Report',
       ],
     }),
     claimHeldBill: builder.mutation<ApiResponse<HeldBill>, HeldBillCounterPayload>({

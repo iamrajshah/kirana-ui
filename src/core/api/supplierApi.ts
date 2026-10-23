@@ -91,7 +91,7 @@ export const supplierApi = apiSlice.injectEndpoints({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'Supplier', id }],
+      invalidatesTags: (_result, _error, { id }) => [{ type: 'Supplier', id }, 'Report'],
     }),
     addSupplierOpeningBalance: builder.mutation<
       ApiResponse<unknown>,
@@ -102,7 +102,7 @@ export const supplierApi = apiSlice.injectEndpoints({
         method: 'POST',
         body: { amount },
       }),
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'Supplier', id }],
+      invalidatesTags: (_result, _error, { id }) => [{ type: 'Supplier', id }, 'Report'],
     }),
     getSupplierLedger: builder.query<
       ApiResponse<SupplierLedgerResponse>,
@@ -123,7 +123,7 @@ export const supplierApi = apiSlice.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'Supplier', id }],
+      invalidatesTags: (_result, _error, { id }) => [{ type: 'Supplier', id }, 'Report'],
     }),
     // Bank Account endpoints
     getBankAccounts: builder.query<ApiResponse<BankAccount[]>, string>({

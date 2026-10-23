@@ -24,7 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { useGetPaymentsQuery, useCreatePaymentMutation } from '@core/api/paymentApi';
 import { useGetCustomersQuery } from '@core/api/customerApi';
 import { useLazyGetPendingInvoicesByCustomerQuery } from '@core/api/invoiceApi';
-import { Input, Select, Button, EmptyState, Loading, SearchBar } from '@components';
+import { Input, Select, Button, EmptyState, SearchBar } from '@components';
 import { formatCurrency, generateIdempotencyKey } from '@utils/helpers';
 import { PAYMENT_MODES } from '@core/constants';
 import type { PaymentMode } from '@core/types';
@@ -194,7 +194,9 @@ export const PaymentsPage: React.FC = () => {
             placeholder={t('payments.searchPayments')}
           />
           {isLoading ? (
-            <Loading isOpen={isLoading} />
+            <div className="workspace-state" role="status" aria-live="polite">
+              <p>{t('common.loading')}</p>
+            </div>
           ) : isError && payments.length === 0 ? (
             <div className="workspace-state">
               <p>{t('payments.loadError')}</p>

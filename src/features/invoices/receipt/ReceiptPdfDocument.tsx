@@ -70,6 +70,7 @@ const styles = StyleSheet.create({
   totals: { alignSelf: 'flex-end', marginTop: 14, width: '48%' },
   totalRow: { display: 'flex', flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
   grandTotal: { borderTop: '1.5 solid #111827', fontSize: 13, fontWeight: 700, marginTop: 3, paddingTop: 5 },
+  savings: { backgroundColor: '#ecfdf5', color: '#047857', fontSize: 11, fontWeight: 700, marginTop: 4, padding: 5 },
   payment: { backgroundColor: '#f8fafc', border: '1 solid #cbd5e1', marginTop: 14, padding: 9 },
   paymentStatus: { fontSize: 12, fontWeight: 700, marginBottom: 3 },
   footer: { color: '#475569', marginTop: 20, textAlign: 'center' },
@@ -141,6 +142,12 @@ export const ReceiptPdfDocument: React.FC<{ receipt: ReceiptViewModel }> = ({ re
           {Number(receipt.totals.discount) > 0 && <View style={styles.totalRow}><Text>{labels.discount}</Text><Text>−{money(receipt.totals.discount)}</Text></View>}
           {gst && <View style={styles.totalRow}><Text>{labels.gst}</Text><Text>{money(receipt.totals.gst)}</Text></View>}
           <View style={[styles.totalRow, styles.grandTotal]}><Text>{labels.total}</Text><Text>{money(receipt.totals.total)}</Text></View>
+          {receipt.totals.mrpSavings && Number(receipt.totals.mrpSavings) > 0 && (
+            <View style={[styles.totalRow, styles.savings]}>
+              <Text>{labels.savings}</Text>
+              <Text>{money(receipt.totals.mrpSavings)}</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.payment} wrap={false}>
