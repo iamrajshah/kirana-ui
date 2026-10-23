@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   getTenantDetails: vi.fn(),
   resetOwnerPassword: vi.fn(),
   history: { replace: vi.fn() },
+  toggleTheme: vi.fn(),
   translate: vi.fn((key: string, values?: { count?: number }) =>
     values?.count === undefined ? key : `${key}:${values.count}`
   ),
@@ -21,6 +22,9 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 vi.mock('react-router', () => ({ useHistory: () => mocks.history }));
+vi.mock('../../contexts/useTheme', () => ({
+  useTheme: () => ({ theme: 'light', toggleTheme: mocks.toggleTheme }),
+}));
 vi.mock('@core/api/platformApi', () => ({
   platformApi: {
     listTenants: (...args: unknown[]) => mocks.listTenants(...args),
@@ -37,8 +41,8 @@ vi.mock('@components', () => ({
 }));
 vi.mock('@ionic/react', () => {
   const Container = ({ children }: PropsWithChildren) => <div>{children}</div>;
-  const Button = ({ children, onClick, disabled }: PropsWithChildren<{ onClick?: () => void; disabled?: boolean }>) => (
-    <button onClick={onClick} disabled={disabled}>{children}</button>
+  const Button = ({ children, onClick, disabled, ...props }: PropsWithChildren<React.ButtonHTMLAttributes<HTMLButtonElement>>) => (
+    <button onClick={onClick} disabled={disabled} {...props}>{children}</button>
   );
   return {
     IonPage: Container,
@@ -60,7 +64,7 @@ vi.mock('@ionic/react', () => {
 });
 vi.mock('ionicons/icons', () => ({
   add: 'add', calendar: 'calendar', checkmarkCircle: 'check', close: 'close', eye: 'eye', key: 'key',
-  logOut: 'logout', pauseCircle: 'pause', search: 'search',
+  logOut: 'logout', moon: 'moon', pauseCircle: 'pause', search: 'search', sunny: 'sunny',
 }));
 
 const summary = {
@@ -117,6 +121,15 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('PlatformTenantsPage', () => {
+  it('lets the platform admin switch themes', async () => {
+    render(<PlatformTenantsPage />);
+
+    await screen.findByText('Jayesh Trading');
+    fireEvent.click(screen.getByRole('button', { name: 'profile.darkMode' }));
+
+    expect(mocks.toggleTheme).toHaveBeenCalledTimes(1);
+  });
+
   it('opens labelled shop and staff details', async () => {
     render(<PlatformTenantsPage />);
 
