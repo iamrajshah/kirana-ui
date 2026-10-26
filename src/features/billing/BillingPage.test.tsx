@@ -29,8 +29,11 @@ const mocks = vi.hoisted(() => ({
   document: null as Record<string, unknown> | null,
   documentError: false,
   refetchDocument: vi.fn(),
+  getCustomerById: vi.fn(),
+  refetchCustomer: vi.fn(),
   settingsMode: 'SIMPLE_RECEIPT' as 'SIMPLE_RECEIPT' | 'GST_TAX_INVOICE',
   settingsLoading: false,
+  customerDetail: null as Record<string, unknown> | null,
 }));
 
 const apiTrigger = (operation: ReturnType<typeof vi.fn>) => (payload: unknown) => ({
@@ -99,13 +102,21 @@ vi.mock('@components/PaymentModal', () => ({
     isOpen,
     onClose,
     onPayment,
+    invoiceAmount,
+    previousBalance,
   }: {
     isOpen: boolean;
     onClose: () => void | Promise<void>;
     onPayment: (amount: number, mode: 'CASH') => Promise<void>;
+    invoiceAmount: number;
+    previousBalance?: number;
   }) =>
     isOpen ? (
-      <div aria-label="payment-recovery">
+      <div
+        aria-label="payment-recovery"
+        data-invoice-amount={invoiceAmount}
+        data-previous-balance={previousBalance}
+      >
         <button onClick={() => void onPayment(100, 'CASH')}>retry payment</button>
         <button onClick={() => void onClose()}>cancel checkout</button>
       </div>
@@ -153,6 +164,21 @@ vi.mock('@core/api/paymentApi', () => ({
 
 vi.mock('@core/api/customerApi', () => ({
   useGetCustomersQuery: () => ({ data: { data: [] }, isLoading: false, isFetching: false }),
+  useGetCustomerByIdQuery: (id: string, options: unknown) => {
+    mocks.getCustomerById(id, options);
+    const invoiceCustomer = mocks.invoice.customer as Record<string, unknown> | null | undefined;
+    const detail =
+      mocks.customerDetail ??
+      (invoiceCustomer
+        ? { ...invoiceCustomer, credit_balance: invoiceCustomer.credit_balance ?? 0 }
+        : null);
+    return {
+      currentData: detail ? { data: detail } : undefined,
+      isFetching: false,
+      isError: false,
+      refetch: mocks.refetchCustomer,
+    };
+  },
 }));
 
 vi.mock('@core/api/productApi', () => ({
@@ -216,6 +242,7 @@ beforeEach(() => {
   mocks.documentError = false;
   mocks.settingsMode = 'SIMPLE_RECEIPT';
   mocks.settingsLoading = false;
+  mocks.customerDetail = null;
   mocks.invoice = {
     id: 'edit-1',
     customer: null,
@@ -279,6 +306,33 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('BillingPage', () => {
+  it('keeps long bills compact until the cashier chooses to review every item', async () => {
+    mocks.invoice = {
+      ...mocks.invoice,
+      items: Array.from({ length: 12 }, (_, index) => ({
+        variant_id: `variant-${index + 1}`,
+        quantity: 1,
+        unit_price: 10,
+        discount_amount: 0,
+        variant: {
+          sku: `SKU-${index + 1}`,
+          product: { name: `Product ${index + 1}` },
+        },
+      })),
+    };
+
+    render(<BillingPage />);
+
+    expect(await screen.findByText('Product 12')).toBeTruthy();
+    expect(screen.getByText('billing.showingRecentItems')).toBeTruthy();
+    expect(screen.queryByText('Product 1')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'billing.reviewAllItems' }));
+
+    expect(await screen.findByText('Product 1')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'billing.showRecentItems' })).toBeTruthy();
+  });
+
   describe('quote refresh', () => {
     it('keeps simple-receipt quantity edits local until checkout', async () => {
       render(<BillingPage />);
@@ -310,6 +364,59 @@ describe('BillingPage', () => {
   });
 
   describe('held bill continuity', () => {
+    it('shows fresh previous khata separately from the current bill total', async () => {
+      mocks.invoice = {
+        ...mocks.invoice,
+        customer: { id: '12', name: 'Anita', phone: '9999999999' },
+      };
+      mocks.customerDetail = {
+        id: '12',
+        name: 'Anita',
+        phone: '9999999999',
+        credit_balance: 2500,
+      };
+
+      render(<BillingPage />);
+
+      expect(await screen.findByText('billing.previousKhata')).toBeTruthy();
+      expect(screen.getByText('billing.todaysBill')).toBeTruthy();
+      expect(screen.getByText('billing.totalCustomerDue')).toBeTruthy();
+      expect(screen.getByText('₹2,500')).toBeTruthy();
+      expect(screen.getByText('₹2,600')).toBeTruthy();
+      expect(mocks.getCustomerById).toHaveBeenCalledWith('12', {
+        skip: false,
+        refetchOnMountOrArgChange: true,
+      });
+    });
+
+    it('skips the customer balance request for a walk-in bill', () => {
+      render(<BillingPage />);
+
+      expect(mocks.getCustomerById).toHaveBeenCalledWith('', {
+        skip: true,
+        refetchOnMountOrArgChange: true,
+      });
+    });
+
+    it('shows customer advance separately instead of turning it into outstanding khata', async () => {
+      mocks.invoice = {
+        ...mocks.invoice,
+        customer: { id: '12', name: 'Anita', phone: '9999999999' },
+      };
+      mocks.customerDetail = {
+        id: '12',
+        name: 'Anita',
+        phone: '9999999999',
+        credit_balance: -500,
+      };
+
+      render(<BillingPage />);
+
+      expect(await screen.findByText('billing.customerAdvance')).toBeTruthy();
+      expect(screen.getByText('billing.advanceNotApplied')).toBeTruthy();
+      expect(screen.queryByText('billing.totalCustomerDue')).toBeNull();
+    });
+
     it('opens the held-bill panel focused on a dashboard-linked bill', () => {
       mocks.search = '?held=held-9';
 
@@ -683,6 +790,35 @@ describe('BillingPage', () => {
   });
 
   describe('checkout recovery', () => {
+    it('freezes previous khata before finalization refreshes the customer balance', async () => {
+      mocks.invoice = {
+        ...mocks.invoice,
+        customer: { id: '12', name: 'Anita', phone: '9999999999' },
+      };
+      mocks.customerDetail = {
+        id: '12',
+        name: 'Anita',
+        phone: '9999999999',
+        credit_balance: 2500,
+      };
+      mocks.finalizeInvoice.mockImplementationOnce(async () => {
+        mocks.customerDetail = { ...mocks.customerDetail, credit_balance: 2600 };
+        return { data: { id: 'edit-1' } };
+      });
+      mocks.createPayment.mockRejectedValueOnce(new Error('payment unavailable'));
+
+      render(<BillingPage />);
+      await screen.findByText('Anita (9999999999)');
+      fireEvent.click(screen.getByRole('button', { name: 'billing.payCash' }));
+
+      const recovery = await screen.findByLabelText('payment-recovery');
+      expect(recovery.getAttribute('data-invoice-amount')).toBe('100');
+      expect(recovery.getAttribute('data-previous-balance')).toBe('2500');
+      expect(
+        JSON.parse(localStorage.getItem('kirana_billing_pending_checkout') || '{}')
+      ).toMatchObject({ payable: 100, previousBalance: 2500 });
+    });
+
     it('blocks checkout until tenant document settings are known', async () => {
       mocks.settingsLoading = true;
       render(<BillingPage />);

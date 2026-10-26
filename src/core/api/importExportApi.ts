@@ -77,7 +77,13 @@ export const importExportApi = apiSlice.injectEndpoints({
         url: `/import/${jobId}/commit`,
         method: 'POST',
       }),
-      invalidatesTags: ['Import', 'Product', 'Customer', 'Inventory'],
+      invalidatesTags: (_result, error) => [
+        'Import',
+        'Product',
+        'Customer',
+        'Inventory',
+        ...(error ? [] : (['Dashboard'] as const)),
+      ],
     }),
 
     exportData: builder.mutation<string, { type: ExportType; format?: ExportFormat }>({

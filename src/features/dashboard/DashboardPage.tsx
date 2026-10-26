@@ -95,7 +95,11 @@ export const DashboardPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const history = useHistory();
   const user = useAppSelector(selectCurrentUser);
-  const { data, isLoading, isError, refetch } = useGetDashboardStatsQuery();
+  const { data, isLoading, isError, refetch } = useGetDashboardStatsQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
   const stats = data?.data;
   const shortcuts = getNavigationItems(user?.roles || []).filter((item) =>
     shortcutIds.has(item.id)

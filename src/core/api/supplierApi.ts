@@ -81,7 +81,13 @@ export const supplierApi = apiSlice.injectEndpoints({
     }),
     createSupplier: builder.mutation<
       ApiResponse<Supplier>,
-      { name: string; phone?: string; email?: string; address?: string; default_purchase_firm_id?: number | null }
+      {
+        name: string;
+        phone?: string;
+        email?: string;
+        address?: string;
+        default_purchase_firm_id?: number | null;
+      }
     >({
       query: (body) => ({
         url: '/suppliers',
@@ -92,14 +98,25 @@ export const supplierApi = apiSlice.injectEndpoints({
     }),
     updateSupplier: builder.mutation<
       ApiResponse<Supplier>,
-      { id: string; name?: string; phone?: string; email?: string; address?: string; default_purchase_firm_id?: number | null }
+      {
+        id: string;
+        name?: string;
+        phone?: string;
+        email?: string;
+        address?: string;
+        default_purchase_firm_id?: number | null;
+      }
     >({
       query: ({ id, ...body }) => ({
         url: `/suppliers/${id}`,
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'Supplier', id }, 'Report'],
+      invalidatesTags: (_result, error, { id }) => [
+        { type: 'Supplier', id },
+        'Report',
+        ...(error ? [] : (['Dashboard'] as const)),
+      ],
     }),
     addSupplierOpeningBalance: builder.mutation<
       ApiResponse<unknown>,
@@ -110,7 +127,11 @@ export const supplierApi = apiSlice.injectEndpoints({
         method: 'POST',
         body: { firm_id, amount },
       }),
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'Supplier', id }, 'Report'],
+      invalidatesTags: (_result, error, { id }) => [
+        { type: 'Supplier', id },
+        'Report',
+        ...(error ? [] : (['Dashboard'] as const)),
+      ],
     }),
     getSupplierLedger: builder.query<
       ApiResponse<SupplierLedgerResponse>,
@@ -124,14 +145,24 @@ export const supplierApi = apiSlice.injectEndpoints({
     }),
     makeSupplierPayment: builder.mutation<
       ApiResponse<unknown>,
-      { id: string; firm_id: number; amount: number; payment_mode: SupplierPaymentMode; description?: string }
+      {
+        id: string;
+        firm_id: number;
+        amount: number;
+        payment_mode: SupplierPaymentMode;
+        description?: string;
+      }
     >({
       query: ({ id, ...body }) => ({
         url: `/suppliers/${id}/payments`,
         method: 'POST',
         body,
       }),
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'Supplier', id }, 'Report'],
+      invalidatesTags: (_result, error, { id }) => [
+        { type: 'Supplier', id },
+        'Report',
+        ...(error ? [] : (['Dashboard'] as const)),
+      ],
     }),
     // Bank Account endpoints
     getBankAccounts: builder.query<ApiResponse<BankAccount[]>, string>({
@@ -140,7 +171,7 @@ export const supplierApi = apiSlice.injectEndpoints({
     }),
     createBankAccount: builder.mutation<
       ApiResponse<BankAccount>,
-      { 
+      {
         supplierId: string;
         account_holder_name: string;
         bank_name: string;

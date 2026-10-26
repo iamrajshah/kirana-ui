@@ -36,6 +36,48 @@ vi.mock('@components', () => ({
 afterEach(cleanup);
 
 describe('PaymentModal completion', () => {
+  it('shows previous khata without collecting it as part of the current invoice', async () => {
+    const onPayment = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <PaymentModal
+        isOpen
+        onClose={vi.fn()}
+        onPayment={onPayment}
+        invoiceAmount={125}
+        previousBalance={2500}
+        allowPartial={false}
+      />
+    );
+
+    expect(screen.getByText('billing.previousKhata')).toBeTruthy();
+    expect(screen.getByText('billing.totalCustomerDue')).toBeTruthy();
+    expect(screen.getByText('₹2,625')).toBeTruthy();
+    expect(screen.getByText('billing.currentBillPaymentOnly')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'payment.collectPayment' }));
+
+    await waitFor(() => expect(onPayment).toHaveBeenCalledWith(125, 'CASH', undefined));
+  });
+
+  it('shows a customer advance without silently treating it as outstanding khata', () => {
+    render(
+      <PaymentModal
+        isOpen
+        onClose={vi.fn()}
+        onPayment={vi.fn()}
+        invoiceAmount={400}
+        previousBalance={-500}
+        allowPartial={false}
+      />
+    );
+
+    expect(screen.getByText('billing.customerAdvance')).toBeTruthy();
+    expect(screen.getByText('₹500')).toBeTruthy();
+    expect(screen.getByText('billing.advanceNotApplied')).toBeTruthy();
+    expect(screen.queryByText('billing.totalCustomerDue')).toBeNull();
+  });
+
   it('does not treat a successful payment as a cancellation request', async () => {
     const onPayment = vi.fn().mockResolvedValue(undefined);
     const onClose = vi.fn();

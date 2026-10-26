@@ -54,6 +54,7 @@ export interface BillingStorageOwner {
 export interface PendingBillingCheckout {
   invoiceId: string;
   payable: number;
+  previousBalance: number;
   customerId: string | null;
   paymentIdempotencyKey: string;
 }
@@ -150,6 +151,10 @@ export const loadPendingBillingCheckout = (
   return {
     invoiceId: stored.invoiceId.trim(),
     payable: stored.payable,
+    previousBalance:
+      typeof stored.previousBalance === 'number' && Number.isFinite(stored.previousBalance)
+        ? stored.previousBalance
+        : 0,
     customerId: typeof stored.customerId === 'string' ? stored.customerId : null,
     paymentIdempotencyKey: stored.paymentIdempotencyKey,
   };

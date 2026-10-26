@@ -27,7 +27,8 @@ import './PurchaseDetailPage.css';
 const PurchaseDetailPage: React.FC = () => {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
-  const { data, isLoading, error } = useGetPurchaseByIdQuery(id);
+  const isPurchaseId = /^\d+$/.test(id);
+  const { data, isLoading, error } = useGetPurchaseByIdQuery(id, { skip: !isPurchaseId });
 
   const purchase = data?.data;
 
@@ -57,7 +58,7 @@ const PurchaseDetailPage: React.FC = () => {
     );
   }
 
-  if (error || !purchase) {
+  if (!isPurchaseId || error || !purchase) {
     return (
       <IonPage>
         <Navbar title={t('purchases.purchaseDetails')} backHref={ROUTES.PURCHASES} />

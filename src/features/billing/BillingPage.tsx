@@ -32,7 +32,7 @@ import {
 } from '@core/api/invoiceApi';
 import { useGetTenantSettingsQuery } from '@core/api/tenantSettingsApi';
 import { useCreatePaymentMutation } from '@core/api/paymentApi';
-import { useGetCustomersQuery } from '@core/api/customerApi';
+import { useGetCustomerByIdQuery, useGetCustomersQuery } from '@core/api/customerApi';
 import {
   useCreateProductFromBarcodeMutation,
   useGetBillingCatalogQuery,
@@ -72,6 +72,7 @@ import {
 } from '../invoices/receipt';
 
 const COUNTER_LABEL_STORAGE_KEY = 'kirana_counter_label';
+const LONG_BILL_PREVIEW_ITEMS = 5;
 
 const isConflictError = (error: unknown) =>
   typeof error === 'object' && error !== null && 'status' in error && error.status === 409;
@@ -128,6 +129,7 @@ export const BillingPage: React.FC = () => {
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
   const [cartItems, setCartItems] = useState<BillingCartItem[]>([]);
+  const [showAllCartItems, setShowAllCartItems] = useState(false);
   const cartItemsRef = useRef<BillingCartItem[]>([]);
   const replaceCartItems = useCallback(
     (next: BillingCartItem[] | ((current: BillingCartItem[]) => BillingCartItem[])) => {
@@ -138,9 +140,12 @@ export const BillingPage: React.FC = () => {
     },
     []
   );
+  const hasLongBill = cartItems.length > LONG_BILL_PREVIEW_ITEMS;
+  const visibleCartItems =
+    hasLongBill && !showAllCartItems ? cartItems.slice(-LONG_BILL_PREVIEW_ITEMS) : cartItems;
   const [selectedCustomer, setSelectedCustomer] = useState<Pick<
     Customer,
-    'id' | 'name' | 'phone' | 'state_code'
+    'id' | 'name' | 'phone' | 'state_code' | 'credit_balance'
   > | null>(null);
   const initializedInvoiceId = useRef<string | null>(null);
   const barcodeQueueRef = useRef<Array<{ barcode: string; billGeneration: number }>>([]);
@@ -158,6 +163,9 @@ export const BillingPage: React.FC = () => {
   );
   const [pendingPayable, setPendingPayable] = useState<number | null>(
     restoredPendingCheckout?.payable ?? null
+  );
+  const [pendingPreviousBalance, setPendingPreviousBalance] = useState(
+    restoredPendingCheckout?.previousBalance ?? 0
   );
   const [pendingCustomerId, setPendingCustomerId] = useState<string | null>(
     restoredPendingCheckout?.customerId ?? null
@@ -211,6 +219,15 @@ export const BillingPage: React.FC = () => {
   const receiptOutput = useReceiptOutput();
 
   const customerId = selectedCustomer?.id || '';
+  const {
+    currentData: selectedCustomerData,
+    isFetching: customerBalanceLoading,
+    isError: customerBalanceError,
+    refetch: refetchCustomerBalance,
+  } = useGetCustomerByIdQuery(customerId, {
+    skip: !customerId,
+    refetchOnMountOrArgChange: true,
+  });
   const matchingVariants = useMemo(
     () => filterBillingCatalog(billingCatalogData?.data ?? [], searchTerm),
     [billingCatalogData?.data, searchTerm]
@@ -259,6 +276,32 @@ export const BillingPage: React.FC = () => {
           total: Number(activeQuote.total_amount),
         }
       : { ...totals, gstAmount: 0 };
+  const hasCurrentCustomerBalance = selectedCustomerData?.data?.id?.toString() === customerId;
+  const previousCustomerBalance = customerId
+    ? Number(
+        hasCurrentCustomerBalance
+          ? selectedCustomerData.data.credit_balance
+          : selectedCustomer?.credit_balance
+      ) || 0
+    : 0;
+  const previousCustomerOutstanding = Math.max(0, previousCustomerBalance);
+  const customerAdvance = Math.max(0, -previousCustomerBalance);
+  const totalCustomerDue = previousCustomerOutstanding + displayedTotals.total;
+  const customerBalanceLabel =
+    previousCustomerBalance < 0 ? t('billing.customerAdvance') : t('billing.previousKhata');
+  const customerBalanceAmount =
+    previousCustomerBalance < 0 ? customerAdvance : previousCustomerOutstanding;
+  let customerBalanceDisplay = formatCurrency(customerBalanceAmount);
+  if (customerBalanceLoading) customerBalanceDisplay = t('common.loading');
+  if (customerBalanceError) customerBalanceDisplay = t('common.retry');
+  let customerBannerText = t('billing.walkInHint');
+  if (customerId) customerBannerText = `${customerBalanceLabel}: ${customerBalanceDisplay}`;
+  if (customerId && customerBalanceLoading) {
+    customerBannerText = t('billing.loadingPreviousKhata');
+  }
+  if (customerId && customerBalanceError) {
+    customerBannerText = t('billing.previousKhataUnavailable');
+  }
   const barcodeWorkPending = pendingBarcodeCount > 0 || barcodeLoading;
   const canCreateBarcodeProduct = Boolean(
     currentUser?.roles?.some((role) => ['OWNER', 'MANAGER'].includes(role.toUpperCase()))
@@ -273,6 +316,8 @@ export const BillingPage: React.FC = () => {
     creatingBarcodeProduct;
   const checkoutQuoteReady =
     !tenantSettingsLoading &&
+    (!customerId ||
+      (!customerBalanceLoading && !customerBalanceError && hasCurrentCustomerBalance)) &&
     (!isGstMode || Boolean(activeQuote && activeQuoteKey === quoteKey && !quoting && !quoteError));
   const stockConflict = cartItems.some((item) => {
     const availableQuantity =
@@ -314,6 +359,7 @@ export const BillingPage: React.FC = () => {
             name: attachedCustomer.name,
             phone: attachedCustomer.phone,
             state_code: attachedCustomer.state_code,
+            credit_balance: attachedCustomer.credit_balance,
           }
         : null
     );
@@ -329,6 +375,7 @@ export const BillingPage: React.FC = () => {
     }));
     setBillDiscount(nextDiscount);
     replaceCartItems(nextCartItems);
+    setShowAllCartItems(false);
     updateActiveHeldVersion(invoice.held_at ? invoice.version : undefined);
     setHeldConflict(false);
     loadedInvoiceSnapshotRef.current = JSON.stringify({
@@ -589,6 +636,7 @@ export const BillingPage: React.FC = () => {
   const resetForm = () => {
     billGenerationRef.current += 1;
     replaceCartItems([]);
+    setShowAllCartItems(false);
     setBillDiscount(0);
     setSearchTerm('');
     setBarcodeInput('');
@@ -600,6 +648,7 @@ export const BillingPage: React.FC = () => {
     setShowPaymentModal(false);
     setPendingInvoiceId(null);
     setPendingPayable(null);
+    setPendingPreviousBalance(0);
     setPendingCustomerId(null);
     setActiveQuote(null);
     setActiveQuoteKey(null);
@@ -728,16 +777,18 @@ export const BillingPage: React.FC = () => {
     }).unwrap();
   };
 
-  const rememberPendingCheckout = (invoiceId: string, payable: number) => {
+  const rememberPendingCheckout = (invoiceId: string, payable: number, previousBalance: number) => {
     const checkout = {
       invoiceId,
       payable,
+      previousBalance,
       customerId: customerId || null,
       paymentIdempotencyKey: paymentIdempotencyKey.current,
     };
     persistPendingBillingCheckout(checkout, billingStorageOwner);
     setPendingInvoiceId(invoiceId);
     setPendingPayable(payable);
+    setPendingPreviousBalance(previousBalance);
     setPendingCustomerId(checkout.customerId);
   };
 
@@ -857,12 +908,13 @@ export const BillingPage: React.FC = () => {
   const handleCheckout = async (quickMode?: PaymentMode) => {
     if (!validateBillReady()) return;
     let invoiceId: string | null = null;
+    const previousBalanceAtCheckout = previousCustomerBalance;
     try {
       const quote = await fetchCheckoutQuote();
       if (!quote) return;
       invoiceId = await createFinalInvoice(quote);
       const payable = Number(quote.total_amount);
-      rememberPendingCheckout(invoiceId, payable);
+      rememberPendingCheckout(invoiceId, payable, previousBalanceAtCheckout);
       if (quickMode) {
         try {
           await recordPayment(invoiceId, payable, quickMode);
@@ -915,6 +967,7 @@ export const BillingPage: React.FC = () => {
       setShowPaymentModal(false);
       setPendingInvoiceId(null);
       setPendingPayable(null);
+      setPendingPreviousBalance(0);
       setPendingCustomerId(null);
       clearPendingBillingCheckout();
       invoiceIdempotencyKey.current = generateIdempotencyKey();
@@ -987,9 +1040,7 @@ export const BillingPage: React.FC = () => {
       <IonContent>
         <Loading
           isOpen={!completionInvoiceId && (invoiceLoading || isBusy)}
-          message={
-            invoiceLoading ? t('billing.loadingInvoice') : t('billing.processingBill')
-          }
+          message={invoiceLoading ? t('billing.loadingInvoice') : t('billing.processingBill')}
         />
 
         {completionInvoiceId ? (
@@ -1050,9 +1101,16 @@ export const BillingPage: React.FC = () => {
                       ? `${selectedCustomer.name} (${selectedCustomer.phone})`
                       : t('billing.walkInCustomer')}
                   </h1>
-                  <p className="text-xs text-gray-600">
-                    {customerId ? t('billing.customerCreditAvailable') : t('billing.walkInHint')}
-                  </p>
+                  <p className="text-xs text-gray-600">{customerBannerText}</p>
+                  {customerId && customerBalanceError && (
+                    <button
+                      type="button"
+                      className="mt-1 text-xs font-bold text-sky-700 underline"
+                      onClick={() => void refetchCustomerBalance()}
+                    >
+                      {t('common.retry')}
+                    </button>
+                  )}
                 </div>
                 <IonButton
                   fill={customerId ? 'outline' : 'solid'}
@@ -1215,12 +1273,40 @@ export const BillingPage: React.FC = () => {
                       onClick={() => {
                         billGenerationRef.current += 1;
                         replaceCartItems([]);
+                        setShowAllCartItems(false);
                       }}
                     >
                       {t('billing.clearCart')}
                     </button>
                   )}
                 </div>
+
+                {hasLongBill && (
+                  <div className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-sky-100 bg-sky-50 px-3 py-2">
+                    <p className="text-xs font-semibold text-sky-900">
+                      {showAllCartItems
+                        ? t('billing.allItemsShown', { count: cartItems.length })
+                        : t('billing.showingRecentItems', {
+                            shown: LONG_BILL_PREVIEW_ITEMS,
+                            total: cartItems.length,
+                          })}
+                    </p>
+                    <button
+                      type="button"
+                      className="min-h-touch shrink-0 rounded-lg px-2 text-xs font-bold text-sky-700 underline"
+                      aria-label={
+                        showAllCartItems
+                          ? t('billing.showRecentItems')
+                          : t('billing.reviewAllItems', { count: cartItems.length })
+                      }
+                      onClick={() => setShowAllCartItems((current) => !current)}
+                    >
+                      {showAllCartItems
+                        ? t('billing.showRecentItems')
+                        : t('billing.reviewAllItems', { count: cartItems.length })}
+                    </button>
+                  </div>
+                )}
 
                 {cartItems.length === 0 ? (
                   <div className="mt-2 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 py-12 text-center">
@@ -1229,8 +1315,14 @@ export const BillingPage: React.FC = () => {
                     <p className="mt-1 text-sm text-gray-500">{t('billing.emptyCartHint')}</p>
                   </div>
                 ) : (
-                  <div className="mt-2 space-y-2">
-                    {cartItems.map((item) => {
+                  <div
+                    className={`mt-2 space-y-2 ${
+                      hasLongBill && showAllCartItems
+                        ? 'max-h-[65vh] overflow-y-auto overscroll-contain pr-1'
+                        : ''
+                    }`}
+                  >
+                    {visibleCartItems.map((item) => {
                       const availableQuantity =
                         availableStockByVariant.get(item.variant_id) ?? item.available_quantity;
                       const stockKnown = availableQuantity !== undefined;
@@ -1413,6 +1505,33 @@ export const BillingPage: React.FC = () => {
                         </p>
                       )}
                       <div className="border-t border-gray-200 pt-3">
+                        {customerId && (
+                          <div className="mb-3 space-y-2 rounded-xl bg-sky-50 p-3">
+                            <div className="flex justify-between text-sm text-gray-700">
+                              <span>{customerBalanceLabel}</span>
+                              <strong>{customerBalanceDisplay}</strong>
+                            </div>
+                            <div className="flex justify-between text-sm text-gray-700">
+                              <span>{t('billing.todaysBill')}</span>
+                              <strong>{formatCurrency(displayedTotals.total)}</strong>
+                            </div>
+                            {previousCustomerBalance >= 0 && (
+                              <div className="flex justify-between border-t border-sky-200 pt-2 font-bold text-gray-900">
+                                <span>{t('billing.totalCustomerDue')}</span>
+                                <strong className="text-lg text-sky-700">
+                                  {customerBalanceLoading || customerBalanceError
+                                    ? customerBalanceDisplay
+                                    : formatCurrency(totalCustomerDue)}
+                                </strong>
+                              </div>
+                            )}
+                            {previousCustomerBalance < 0 && (
+                              <p className="border-t border-sky-200 pt-2 text-xs text-gray-600">
+                                {t('billing.advanceNotApplied')}
+                              </p>
+                            )}
+                          </div>
+                        )}
                         <div className="flex items-end justify-between">
                           <span className="font-bold text-gray-900">
                             {t('billing.amountToCollect')}
@@ -1421,6 +1540,11 @@ export const BillingPage: React.FC = () => {
                             {formatCurrency(displayedTotals.total)}
                           </strong>
                         </div>
+                        {customerId && (
+                          <p className="mt-2 text-xs text-gray-600">
+                            {t('billing.currentBillPaymentOnly')}
+                          </p>
+                        )}
                         {!customerId && (
                           <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-800">
                             {t('billing.walkInFullPaymentOnly')}
@@ -1540,6 +1664,7 @@ export const BillingPage: React.FC = () => {
             onClose={cancelPendingCheckout}
             onPayment={handleModalPayment}
             invoiceAmount={pendingPayable ?? displayedTotals.total}
+            previousBalance={pendingPreviousBalance}
             paidAmount={0}
             isLoading={paying}
             allowPartial={Boolean(pendingCustomerId || customerId)}

@@ -16,12 +16,13 @@ import {
   IonToast,
   IonToolbar,
 } from '@ionic/react';
-import { add, calendar, checkmarkCircle, close, eye, key, logOut, pauseCircle, search } from 'ionicons/icons';
+import { add, calendar, checkmarkCircle, close, eye, key, logOut, moon, pauseCircle, search, sunny } from 'ionicons/icons';
 import { useHistory } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@components';
 import { platformApi, PlatformTenant, PlatformTenantDetails } from '@core/api/platformApi';
 import { ROUTES, STORAGE_KEYS } from '@core/constants';
+import { useTheme } from '../../contexts/useTheme';
 import './platform.css';
 
 const emptyForm = {
@@ -36,6 +37,7 @@ const emptyForm = {
 export const PlatformTenantsPage: React.FC = () => {
   const { t } = useTranslation();
   const history = useHistory();
+  const { theme, toggleTheme } = useTheme();
   const [tenants, setTenants] = useState<PlatformTenant[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -211,6 +213,12 @@ export const PlatformTenantsPage: React.FC = () => {
         <IonToolbar>
           <IonTitle>{t('platform.shops')}</IonTitle>
           <IonButtons slot="end">
+            <IonButton
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? t('profile.lightMode') : t('profile.darkMode')}
+            >
+              <IonIcon icon={theme === 'dark' ? sunny : moon} />
+            </IonButton>
             <IonButton onClick={logout} aria-label={t('platform.logout')}>
               <IonIcon icon={logOut} />
             </IonButton>

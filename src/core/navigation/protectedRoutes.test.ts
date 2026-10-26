@@ -10,4 +10,12 @@ describe('protected page route precedence', () => {
 
     expect(selectedRoute?.id).toBe('purchase-create');
   });
+
+  it('does not treat the purchase creation URL as a purchase ID', () => {
+    const detailRoute = protectedPageRoutes.find(({ id }) => id === 'purchase-detail');
+
+    expect(detailRoute).toBeDefined();
+    expect(matchPath('/purchases/create', { path: detailRoute!.path, exact: true })).toBeNull();
+    expect(matchPath('/purchases/42', { path: detailRoute!.path, exact: true })).not.toBeNull();
+  });
 });

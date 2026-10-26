@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { IonContent, IonPage, IonToast } from '@ionic/react';
+import { IonButton, IonContent, IonIcon, IonPage, IonToast } from '@ionic/react';
+import { moon, sunny } from 'ionicons/icons';
 import { useHistory } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Button, Input } from '@components';
 import { platformApi } from '@core/api/platformApi';
 import { APP_NAME, ROUTES, STORAGE_KEYS } from '@core/constants';
+import { useTheme } from '../../contexts/useTheme';
 import './platform.css';
 
 export const PlatformLoginPage: React.FC = () => {
   const { t } = useTranslation();
   const history = useHistory();
+  const { theme, toggleTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,6 +39,15 @@ export const PlatformLoginPage: React.FC = () => {
     <IonPage>
       <IonContent>
         <main className="platform-login-shell">
+          <IonButton
+            className="platform-theme-toggle"
+            fill="outline"
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? t('profile.lightMode') : t('profile.darkMode')}
+          >
+            <IonIcon icon={theme === 'dark' ? sunny : moon} slot="start" />
+            {theme === 'dark' ? t('profile.lightMode') : t('profile.darkMode')}
+          </IonButton>
           <form className="platform-login-card" onSubmit={submit}>
             <div className="platform-brand-mark" aria-hidden="true">
               {APP_NAME.charAt(0)}

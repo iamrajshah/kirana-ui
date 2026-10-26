@@ -110,6 +110,7 @@ describe('billing completion recovery', () => {
     const pending = {
       invoiceId: '84',
       payable: 118,
+      previousBalance: 2500,
       customerId: '12',
       paymentIdempotencyKey: 'retry-key',
     };
@@ -120,6 +121,20 @@ describe('billing completion recovery', () => {
     expect(loadPendingBillingCheckout({ userId: '8', tenantId: '1' })).toBeNull();
     clearPendingBillingCheckout();
     expect(localStorage.getItem(BILLING_PENDING_CHECKOUT_STORAGE_KEY)).toBeNull();
+  });
+
+  it('preserves a customer advance while restoring payment recovery', () => {
+    const pending = {
+      invoiceId: '85',
+      payable: 400,
+      previousBalance: -500,
+      customerId: '12',
+      paymentIdempotencyKey: 'advance-retry-key',
+    };
+
+    persistPendingBillingCheckout(pending, owner);
+
+    expect(loadPendingBillingCheckout(owner)).toEqual(pending);
   });
 
   it('treats blocked browser storage as unavailable instead of throwing', () => {

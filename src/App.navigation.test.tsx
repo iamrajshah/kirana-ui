@@ -146,6 +146,13 @@ describe('main application navigation', () => {
       </IonApp>
     );
 
+    const routerOutlet = document.querySelector('ion-router-outlet') as HTMLElement & {
+      gesture?: unknown;
+    };
+    await waitFor(() => {
+      expect(routerOutlet.gesture).toBeDefined();
+    });
+
     fireEvent(screen.getByLabelText('Product search'), new CustomEvent('ionInput', {
       detail: { value: 'rice' },
       bubbles: true,
