@@ -31,13 +31,48 @@ declare global {
   }
 }
 
-const loadGoogleIdentityServices = (): Promise<GoogleAccounts> =>
-  new Promise((resolve, reject) => {
-    if (window.google?.accounts) return resolve(window.google.accounts);
+const GOOGLE_SCRIPT_TIMEOUT_MS = 10_000;
+let googleIdentityLoad: Promise<GoogleAccounts> | null = null;
+
+const loadGoogleIdentityServices = (): Promise<GoogleAccounts> => {
+  if (window.google?.accounts) return Promise.resolve(window.google.accounts);
+  if (googleIdentityLoad) return googleIdentityLoad;
+
+  const pending = new Promise<GoogleAccounts>((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>(
       'script[data-kirana-google-identity]'
     );
     const script = existing ?? document.createElement('script');
+    let settled = false;
+
+    const cleanup = () => {
+      window.clearTimeout(timeout);
+      script.removeEventListener('load', handleLoad);
+      script.removeEventListener('error', handleFailure);
+    };
+    const fail = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      script.remove();
+      reject(new Error('Google sign-in unavailable'));
+    };
+    const handleLoad = () => {
+      if (settled) return;
+      const accounts = window.google?.accounts;
+      if (!accounts) {
+        fail();
+        return;
+      }
+      settled = true;
+      cleanup();
+      resolve(accounts);
+    };
+    const handleFailure = () => fail();
+    const timeout = window.setTimeout(fail, GOOGLE_SCRIPT_TIMEOUT_MS);
+
+    script.addEventListener('load', handleLoad, { once: true });
+    script.addEventListener('error', handleFailure, { once: true });
     if (!existing) {
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
@@ -45,18 +80,14 @@ const loadGoogleIdentityServices = (): Promise<GoogleAccounts> =>
       script.dataset.kiranaGoogleIdentity = 'true';
       document.head.appendChild(script);
     }
-    script.addEventListener(
-      'load',
-      () =>
-        window.google?.accounts
-          ? resolve(window.google.accounts)
-          : reject(new Error('Google sign-in unavailable')),
-      { once: true }
-    );
-    script.addEventListener('error', () => reject(new Error('Google sign-in unavailable')), {
-      once: true,
-    });
   });
+
+  googleIdentityLoad = pending;
+  void pending.catch(() => {
+    if (googleIdentityLoad === pending) googleIdentityLoad = null;
+  });
+  return pending;
+};
 
 export class WebGoogleIdentityProvider implements IdentityCredentialProvider {
   constructor(private readonly clientId: string) {}
@@ -84,9 +115,11 @@ export class WebGoogleIdentityProvider implements IdentityCredentialProvider {
             callbacks.onCancel();
         });
       })
-      .catch((error: unknown) =>
-        callbacks.onError(error instanceof Error ? error.message : 'Google sign-in unavailable')
-      );
+      .catch((error: unknown) => {
+        if (active) {
+          callbacks.onError(error instanceof Error ? error.message : 'Google sign-in unavailable');
+        }
+      });
     return () => {
       active = false;
       window.google?.accounts.id.cancel();
