@@ -3,7 +3,7 @@ import { IonContent, IonPage } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@components';
 import { useAppSelector } from '@core/hooks';
-import { selectSessionContext } from '@core/auth/authSlice';
+import { selectCurrentUser, selectSessionContext } from '@core/auth/authSlice';
 import { ROUTES } from '@core/constants';
 import {
   commercialFromSession,
@@ -29,6 +29,7 @@ const daysRemaining = (value: string | null | undefined) => {
 export const SubscriptionAccountPage: React.FC = () => {
   const { t } = useTranslation();
   const session = useAppSelector(selectSessionContext);
+  const currentUser = useAppSelector(selectCurrentUser);
   const access = commercialFromSession(session);
   const { data: product } = useGetPublicProductQuery();
   const { data: account } = useGetAccountSummaryQuery();
@@ -68,6 +69,14 @@ export const SubscriptionAccountPage: React.FC = () => {
             </p>
             {access && (
               <p className="mt-1 text-sm">{t('account.currentPlan', { plan: access.planCode })}</p>
+            )}
+            {currentUser?.roles?.includes('OWNER') && (
+              <a
+                className="mt-4 inline-block rounded-lg bg-[var(--ion-color-primary)] px-4 py-2 font-semibold text-white"
+                href={ROUTES.ACCOUNT_RENEWAL}
+              >
+                {t('renewal.open')}
+              </a>
             )}
           </header>
 

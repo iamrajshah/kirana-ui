@@ -70,6 +70,8 @@ export const mainLayoutPaths: readonly string[] = [
   ROUTES.CHANGE_PASSWORD,
   ROUTES.ABOUT,
   ROUTES.ACCOUNT,
+  ROUTES.ACCOUNT_RENEWAL,
+  ROUTES.RESTRICTED,
   ...protectedPageRoutes.map(({ path }) => path),
   ...protectedMainLayoutRoutes.map(({ path }) => path),
 ];

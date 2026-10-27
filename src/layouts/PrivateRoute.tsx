@@ -36,6 +36,27 @@ export const PrivateRoute: React.FC<PrivateRouteProps> = ({
     return <Redirect to={ROUTES.CHANGE_PASSWORD} />;
   }
 
+  const restricted = Boolean(
+    commercialAccess &&
+    ['READ_ONLY', 'SUSPENDED', 'CANCELLED', 'EXPIRED', 'PROVISIONING'].includes(
+      commercialAccess.state
+    )
+  );
+  if (restricted) {
+    const isOwner = user?.roles.includes('OWNER');
+    const allowed = isOwner
+      ? (
+          [
+            ROUTES.ACCOUNT,
+            ROUTES.ACCOUNT_RENEWAL,
+            ROUTES.ACCOUNT_EXPORT,
+            ROUTES.RESTRICTED,
+          ] as string[]
+        ).includes(location.pathname)
+      : location.pathname === ROUTES.RESTRICTED;
+    if (!allowed) return <Redirect to={ROUTES.RESTRICTED} />;
+  }
+
   if (permission && !hasAccessToTab(user?.roles || [], permission)) {
     return <Redirect to={ROUTES.DASHBOARD} />;
   }

@@ -37,6 +37,7 @@
     "appName": "Kirana POS",
     "loading": "Loading...",
     "retry": "Retry",
+    "refresh": "Refresh",
     "error": "Error",
     "success": "Success",
     "save": "Save",
@@ -200,6 +201,59 @@
       "PROVISIONING": "Your shop is being prepared.",
       "UNKNOWN": "Plan details are being refreshed."
     }
+  },
+  "renewal": {
+    "eyebrow": "Subscription renewal",
+    "title": "Renew your Kirana plan",
+    "description": "Submit your payment reference here. Access changes only after Kirana verifies it.",
+    "open": "Renew subscription",
+    "submitTitle": "Payment details",
+    "plan": "Plan",
+    "billingCycle": "Billing cycle",
+    "provider": "Payment provider",
+    "reference": "Transaction reference",
+    "amount": "Amount paid (₹)",
+    "proof": "Payment proof (optional)",
+    "proofHelp": "JPG, PNG or PDF up to 5 MB.",
+    "proofInvalid": "Choose a JPG, PNG or PDF no larger than 5 MB.",
+    "amountInvalid": "Enter a valid amount greater than zero.",
+    "submit": "Send for verification",
+    "submitting": "Submitting…",
+    "submitted": "Renewal sent for verification.",
+    "submitFailed": "We could not submit this renewal. Review the details and retry.",
+    "pendingTitle": "Verification in progress",
+    "pendingDescription": "Reference {{reference}} is awaiting review. You cannot submit another request yet.",
+    "proofReceived": "Payment proof received securely.",
+    "history": "Renewal history",
+    "loadFailed": "Renewal history could not be loaded.",
+    "empty": "No renewal requests yet.",
+    "reason": "Decision note: {{reason}}",
+    "back": "Back to plan & account",
+    "status": {
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
+    }
+  },
+  "restricted": {
+    "eyebrow": "Shop access",
+    "title": "Your records are safe",
+    "ownerDescription": "Shop operations are paused. Renew your plan or review your account to restore access.",
+    "staffDescription": "Shop operations are paused. Please ask the shop owner to renew the plan.",
+    "status": "{{plan}} plan · {{state}}",
+    "renew": "Renew now",
+    "account": "View account",
+    "export": "Download shop data",
+    "logoutHelp": "You can still sign out safely from the menu."
+  },
+  "accountExport": {
+    "title": "Shop data export",
+    "heading": "Download your complete shop backup",
+    "description": "Owners can keep a portable copy of their shop records even when billing access is paused.",
+    "safety": "This is a read-only export. It does not change products, bills, balances or staff access.",
+    "download": "Download backup",
+    "failed": "Could not download the shop backup."
   },
   "dashboard": {
     "title": "Dashboard",

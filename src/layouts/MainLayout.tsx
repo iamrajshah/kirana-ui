@@ -84,6 +84,17 @@ const SubscriptionAccountPage = lazy(() =>
     default: module.SubscriptionAccountPage,
   }))
 );
+const RenewalPage = lazy(() =>
+  import('@features/account/RenewalPage').then((module) => ({ default: module.RenewalPage }))
+);
+const RestrictedPage = lazy(() =>
+  import('@features/account/RestrictedPage').then((module) => ({ default: module.RestrictedPage }))
+);
+const AccountExportPage = lazy(() =>
+  import('@features/account/AccountExportPage').then((module) => ({
+    default: module.AccountExportPage,
+  }))
+);
 const CustomerLedgerPage = lazy(() =>
   import('@features/customers/CustomerLedgerPage').then((module) => ({
     default: module.CustomerLedgerPage,
@@ -189,6 +200,13 @@ export const MainLayout: React.FC = () => {
                 path={ROUTES.ACCOUNT}
                 render={() => renderPage(SubscriptionAccountPage)}
               />
+              <Route exact path={ROUTES.ACCOUNT_RENEWAL} render={() => renderPage(RenewalPage)} />
+              <Route
+                exact
+                path={ROUTES.ACCOUNT_EXPORT}
+                render={() => renderPage(AccountExportPage)}
+              />
+              <Route exact path={ROUTES.RESTRICTED} render={() => renderPage(RestrictedPage)} />
               <Route
                 exact
                 path={ROUTES.CHANGE_PASSWORD}

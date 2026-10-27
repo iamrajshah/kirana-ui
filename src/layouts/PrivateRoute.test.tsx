@@ -118,6 +118,73 @@ describe('PrivateRoute', () => {
 
     expect(screen.getByText('change password')).toBeTruthy();
   });
+
+  it('sends a restricted owner away from operational routes', () => {
+    useAppSelector
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce({ roles: ['OWNER'] })
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce({ state: 'READ_ONLY' });
+
+    render(
+      <PrivateRoute>
+        <div>dashboard</div>
+      </PrivateRoute>
+    );
+
+    expect(screen.getByTestId('redirect').textContent).toBe(ROUTES.RESTRICTED);
+  });
+
+  it('lets a restricted owner open the renewal recovery route', () => {
+    useLocation.mockReturnValue({ pathname: ROUTES.ACCOUNT_RENEWAL });
+    useAppSelector
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce({ roles: ['OWNER'] })
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce({ state: 'READ_ONLY' });
+
+    render(
+      <PrivateRoute>
+        <div>renewal</div>
+      </PrivateRoute>
+    );
+
+    expect(screen.getByText('renewal')).toBeTruthy();
+  });
+
+  it('lets a restricted owner download a safe account export', () => {
+    useLocation.mockReturnValue({ pathname: ROUTES.ACCOUNT_EXPORT });
+    useAppSelector
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce({ roles: ['OWNER'] })
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce({ state: 'EXPIRED' });
+
+    render(
+      <PrivateRoute>
+        <div>account export</div>
+      </PrivateRoute>
+    );
+
+    expect(screen.getByText('account export')).toBeTruthy();
+  });
+
+  it('keeps restricted staff on the notice page', () => {
+    useLocation.mockReturnValue({ pathname: ROUTES.ACCOUNT });
+    useAppSelector
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce({ roles: ['CASHIER'] })
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce({ state: 'SUSPENDED' });
+
+    render(
+      <PrivateRoute>
+        <div>account</div>
+      </PrivateRoute>
+    );
+
+    expect(screen.getByTestId('redirect').textContent).toBe(ROUTES.RESTRICTED);
+  });
 });
 
 describe('protected route configuration', () => {

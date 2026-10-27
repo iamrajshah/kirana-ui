@@ -86,10 +86,10 @@ const isCurrentSession = (api: QueryApi, expected: AuthSnapshot): boolean => {
   const current = readAuthSnapshot(api);
   return Boolean(
     current &&
-      current.userId === expected.userId &&
-      current.sessionVersion === expected.sessionVersion &&
-      current.refreshToken === expected.refreshToken &&
-      localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) === expected.refreshToken
+    current.userId === expected.userId &&
+    current.sessionVersion === expected.sessionVersion &&
+    current.refreshToken === expected.refreshToken &&
+    localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) === expected.refreshToken
   );
 };
 
@@ -163,14 +163,9 @@ const synchronizeSessionState = (
   return synchronization;
 };
 
-let refreshInFlight:
-  | { snapshot: AuthSnapshot; promise: Promise<boolean> }
-  | null = null;
+let refreshInFlight: { snapshot: AuthSnapshot; promise: Promise<boolean> } | null = null;
 
-const refreshSession = (
-  api: QueryApi,
-  extraOptions: QueryExtraOptions
-): Promise<boolean> => {
+const refreshSession = (api: QueryApi, extraOptions: QueryExtraOptions): Promise<boolean> => {
   const snapshot = readAuthSnapshot(api);
   if (!snapshot) {
     notificationService.error('Session expired. Please login again.');
@@ -337,6 +332,7 @@ export const apiSlice = createApi({
     'Firm',
     'Report',
     'Account',
+    'Renewal',
   ],
   endpoints: () => ({}),
 });

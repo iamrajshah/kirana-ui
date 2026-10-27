@@ -43,6 +43,9 @@ export const ROUTES = {
   SUPPORT: '/support',
   ACCOUNT_DELETION: '/account-deletion',
   ACCOUNT: '/account',
+  ACCOUNT_RENEWAL: '/account/renewal',
+  ACCOUNT_EXPORT: '/account/export',
+  RESTRICTED: '/restricted',
 } as const;
 
 // Storage Keys

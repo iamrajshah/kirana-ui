@@ -24,7 +24,10 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 vi.mock('@core/hooks', () => ({ useAppSelector: () => session }));
-vi.mock('@core/auth/authSlice', () => ({ selectSessionContext: vi.fn() }));
+vi.mock('@core/auth/authSlice', () => ({
+  selectSessionContext: vi.fn(),
+  selectCurrentUser: vi.fn(),
+}));
 vi.mock('@core/api/lifecycleApi', () => ({
   commercialFromSession: (value: typeof session) => value.commercialAccess,
   useGetPublicProductQuery: () => ({
