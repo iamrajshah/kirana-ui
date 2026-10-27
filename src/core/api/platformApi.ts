@@ -4,6 +4,7 @@ export interface PlatformAdmin {
   id: string;
   name: string;
   email: string;
+  scopes?: string[];
 }
 
 export interface PlatformTenant {
@@ -48,6 +49,123 @@ export interface PlatformTenantDetails {
     createdAt: string | null;
     roles: string[];
   }>;
+  commercial: null | {
+    subscriptionId: string;
+    plan: { code: string; name: string; version: number };
+    state: string;
+    billingCycle: 'MONTHLY' | 'YEARLY' | null;
+    startsAt: string;
+    endsAt: string | null;
+    demoExpiresAt: string | null;
+    graceExpiresAt: string | null;
+    usage: { staff: number; firms: number };
+    limits: { staff: number | null; firms: number | null };
+    pendingPlan: { code: string; version: number } | null;
+    pendingConflicts: unknown;
+    history: Array<{
+      id: string;
+      from: string | null;
+      to: string;
+      reason: string | null;
+      occurredAt: string;
+    }>;
+  };
+  auditHistory: Array<{ id: string; action: string; occurredAt: string; metadata: unknown }>;
+}
+
+export interface PlatformPlan {
+  code: 'DEMO' | 'STARTER' | 'PRO' | 'BUSINESS';
+  name: string;
+  description: string | null;
+  version: number | null;
+  monthlyPricePaise: number | null;
+  yearlyPricePaise: number | null;
+  limits: { staff: number | null; firms: number | null };
+  entitlements: string[];
+}
+
+export interface PlatformLead {
+  id: string;
+  status: string;
+  email: string | null;
+  phone: string | null;
+  shopName: string | null;
+  source: string | null;
+  identity: {
+    id: string;
+    name: string | null;
+    provider: string | null;
+    lastSignInAt: string | null;
+  };
+  demo: null | {
+    status: string;
+    stage: string;
+    createdAt: string;
+    completedAt: string | null;
+    expiresAt: string | null;
+  };
+  milestones: Array<{ code: string; firstObservedAt: string }>;
+}
+
+export interface PlatformLeadDetails extends Omit<PlatformLead, 'identity' | 'demo'> {
+  identity: {
+    id: string;
+    name: string | null;
+    email: string;
+    status: string;
+    providers: Array<{ provider: string; lastSeenAt: string | null }>;
+    memberships: Array<{
+      id: string;
+      tenantId: string;
+      tenantName: string;
+      tenantStatus: string;
+      name: string | null;
+      email: string | null;
+      phone: string | null;
+      active: boolean;
+    }>;
+  };
+  demo: null | {
+    id: string;
+    tenantId: string;
+    status: string;
+    stage: string;
+    createdAt: string;
+    completedAt: string | null;
+    expiresAt: string | null;
+    subscriptionHistory: Array<{
+      from: string | null;
+      to: string;
+      reason: string | null;
+      occurredAt: string;
+    }>;
+  };
+  milestones: Array<{ code: string; firstObservedAt: string; metadata: unknown }>;
+  conversions: Array<{
+    id: string;
+    status: string;
+    paidTenant: { id: string; name: string; status: string } | null;
+    completedAt: string | null;
+  }>;
+  deletionRequests: Array<{
+    id: string;
+    status: string;
+    requestedAt: string;
+    resolvedAt: string | null;
+    notes: string | null;
+  }>;
+}
+
+export interface DowngradePreview {
+  targetPlan: string;
+  canActivate: boolean;
+  conflicts: Array<{
+    type: string;
+    current?: number;
+    limit?: number;
+    excess?: number;
+    feature?: string;
+  }>;
 }
 
 interface ApiEnvelope<T> {
@@ -87,6 +205,18 @@ export const platformApi = {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
+  },
+
+  async reauthenticate(password: string) {
+    const data = await platformRequest<{ accessToken: string; reauthenticatedAt: string }>(
+      '/platform-auth/reauthenticate',
+      {
+        method: 'POST',
+        body: JSON.stringify({ password }),
+      }
+    );
+    localStorage.setItem(STORAGE_KEYS.PLATFORM_ACCESS_TOKEN, data.accessToken);
+    return data;
   },
 
   listTenants(search = '') {
@@ -139,5 +269,136 @@ export const platformApi = {
       method: 'PATCH',
       body: JSON.stringify({ temporaryPassword }),
     });
+  },
+
+  listLeads(search = '') {
+    const query = search.trim() ? `?search=${encodeURIComponent(search.trim())}` : '';
+    return platformRequest<PlatformLead[]>(`/platform/leads${query}`);
+  },
+
+  getLeadDetails(id: string) {
+    return platformRequest<PlatformLeadDetails>(`/platform/leads/${id}`);
+  },
+
+  listPlans() {
+    return platformRequest<PlatformPlan[]>('/platform/plans');
+  },
+
+  createPlanVersion(
+    code: 'STARTER' | 'PRO' | 'BUSINESS',
+    input: {
+      monthlyPricePaise: number;
+      yearlyPricePaise: number;
+      staffLimit: number | null;
+      firmLimit: number | null;
+      entitlements: string[];
+      effectiveAt?: string;
+    }
+  ) {
+    return platformRequest<{
+      id: string;
+      planCode: string;
+      version: number;
+      effectiveAt: string;
+      catalogueHash: string;
+    }>(`/platform/plans/${code}/versions`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  activateLead(
+    id: string,
+    input: {
+      planCode: 'STARTER' | 'PRO' | 'BUSINESS';
+      billingCycle: 'MONTHLY' | 'YEARLY';
+      shopName: string;
+      ownerName: string;
+      phone: string;
+      email: string;
+      gstNumber?: string;
+    }
+  ) {
+    return platformRequest<{ idempotent: boolean; conversionId: string; tenant: { id: string } }>(
+      `/platform/leads/${id}/activate`,
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }
+    );
+  },
+
+  previewSubscriptionChange(id: string, planCode: string) {
+    return platformRequest<DowngradePreview>(
+      `/platform/tenants/${id}/subscription/preview?planCode=${encodeURIComponent(planCode)}`
+    );
+  },
+
+  changeSubscription(id: string, planCode: string, billingCycle: 'MONTHLY' | 'YEARLY') {
+    return platformRequest<{ applied: boolean; subscriptionId: string; conflicts: unknown[] }>(
+      `/platform/tenants/${id}/subscription`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ planCode, billingCycle }),
+      }
+    );
+  },
+
+  transitionSubscription(id: string, state: string, reason: string, graceExpiresAt?: string) {
+    return platformRequest<{ id: string; state: string; graceExpiresAt: string | null }>(
+      `/platform/tenants/${id}/lifecycle`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ state, reason, graceExpiresAt }),
+      }
+    );
+  },
+
+  repairIdentityMembership(identityId: string, userId: string, tenantId: string, reason: string) {
+    return platformRequest<{
+      identityId: string;
+      userId: string;
+      tenantId: string;
+      sessionsRevoked: boolean;
+    }>(`/platform/identities/${identityId}/repair`, {
+      method: 'POST',
+      body: JSON.stringify({ userId, tenantId, reason }),
+    });
+  },
+
+  decideDeletionRequest(
+    id: string,
+    decision: 'IN_REVIEW' | 'COMPLETED' | 'REJECTED' | 'CANCELLED',
+    notes: string
+  ) {
+    return platformRequest<{ id: string; status: string; resolvedAt: string | null }>(
+      `/platform/deletion-requests/${id}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ decision, notes }),
+      }
+    );
+  },
+
+  previewDemoCleanup() {
+    return platformRequest<
+      Array<{
+        id: string;
+        tenantId: string;
+        identityId: string;
+        status: string;
+        purgeAfter: string | null;
+      }>
+    >('/platform/maintenance/demo-cleanup');
+  },
+
+  executeDemoCleanup(provisioningIds: string[]) {
+    return platformRequest<{ purged: Array<{ id: string; tenantId: string }> }>(
+      '/platform/maintenance/demo-cleanup',
+      {
+        method: 'POST',
+        body: JSON.stringify({ provisioningIds, confirmation: 'PURGE DEMO OPERATIONAL DATA' }),
+      }
+    );
   },
 };

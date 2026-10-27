@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   listTenants: vi.fn(),
   getTenantDetails: vi.fn(),
   resetOwnerPassword: vi.fn(),
+  listPlans: vi.fn(),
+  listLeads: vi.fn(),
   history: { replace: vi.fn() },
   toggleTheme: vi.fn(),
   translate: vi.fn((key: string, values?: { count?: number }) =>
@@ -32,6 +34,16 @@ vi.mock('@core/api/platformApi', () => ({
     resetOwnerPassword: (...args: unknown[]) => mocks.resetOwnerPassword(...args),
     createTenant: vi.fn(),
     updateTenantStatus: vi.fn(),
+    listPlans: (...args: unknown[]) => mocks.listPlans(...args),
+    listLeads: (...args: unknown[]) => mocks.listLeads(...args),
+    activateLead: vi.fn(),
+    repairIdentityMembership: vi.fn(),
+    previewDemoCleanup: vi.fn(),
+    executeDemoCleanup: vi.fn(),
+    previewSubscriptionChange: vi.fn(),
+    changeSubscription: vi.fn(),
+    reauthenticate: vi.fn(),
+    transitionSubscription: vi.fn(),
   },
 }));
 vi.mock('@components', () => ({
@@ -92,6 +104,8 @@ beforeEach(() => {
   localStorage.clear();
   localStorage.setItem('platform_access_token', 'token');
   mocks.listTenants.mockResolvedValue([summary]);
+  mocks.listPlans.mockResolvedValue([]);
+  mocks.listLeads.mockResolvedValue([]);
   mocks.getTenantDetails.mockResolvedValue({
     ...summary,
     contact: {
@@ -112,6 +126,8 @@ beforeEach(() => {
         roles: ['OWNER'],
       },
     ],
+    commercial: null,
+    auditHistory: [],
   });
   mocks.resetOwnerPassword.mockResolvedValue({
     tenant: { id: '1', name: 'Jayesh Trading' },
