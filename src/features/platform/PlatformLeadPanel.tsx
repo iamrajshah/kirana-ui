@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   platformApi,
@@ -49,6 +49,8 @@ export const PlatformLeadPanel: React.FC<Props> = ({ plans, onActivated }) => {
     password: '',
     confirmed: false,
   });
+  const selectionRequestId = useRef(0);
+  const selectedLeadId = useRef<string | null>(null);
 
   const load = useCallback(
     async (search = '') => setLeads(await platformApi.listLeads(search)),
@@ -61,8 +63,17 @@ export const PlatformLeadPanel: React.FC<Props> = ({ plans, onActivated }) => {
       )
     );
   }, [load, t]);
+  useEffect(
+    () => () => {
+      selectionRequestId.current += 1;
+      selectedLeadId.current = null;
+    },
+    []
+  );
 
   const choose = (lead: PlatformLead) => {
+    const requestId = ++selectionRequestId.current;
+    selectedLeadId.current = lead.id;
     setSelected(lead);
     setMessage('');
     setError('');
@@ -73,17 +84,31 @@ export const PlatformLeadPanel: React.FC<Props> = ({ plans, onActivated }) => {
       email: lead.email || '',
       gstNumber: '',
     });
+    setRepair({ userId: '', tenantId: '', reason: '', password: '', confirmed: false });
+    setDeletion({
+      requestId: '',
+      decision: 'IN_REVIEW',
+      notes: '',
+      password: '',
+      confirmed: false,
+    });
     setDetails(null);
     void platformApi
       .getLeadDetails(lead.id)
-      .then(setDetails)
-      .catch((requestError) =>
-        setError(
-          requestError instanceof Error
-            ? requestError.message
-            : t('platform.commercial.actionFailed')
-        )
-      );
+      .then((leadDetails) => {
+        if (selectionRequestId.current === requestId && selectedLeadId.current === lead.id) {
+          setDetails(leadDetails);
+        }
+      })
+      .catch((requestError) => {
+        if (selectionRequestId.current === requestId && selectedLeadId.current === lead.id) {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : t('platform.commercial.actionFailed')
+          );
+        }
+      });
   };
 
   const decideDeletion = async () => {
@@ -96,6 +121,7 @@ export const PlatformLeadPanel: React.FC<Props> = ({ plans, onActivated }) => {
       return;
     setBusy(true);
     setError('');
+    const selectedId = selected?.id;
     try {
       await platformApi.reauthenticate(deletion.password);
       await platformApi.decideDeletionRequest(
@@ -103,7 +129,10 @@ export const PlatformLeadPanel: React.FC<Props> = ({ plans, onActivated }) => {
         deletion.decision,
         deletion.notes.trim()
       );
-      if (selected) setDetails(await platformApi.getLeadDetails(selected.id));
+      if (selectedId) {
+        const refreshedDetails = await platformApi.getLeadDetails(selectedId);
+        if (selectedLeadId.current === selectedId) setDetails(refreshedDetails);
+      }
       setDeletion({
         requestId: '',
         decision: 'IN_REVIEW',

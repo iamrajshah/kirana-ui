@@ -1226,6 +1226,8 @@
       "renewsOn": "नूतनीकरण",
       "graceUntil": "ग्रेस कालावधी",
       "targetPlan": "लक्ष्य प्लॅन",
+      "selectPaidPlan": "सशुल्क प्लॅन निवडा",
+      "graceExpiryRequired": "भविष्यातील ग्रेस समाप्तीची तारीख आणि वेळ निवडा.",
       "yearly": "वार्षिक (शिफारस)",
       "monthly": "मासिक",
       "refresh": "रिफ्रेश करा",

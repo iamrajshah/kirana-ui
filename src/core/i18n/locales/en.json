@@ -1209,6 +1209,8 @@
       "renewsOn": "Renews on",
       "graceUntil": "Grace until",
       "targetPlan": "Target plan",
+      "selectPaidPlan": "Select a paid plan",
+      "graceExpiryRequired": "Select a future grace expiry date and time.",
       "yearly": "Yearly (recommended)",
       "monthly": "Monthly",
       "refresh": "Refresh",

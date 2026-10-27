@@ -92,15 +92,19 @@ export const ReportsPage: React.FC = () => {
     commercialAccess,
     'ADVANCED_REPORTS'
   );
-  const isBusiness = commercialAccess?.planCode === 'BUSINESS';
-  const { data: firmsResponse } = useGetFirmsQuery({ active: true }, { skip: !isBusiness });
+  const supportsFirmScope =
+    commercialAccess?.planCode === 'BUSINESS' || commercialAccess?.planCode === 'DEMO';
+  const { data: firmsResponse } = useGetFirmsQuery(
+    { active: true },
+    { skip: !supportsFirmScope }
+  );
   const firms = firmsResponse?.data.firms ?? [];
   const defaultFirmId = firms.find((firm) => firm.is_default_sales)?.id ?? firms[0]?.id ?? '';
   const [selectedFirmId, setSelectedFirmId] = useState('');
   const [selectedReport, setSelectedReport] = useState<ReportId>('sales');
   const effectiveFirm = selectedFirmId || defaultFirmId;
   const firmScope =
-    isBusiness && firmScopedReports.has(selectedReport)
+    supportsFirmScope && firmScopedReports.has(selectedReport)
       ? effectiveFirm === 'CONSOLIDATED'
         ? { scope: 'CONSOLIDATED' as const }
         : { firmId: effectiveFirm || undefined, scope: 'FIRM' as const }
@@ -1023,7 +1027,7 @@ export const ReportsPage: React.FC = () => {
             </IonCardContent>
           </IonCard>
 
-          {isBusiness && firmScopedReports.has(selectedReport) && (
+          {supportsFirmScope && firmScopedReports.has(selectedReport) && (
             <IonCard className="mb-4 report-select-card">
               <IonCardContent>
                 <IonItem lines="none">

@@ -44,6 +44,13 @@ const lead = {
   },
   milestones: [{ code: 'FIRST_BILL', firstObservedAt: '2026-10-21' }],
 };
+const secondLead = {
+  ...lead,
+  id: '6',
+  email: 'second@example.com',
+  shopName: 'Second Prospect',
+  identity: { ...lead.identity, id: '10', name: 'Second Owner' },
+};
 const plans = [{ code: 'PRO', name: 'Pro', version: 1 }] as never;
 const detail = {
   ...lead,
@@ -61,6 +68,17 @@ const detail = {
   deletionRequests: [
     { id: '31', status: 'PENDING', requestedAt: '2026-10-27', resolvedAt: null, notes: null },
   ],
+};
+const secondDetail = {
+  ...detail,
+  ...secondLead,
+  identity: {
+    ...detail.identity,
+    id: '10',
+    name: 'Second Owner',
+    email: 'second@example.com',
+    providers: [{ provider: 'google-second', lastSeenAt: '2026-10-27' }],
+  },
 };
 
 beforeEach(() => {
@@ -136,5 +154,45 @@ describe('PlatformLeadPanel', () => {
       'REJECTED',
       'Verified duplicate request'
     );
+  });
+
+  it('keeps the newest selected lead when an older details request resolves late', async () => {
+    let resolveFirst!: (value: typeof detail) => void;
+    mocks.listLeads.mockResolvedValue([lead, secondLead]);
+    mocks.getLead.mockImplementation((id: string) =>
+      id === '5'
+        ? new Promise((resolve) => {
+            resolveFirst = resolve;
+          })
+        : Promise.resolve(secondDetail)
+    );
+    render(<PlatformLeadPanel plans={plans} onActivated={vi.fn()} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Prospect Shop/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Second Prospect/ }));
+    expect(await screen.findByText(/google-second/)).toBeTruthy();
+
+    resolveFirst(detail);
+    await waitFor(() => expect(screen.getByText(/google-second/)).toBeTruthy());
+    expect(screen.queryByText(/^google$/)).toBeNull();
+  });
+
+  it('clears sensitive confirmations whenever another lead is selected', async () => {
+    mocks.listLeads.mockResolvedValue([lead, secondLead]);
+    mocks.getLead.mockImplementation((id: string) =>
+      Promise.resolve(id === '5' ? detail : secondDetail)
+    );
+    render(<PlatformLeadPanel plans={plans} onActivated={vi.fn()} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Prospect Shop/ }));
+    fireEvent.click(screen.getByText('platform.commercial.repairMembership'));
+    fireEvent.click(screen.getByLabelText('platform.commercial.confirmRepair'));
+    fireEvent.click(await screen.findByText('platform.commercial.deletionHandling'));
+    fireEvent.click(screen.getByLabelText('platform.commercial.confirmDeletion'));
+
+    fireEvent.click(screen.getByRole('button', { name: /Second Prospect/ }));
+    await screen.findByText(/google-second/);
+    expect((screen.getByLabelText('platform.commercial.confirmRepair') as HTMLInputElement).checked).toBe(false);
+    expect((screen.getByLabelText('platform.commercial.confirmDeletion') as HTMLInputElement).checked).toBe(false);
   });
 });

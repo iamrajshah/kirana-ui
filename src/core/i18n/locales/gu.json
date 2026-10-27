@@ -1226,6 +1226,8 @@
       "renewsOn": "નવીકરણ",
       "graceUntil": "ગ્રેસ સમય",
       "targetPlan": "લક્ષ્ય પ્લાન",
+      "selectPaidPlan": "ચુકવેલ પ્લાન પસંદ કરો",
+      "graceExpiryRequired": "ભવિષ્યની ગ્રેસ સમાપ્તિ તારીખ અને સમય પસંદ કરો.",
       "yearly": "વાર્ષિક (ભલામણ)",
       "monthly": "માસિક",
       "refresh": "રિફ્રેશ કરો",
