@@ -30,8 +30,13 @@ dist-ssr
 !.env.production
 
 # Capacitor
-android/
+# Android is a reviewed release artifact. iOS stays gated until Apple sign-in
+# and account-deletion obligations are satisfied.
 ios/
+android/app/google-services.json
+android/*.jks
+android/*.keystore
+android/key.properties
 
 github
 github.*

@@ -10,16 +10,17 @@ export const GoogleSignInButton: React.FC<{
   const { t } = useTranslation();
   const target = useRef<HTMLDivElement>(null);
   const clientId = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID;
+  const entryEnabled = import.meta.env.VITE_GOOGLE_ENTRY_ENABLED === 'true';
 
   useEffect(() => {
-    if (!target.current || !clientId) return;
+    if (!entryEnabled || !target.current || !clientId) return;
     return new WebGoogleIdentityProvider(clientId).render(target.current, {
       onCredential: (identity) => onCredential(identity.credential, identity.source),
       onCancel,
       onError,
     });
-  }, [clientId, onCancel, onCredential, onError]);
+  }, [clientId, entryEnabled, onCancel, onCredential, onError]);
 
-  if (!clientId) return null;
+  if (!entryEnabled || !clientId) return null;
   return <div ref={target} aria-label={t('auth.googleSignIn')} className="flex justify-center" />;
 };
