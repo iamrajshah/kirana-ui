@@ -115,7 +115,21 @@
     "invalidCredentials": "Invalid email/phone or password",
     "serverError": "Server error. Please try again later.",
     "networkError": "Network error. Please check your connection.",
-    "temporaryPasswordHelp": "Using a temporary password? After sign-in, you will be asked to create your own password."
+    "temporaryPasswordHelp": "Using a temporary password? After sign-in, you will be asked to create your own password.",
+    "or": "or", "googleSignIn": "Google sign in", "googleLoading": "Signing in with Google...", "googleCancelled": "Google sign-in was cancelled.",
+    "googleError": "Google sign-in could not be completed.", "privateDemoProvisioning": "Your private seven-day demo is ready to be created.",
+    "googleLinkRequired": "Sign in with your password first to safely link this Google account.", "chooseShop": "Choose a shop",
+    "legalAndSupport": "Legal and support", "privacy": "Privacy", "terms": "Terms", "support": "Support", "accountDeletion": "Account deletion"
+  },
+  "legal": {
+    "backToLogin": "Back to sign in",
+    "privacyTitle": "Privacy",
+    "privacyBody": "Kirana uses identity and shop information to provide secure access, operate your selected shop and support your account. Operational records remain separated by shop.",
+    "termsTitle": "Terms of use",
+    "termsBody": "Use Kirana only for a shop you are authorized to manage. Demo records are for evaluation and are not valid business documents.",
+    "deletionTitle": "Account deletion",
+    "deletionBody": "You can request deletion from your signed-in account or contact support. Demo identities can be removed after required checks. Paid-shop accounting records follow an assisted ownership and legal-retention process.",
+    "supportAction": "Contact Kirana support"
   },
   "dashboard": {
     "title": "Dashboard",

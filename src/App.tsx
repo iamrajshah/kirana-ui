@@ -50,6 +50,9 @@ const PlatformLoginPage = lazy(() =>
 const PlatformTenantsPage = lazy(() =>
   import('@features/platform/PlatformTenantsPage').then((module) => ({ default: module.PlatformTenantsPage }))
 );
+const LegalPage = lazy(() =>
+  import('@features/legal/LegalPage').then((module) => ({ default: module.LegalPage }))
+);
 const App: React.FC = () => {
   useEffect(() => {
     // Load saved language from localStorage
@@ -69,6 +72,8 @@ const App: React.FC = () => {
             <Route exact path={ROUTES.LOGIN} component={LoginPage} />
             <Route exact path={ROUTES.PLATFORM_LOGIN} component={PlatformLoginPage} />
             <Route exact path={ROUTES.PLATFORM_TENANTS} component={PlatformTenantsPage} />
+            <Route exact path={ROUTES.PRIVACY} render={() => <LegalPage document="privacy" />} />
+            <Route exact path={ROUTES.TERMS} render={() => <LegalPage document="terms" />} />
             <Route exact path="/" render={() => <Redirect to={ROUTES.LOGIN} />} />
             <Route
               exact

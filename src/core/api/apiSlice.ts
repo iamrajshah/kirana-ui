@@ -1,9 +1,8 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { API_BASE_URL, STORAGE_KEYS } from '../constants';
-import { logout, setCredentials } from '../auth/authSlice';
+import { logout, updateTokens } from '../auth/authSlice';
 import { notificationService } from '../services/notificationService';
-import type { AuthResponse } from '../types';
 
 export type ApiRequestArgs =
   | string
@@ -56,8 +55,7 @@ const baseQueryWithReauth: BaseQueryFn<ApiRequestArgs, unknown, FetchBaseQueryEr
   api,
   extraOptions
 ) => {
-  const requestsSilentInitialFailure =
-    typeof args === 'object' && args.suppressErrorToast === true;
+  const requestsSilentInitialFailure = typeof args === 'object' && args.suppressErrorToast === true;
   const suppressErrorToast = requestsSilentInitialFailure && api.forced !== true;
   const hasRequestPolicy = typeof args === 'object' && 'suppressErrorToast' in args;
   const requestArgs = hasRequestPolicy ? { ...args } : args;
@@ -84,9 +82,19 @@ const baseQueryWithReauth: BaseQueryFn<ApiRequestArgs, unknown, FetchBaseQueryEr
         );
 
         if (refreshResult.data) {
-          const data = refreshResult.data as AuthResponse;
-          // Store new tokens
-          api.dispatch(setCredentials(data.data));
+          const data = refreshResult.data as {
+            data?: { accessToken?: string; refreshToken?: string };
+          };
+          if (!data.data?.accessToken || !data.data.refreshToken) {
+            api.dispatch(logout());
+            return result;
+          }
+          api.dispatch(
+            updateTokens({
+              accessToken: data.data.accessToken,
+              refreshToken: data.data.refreshToken,
+            })
+          );
           // Retry original query
           result = await baseQuery(requestArgs, api, extraOptions);
         } else {

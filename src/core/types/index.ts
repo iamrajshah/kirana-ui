@@ -15,6 +15,31 @@ export interface User {
   };
 }
 
+export interface SessionMembership {
+  userId: string;
+  tenantId: string;
+  tenantName: string;
+  active: boolean;
+  tenantStatus: string | null;
+  roles: string[];
+  permissions: string[];
+  mustChangePassword: boolean;
+}
+
+export interface SessionContext {
+  identity: {
+    id: string;
+    email: string | null;
+    displayName: string | null;
+    status: string;
+    accessStateVersion: number;
+  };
+  memberships: SessionMembership[];
+  selected: { userId: string; tenantId: string } | null;
+  commercialAccess: { state: string; demoExpiresAt: string | null; endsAt: string | null } | null;
+  provisioning: { state: string; demoDays?: number };
+}
+
 export interface AuthResponse {
   success: boolean;
   data: {
@@ -29,6 +54,7 @@ export interface AuthResponse {
       refreshToken: string;
     };
     isFirstLogin?: boolean;
+    sessionContext?: SessionContext;
   };
   message: string;
 }
