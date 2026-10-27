@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { STORAGE_KEYS } from '../constants';
 import type { SessionContext, User } from '../types';
+import type { CommercialAccessSummary } from '@core/commercial';
 
 interface AuthState {
   user: User | null;
@@ -126,6 +127,15 @@ const authSlice = createSlice({
       localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, action.payload.accessToken);
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, action.payload.refreshToken);
     },
+    setCommercialAccess: (state, action: PayloadAction<CommercialAccessSummary>) => {
+      if (!state.sessionContext) return;
+      state.sessionContext.commercialAccess = action.payload;
+      localStorage.setItem(STORAGE_KEYS.SESSION_CONTEXT, JSON.stringify(state.sessionContext));
+    },
+    setSessionContext: (state, action: PayloadAction<SessionContext>) => {
+      state.sessionContext = action.payload;
+      localStorage.setItem(STORAGE_KEYS.SESSION_CONTEXT, JSON.stringify(action.payload));
+    },
     beginCurrentUserProfileUpdate: (state, action: PayloadAction<ProfileUpdateRequest>) => {
       if (!state.user || action.payload.userId !== state.user.id) return;
       if (action.payload.sessionVersion !== state.sessionVersion) return;
@@ -185,6 +195,8 @@ const authSlice = createSlice({
 export const {
   setCredentials,
   updateTokens,
+  setCommercialAccess,
+  setSessionContext,
   beginCurrentUserProfileUpdate,
   updateCurrentUser,
   finishCurrentUserProfileUpdate,
@@ -199,3 +211,7 @@ export const selectIsAuthenticated = (state: { auth: AuthState }) => !!state.aut
 export const selectMustChangePassword = (state: { auth: AuthState }) =>
   state.auth.mustChangePassword === true;
 export const selectUserRole = (state: { auth: AuthState }) => state.auth.user?.roles?.[0];
+export const selectCommercialAccess = (state: { auth: AuthState }) => {
+  const access = state.auth.sessionContext?.commercialAccess;
+  return access && 'planCode' in access ? access : null;
+};

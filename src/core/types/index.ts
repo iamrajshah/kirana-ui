@@ -1,4 +1,5 @@
 // Core Types - Match backend API contract exactly
+import type { CommercialAccessSummary } from '@core/commercial/types';
 
 export type UserRole = 'OWNER' | 'MANAGER' | 'CASHIER';
 
@@ -36,7 +37,10 @@ export interface SessionContext {
   };
   memberships: SessionMembership[];
   selected: { userId: string; tenantId: string } | null;
-  commercialAccess: { state: string; demoExpiresAt: string | null; endsAt: string | null } | null;
+  commercialAccess:
+    | CommercialAccessSummary
+    | { state: string; demoExpiresAt: string | null; endsAt: string | null }
+    | null;
   provisioning: { state: string; demoDays?: number };
 }
 

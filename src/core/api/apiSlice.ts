@@ -1,8 +1,14 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { API_BASE_URL, STORAGE_KEYS } from '../constants';
-import { logout, updateTokens } from '../auth/authSlice';
+import { logout, setCommercialAccess, setSessionContext, updateTokens } from '../auth/authSlice';
 import { notificationService } from '../services/notificationService';
+import {
+  commercialDenialMessage,
+  isCommercialDenial,
+  type CommercialAccessSummary,
+} from '@core/commercial';
+import type { SessionContext } from '@core/types';
 
 export type ApiRequestArgs =
   | string
@@ -12,16 +18,35 @@ export type ApiRequestArgs =
 
 const baseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
-  prepareHeaders: (headers) => {
-    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  prepareHeaders: (headers, { getState }) => {
+    const auth = (
+      getState() as {
+        auth?: { accessToken?: string | null; sessionContext?: SessionContext | null };
+      }
+    ).auth;
+    const token = auth?.accessToken ?? localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
     if (token) {
       headers.set('authorization', `Bearer ${token}`);
+    }
+    const commercial = auth?.sessionContext?.commercialAccess;
+    if (commercial && 'accessStateVersion' in commercial) {
+      headers.set('x-access-state-version', commercial.accessStateVersion);
     }
     return headers;
   },
 });
 
 const notifyApiError = (error: FetchBaseQueryError): void => {
+  const data = error.data;
+  if (
+    data &&
+    typeof data === 'object' &&
+    'commercial' in data &&
+    isCommercialDenial(data.commercial)
+  ) {
+    notificationService.error(commercialDenialMessage(data.commercial));
+    return;
+  }
   if (error.status === 'FETCH_ERROR') {
     notificationService.error(
       'Network error. Please check your connection and server configuration.'
@@ -65,6 +90,52 @@ const baseQueryWithReauth: BaseQueryFn<ApiRequestArgs, unknown, FetchBaseQueryEr
   let result = await baseQuery(requestArgs, api, extraOptions);
 
   if (result.error) {
+    const errorData = result.error.data;
+    const commercialDenial =
+      errorData && typeof errorData === 'object' && 'commercial' in errorData
+        ? errorData.commercial
+        : null;
+    if (isCommercialDenial(commercialDenial)) {
+      const previousVersion = (
+        (api.getState() as { auth?: { sessionContext?: SessionContext | null } }).auth
+          ?.sessionContext?.commercialAccess as CommercialAccessSummary | undefined
+      )?.accessStateVersion;
+      if (
+        !commercialDenial.accessStateVersion ||
+        commercialDenial.accessStateVersion !== previousVersion
+      ) {
+        const [sessionResult, accessResult] = await Promise.all([
+          baseQuery('/auth/session-context', api, extraOptions),
+          baseQuery('/subscription/access', api, extraOptions),
+        ]);
+        const sessionData = sessionResult.data as { data?: SessionContext } | undefined;
+        if (sessionData?.data) api.dispatch(setSessionContext(sessionData.data));
+        const accessData = accessResult.data as { data?: CommercialAccessSummary } | undefined;
+        if (accessData?.data) {
+          api.dispatch(setCommercialAccess(accessData.data));
+          if (previousVersion && previousVersion !== accessData.data.accessStateVersion) {
+            api.dispatch(
+              apiSlice.util.invalidateTags([
+                'User',
+                'Customer',
+                'Product',
+                'Inventory',
+                'Invoice',
+                'Payment',
+                'Dashboard',
+                'Category',
+                'Import',
+                'Supplier',
+                'Purchase',
+                'TenantSettings',
+                'Firm',
+                'Report',
+              ])
+            );
+          }
+        }
+      }
+    }
     // Handle different error types
     if (result.error.status === 401) {
       // Try to refresh token

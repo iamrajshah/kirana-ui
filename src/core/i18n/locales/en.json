@@ -1,4 +1,14 @@
 {
+  "commercial": {
+    "suspended": "Shop access is suspended. Contact support.",
+    "readOnly": "Your shop is read-only. Please renew to make changes.",
+    "expired": "Your demo has expired. Choose a plan to continue.",
+    "upgrade": "Upgrade your plan to use this feature.",
+    "limit": "Your plan limit has been reached. Upgrade or deactivate an existing record.",
+    "stale": "Shop access changed. Refresh and try again.",
+    "provisioning": "Shop setup is still in progress. Please wait for setup to finish.",
+    "roleDenied": "Your staff role does not allow this operation. Contact your owner."
+  },
   "workspace": {
     "sell": "Sales",
     "stock": "Stock & purchasing",
@@ -116,10 +126,19 @@
     "serverError": "Server error. Please try again later.",
     "networkError": "Network error. Please check your connection.",
     "temporaryPasswordHelp": "Using a temporary password? After sign-in, you will be asked to create your own password.",
-    "or": "or", "googleSignIn": "Google sign in", "googleLoading": "Signing in with Google...", "googleCancelled": "Google sign-in was cancelled.",
-    "googleError": "Google sign-in could not be completed.", "privateDemoProvisioning": "Your private seven-day demo is ready to be created.",
-    "googleLinkRequired": "Sign in with your password first to safely link this Google account.", "chooseShop": "Choose a shop",
-    "legalAndSupport": "Legal and support", "privacy": "Privacy", "terms": "Terms", "support": "Support", "accountDeletion": "Account deletion"
+    "or": "or",
+    "googleSignIn": "Google sign in",
+    "googleLoading": "Signing in with Google...",
+    "googleCancelled": "Google sign-in was cancelled.",
+    "googleError": "Google sign-in could not be completed.",
+    "privateDemoProvisioning": "Your private seven-day demo is ready to be created.",
+    "googleLinkRequired": "Sign in with your password first to safely link this Google account.",
+    "chooseShop": "Choose a shop",
+    "legalAndSupport": "Legal and support",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "support": "Support",
+    "accountDeletion": "Account deletion"
   },
   "legal": {
     "backToLogin": "Back to sign in",

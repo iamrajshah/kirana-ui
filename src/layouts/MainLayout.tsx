@@ -12,7 +12,7 @@ import { Route, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ROUTES } from '@core/constants';
 import { useAppSelector } from '../core/hooks';
-import { selectCurrentUser } from '@core/auth/authSlice';
+import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice';
 import { getNavigationItems, getPrimaryTabForPath } from '@core/navigation/navigation';
 import type { TabPermission } from '@core/permissions/rolePermissions';
 import {
@@ -26,6 +26,7 @@ import { RoutePageSuspense } from './RoutePageSuspense';
 import { scheduleRoutePreload, type RouteLoader } from './routePreload';
 import { BackgroundDataWarmup } from './BackgroundDataWarmup';
 import '@components/Workspace/workspace.css';
+import { useGetCommercialAccessQuery } from '@core/api/subscriptionApi';
 
 const DashboardPage = lazy(() =>
   import('@features/dashboard/DashboardPage').then((module) => ({ default: module.DashboardPage }))
@@ -134,7 +135,12 @@ export const MainLayout: React.FC = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const user = useAppSelector(selectCurrentUser);
-  const navigation = useMemo(() => getNavigationItems(user?.roles ?? []), [user?.roles]);
+  const commercialAccess = useAppSelector(selectCommercialAccess);
+  useGetCommercialAccessQuery();
+  const navigation = useMemo(
+    () => getNavigationItems(user?.roles ?? [], commercialAccess),
+    [user?.roles, commercialAccess]
+  );
   const primaryItems = navigation.filter((item) => item.primary);
   const selectedTab = getPrimaryTabForPath(location.pathname);
 
@@ -146,8 +152,12 @@ export const MainLayout: React.FC = () => {
 
     return scheduleRoutePreload(preloaders);
   }, [navigation]);
-  const renderPage = (Component: React.ComponentType, permission?: TabPermission) => (
-    <PrivateRoute permission={permission}>
+  const renderPage = (
+    Component: React.ComponentType,
+    permission?: TabPermission,
+    commercialFeature?: import('@core/commercial').CommercialFeatureCode
+  ) => (
+    <PrivateRoute permission={permission} commercialFeature={commercialFeature}>
       <RoutePageSuspense loadingLabel={t('common.loading')}>
         <Component />
       </RoutePageSuspense>
@@ -164,54 +174,54 @@ export const MainLayout: React.FC = () => {
       >
         <SideMenu />
         <div id="main-content" className="workspace-main">
-        <IonTabs className="workspace-tabs">
-          <IonRouterOutlet>
-            <Route exact path={ROUTES.PROFILE} render={() => renderPage(ProfilePage)} />
-            <Route
-              exact
-              path={ROUTES.CHANGE_PASSWORD}
-              render={() => renderPage(ChangePasswordPage)}
-            />
-            {protectedPageRoutes.map(({ id, path, permission }) => {
-              const Component = protectedPageComponents[id];
-              return (
-                <Route
-                  key={id}
-                  exact
-                  path={path}
-                  render={() => renderPage(Component, permission)}
-                />
-              );
-            })}
-            {protectedMainLayoutRoutes.map(({ path, permission }) => {
-              const Component = mainPageComponents[path];
-              return (
-                <Route
-                  key={path}
-                  exact
-                  path={path}
-                  render={() => renderPage(Component, permission)}
-                />
-              );
-            })}
-            <Route exact path={ROUTES.ABOUT} render={() => renderPage(AboutPage)} />
-          </IonRouterOutlet>
+          <IonTabs className="workspace-tabs">
+            <IonRouterOutlet>
+              <Route exact path={ROUTES.PROFILE} render={() => renderPage(ProfilePage)} />
+              <Route
+                exact
+                path={ROUTES.CHANGE_PASSWORD}
+                render={() => renderPage(ChangePasswordPage)}
+              />
+              {protectedPageRoutes.map(({ id, path, permission, commercialFeature }) => {
+                const Component = protectedPageComponents[id];
+                return (
+                  <Route
+                    key={id}
+                    exact
+                    path={path}
+                    render={() => renderPage(Component, permission, commercialFeature)}
+                  />
+                );
+              })}
+              {protectedMainLayoutRoutes.map(({ path, permission, commercialFeature }) => {
+                const Component = mainPageComponents[path];
+                return (
+                  <Route
+                    key={path}
+                    exact
+                    path={path}
+                    render={() => renderPage(Component, permission, commercialFeature)}
+                  />
+                );
+              })}
+              <Route exact path={ROUTES.ABOUT} render={() => renderPage(AboutPage)} />
+            </IonRouterOutlet>
 
-          <IonTabBar slot="bottom" className="workspace-bottom-tabs" selectedTab={selectedTab}>
-            {primaryItems.map((item) => (
-              <IonTabButton
-                key={item.id}
-                tab={item.id}
-                href={item.href}
-                aria-current={selectedTab === item.id ? 'page' : undefined}
-                className={selectedTab === item.id ? 'workspace-tab-context-active' : undefined}
-              >
-                <IonIcon icon={item.icon} />
-                <IonLabel>{t(item.labelKey)}</IonLabel>
-              </IonTabButton>
-            ))}
-          </IonTabBar>
-        </IonTabs>
+            <IonTabBar slot="bottom" className="workspace-bottom-tabs" selectedTab={selectedTab}>
+              {primaryItems.map((item) => (
+                <IonTabButton
+                  key={item.id}
+                  tab={item.id}
+                  href={item.href}
+                  aria-current={selectedTab === item.id ? 'page' : undefined}
+                  className={selectedTab === item.id ? 'workspace-tab-context-active' : undefined}
+                >
+                  <IonIcon icon={item.icon} />
+                  <IonLabel>{t(item.labelKey)}</IonLabel>
+                </IonTabButton>
+              ))}
+            </IonTabBar>
+          </IonTabs>
         </div>
       </IonSplitPane>
     </>

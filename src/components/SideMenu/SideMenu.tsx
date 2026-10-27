@@ -14,7 +14,7 @@ import {
 import { useHistory, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useAppSelector } from '@core/hooks';
-import { selectCurrentUser } from '@core/auth/authSlice';
+import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice';
 import { getNavigationItems } from '@core/navigation/navigation';
 import './SideMenu.css';
 
@@ -23,7 +23,8 @@ export const SideMenu: React.FC = () => {
   const history = useHistory();
   const location = useLocation();
   const user = useAppSelector(selectCurrentUser);
-  const items = getNavigationItems(user?.roles || []);
+  const commercialAccess = useAppSelector(selectCommercialAccess);
+  const items = getNavigationItems(user?.roles || [], commercialAccess);
   const groups = Array.from(new Set(items.map((item) => item.group)));
 
   return (
