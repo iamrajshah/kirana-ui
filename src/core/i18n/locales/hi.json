@@ -7,7 +7,8 @@
     "limit": "योजना की सीमा पूरी हो गई है। अपग्रेड करें या पुराना रिकॉर्ड निष्क्रिय करें।",
     "stale": "दुकान की पहुँच बदल गई है। रीफ़्रेश करके फिर प्रयास करें।",
     "provisioning": "दुकान का सेटअप चल रहा है। कृपया पूरा होने तक प्रतीक्षा करें।",
-    "roleDenied": "आपकी कर्मचारी भूमिका इस काम की अनुमति नहीं देती। मालिक से संपर्क करें।"
+    "roleDenied": "आपकी कर्मचारी भूमिका इस काम की अनुमति नहीं देती। मालिक से संपर्क करें।",
+    "demoDocumentMarker": "DEMO — NOT A VALID BUSINESS DOCUMENT"
   },
   "workspace": {
     "sell": "बिक्री",
@@ -798,7 +799,8 @@
     "bankRequiredFields": "बैंक खाते के सभी आवश्यक फ़ील्ड भरें।",
     "created": "फर्म सफलतापूर्वक बनाई गई।",
     "updated": "फर्म सफलतापूर्वक अपडेट की गई।",
-    "defaultUpdated": "डिफ़ॉल्ट बिक्री फर्म अपडेट की गई।"
+    "defaultUpdated": "डिफ़ॉल्ट बिक्री फर्म अपडेट की गई।",
+    "businessPlanRequired": "एक और कानूनी फर्म जोड़ने के लिए बिज़नेस प्लान आवश्यक है।"
   },
   "payments": {
     "searchPayments": "ग्राहक, प्रकार, राशि या तारीख से भुगतान खोजें...",
@@ -916,6 +918,9 @@
     "noPayablesFound": "कोई देय नहीं मिला",
     "selectReportType": "रिपोर्ट प्रकार चुनें",
     "chooseReport": "देखने के लिए रिपोर्ट चुनें",
+    "accountingFirm": "लेखा फर्म",
+    "allFirmsConsolidated": "सभी फर्म (समेकित)",
+    "printReport": "रिपोर्ट प्रिंट करें",
     "salesReport": "बिक्री रिपोर्ट",
     "outstandingCustomers": "बकाया ग्राहक",
     "inventorySummaryReport": "इन्वेंटरी सारांश",
@@ -1004,6 +1009,7 @@
     "importHistory": "आयात इतिहास",
     "exportData": "डेटा निर्यात करें",
     "customers": "ग्राहक",
+    "suppliers": "आपूर्तिकर्ता",
     "productsExport": "उत्पाद",
     "inventoryExport": "इन्वेंटरी",
     "categoriesExport": "श्रेणियाँ",

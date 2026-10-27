@@ -15,6 +15,12 @@ const state = vi.hoisted(() => ({
 }));
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+vi.mock('@core/hooks', () => ({ useAppSelector: (selector: { name?: string }) => (
+  selector?.name === 'selectCurrentUser'
+    ? { roles: ['OWNER'] }
+    : { planCode: 'BUSINESS', entitlements: {} }
+) }));
+vi.mock('@core/commercial/commercialAccess', () => ({ canUseCommercialFeature: () => true }));
 vi.mock('@core/api/firmApi', () => ({
   useGetFirmsQuery: () => ({
     data: { data: { firms: [

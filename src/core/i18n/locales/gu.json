@@ -7,7 +7,8 @@
     "limit": "યોજનાની મર્યાદા પૂરી થઈ છે. અપગ્રેડ કરો અથવા જૂનો રેકોર્ડ નિષ્ક્રિય કરો.",
     "stale": "દુકાનની ઍક્સેસ બદલાઈ છે. રિફ્રેશ કરીને ફરી પ્રયાસ કરો.",
     "provisioning": "દુકાન સેટઅપ ચાલુ છે. પૂર્ણ થાય ત્યાં સુધી રાહ જુઓ.",
-    "roleDenied": "તમારી કર્મચારી ભૂમિકા આ કાર્યની મંજૂરી આપતી નથી. માલિકનો સંપર્ક કરો."
+    "roleDenied": "તમારી કર્મચારી ભૂમિકા આ કાર્યની મંજૂરી આપતી નથી. માલિકનો સંપર્ક કરો.",
+    "demoDocumentMarker": "DEMO — NOT A VALID BUSINESS DOCUMENT"
   },
   "workspace": {
     "sell": "વેચાણ",
@@ -798,7 +799,8 @@
     "bankRequiredFields": "બેંક ખાતાની બધી જરૂરી વિગતો ભરો.",
     "created": "પેઢી સફળતાપૂર્વક બનાવાઈ.",
     "updated": "પેઢી સફળતાપૂર્વક અપડેટ થઈ.",
-    "defaultUpdated": "ડિફૉલ્ટ વેચાણ પેઢી અપડેટ થઈ."
+    "defaultUpdated": "ડિફૉલ્ટ વેચાણ પેઢી અપડેટ થઈ.",
+    "businessPlanRequired": "બીજી કાનૂની ફર્મ ઉમેરવા માટે બિઝનેસ પ્લાન જરૂરી છે."
   },
   "payments": {
     "searchPayments": "ગ્રાહક, પ્રકાર, રકમ અથવા તારીખથી ચુકવણી શોધો...",
@@ -916,6 +918,9 @@
     "noPayablesFound": "કોઈ ચૂકવવાપાત્ર મળ્યા નથી",
     "selectReportType": "રિપોર્ટ પ્રકાર પસંદ કરો",
     "chooseReport": "રિપોર્ટ પસંદ કરો",
+    "accountingFirm": "હિસાબી ફર્મ",
+    "allFirmsConsolidated": "બધી ફર્મ (એકત્રિત)",
+    "printReport": "રિપોર્ટ પ્રિન્ટ કરો",
     "salesReport": "વેચાણ રિપોર્ટ",
     "outstandingCustomers": "બાકી ગ્રાહકો",
     "inventorySummaryReport": "ઇન્વેન્ટરી સારાંશ",
@@ -1004,6 +1009,7 @@
     "importHistory": "આયાત ઇતિહાસ",
     "exportData": "ડેટા નિકાસ કરો",
     "customers": "ગ્રાહકો",
+    "suppliers": "સપ્લાયરો",
     "productsExport": "ઉત્પાદનો",
     "inventoryExport": "ઇન્વેન્ટરી",
     "categoriesExport": "શ્રેણીઓ",

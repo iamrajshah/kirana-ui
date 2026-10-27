@@ -46,6 +46,7 @@ export interface ReceiptViewModel {
   issuedAt: string | null;
   isLegacy: boolean;
   cancellationMarker: string | null;
+  demoMarker?: string | null;
   supplier: {
     name: string;
     address: string | null;

@@ -41,6 +41,10 @@ import type {
 import { Loading, EmptyState } from '@components';
 import { formatCurrency, formatDate, formatNumber } from '@utils/helpers';
 import './ReportsPage.css';
+import { useAppSelector } from '@core/hooks';
+import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice';
+import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
+import { useGetFirmsQuery } from '@core/api/firmApi';
 
 const reportOptions = [
   ['sales', 'reports.salesReport'],
@@ -57,10 +61,50 @@ const reportOptions = [
 ] as const;
 
 type ReportId = (typeof reportOptions)[number][0];
+const advancedReports = new Set<ReportId>([
+  'profitLoss',
+  'topSelling',
+  'supplierOutstanding',
+  'purchaseRegister',
+  'topPayables',
+  'supplierLedger',
+  'purchaseTrend',
+]);
+const firmScopedReports = new Set<ReportId>([
+  'sales',
+  'outstanding',
+  'cashbook',
+  'profitLoss',
+  'topSelling',
+  'supplierOutstanding',
+  'purchaseRegister',
+  'topPayables',
+  'supplierLedger',
+  'purchaseTrend',
+]);
 
 export const ReportsPage: React.FC = () => {
   const { t } = useTranslation();
+  const currentUser = useAppSelector(selectCurrentUser);
+  const commercialAccess = useAppSelector(selectCommercialAccess);
+  const canUseAdvancedReports = canUseCommercialFeature(
+    currentUser?.roles ?? [],
+    commercialAccess,
+    'ADVANCED_REPORTS'
+  );
+  const isBusiness = commercialAccess?.planCode === 'BUSINESS';
+  const { data: firmsResponse } = useGetFirmsQuery({ active: true }, { skip: !isBusiness });
+  const firms = firmsResponse?.data.firms ?? [];
+  const defaultFirmId = firms.find((firm) => firm.is_default_sales)?.id ?? firms[0]?.id ?? '';
+  const [selectedFirmId, setSelectedFirmId] = useState('');
   const [selectedReport, setSelectedReport] = useState<ReportId>('sales');
+  const effectiveFirm = selectedFirmId || defaultFirmId;
+  const firmScope =
+    isBusiness && firmScopedReports.has(selectedReport)
+      ? effectiveFirm === 'CONSOLIDATED'
+        ? { scope: 'CONSOLIDATED' as const }
+        : { firmId: effectiveFirm || undefined, scope: 'FIRM' as const }
+      : {};
 
   // Pagination state
   const [supplierOutstandingPage, setSupplierOutstandingPage] = useState(1);
@@ -73,6 +117,7 @@ export const ReportsPage: React.FC = () => {
   const [allSupplierLedger, setAllSupplierLedger] = useState<SupplierLedgerSummary[]>([]);
 
   const selectReport = (report: ReportId) => {
+    if (advancedReports.has(report) && !canUseAdvancedReports) return;
     if (report === selectedReport) return;
 
     if (report === 'supplierOutstanding') {
@@ -95,13 +140,16 @@ export const ReportsPage: React.FC = () => {
     isLoading: salesLoading,
     isError: salesError,
     refetch: refetchSales,
-  } = useGetSalesReportQuery({ groupBy: 'day' }, { skip: selectedReport !== 'sales' });
+  } = useGetSalesReportQuery(
+    { groupBy: 'day', ...firmScope },
+    { skip: selectedReport !== 'sales' }
+  );
   const {
     data: outstandingData,
     isLoading: outstandingLoading,
     isError: outstandingError,
     refetch: refetchOutstanding,
-  } = useGetOutstandingCustomersQuery(undefined, {
+  } = useGetOutstandingCustomersQuery(firmScope, {
     skip: selectedReport !== 'outstanding',
   });
   const {
@@ -117,7 +165,7 @@ export const ReportsPage: React.FC = () => {
     isLoading: cashbookLoading,
     isError: cashbookError,
     refetch: refetchCashbook,
-  } = useGetDailyCashbookQuery(undefined, {
+  } = useGetDailyCashbookQuery(firmScope, {
     skip: selectedReport !== 'cashbook',
   });
   const {
@@ -125,7 +173,7 @@ export const ReportsPage: React.FC = () => {
     isLoading: profitLossLoading,
     isError: profitLossError,
     refetch: refetchProfitLoss,
-  } = useGetProfitLossQuery(undefined, {
+  } = useGetProfitLossQuery(firmScope, {
     skip: selectedReport !== 'profitLoss',
   });
   const {
@@ -133,7 +181,7 @@ export const ReportsPage: React.FC = () => {
     isLoading: topSellingLoading,
     isError: topSellingError,
     refetch: refetchTopSelling,
-  } = useGetTopSellingQuery({ limit: 20 }, { skip: selectedReport !== 'topSelling' });
+  } = useGetTopSellingQuery({ limit: 20, ...firmScope }, { skip: selectedReport !== 'topSelling' });
 
   const {
     data: supplierOutstandingData,
@@ -141,7 +189,7 @@ export const ReportsPage: React.FC = () => {
     isError: supplierOutstandingError,
     refetch: refetchSupplierOutstanding,
   } = useGetSupplierOutstandingQuery(
-    { page: supplierOutstandingPage, limit: 50 },
+    { page: supplierOutstandingPage, limit: 50, ...firmScope },
     { skip: selectedReport !== 'supplierOutstanding' }
   );
   const {
@@ -150,7 +198,7 @@ export const ReportsPage: React.FC = () => {
     isError: purchaseRegisterError,
     refetch: refetchPurchaseRegister,
   } = useGetPurchaseRegisterQuery(
-    { page: purchaseRegisterPage, limit: 50 },
+    { page: purchaseRegisterPage, limit: 50, ...firmScope },
     { skip: selectedReport !== 'purchaseRegister' }
   );
   const {
@@ -158,14 +206,17 @@ export const ReportsPage: React.FC = () => {
     isLoading: topPayablesLoading,
     isError: topPayablesError,
     refetch: refetchTopPayables,
-  } = useGetTopPayablesQuery({ limit: 10 }, { skip: selectedReport !== 'topPayables' });
+  } = useGetTopPayablesQuery(
+    { limit: 10, ...firmScope },
+    { skip: selectedReport !== 'topPayables' }
+  );
   const {
     data: supplierLedgerData,
     isLoading: supplierLedgerLoading,
     isError: supplierLedgerError,
     refetch: refetchSupplierLedger,
   } = useGetSupplierLedgerSummaryQuery(
-    { page: supplierLedgerPage, limit: 50 },
+    { page: supplierLedgerPage, limit: 50, ...firmScope },
     { skip: selectedReport !== 'supplierLedger' }
   );
   const {
@@ -173,7 +224,19 @@ export const ReportsPage: React.FC = () => {
     isLoading: purchaseTrendLoading,
     isError: purchaseTrendError,
     refetch: refetchPurchaseTrend,
-  } = useGetPurchaseTrendQuery({ months: 12 }, { skip: selectedReport !== 'purchaseTrend' });
+  } = useGetPurchaseTrendQuery(
+    { months: 12, ...firmScope },
+    { skip: selectedReport !== 'purchaseTrend' }
+  );
+
+  useEffect(() => {
+    setSupplierOutstandingPage(1);
+    setPurchaseRegisterPage(1);
+    setSupplierLedgerPage(1);
+    setAllSupplierOutstanding([]);
+    setAllPurchaseRegister([]);
+    setAllSupplierLedger([]);
+  }, [effectiveFirm]);
 
   const reportRequests: Record<ReportId, { isError?: boolean; refetch?: () => unknown }> = {
     sales: { isError: salesError, refetch: refetchSales },
@@ -944,14 +1007,50 @@ export const ReportsPage: React.FC = () => {
                   }}
                 >
                   {reportOptions.map(([id, labelKey]) => (
-                    <IonSelectOption key={id} value={id}>
+                    <IonSelectOption
+                      key={id}
+                      value={id}
+                      disabled={advancedReports.has(id) && !canUseAdvancedReports}
+                    >
                       {t(labelKey)}
+                      {advancedReports.has(id) && !canUseAdvancedReports
+                        ? ` · ${t('commercial.upgrade')}`
+                        : ''}
                     </IonSelectOption>
                   ))}
                 </IonSelect>
               </IonItem>
             </IonCardContent>
           </IonCard>
+
+          {isBusiness && firmScopedReports.has(selectedReport) && (
+            <IonCard className="mb-4 report-select-card">
+              <IonCardContent>
+                <IonItem lines="none">
+                  <IonLabel>{t('reports.accountingFirm')}</IonLabel>
+                  <IonSelect
+                    aria-label={t('reports.accountingFirm')}
+                    value={effectiveFirm}
+                    onIonChange={(event) => setSelectedFirmId(event.detail.value)}
+                  >
+                    {firms.map((firm) => (
+                      <IonSelectOption key={firm.id} value={firm.id}>
+                        {firm.legal_name}
+                      </IonSelectOption>
+                    ))}
+                    <IonSelectOption value="CONSOLIDATED">
+                      {t('reports.allFirmsConsolidated')}
+                    </IonSelectOption>
+                  </IonSelect>
+                </IonItem>
+                <p className="report-firm-label">
+                  {effectiveFirm === 'CONSOLIDATED'
+                    ? t('reports.allFirmsConsolidated')
+                    : firms.find((firm) => firm.id === effectiveFirm)?.legal_name}
+                </p>
+              </IonCardContent>
+            </IonCard>
+          )}
 
           <nav className="report-choices" aria-label={t('reports.selectReportType')}>
             {reportOptions.map(([id, labelKey]) => (
@@ -962,15 +1061,29 @@ export const ReportsPage: React.FC = () => {
                   selectedReport === id ? 'report-choice report-choice-active' : 'report-choice'
                 }
                 aria-current={selectedReport === id ? 'page' : undefined}
+                disabled={advancedReports.has(id) && !canUseAdvancedReports}
                 onClick={() => selectReport(id)}
               >
                 {t(labelKey)}
+                {advancedReports.has(id) && !canUseAdvancedReports && (
+                  <small>{t('commercial.upgrade')}</small>
+                )}
               </button>
             ))}
           </nav>
 
           {/* Report Content */}
-          <div className="mt-4">
+          <div className="mt-4 report-output">
+            {commercialAccess?.planCode === 'DEMO' && (
+              <div className="report-demo-marker" role="status">
+                {t('commercial.demoDocumentMarker')}
+              </div>
+            )}
+            <div className="report-output-actions">
+              <IonButton fill="outline" onClick={() => window.print()}>
+                {t('reports.printReport')}
+              </IonButton>
+            </div>
             {reportRequests[selectedReport]?.isError ? (
               <div className="workspace-state">
                 <p>{t('reports.loadFailed')}</p>

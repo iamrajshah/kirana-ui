@@ -1,7 +1,7 @@
 import { apiSlice } from './apiSlice';
 import type { ApiResponse } from '../types';
 
-export type ImportType = 'CUSTOMER' | 'PRODUCT' | 'INVENTORY' | 'CATEGORY';
+export type ImportType = 'CUSTOMER' | 'PRODUCT' | 'INVENTORY' | 'CATEGORY' | 'SUPPLIER';
 export type ExportType =
   | 'customers'
   | 'products'

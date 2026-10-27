@@ -25,10 +25,20 @@ const reportRequests = vi.hoisted(
     ) as Record<string, { isError: boolean; refetch: ReturnType<typeof vi.fn> }>
 );
 const querySkips = vi.hoisted(() => ({ sales: [] as boolean[], inventory: [] as boolean[] }));
+const commercialState = vi.hoisted(() => ({ allowed: true }));
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('@components', () => ({ Loading: () => null, EmptyState: () => <div>empty</div> }));
+vi.mock('@core/hooks', () => ({ useAppSelector: (selector: (state: unknown) => unknown) => selector({ auth: { user: { roles: ['OWNER'] }, sessionContext: null } }) }));
+vi.mock('@core/auth/authSlice', () => ({
+  selectCurrentUser: (state: { auth: { user: unknown } }) => state.auth.user,
+  selectCommercialAccess: () => null,
+}));
+vi.mock('@core/commercial/commercialAccess', () => ({
+  canUseCommercialFeature: () => commercialState.allowed,
+}));
+vi.mock('@core/api/firmApi', () => ({ useGetFirmsQuery: () => ({ data: undefined }) }));
 vi.mock('@core/api/reportsApi', () => {
   const emptyReport = (id: string) => () => ({
     data: undefined,
@@ -85,8 +95,8 @@ vi.mock('@ionic/react', () => {
     IonIcon: Container,
     IonInfiniteScroll: Container,
     IonInfiniteScrollContent: Container,
-    IonButton: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
-      <button onClick={onClick}>{children}</button>
+    IonButton: ({ children, onClick, disabled }: PropsWithChildren<{ onClick?: () => void; disabled?: boolean }>) => (
+      <button onClick={onClick} disabled={disabled}>{children}</button>
     ),
     IonSelectOption: Container,
     IonSelect: ({
@@ -126,6 +136,7 @@ beforeEach(() => {
   });
   querySkips.sales.length = 0;
   querySkips.inventory.length = 0;
+  commercialState.allowed = true;
 });
 
 it('formats sales report dates for people instead of exposing API timestamps', () => {
@@ -170,6 +181,16 @@ it('only activates the query for the selected report', () => {
   fireEvent.click(screen.getByText('inventory report'));
   expect(querySkips.sales[querySkips.sales.length - 1]).toBe(true);
   expect(querySkips.inventory[querySkips.inventory.length - 1]).toBe(false);
+});
+
+it('locks advanced reports before a direct UI selection can trigger their query', () => {
+  commercialState.allowed = false;
+  render(<ReportsPage />);
+
+  const profitLoss = screen.getByRole('button', { name: /reports.profitAndLoss/ });
+  expect(profitLoss.hasAttribute('disabled')).toBe(true);
+  fireEvent.click(profitLoss);
+  expect(querySkips.sales[querySkips.sales.length - 1]).toBe(false);
 });
 
 it('uses a supplied summary for an inventory object response', () => {

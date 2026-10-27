@@ -25,6 +25,9 @@ import {
   useUpdateFirmMutation,
 } from '@core/api/firmApi';
 import notificationService from '@core/services/notificationService';
+import { useAppSelector } from '@core/hooks';
+import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice';
+import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
 
 const blankFirm = (): FirmInput => ({
   code: '',
@@ -59,6 +62,8 @@ const nullable = (value: string | null | undefined) => value?.trim() || null;
 
 export const FirmSettingsCard: React.FC = () => {
   const { t } = useTranslation();
+  const currentUser = useAppSelector(selectCurrentUser);
+  const commercialAccess = useAppSelector(selectCommercialAccess);
   const { data, isLoading, isError, refetch } = useGetFirmsQuery();
   const [createFirm, { isLoading: isCreating }] = useCreateFirmMutation();
   const [updateFirm, { isLoading: isUpdating }] = useUpdateFirmMutation();
@@ -68,6 +73,9 @@ export const FirmSettingsCard: React.FC = () => {
   const [form, setForm] = useState<FirmInput | null>(null);
 
   const firms = useMemo(() => data?.data.firms || [], [data]);
+  const canAddFirm = firms.length === 0 || canUseCommercialFeature(
+    currentUser?.roles ?? [], commercialAccess, 'MULTI_FIRM'
+  );
   const isSaving = isCreating || isUpdating;
 
   useEffect(() => {
@@ -241,7 +249,8 @@ export const FirmSettingsCard: React.FC = () => {
                 </div>
               ))}
             </div>
-            <IonButton expand="block" onClick={() => { setEditingId(null); setForm(blankFirm()); }}>
+            {!canAddFirm && <p role="status">{t('firms.businessPlanRequired')}</p>}
+            <IonButton disabled={!canAddFirm} expand="block" onClick={() => { setEditingId(null); setForm(blankFirm()); }}>
               <IonIcon icon={add} slot="start" /> {t('firms.addFirm')}
             </IonButton>
           </>

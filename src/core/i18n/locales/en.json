@@ -7,7 +7,8 @@
     "limit": "Your plan limit has been reached. Upgrade or deactivate an existing record.",
     "stale": "Shop access changed. Refresh and try again.",
     "provisioning": "Shop setup is still in progress. Please wait for setup to finish.",
-    "roleDenied": "Your staff role does not allow this operation. Contact your owner."
+    "roleDenied": "Your staff role does not allow this operation. Contact your owner.",
+    "demoDocumentMarker": "DEMO — NOT A VALID BUSINESS DOCUMENT"
   },
   "workspace": {
     "sell": "Sales",
@@ -798,7 +799,8 @@
     "bankRequiredFields": "Complete all required bank account fields.",
     "created": "Firm created successfully.",
     "updated": "Firm updated successfully.",
-    "defaultUpdated": "Default sales firm updated."
+    "defaultUpdated": "Default sales firm updated.",
+    "businessPlanRequired": "Business plan is required to add another legal firm."
   },
   "payments": {
     "searchPayments": "Search payments by customer, mode, amount or date...",
@@ -916,6 +918,9 @@
     "noPayablesFound": "No payables found",
     "selectReportType": "Select Report Type",
     "chooseReport": "Choose a report to view",
+    "accountingFirm": "Accounting firm",
+    "allFirmsConsolidated": "All firms (consolidated)",
+    "printReport": "Print report",
     "salesReport": "Sales Report",
     "outstandingCustomers": "Outstanding Customers",
     "inventorySummaryReport": "Inventory Summary",
@@ -1004,6 +1009,7 @@
     "importHistory": "Import History",
     "exportData": "Export Data",
     "customers": "Customers",
+    "suppliers": "Suppliers",
     "productsExport": "Products",
     "inventoryExport": "Inventory",
     "categoriesExport": "Categories",

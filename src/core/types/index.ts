@@ -277,6 +277,7 @@ export interface FinalizedDocumentDto {
   document_mode: DocumentMode;
   legacy: boolean;
   cancellation: { cancelled: boolean; marker: string | null };
+  commercial?: { is_demo: boolean; marker: string | null };
   supplier: DocumentPartyDto;
   customer: DocumentPartyDto | null;
   place_of_supply: { name: string | null; state_code: string | null } | null;

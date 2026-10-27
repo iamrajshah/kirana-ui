@@ -23,6 +23,7 @@ export const mapReceiptDocument = (
   issuedAt: document.issued_at,
   isLegacy: document.legacy,
   cancellationMarker: document.cancellation.cancelled ? document.cancellation.marker : null,
+  demoMarker: document.commercial?.is_demo ? document.commercial.marker : null,
   supplier: {
     name: document.supplier.name ?? 'Kirana Store',
     address: document.supplier.address,

@@ -22,6 +22,9 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
 
   return (
     <article className={`sale-receipt sale-receipt--${isGst ? 'gst' : 'simple'} ${className}`.trim()} aria-label={`${receipt.title} ${receipt.invoiceNumber}`}>
+      {receipt.demoMarker && (
+        <div className="sale-receipt__demo" role="status">{receipt.demoMarker}</div>
+      )}
       {receipt.cancellationMarker && (
         <div className="sale-receipt__cancelled" role="status">
           {receipt.cancellationMarker}

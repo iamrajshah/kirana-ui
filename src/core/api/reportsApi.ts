@@ -1,6 +1,11 @@
 import { apiSlice } from './apiSlice';
 import type { ApiResponse, PaginatedApiResponse } from '../types';
 
+export interface ReportFirmScopeParams {
+  firmId?: string;
+  scope?: 'FIRM' | 'CONSOLIDATED';
+}
+
 export interface SalesReport {
   date: string;
   total_sales: number;
@@ -20,10 +25,12 @@ export interface OutstandingCustomer {
   outstanding_balance: number;
 }
 
-export type OutstandingCustomersData = OutstandingCustomer[] | {
-  summary: { total_customers: number; total_outstanding: number };
-  customers: OutstandingCustomer[];
-};
+export type OutstandingCustomersData =
+  | OutstandingCustomer[]
+  | {
+      summary: { total_customers: number; total_outstanding: number };
+      customers: OutstandingCustomer[];
+    };
 
 export interface InventorySummaryItem {
   variant_id: string;
@@ -35,15 +42,17 @@ export interface InventorySummaryItem {
   stock_value: number;
 }
 
-export type InventorySummaryData = InventorySummaryItem[] | {
-  summary: {
-    total_items: number;
-    low_stock_items: number;
-    out_of_stock_items: number;
-    total_inventory_value: number;
-  };
-  items: InventorySummaryItem[];
-};
+export type InventorySummaryData =
+  | InventorySummaryItem[]
+  | {
+      summary: {
+        total_items: number;
+        low_stock_items: number;
+        out_of_stock_items: number;
+        total_inventory_value: number;
+      };
+      items: InventorySummaryItem[];
+    };
 
 export interface DailyCashbook {
   date: string;
@@ -161,7 +170,8 @@ export const reportsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getSalesReport: builder.query<
       ApiResponse<SalesReportData>,
-      { from?: string; to?: string; groupBy?: 'day' | 'week' | 'month' } | void
+      | ({ from?: string; to?: string; groupBy?: 'day' | 'week' | 'month' } & ReportFirmScopeParams)
+      | void
     >({
       query: (params) => ({
         url: '/reports/sales',
@@ -169,15 +179,21 @@ export const reportsApi = apiSlice.injectEndpoints({
       }),
       providesTags: ['Report'],
     }),
-    getOutstandingCustomers: builder.query<ApiResponse<OutstandingCustomersData>, void>({
-      query: () => '/reports/outstanding-customers',
+    getOutstandingCustomers: builder.query<
+      ApiResponse<OutstandingCustomersData>,
+      ReportFirmScopeParams | void
+    >({
+      query: (params) => ({ url: '/reports/outstanding-customers', params: params || {} }),
       providesTags: ['Report'],
     }),
     getInventorySummary: builder.query<ApiResponse<InventorySummaryData>, void>({
       query: () => '/reports/inventory-summary',
       providesTags: ['Report'],
     }),
-    getDailyCashbook: builder.query<ApiResponse<DailyCashbook>, { date?: string } | void>({
+    getDailyCashbook: builder.query<
+      ApiResponse<DailyCashbook>,
+      ({ date?: string } & ReportFirmScopeParams) | void
+    >({
       query: (params) => ({
         url: '/reports/daily-cashbook',
         params: params || {},
@@ -186,7 +202,7 @@ export const reportsApi = apiSlice.injectEndpoints({
     }),
     getProfitLoss: builder.query<
       ApiResponse<ProfitLoss>,
-      { from?: string; to?: string } | void
+      ({ from?: string; to?: string } & ReportFirmScopeParams) | void
     >({
       query: (params) => ({
         url: '/reports/profit-loss',
@@ -194,7 +210,10 @@ export const reportsApi = apiSlice.injectEndpoints({
       }),
       providesTags: ['Report'],
     }),
-    getTopSelling: builder.query<ApiResponse<TopSellingData>, { limit?: number } | void>({
+    getTopSelling: builder.query<
+      ApiResponse<TopSellingData>,
+      ({ limit?: number } & ReportFirmScopeParams) | void
+    >({
       query: (params) => ({
         url: '/reports/top-selling',
         params: params || {},
@@ -204,7 +223,7 @@ export const reportsApi = apiSlice.injectEndpoints({
     // Supplier & Purchase Reports
     getSupplierOutstanding: builder.query<
       ApiResponse<SupplierOutstanding[]>,
-      { page?: number; limit?: number; minAmount?: number } | void
+      ({ page?: number; limit?: number; minAmount?: number } & ReportFirmScopeParams) | void
     >({
       query: (params) => ({
         url: '/reports/supplier-outstanding',
@@ -214,7 +233,15 @@ export const reportsApi = apiSlice.injectEndpoints({
     }),
     getPurchaseRegister: builder.query<
       PurchaseRegisterResponse,
-      { page?: number; limit?: number; from?: string; to?: string; supplierId?: string; status?: string } | void
+      | ({
+          page?: number;
+          limit?: number;
+          from?: string;
+          to?: string;
+          supplierId?: string;
+          status?: string;
+        } & ReportFirmScopeParams)
+      | void
     >({
       query: (params) => ({
         url: '/reports/purchase-register',
@@ -222,7 +249,10 @@ export const reportsApi = apiSlice.injectEndpoints({
       }),
       providesTags: ['Report'],
     }),
-    getTopPayables: builder.query<ApiResponse<TopPayable[]>, { limit?: number } | void>({
+    getTopPayables: builder.query<
+      ApiResponse<TopPayable[]>,
+      ({ limit?: number } & ReportFirmScopeParams) | void
+    >({
       query: (params) => ({
         url: '/reports/top-payables',
         params: params || {},
@@ -231,7 +261,14 @@ export const reportsApi = apiSlice.injectEndpoints({
     }),
     getSupplierLedgerSummary: builder.query<
       PaginatedApiResponse<SupplierLedgerSummary>,
-      { page?: number; limit?: number; from?: string; to?: string; supplierId?: string } | void
+      | ({
+          page?: number;
+          limit?: number;
+          from?: string;
+          to?: string;
+          supplierId?: string;
+        } & ReportFirmScopeParams)
+      | void
     >({
       query: (params) => ({
         url: '/reports/supplier-ledger-summary',
@@ -241,7 +278,7 @@ export const reportsApi = apiSlice.injectEndpoints({
     }),
     getPurchaseTrend: builder.query<
       ApiResponse<PurchaseTrendMonth[]>,
-      { months?: number } | void
+      ({ months?: number } & ReportFirmScopeParams) | void
     >({
       query: (params) => ({
         url: '/reports/purchase-trend',
