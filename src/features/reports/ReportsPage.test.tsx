@@ -25,10 +25,35 @@ const reportRequests = vi.hoisted(
     ) as Record<string, { isError: boolean; refetch: ReturnType<typeof vi.fn> }>
 );
 const querySkips = vi.hoisted(() => ({ sales: [] as boolean[], inventory: [] as boolean[] }));
+const reportArgs = vi.hoisted(() => ({ sales: [] as unknown[] }));
+const commercialState = vi.hoisted(() => ({
+  allowed: true,
+  access: null as null | { planCode: string },
+}));
+const firmState = vi.hoisted(() => ({
+  firms: [] as Array<{ id: string; legal_name: string; is_default_sales: boolean }>,
+  calls: [] as Array<{ params: unknown; options: unknown }>,
+}));
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('@components', () => ({ Loading: () => null, EmptyState: () => <div>empty</div> }));
+vi.mock('@core/hooks', () => ({ useAppSelector: (selector: (state: unknown) => unknown) => selector({ auth: { user: { roles: ['OWNER'] }, sessionContext: null } }) }));
+vi.mock('@core/auth/authSlice', () => ({
+  selectCurrentUser: (state: { auth: { user: unknown } }) => state.auth.user,
+  selectCommercialAccess: () => commercialState.access,
+}));
+vi.mock('@core/commercial/commercialAccess', () => ({
+  canUseCommercialFeature: () => commercialState.allowed,
+}));
+vi.mock('@core/api/firmApi', () => ({
+  useGetFirmsQuery: (params: unknown, options: unknown) => {
+    firmState.calls.push({ params, options });
+    return {
+      data: firmState.firms.length ? { data: { firms: firmState.firms } } : undefined,
+    };
+  },
+}));
 vi.mock('@core/api/reportsApi', () => {
   const emptyReport = (id: string) => () => ({
     data: undefined,
@@ -37,6 +62,7 @@ vi.mock('@core/api/reportsApi', () => {
   });
   return {
     useGetSalesReportQuery: (_arg: unknown, options?: { skip?: boolean }) => {
+      reportArgs.sales.push(_arg);
       querySkips.sales.push(Boolean(options?.skip));
       return {
         ...emptyReport('sales')(),
@@ -85,23 +111,31 @@ vi.mock('@ionic/react', () => {
     IonIcon: Container,
     IonInfiniteScroll: Container,
     IonInfiniteScrollContent: Container,
-    IonButton: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
-      <button onClick={onClick}>{children}</button>
+    IonButton: ({ children, onClick, disabled }: PropsWithChildren<{ onClick?: () => void; disabled?: boolean }>) => (
+      <button onClick={onClick} disabled={disabled}>{children}</button>
     ),
     IonSelectOption: Container,
     IonSelect: ({
       onIonChange,
+      'aria-label': ariaLabel,
     }: {
       onIonChange: (event: { detail: { value: string } }) => void;
+      'aria-label'?: string;
     }) => (
-      <>
-        <button onClick={() => onIonChange({ detail: { value: 'inventory' } })}>
-          inventory report
+      ariaLabel === 'reports.accountingFirm' ? (
+        <button onClick={() => onIonChange({ detail: { value: 'firm-2' } })}>
+          select firm two
         </button>
-        <button onClick={() => onIonChange({ detail: { value: 'purchaseRegister' } })}>
-          purchase register
-        </button>
-      </>
+      ) : (
+        <>
+          <button onClick={() => onIonChange({ detail: { value: 'inventory' } })}>
+            inventory report
+          </button>
+          <button onClick={() => onIonChange({ detail: { value: 'purchaseRegister' } })}>
+            purchase register
+          </button>
+        </>
+      )
     ),
   };
 });
@@ -126,6 +160,11 @@ beforeEach(() => {
   });
   querySkips.sales.length = 0;
   querySkips.inventory.length = 0;
+  reportArgs.sales.length = 0;
+  commercialState.allowed = true;
+  commercialState.access = null;
+  firmState.firms = [];
+  firmState.calls.length = 0;
 });
 
 it('formats sales report dates for people instead of exposing API timestamps', () => {
@@ -170,6 +209,31 @@ it('only activates the query for the selected report', () => {
   fireEvent.click(screen.getByText('inventory report'));
   expect(querySkips.sales[querySkips.sales.length - 1]).toBe(true);
   expect(querySkips.inventory[querySkips.inventory.length - 1]).toBe(false);
+});
+
+it('locks advanced reports before a direct UI selection can trigger their query', () => {
+  commercialState.allowed = false;
+  render(<ReportsPage />);
+
+  const profitLoss = screen.getByRole('button', { name: /reports.profitAndLoss/ });
+  expect(profitLoss.hasAttribute('disabled')).toBe(true);
+  fireEvent.click(profitLoss);
+  expect(querySkips.sales[querySkips.sales.length - 1]).toBe(false);
+});
+
+it('lets a demo shop select a seeded firm for firm-scoped reports', () => {
+  commercialState.access = { planCode: 'DEMO' };
+  firmState.firms = [
+    { id: 'firm-1', legal_name: 'Demo Main Firm', is_default_sales: true },
+    { id: 'firm-2', legal_name: 'Demo Second Firm', is_default_sales: false },
+  ];
+
+  render(<ReportsPage />);
+  expect(firmState.calls.at(-1)?.options).toEqual({ skip: false });
+  expect(reportArgs.sales.at(-1)).toEqual({ groupBy: 'day', firmId: 'firm-1', scope: 'FIRM' });
+
+  fireEvent.click(screen.getByText('select firm two'));
+  expect(reportArgs.sales.at(-1)).toEqual({ groupBy: 'day', firmId: 'firm-2', scope: 'FIRM' });
 });
 
 it('uses a supplied summary for an inventory object response', () => {

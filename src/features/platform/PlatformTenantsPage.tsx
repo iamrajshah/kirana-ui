@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   IonBadge,
-  IonAlert,
   IonButton,
   IonButtons,
   IonCard,
@@ -20,9 +19,11 @@ import { add, calendar, checkmarkCircle, close, eye, key, logOut, moon, pauseCir
 import { useHistory } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@components';
-import { platformApi, PlatformTenant, PlatformTenantDetails } from '@core/api/platformApi';
+import { platformApi, PlatformPlan, PlatformTenant, PlatformTenantDetails } from '@core/api/platformApi';
 import { ROUTES, STORAGE_KEYS } from '@core/constants';
 import { useTheme } from '../../contexts/useTheme';
+import { PlatformCommercialPanel } from './PlatformCommercialPanel';
+import { PlatformLeadPanel } from './PlatformLeadPanel';
 import './platform.css';
 
 const emptyForm = {
@@ -39,6 +40,7 @@ export const PlatformTenantsPage: React.FC = () => {
   const history = useHistory();
   const { theme, toggleTheme } = useTheme();
   const [tenants, setTenants] = useState<PlatformTenant[]>([]);
+  const [plans, setPlans] = useState<PlatformPlan[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,7 +65,6 @@ export const PlatformTenantsPage: React.FC = () => {
     phone: string | null;
     password: string;
   } | null>(null);
-  const [statusTarget, setStatusTarget] = useState<PlatformTenant | null>(null);
   const [error, setError] = useState('');
   const detailRequest = useRef<AbortController | null>(null);
 
@@ -88,6 +89,7 @@ export const PlatformTenantsPage: React.FC = () => {
       return;
     }
     void loadTenants();
+    void platformApi.listPlans().then(setPlans).catch(() => setPlans([]));
   }, [history, loadTenants]);
 
   const setField = (field: keyof typeof form, value: string) =>
@@ -125,18 +127,6 @@ export const PlatformTenantsPage: React.FC = () => {
       setError(requestError instanceof Error ? requestError.message : t('platform.createFailed'));
     } finally {
       setSaving(false);
-    }
-  };
-
-  const toggleStatus = async (tenant: PlatformTenant) => {
-    try {
-      await platformApi.updateTenantStatus(
-        tenant.id,
-        tenant.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE'
-      );
-      await loadTenants(searchTerm);
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : t('platform.statusFailed'));
     }
   };
 
@@ -258,6 +248,8 @@ export const PlatformTenantsPage: React.FC = () => {
             </IonButton>
           </form>
 
+          <PlatformLeadPanel plans={plans} onActivated={() => loadTenants(searchTerm)} />
+
           {loading ? (
             <div className="workspace-state" role="status">{t('common.loading')}</div>
           ) : tenants.length === 0 ? (
@@ -305,16 +297,6 @@ export const PlatformTenantsPage: React.FC = () => {
                     >
                       <IonIcon icon={eye} slot="start" />
                       {t('platform.viewDetails')}
-                    </IonButton>
-                    <IonButton
-                      expand="block"
-                      fill="outline"
-                      color={tenant.status === 'ACTIVE' ? 'danger' : 'success'}
-                      onClick={() => setStatusTarget(tenant)}
-                    >
-                      {tenant.status === 'ACTIVE'
-                        ? t('platform.suspendShop')
-                        : t('platform.reactivateShop')}
                     </IonButton>
                   </IonCardContent>
                 </IonCard>
@@ -372,6 +354,14 @@ export const PlatformTenantsPage: React.FC = () => {
                     <span>{t('platform.billCount', { count: tenantDetails.counts.invoices })}</span>
                   </div>
                 </section>
+
+                <PlatformCommercialPanel
+                  tenant={tenantDetails}
+                  plans={plans}
+                  onChanged={async () => {
+                    await Promise.all([loadTenantDetails(tenantDetails.id), loadTenants(searchTerm)]);
+                  }}
+                />
 
                 <section>
                   <div className="platform-detail-heading">
@@ -500,29 +490,6 @@ export const PlatformTenantsPage: React.FC = () => {
           </IonContent>
         </IonModal>
 
-        <IonAlert
-          isOpen={!!statusTarget}
-          onDidDismiss={() => setStatusTarget(null)}
-          header={
-            statusTarget?.status === 'ACTIVE'
-              ? t('platform.confirmSuspendTitle')
-              : t('platform.confirmReactivateTitle')
-          }
-          message={t('platform.confirmStatusMessage', { shop: statusTarget?.name })}
-          buttons={[
-            { text: t('common.cancel'), role: 'cancel' },
-            {
-              text:
-                statusTarget?.status === 'ACTIVE'
-                  ? t('platform.suspendShop')
-                  : t('platform.reactivateShop'),
-              role: statusTarget?.status === 'ACTIVE' ? 'destructive' : undefined,
-              handler: () => {
-                if (statusTarget) void toggleStatus(statusTarget);
-              },
-            },
-          ]}
-        />
 
         <IonToast isOpen={!!error} onDidDismiss={() => setError('')} message={error} color="danger" duration={4000} />
       </IonContent>

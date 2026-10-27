@@ -37,6 +37,9 @@ Maintainer: [Rajesh Shah (@iamrajshah)](https://github.com/iamrajshah)
   phone. Newly provisioned or reset owners must replace their temporary password
   first, and the login page explains this handoff.
 - Ionic/Capacitor foundations for web and Android/iOS packaging.
+- Production Android project identity (`com.iamrajshah.kiranapos`) and a
+  fail-closed Google-entry UI flag. Google remains hidden until server,
+  OAuth, legal, signing, and device gates are complete.
 
 Offline billing queue, optional cashier shift cash, smart reorder, and WhatsApp
 list-to-cart are planned product work. They are not production-ready features yet.
@@ -143,6 +146,11 @@ npx cap open android
 
 Web and Capacitor share the same responsive UI. Native release signing and store
 submission remain separate deployment steps.
+The generated Android project is committed; follow
+[`docs/runbooks/web-android-release.md`](docs/runbooks/web-android-release.md).
+Credential Manager wiring, production OAuth fingerprints, approved store
+artwork, signed AAB/device evidence, and iOS Apple-login compliance remain
+release gates rather than completed claims.
 
 ## Working agreement for humans and AI agents
 

@@ -48,14 +48,22 @@ import {
 import { BackupRestorePanel } from './BackupRestorePanel';
 import { useAppSelector } from '@core/hooks';
 import { selectCurrentUser } from '@core/auth/authSlice';
+import { selectCommercialAccess } from '@core/auth/authSlice';
+import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
 
 type TabType = 'import' | 'export' | 'backup';
 
 export const ImportExportPage: React.FC = () => {
   const { t } = useTranslation();
   const currentUser = useAppSelector(selectCurrentUser);
+  const commercialAccess = useAppSelector(selectCommercialAccess);
   const isOwner = currentUser?.roles?.includes('OWNER') ?? false;
   const shopName = currentUser?.tenant?.name ?? '';
+  const roles = currentUser?.roles ?? [];
+  const canAdvancedImport = canUseCommercialFeature(roles, commercialAccess, 'IMPORT_INVENTORY_CATEGORY_SUPPLIER');
+  const canCsvExport = canUseCommercialFeature(roles, commercialAccess, 'EXPORT_CSV_SIX_DATASETS');
+  const canExcelExport = canUseCommercialFeature(roles, commercialAccess, 'EXPORT_EXCEL');
+  const canBackup = canUseCommercialFeature(roles, commercialAccess, 'BACKUP_RESTORE');
   const [selectedTab, setSelectedTab] = useState<TabType>('import');
   const [selectedImportType, setSelectedImportType] = useState<ImportType>('CUSTOMER');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -237,11 +245,14 @@ export const ImportExportPage: React.FC = () => {
                     <IonSegmentButton value="PRODUCT">
                       <IonLabel>{t('importExport.productsExport')}</IonLabel>
                     </IonSegmentButton>
-                    <IonSegmentButton value="INVENTORY">
+                    <IonSegmentButton value="INVENTORY" disabled={!canAdvancedImport}>
                       <IonLabel>{t('importExport.inventoryExport')}</IonLabel>
                     </IonSegmentButton>
-                    <IonSegmentButton value="CATEGORY">
+                    <IonSegmentButton value="CATEGORY" disabled={!canAdvancedImport}>
                       <IonLabel>{t('importExport.categoriesExport')}</IonLabel>
+                    </IonSegmentButton>
+                    <IonSegmentButton value="SUPPLIER" disabled={!canAdvancedImport}>
+                      <IonLabel>{t('importExport.suppliers')}</IonLabel>
                     </IonSegmentButton>
                   </IonSegment>
 
@@ -368,7 +379,7 @@ export const ImportExportPage: React.FC = () => {
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <IonButton
                             expand="block"
-                            disabled={exporting}
+                            disabled={exporting || !canCsvExport}
                             onClick={() => handleExport('customers', 'CSV')}
                           >
                             <IonIcon icon={cloudDownload} slot="start" />
@@ -376,7 +387,7 @@ export const ImportExportPage: React.FC = () => {
                           </IonButton>
                           <IonButton
                             expand="block"
-                            disabled={exporting}
+                            disabled={exporting || !canExcelExport}
                             onClick={() => handleExport('customers', 'EXCEL')}
                           >
                             <IonIcon icon={cloudDownload} slot="start" />
@@ -394,7 +405,7 @@ export const ImportExportPage: React.FC = () => {
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <IonButton
                             expand="block"
-                            disabled={exporting}
+                            disabled={exporting || !canCsvExport}
                             onClick={() => handleExport('products', 'CSV')}
                           >
                             <IonIcon icon={cloudDownload} slot="start" />
@@ -402,7 +413,7 @@ export const ImportExportPage: React.FC = () => {
                           </IonButton>
                           <IonButton
                             expand="block"
-                            disabled={exporting}
+                            disabled={exporting || !canExcelExport}
                             onClick={() => handleExport('products', 'EXCEL')}
                           >
                             <IonIcon icon={cloudDownload} slot="start" />
@@ -420,7 +431,7 @@ export const ImportExportPage: React.FC = () => {
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <IonButton
                             expand="block"
-                            disabled={exporting}
+                            disabled={exporting || !canCsvExport}
                             onClick={() => handleExport('inventory', 'CSV')}
                           >
                             <IonIcon icon={cloudDownload} slot="start" />
@@ -428,7 +439,7 @@ export const ImportExportPage: React.FC = () => {
                           </IonButton>
                           <IonButton
                             expand="block"
-                            disabled={exporting}
+                            disabled={exporting || !canExcelExport}
                             onClick={() => handleExport('inventory', 'EXCEL')}
                           >
                             <IonIcon icon={cloudDownload} slot="start" />
@@ -446,7 +457,7 @@ export const ImportExportPage: React.FC = () => {
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <IonButton
                             expand="block"
-                            disabled={exporting}
+                            disabled={exporting || !canCsvExport}
                             onClick={() => handleExport('categories', 'CSV')}
                           >
                             <IonIcon icon={cloudDownload} slot="start" />
@@ -454,7 +465,7 @@ export const ImportExportPage: React.FC = () => {
                           </IonButton>
                           <IonButton
                             expand="block"
-                            disabled={exporting}
+                            disabled={exporting || !canExcelExport}
                             onClick={() => handleExport('categories', 'EXCEL')}
                           >
                             <IonIcon icon={cloudDownload} slot="start" />
@@ -472,7 +483,7 @@ export const ImportExportPage: React.FC = () => {
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <IonButton
                             expand="block"
-                            disabled={exporting}
+                            disabled={exporting || !canCsvExport}
                             onClick={() => handleExport('invoices', 'CSV')}
                           >
                             <IonIcon icon={cloudDownload} slot="start" />
@@ -480,7 +491,7 @@ export const ImportExportPage: React.FC = () => {
                           </IonButton>
                           <IonButton
                             expand="block"
-                            disabled={exporting}
+                            disabled={exporting || !canExcelExport}
                             onClick={() => handleExport('invoices', 'EXCEL')}
                           >
                             <IonIcon icon={cloudDownload} slot="start" />
@@ -498,7 +509,7 @@ export const ImportExportPage: React.FC = () => {
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <IonButton
                             expand="block"
-                            disabled={exporting}
+                            disabled={exporting || !canCsvExport}
                             onClick={() => handleExport('ledger', 'CSV')}
                           >
                             <IonIcon icon={cloudDownload} slot="start" />
@@ -506,7 +517,7 @@ export const ImportExportPage: React.FC = () => {
                           </IonButton>
                           <IonButton
                             expand="block"
-                            disabled={exporting}
+                            disabled={exporting || !canExcelExport}
                             onClick={() => handleExport('ledger', 'EXCEL')}
                           >
                             <IonIcon icon={cloudDownload} slot="start" />
@@ -521,7 +532,13 @@ export const ImportExportPage: React.FC = () => {
             </div>
           )}
 
-          {selectedTab === 'backup' && isOwner && <BackupRestorePanel shopName={shopName} />}
+          {selectedTab === 'backup' && isOwner && (
+            <BackupRestorePanel
+              shopName={shopName}
+              disabled={!canBackup}
+              disabledReason={t('commercial.upgrade')}
+            />
+          )}
 
           <IonToast
             isOpen={showSuccess}

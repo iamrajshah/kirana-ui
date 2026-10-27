@@ -125,6 +125,20 @@ afterEach(() => {
 });
 
 describe('ProductBarcodeLabelModal', () => {
+  it('marks every demo barcode label as a non-business document', () => {
+    render(
+      <ProductBarcodeLabelModal
+        isOpen
+        isDemo
+        shopName="Rajesh Kirana Store"
+        productName="India Gate Basmati Rice"
+        variant={variant}
+        onDismiss={vi.fn()}
+      />
+    );
+    expect(screen.getByText('DEMO — NOT A VALID BUSINESS DOCUMENT')).toBeTruthy();
+  });
+
   it('prints the shop identity, selling price, and differing MRP by default', () => {
     render(
       <ProductBarcodeLabelModal

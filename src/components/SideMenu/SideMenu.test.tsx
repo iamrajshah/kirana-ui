@@ -8,7 +8,10 @@ const push = vi.fn();
 vi.mock('react-router', () => ({ useHistory: () => ({ push }), useLocation: () => ({ pathname: '/dashboard' }) }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('@core/hooks', () => ({ useAppSelector: () => ({ roles: ['CASHIER'] }) }));
-vi.mock('@core/auth/authSlice', () => ({ selectCurrentUser: vi.fn() }));
+vi.mock('@core/auth/authSlice', () => ({
+  selectCurrentUser: vi.fn(),
+  selectCommercialAccess: vi.fn(),
+}));
 vi.mock('@ionic/react', () => {
   const Container = ({ children }: PropsWithChildren) => <div>{children}</div>;
   return {

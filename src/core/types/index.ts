@@ -1,4 +1,5 @@
 // Core Types - Match backend API contract exactly
+import type { CommercialAccessSummary } from '@core/commercial/types';
 
 export type UserRole = 'OWNER' | 'MANAGER' | 'CASHIER';
 
@@ -15,6 +16,34 @@ export interface User {
   };
 }
 
+export interface SessionMembership {
+  userId: string;
+  tenantId: string;
+  tenantName: string;
+  active: boolean;
+  tenantStatus: string | null;
+  roles: string[];
+  permissions: string[];
+  mustChangePassword: boolean;
+}
+
+export interface SessionContext {
+  identity: {
+    id: string;
+    email: string | null;
+    displayName: string | null;
+    status: string;
+    accessStateVersion: number;
+  };
+  memberships: SessionMembership[];
+  selected: { userId: string; tenantId: string } | null;
+  commercialAccess:
+    | CommercialAccessSummary
+    | { state: string; demoExpiresAt: string | null; endsAt: string | null }
+    | null;
+  provisioning: { state: string; demoDays?: number };
+}
+
 export interface AuthResponse {
   success: boolean;
   data: {
@@ -29,6 +58,7 @@ export interface AuthResponse {
       refreshToken: string;
     };
     isFirstLogin?: boolean;
+    sessionContext?: SessionContext;
   };
   message: string;
 }
@@ -247,6 +277,7 @@ export interface FinalizedDocumentDto {
   document_mode: DocumentMode;
   legacy: boolean;
   cancellation: { cancelled: boolean; marker: string | null };
+  commercial?: { is_demo: boolean; marker: string | null };
   supplier: DocumentPartyDto;
   customer: DocumentPartyDto | null;
   place_of_supply: { name: string | null; state_code: string | null } | null;

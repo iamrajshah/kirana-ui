@@ -33,15 +33,18 @@ import { Loading, EmptyState, Input, Select, Button } from '@components';
 import { formatCurrency } from '@utils/helpers';
 import type { ProductVariant, UqcCode } from '@core/types';
 import { useAppSelector } from '@core/hooks';
-import { selectCurrentUser } from '@core/auth/authSlice';
+import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice';
+import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
 import { APP_NAME } from '@core/constants';
 import { ProductBarcodeLabelModal } from './ProductBarcodeLabelModal';
 
 export const ProductDetailPage: React.FC = () => {
   const { t } = useTranslation();
   const currentUser = useAppSelector(selectCurrentUser);
-  const canManageBarcodes =
-    currentUser?.roles?.some((role) => role === 'OWNER' || role === 'MANAGER') ?? false;
+  const commercialAccess = useAppSelector(selectCommercialAccess);
+  const canManageBarcodes = canUseCommercialFeature(
+    currentUser?.roles ?? [], commercialAccess, 'CUSTOM_BARCODE'
+  );
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, error } = useGetProductByIdQuery(id);
   const { data: categoriesData } = useGetCategoriesQuery();
@@ -386,6 +389,7 @@ export const ProductDetailPage: React.FC = () => {
           productName={product.name}
           variant={barcodeVariant}
           onDismiss={() => setBarcodeVariant(null)}
+          isDemo={commercialAccess?.planCode === 'DEMO'}
         />
 
         <IonToast

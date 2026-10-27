@@ -38,3 +38,29 @@
     display: grid;
   }
 }
+.report-firm-label {
+  margin: 8px 16px 0;
+  color: var(--ion-color-medium);
+  font-weight: 700;
+}
+
+.report-choice small {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+.report-demo-marker {
+  margin-bottom: 12px;
+  padding: 10px;
+  border: 3px double currentColor;
+  font-weight: 900;
+  text-align: center;
+}
+
+.report-output-actions { display: flex; justify-content: flex-end; }
+
+@media print {
+  .report-demo-marker { border-color: #000; color: #000; }
+  .report-output-actions, .report-choices, .report-select-card { display: none !important; }
+}

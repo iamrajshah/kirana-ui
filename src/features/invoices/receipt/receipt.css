@@ -22,6 +22,15 @@
 .sale-receipt * { box-sizing: border-box; }
 .sale-receipt h1, .sale-receipt p { margin: 0; }
 
+.sale-receipt__demo {
+  margin: -4px 0 16px;
+  padding: 10px;
+  border: 3px double currentColor;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
 .sale-receipt__cancelled {
   margin: -4px 0 16px;
   padding: 10px;
@@ -136,4 +145,5 @@
   .sale-receipt__summary { margin-top: 2mm; }
   .sale-receipt__payment { padding: 2mm; border: 1px solid #555; background: #fff !important; color: #000 !important; }
   .sale-receipt__footer { margin-top: 3mm; }
+  .sale-receipt__demo { border-color: #000; color: #000; }
 }

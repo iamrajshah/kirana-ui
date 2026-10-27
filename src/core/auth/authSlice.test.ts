@@ -4,6 +4,7 @@ import authReducer, {
   beginCurrentUserProfileUpdate,
   completeFirstLogin,
   setCredentials,
+  updateTokens,
   updateCurrentUser,
 } from './authSlice';
 
@@ -148,5 +149,33 @@ describe('authSlice profile synchronization', () => {
     const completedState = authReducer(loginState, completeFirstLogin());
     expect(completedState.mustChangePassword).toBe(false);
     expect(localStorage.getItem(STORAGE_KEYS.MUST_CHANGE_PASSWORD)).toBe('false');
+  });
+
+  it('rejects refreshed tokens captured from an older session', () => {
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, 'current-refresh');
+    const state = {
+      user: currentUser,
+      accessToken: 'current-access',
+      refreshToken: 'current-refresh',
+      sessionVersion: 2,
+      profileUpdateSequence: 0,
+      lastAppliedProfileUpdateSequence: 0,
+      profileUpdateRequests: {},
+    };
+
+    const nextState = authReducer(
+      state,
+      updateTokens({
+        userId: currentUser.id,
+        sessionVersion: 1,
+        refreshToken: 'old-refresh',
+        accessToken: 'stale-access',
+        nextRefreshToken: 'stale-refresh',
+      })
+    );
+
+    expect(nextState.accessToken).toBe('current-access');
+    expect(nextState.refreshToken).toBe('current-refresh');
+    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBe('current-refresh');
   });
 });

@@ -1,5 +1,7 @@
 import { ROUTES } from '@core/constants';
 import type { TabPermission } from '@core/permissions/rolePermissions';
+import type { CommercialFeatureCode } from '@core/commercial';
+import { navigationItems } from './navigation';
 
 export type ProtectedPageRouteId =
   | 'customer-ledger'
@@ -13,6 +15,7 @@ export type ProtectedPageRouteId =
 export interface ProtectedRouteAccess {
   path: string;
   permission: TabPermission;
+  commercialFeature?: CommercialFeatureCode;
 }
 
 export interface ProtectedPageRouteAccess extends ProtectedRouteAccess {
@@ -22,33 +25,53 @@ export interface ProtectedPageRouteAccess extends ProtectedRouteAccess {
 export const protectedPageRoutes: readonly ProtectedPageRouteAccess[] = [
   { id: 'customer-ledger', path: '/customers/:id/ledger', permission: 'customers' },
   { id: 'product-detail', path: '/products/:id', permission: 'products' },
-  { id: 'product-barcode', path: ROUTES.PRODUCT_BARCODE, permission: 'products' },
+  {
+    id: 'product-barcode',
+    path: ROUTES.PRODUCT_BARCODE,
+    permission: 'products',
+    commercialFeature: 'CUSTOM_BARCODE',
+  },
   { id: 'supplier-ledger', path: '/suppliers/:id/ledger', permission: 'suppliers' },
   { id: 'invoice-detail', path: '/invoices/:id', permission: 'invoices' },
   { id: 'purchase-create', path: ROUTES.PURCHASE_CREATE, permission: 'purchases' },
   { id: 'purchase-detail', path: '/purchases/:id(\\d+)', permission: 'purchases' },
 ];
 
-export const protectedMainLayoutRoutes: readonly ProtectedRouteAccess[] = [
-  { path: ROUTES.DASHBOARD, permission: 'dashboard' },
-  { path: ROUTES.BILLING, permission: 'billing' },
-  { path: ROUTES.CUSTOMERS, permission: 'customers' },
-  { path: ROUTES.SUPPLIERS, permission: 'suppliers' },
-  { path: ROUTES.PURCHASES, permission: 'purchases' },
-  { path: ROUTES.PRODUCTS, permission: 'products' },
-  { path: ROUTES.INVENTORY, permission: 'inventory' },
-  { path: ROUTES.INVOICES, permission: 'invoices' },
-  { path: ROUTES.PAYMENTS, permission: 'payments' },
-  { path: ROUTES.REPORTS, permission: 'reports' },
-  { path: ROUTES.USERS, permission: 'users' },
-  { path: ROUTES.CATEGORIES, permission: 'products' },
-  { path: ROUTES.IMPORT_EXPORT, permission: 'import-export' },
-];
+const mainLayoutRouteIds = [
+  'dashboard',
+  'billing',
+  'customers',
+  'suppliers',
+  'purchases',
+  'products',
+  'inventory',
+  'invoices',
+  'payments',
+  'reports',
+  'users',
+  'categories',
+  'import-export',
+] as const;
+
+export const protectedMainLayoutRoutes: readonly ProtectedRouteAccess[] = mainLayoutRouteIds.map(
+  (id) => {
+    const item = navigationItems.find((candidate) => candidate.id === id);
+    if (!item?.permission) throw new Error(`Missing protected navigation route: ${id}`);
+    return {
+      path: item.href,
+      permission: item.permission,
+      commercialFeature: item.commercialFeature,
+    };
+  }
+);
 
 export const mainLayoutPaths: readonly string[] = [
   ROUTES.PROFILE,
   ROUTES.CHANGE_PASSWORD,
   ROUTES.ABOUT,
+  ROUTES.ACCOUNT,
+  ROUTES.ACCOUNT_RENEWAL,
+  ROUTES.RESTRICTED,
   ...protectedPageRoutes.map(({ path }) => path),
   ...protectedMainLayoutRoutes.map(({ path }) => path),
 ];

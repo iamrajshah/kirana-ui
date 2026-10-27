@@ -16,6 +16,7 @@ const receipt = (mode: ReceiptViewModel['mode'] = 'SIMPLE_RECEIPT'): ReceiptView
   issuedAt: '2026-10-15T10:30:00.000Z',
   isLegacy: false,
   cancellationMarker: null,
+  demoMarker: null,
   supplier: {
     name: 'Rajesh Kirana',
     address: 'Pune',
@@ -81,5 +82,12 @@ describe('ReceiptDocument', () => {
     saved.totals.mrpSavings = null;
     rerender(<ReceiptDocument receipt={saved} />);
     expect(screen.queryByText('You saved on MRP')).toBeNull();
+  });
+
+  it('keeps the demo warning visible in screen and print markup', () => {
+    const demo = receipt();
+    demo.demoMarker = 'DEMO — NOT A VALID BUSINESS DOCUMENT';
+    render(<ReceiptDocument receipt={demo} />);
+    expect(screen.getByRole('status').textContent).toBe('DEMO — NOT A VALID BUSINESS DOCUMENT');
   });
 });

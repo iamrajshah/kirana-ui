@@ -31,6 +31,7 @@ interface Props {
   productName: string;
   variant: ProductVariant | null;
   onDismiss: () => void;
+  isDemo?: boolean;
 }
 
 const MAX_LABEL_COPIES = 1000;
@@ -119,6 +120,7 @@ interface BarcodeLabelProps {
   storePackedItemLabel: string;
   mrpLabel: string;
   barcodeAriaLabel: string;
+  demoMarker?: string | null;
 }
 
 const BarcodeLabel: React.FC<BarcodeLabelProps> = ({
@@ -134,9 +136,11 @@ const BarcodeLabel: React.FC<BarcodeLabelProps> = ({
   storePackedItemLabel,
   mrpLabel,
   barcodeAriaLabel,
+  demoMarker,
 }) => {
   return (
     <div className={`product-barcode-label${details.length ? ' product-barcode-label--with-details' : ''}`}>
+      {demoMarker && <b className="product-barcode-demo-marker">{demoMarker}</b>}
       <div className="product-barcode-label-header">
         <small className={showShopName ? 'product-barcode-shop-name' : 'product-barcode-kind'}>
           {showShopName ? shopName : storePackedItemLabel}
@@ -176,6 +180,7 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
   productName,
   variant,
   onDismiss,
+  isDemo = false,
 }) => {
   const { t, i18n } = useTranslation();
   const existing = variant?.barcodes?.find(
@@ -267,6 +272,7 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
     storePackedItemLabel: t('products.storePackedItem'),
     mrpLabel: t('products.mrpShort'),
     barcodeAriaLabel: t('products.barcodeAriaLabel', { value: barcode }),
+    demoMarker: isDemo ? 'DEMO — NOT A VALID BUSINESS DOCUMENT' : null,
   };
   const printPages = printJob ? paginateBarcodeCopies(printJob.copies) : [];
 

@@ -32,6 +32,8 @@ import {
 
 interface BackupRestorePanelProps {
   shopName: string;
+  disabled?: boolean;
+  disabledReason?: string;
 }
 
 const PRIMARY_COUNTS = [
@@ -43,7 +45,7 @@ const PRIMARY_COUNTS = [
   'payments',
 ];
 
-export const BackupRestorePanel: React.FC<BackupRestorePanelProps> = ({ shopName }) => {
+export const BackupRestorePanel: React.FC<BackupRestorePanelProps> = ({ shopName, disabled = false, disabledReason }) => {
   const { t } = useTranslation();
   const fileInput = useRef<HTMLInputElement>(null);
   const selectedFileRequest = useRef(0);
@@ -138,6 +140,7 @@ export const BackupRestorePanel: React.FC<BackupRestorePanelProps> = ({ shopName
 
   return (
     <div className="backup-section">
+      {disabled && <IonNote color="warning" role="status">{disabledReason}</IonNote>}
       <div className="backup-grid">
         <IonCard className="backup-card backup-card--safe">
           <IonCardHeader>
@@ -148,7 +151,7 @@ export const BackupRestorePanel: React.FC<BackupRestorePanelProps> = ({ shopName
             <p>{t('importExport.backupDescription')}</p>
             <IonNote>{t('importExport.backupExcludes')}</IonNote>
             <IonNote color="warning">{t('importExport.backupSensitiveWarning')}</IonNote>
-            <IonButton expand="block" onClick={download} disabled={downloading}>
+            <IonButton expand="block" onClick={download} disabled={disabled || downloading}>
               {downloading ? (
                 <IonSpinner name="crescent" />
               ) : (
@@ -172,6 +175,7 @@ export const BackupRestorePanel: React.FC<BackupRestorePanelProps> = ({ shopName
               type="file"
               accept=".json,application/json"
               onChange={(event) => void selectFile(event.target.files?.[0])}
+              disabled={disabled}
             />
             {previewing && (
               <div className="backup-loading">

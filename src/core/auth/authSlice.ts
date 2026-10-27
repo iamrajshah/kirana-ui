@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { STORAGE_KEYS } from '../constants';
-import type { User } from '../types';
+import type { SessionContext, User } from '../types';
+import type { CommercialAccessSummary } from '@core/commercial';
 
 interface AuthState {
   user: User | null;
@@ -11,6 +12,7 @@ interface AuthState {
   lastAppliedProfileUpdateSequence: number;
   profileUpdateRequests: Record<string, number>;
   mustChangePassword?: boolean;
+  sessionContext?: SessionContext | null;
 }
 
 interface CredentialsPayload {
@@ -27,6 +29,7 @@ interface CredentialsPayload {
   access_token?: string;
   refresh_token?: string;
   isFirstLogin?: boolean;
+  sessionContext?: SessionContext;
 }
 
 type CurrentUserProfileUpdate = Pick<User, 'id'> &
@@ -41,6 +44,17 @@ interface ProfileUpdateRequest {
   sessionVersion: number;
 }
 
+interface SessionBoundPayload {
+  sessionVersion: number;
+  userId: string;
+  refreshToken: string;
+}
+
+interface TokenRefreshPayload extends SessionBoundPayload {
+  accessToken: string;
+  nextRefreshToken: string;
+}
+
 const storedUser: User | null = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || 'null');
 
 const initialState: AuthState = {
@@ -52,16 +66,14 @@ const initialState: AuthState = {
   lastAppliedProfileUpdateSequence: 0,
   profileUpdateRequests: {},
   mustChangePassword: localStorage.getItem(STORAGE_KEYS.MUST_CHANGE_PASSWORD) === 'true',
+  sessionContext: JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSION_CONTEXT) || 'null'),
 };
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setCredentials: (
-      state,
-      action: PayloadAction<CredentialsPayload>
-    ) => {
+    setCredentials: (state, action: PayloadAction<CredentialsPayload>) => {
       const payload = action.payload;
 
       let user: User;
@@ -73,19 +85,23 @@ const authSlice = createSlice({
         // Merge tenant info into user object
         user = {
           ...payload.user,
-          tenant: payload.tenant
+          tenant: payload.tenant,
         };
         // Try different possible property names
-        access_token = payload.tokens.access_token || payload.tokens.accessToken || payload.tokens.access || '';
-        refresh_token = payload.tokens.refresh_token || payload.tokens.refreshToken || payload.tokens.refresh || '';
-      } 
+        access_token =
+          payload.tokens.access_token || payload.tokens.accessToken || payload.tokens.access || '';
+        refresh_token =
+          payload.tokens.refresh_token ||
+          payload.tokens.refreshToken ||
+          payload.tokens.refresh ||
+          '';
+      }
       // Handle format: {user, access_token, refresh_token}
       else if (payload.access_token) {
         user = payload.user;
         access_token = payload.access_token;
         refresh_token = payload.refresh_token;
-      }
-      else {
+      } else {
         return;
       }
 
@@ -105,14 +121,61 @@ const authSlice = createSlice({
       if (payload.isFirstLogin !== undefined) {
         state.mustChangePassword = payload.isFirstLogin === true;
       }
+      if (payload.sessionContext !== undefined) {
+        state.sessionContext = payload.sessionContext;
+        localStorage.setItem(STORAGE_KEYS.SESSION_CONTEXT, JSON.stringify(payload.sessionContext));
+      }
 
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
       localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, access_token);
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
+      localStorage.setItem(STORAGE_KEYS.MUST_CHANGE_PASSWORD, String(state.mustChangePassword));
+    },
+    updateTokens: (state, action: PayloadAction<TokenRefreshPayload>) => {
+      if (!state.user || !action.payload.accessToken || !action.payload.nextRefreshToken) return;
+      if (state.user.id !== action.payload.userId) return;
+      if (state.sessionVersion !== action.payload.sessionVersion) return;
+      if (state.refreshToken !== action.payload.refreshToken) return;
+      if (localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) !== action.payload.refreshToken) return;
+      state.accessToken = action.payload.accessToken;
+      state.refreshToken = action.payload.nextRefreshToken;
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, action.payload.accessToken);
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, action.payload.nextRefreshToken);
+    },
+    setCommercialAccess: (state, action: PayloadAction<CommercialAccessSummary>) => {
+      if (!state.sessionContext) return;
+      state.sessionContext.commercialAccess = action.payload;
+      localStorage.setItem(STORAGE_KEYS.SESSION_CONTEXT, JSON.stringify(state.sessionContext));
+    },
+    setSessionContext: (state, action: PayloadAction<SessionContext>) => {
+      state.sessionContext = action.payload;
+      localStorage.setItem(STORAGE_KEYS.SESSION_CONTEXT, JSON.stringify(action.payload));
+    },
+    setSessionContextForSession: (
+      state,
+      action: PayloadAction<SessionBoundPayload & { sessionContext: SessionContext }>
+    ) => {
+      if (!state.user || state.user.id !== action.payload.userId) return;
+      if (state.sessionVersion !== action.payload.sessionVersion) return;
+      if (state.refreshToken !== action.payload.refreshToken) return;
+      if (localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) !== action.payload.refreshToken) return;
+      state.sessionContext = action.payload.sessionContext;
       localStorage.setItem(
-        STORAGE_KEYS.MUST_CHANGE_PASSWORD,
-        String(state.mustChangePassword)
+        STORAGE_KEYS.SESSION_CONTEXT,
+        JSON.stringify(action.payload.sessionContext)
       );
+    },
+    setCommercialAccessForSession: (
+      state,
+      action: PayloadAction<SessionBoundPayload & { commercialAccess: CommercialAccessSummary }>
+    ) => {
+      if (!state.user || state.user.id !== action.payload.userId) return;
+      if (state.sessionVersion !== action.payload.sessionVersion) return;
+      if (state.refreshToken !== action.payload.refreshToken) return;
+      if (localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) !== action.payload.refreshToken) return;
+      if (!state.sessionContext) return;
+      state.sessionContext.commercialAccess = action.payload.commercialAccess;
+      localStorage.setItem(STORAGE_KEYS.SESSION_CONTEXT, JSON.stringify(state.sessionContext));
     },
     beginCurrentUserProfileUpdate: (state, action: PayloadAction<ProfileUpdateRequest>) => {
       if (!state.user || action.payload.userId !== state.user.id) return;
@@ -162,6 +225,8 @@ const authSlice = createSlice({
       localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.MUST_CHANGE_PASSWORD);
+      localStorage.removeItem(STORAGE_KEYS.SESSION_CONTEXT);
+      state.sessionContext = null;
       localStorage.removeItem('kirana_billing_completion_invoice');
       localStorage.removeItem('kirana_billing_pending_checkout');
     },
@@ -170,6 +235,11 @@ const authSlice = createSlice({
 
 export const {
   setCredentials,
+  updateTokens,
+  setCommercialAccess,
+  setSessionContext,
+  setCommercialAccessForSession,
+  setSessionContextForSession,
   beginCurrentUserProfileUpdate,
   updateCurrentUser,
   finishCurrentUserProfileUpdate,
@@ -180,7 +250,12 @@ export default authSlice.reducer;
 
 // Selectors
 export const selectCurrentUser = (state: { auth: AuthState }) => state.auth.user;
+export const selectSessionContext = (state: { auth: AuthState }) => state.auth.sessionContext;
 export const selectIsAuthenticated = (state: { auth: AuthState }) => !!state.auth.accessToken;
 export const selectMustChangePassword = (state: { auth: AuthState }) =>
   state.auth.mustChangePassword === true;
 export const selectUserRole = (state: { auth: AuthState }) => state.auth.user?.roles?.[0];
+export const selectCommercialAccess = (state: { auth: AuthState }) => {
+  const access = state.auth.sessionContext?.commercialAccess;
+  return access && 'planCode' in access ? access : null;
+};

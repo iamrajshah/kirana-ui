@@ -13,9 +13,15 @@ import {
   swapHorizontal,
   pricetags,
   informationCircleOutline,
+  walletOutline,
 } from 'ionicons/icons';
 import { ROUTES } from '@core/constants';
 import { hasAccessToTab, type TabPermission } from '@core/permissions/rolePermissions';
+import {
+  canUseCommercialFeature,
+  type CommercialAccessSummary,
+  type CommercialFeatureCode,
+} from '@core/commercial';
 
 export type NavigationGroup = 'sell' | 'stock' | 'manage' | 'more';
 
@@ -27,6 +33,7 @@ export interface NavigationItem {
   group: NavigationGroup;
   primary?: boolean;
   permission?: TabPermission;
+  commercialFeature?: CommercialFeatureCode;
 }
 
 export const navigationItems: readonly NavigationItem[] = [
@@ -122,6 +129,7 @@ export const navigationItems: readonly NavigationItem[] = [
     icon: statsChart,
     group: 'manage',
     permission: 'reports',
+    commercialFeature: 'ESSENTIAL_REPORTS',
   },
   {
     id: 'users',
@@ -130,6 +138,7 @@ export const navigationItems: readonly NavigationItem[] = [
     icon: personAdd,
     group: 'manage',
     permission: 'users',
+    commercialFeature: 'CORE_POS',
   },
   {
     id: 'import-export',
@@ -138,6 +147,14 @@ export const navigationItems: readonly NavigationItem[] = [
     icon: swapHorizontal,
     group: 'manage',
     permission: 'import-export',
+    commercialFeature: 'IMPORT_CUSTOMER_PRODUCT',
+  },
+  {
+    id: 'account',
+    href: ROUTES.ACCOUNT,
+    labelKey: 'account.title',
+    icon: walletOutline,
+    group: 'more',
   },
   {
     id: 'about',
@@ -148,8 +165,12 @@ export const navigationItems: readonly NavigationItem[] = [
   },
 ];
 
-export const getNavigationItems = (roles: string[]) =>
-  navigationItems.filter((item) => !item.permission || hasAccessToTab(roles, item.permission));
+export const getNavigationItems = (roles: string[], access?: CommercialAccessSummary | null) =>
+  navigationItems.filter(
+    (item) =>
+      (!item.permission || hasAccessToTab(roles, item.permission)) &&
+      (!item.commercialFeature || canUseCommercialFeature(roles, access, item.commercialFeature))
+  );
 
 const primaryTabPrefixes: readonly [prefix: string, tabId: string][] = [
   [ROUTES.DASHBOARD, 'dashboard'],
