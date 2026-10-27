@@ -40,6 +40,9 @@ export const ROUTES = {
   PLATFORM_TENANTS: '/platform/tenants',
   PRIVACY: '/privacy',
   TERMS: '/terms',
+  SUPPORT: '/support',
+  ACCOUNT_DELETION: '/account-deletion',
+  ACCOUNT: '/account',
 } as const;
 
 // Storage Keys

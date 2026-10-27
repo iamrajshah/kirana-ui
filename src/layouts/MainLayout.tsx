@@ -27,6 +27,7 @@ import { scheduleRoutePreload, type RouteLoader } from './routePreload';
 import { BackgroundDataWarmup } from './BackgroundDataWarmup';
 import '@components/Workspace/workspace.css';
 import { useGetCommercialAccessQuery } from '@core/api/subscriptionApi';
+import { SessionLifecycleSync } from './SessionLifecycleSync';
 
 const DashboardPage = lazy(() =>
   import('@features/dashboard/DashboardPage').then((module) => ({ default: module.DashboardPage }))
@@ -76,6 +77,11 @@ const ProfilePage = lazy(() =>
 const ChangePasswordPage = lazy(() =>
   import('@features/profile/ChangePasswordPage').then((module) => ({
     default: module.ChangePasswordPage,
+  }))
+);
+const SubscriptionAccountPage = lazy(() =>
+  import('@features/account/SubscriptionAccountPage').then((module) => ({
+    default: module.SubscriptionAccountPage,
   }))
 );
 const CustomerLedgerPage = lazy(() =>
@@ -167,6 +173,7 @@ export const MainLayout: React.FC = () => {
   return (
     <>
       <BackgroundDataWarmup />
+      <SessionLifecycleSync />
       <IonSplitPane
         contentId="main-content"
         when="(min-width: 992px)"
@@ -177,6 +184,11 @@ export const MainLayout: React.FC = () => {
           <IonTabs className="workspace-tabs">
             <IonRouterOutlet>
               <Route exact path={ROUTES.PROFILE} render={() => renderPage(ProfilePage)} />
+              <Route
+                exact
+                path={ROUTES.ACCOUNT}
+                render={() => renderPage(SubscriptionAccountPage)}
+              />
               <Route
                 exact
                 path={ROUTES.CHANGE_PASSWORD}

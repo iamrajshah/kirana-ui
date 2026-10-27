@@ -207,6 +207,7 @@ export default authSlice.reducer;
 
 // Selectors
 export const selectCurrentUser = (state: { auth: AuthState }) => state.auth.user;
+export const selectSessionContext = (state: { auth: AuthState }) => state.auth.sessionContext;
 export const selectIsAuthenticated = (state: { auth: AuthState }) => !!state.auth.accessToken;
 export const selectMustChangePassword = (state: { auth: AuthState }) =>
   state.auth.mustChangePassword === true;

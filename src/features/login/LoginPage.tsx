@@ -26,6 +26,8 @@ import { apiErrorMessage } from '@core/services/notificationService';
 import { useTheme } from '../../contexts/useTheme';
 import { useHistory } from 'react-router-dom';
 import { GoogleSignInButton } from './GoogleSignInButton';
+import { DemoProvisioningPanel } from './DemoProvisioningPanel';
+import { useGetPublicProductQuery } from '@core/api/lifecycleApi';
 
 export const LoginPage: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -36,6 +38,7 @@ export const LoginPage: React.FC = () => {
   const [linkGoogle] = useLinkGoogleMutation();
   const [selectMembership] = useSelectMembershipMutation();
   const { theme, toggleTheme } = useTheme();
+  const { data: productInformation } = useGetPublicProductQuery();
 
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -47,6 +50,8 @@ export const LoginPage: React.FC = () => {
   const [memberships, setMemberships] = useState<SessionMembership[]>([]);
   const [identityOutcome, setIdentityOutcome] = useState<string>('');
   const [linkRequired, setLinkRequired] = useState(false);
+  const [legalAccepted, setLegalAccepted] = useState(false);
+  const [provisioningToken, setProvisioningToken] = useState('');
 
   const languages = [
     { code: 'en', name: 'English' },
@@ -130,12 +135,28 @@ export const LoginPage: React.FC = () => {
 
   const handleGoogleCredential = useCallback(
     async (credential: string, source: 'web' | 'android' = 'web') => {
+      if (!legalAccepted) {
+        setError(t('auth.acceptLegalRequired'));
+        return;
+      }
       setError('');
       setIdentityOutcome('');
       setLinkRequired(false);
       setGoogleCredential({ credential, source });
       try {
-        const response = await googleExchange({ credential, source }).unwrap();
+        const response = await googleExchange({
+          credential,
+          source,
+          consents: productInformation
+            ? [
+                {
+                  consentType: 'PRIVACY',
+                  documentVersion: productInformation.legal.privacyVersion,
+                },
+                { consentType: 'TERMS', documentVersion: productInformation.legal.termsVersion },
+              ]
+            : undefined,
+        }).unwrap();
         if (response.data.outcome === 'AUTHENTICATED' && response.data.auth) {
           finishAuthentication(response.data.auth);
         } else if (response.data.outcome === 'MEMBERSHIP_SELECTION_REQUIRED') {
@@ -144,6 +165,7 @@ export const LoginPage: React.FC = () => {
           );
         } else if (response.data.outcome === 'PROVISIONING_REQUIRED') {
           setIdentityOutcome(t('auth.privateDemoProvisioning'));
+          setProvisioningToken(response.data.provisioningToken ?? '');
         } else if (response.data.outcome === 'LINK_REQUIRED') {
           setLinkRequired(true);
           setIdentityOutcome(t('auth.googleLinkRequired'));
@@ -158,7 +180,7 @@ export const LoginPage: React.FC = () => {
         );
       }
     },
-    [finishAuthentication, googleExchange, t]
+    [finishAuthentication, googleExchange, legalAccepted, productInformation, t]
   );
 
   const handleMembership = async (membership: SessionMembership) => {
@@ -182,10 +204,7 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleGoogleCancel = useCallback(
-    () => setIdentityOutcome(t('auth.googleCancelled')),
-    [t]
-  );
+  const handleGoogleCancel = useCallback(() => setIdentityOutcome(t('auth.googleCancelled')), [t]);
   const handleGoogleError = useCallback(
     (message: string) => setError(message || t('auth.googleError')),
     [t]
@@ -288,6 +307,17 @@ export const LoginPage: React.FC = () => {
                 <span>{t('auth.or')}</span>
                 <span className="h-px flex-1 bg-gray-300" />
               </div>
+              <label className="mb-4 flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={legalAccepted}
+                  onChange={(event) => setLegalAccepted(event.target.checked)}
+                />
+                <span>
+                  {t('auth.acceptLegal')} <a href={ROUTES.PRIVACY}>{t('auth.privacy')}</a> ·{' '}
+                  <a href={ROUTES.TERMS}>{t('auth.terms')}</a>
+                </span>
+              </label>
               <GoogleSignInButton
                 onCredential={handleGoogleCredential}
                 onCancel={handleGoogleCancel}
@@ -298,6 +328,14 @@ export const LoginPage: React.FC = () => {
                 <p role="status" className="mt-3 text-sm">
                   {identityOutcome}
                 </p>
+              )}
+              {provisioningToken && googleCredential && (
+                <DemoProvisioningPanel
+                  token={provisioningToken}
+                  onReady={() =>
+                    handleGoogleCredential(googleCredential.credential, googleCredential.source)
+                  }
+                />
               )}
               {memberships.length > 0 && (
                 <div className="mt-4" aria-label={t('auth.chooseShop')}>

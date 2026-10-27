@@ -39,6 +39,17 @@ vi.mock('@core/api/authApi', () => ({
     { isLoading: false },
   ],
 }));
+vi.mock('@core/api/lifecycleApi', () => ({
+  useGetPublicProductQuery: () => ({
+    data: {
+      legal: { privacyVersion: 'privacy-v1', termsVersion: 'terms-v1' },
+      support: { email: 'support@kirana.app' },
+    },
+  }),
+}));
+vi.mock('./DemoProvisioningPanel', () => ({
+  DemoProvisioningPanel: () => <div>demo-provisioning-panel</div>,
+}));
 vi.mock('./GoogleSignInButton', () => ({
   GoogleSignInButton: ({
     onCredential,
@@ -178,12 +189,18 @@ describe('LoginPage', () => {
     });
     render(<LoginPage />);
 
+    fireEvent.click(screen.getByRole('checkbox'));
+
     fireEvent.click(screen.getByRole('button', { name: 'google-provider-success' }));
 
     await waitFor(() =>
       expect(mocks.googleExchange).toHaveBeenCalledWith({
         credential: 'google-credential',
         source: 'web',
+        consents: [
+          { consentType: 'PRIVACY', documentVersion: 'privacy-v1' },
+          { consentType: 'TERMS', documentVersion: 'terms-v1' },
+        ],
       })
     );
     expect(mocks.dispatch).toHaveBeenCalledWith({ type: 'auth/setCredentials', payload: auth });
@@ -219,6 +236,7 @@ describe('LoginPage', () => {
       data: { outcome: 'AUTHENTICATED', auth },
     });
     render(<LoginPage />);
+    fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(screen.getByRole('button', { name: 'google-provider-success' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Shop B' }));
 
@@ -249,6 +267,7 @@ describe('LoginPage', () => {
     mocks.linkGoogle.mockResolvedValueOnce({ success: true, data: { auth: linkedAuth } });
     render(<LoginPage />);
 
+    fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(screen.getByRole('button', { name: 'google-provider-success' }));
     await screen.findByText('auth.googleLinkRequired');
     fireEvent.change(screen.getByLabelText('auth.emailOrPhone'), {

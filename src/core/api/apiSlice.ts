@@ -36,6 +36,66 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
+let refreshInFlight: Promise<boolean> | null = null;
+
+const refreshSession = (
+  api: Parameters<typeof baseQuery>[1],
+  extraOptions: Parameters<typeof baseQuery>[2]
+): Promise<boolean> => {
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = (async () => {
+    const state = api.getState() as { auth?: { refreshToken?: string | null } };
+    const refreshToken =
+      state.auth?.refreshToken ?? localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+    if (!refreshToken) {
+      notificationService.error('Session expired. Please login again.');
+      api.dispatch(logout());
+      return false;
+    }
+
+    const refreshResult = await baseQuery(
+      {
+        url: '/auth/refresh-token',
+        method: 'POST',
+        body: { refresh_token: refreshToken },
+      },
+      api,
+      extraOptions
+    );
+    const payload = refreshResult.data as
+      | { data?: { accessToken?: string; refreshToken?: string } }
+      | undefined;
+    if (!payload?.data?.accessToken || !payload.data.refreshToken) {
+      notificationService.error('Session expired. Please login again.');
+      api.dispatch(logout());
+      return false;
+    }
+
+    api.dispatch(updateTokens(payload.data as { accessToken: string; refreshToken: string }));
+
+    // Refreshing a rotating session also revalidates server-owned lifecycle state. The
+    // shape guards keep older deployments backward compatible during a rolling release.
+    const [sessionResult, accessResult] = await Promise.all([
+      baseQuery('/auth/session-context', api, extraOptions),
+      baseQuery('/subscription/access', api, extraOptions),
+    ]);
+    const session = (sessionResult.data as { data?: unknown } | undefined)?.data;
+    if (session && typeof session === 'object' && 'identity' in session) {
+      api.dispatch(setSessionContext(session as SessionContext));
+    }
+    const access = (accessResult.data as { data?: unknown } | undefined)?.data;
+    if (access && typeof access === 'object' && 'planCode' in access) {
+      api.dispatch(setCommercialAccess(access as CommercialAccessSummary));
+    }
+    return true;
+  })().finally(() => {
+    refreshInFlight = null;
+  });
+
+  return refreshInFlight;
+};
+
 const notifyApiError = (error: FetchBaseQueryError): void => {
   const data = error.data;
   if (
@@ -138,44 +198,8 @@ const baseQueryWithReauth: BaseQueryFn<ApiRequestArgs, unknown, FetchBaseQueryEr
     }
     // Handle different error types
     if (result.error.status === 401) {
-      // Try to refresh token
-      const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-
-      if (refreshToken) {
-        const refreshResult = await baseQuery(
-          {
-            url: '/auth/refresh-token',
-            method: 'POST',
-            body: { refresh_token: refreshToken },
-          },
-          api,
-          extraOptions
-        );
-
-        if (refreshResult.data) {
-          const data = refreshResult.data as {
-            data?: { accessToken?: string; refreshToken?: string };
-          };
-          if (!data.data?.accessToken || !data.data.refreshToken) {
-            api.dispatch(logout());
-            return result;
-          }
-          api.dispatch(
-            updateTokens({
-              accessToken: data.data.accessToken,
-              refreshToken: data.data.refreshToken,
-            })
-          );
-          // Retry original query
-          result = await baseQuery(requestArgs, api, extraOptions);
-        } else {
-          // Refresh failed - logout
-          notificationService.error('Session expired. Please login again.');
-          api.dispatch(logout());
-        }
-      } else {
-        notificationService.error('Session expired. Please login again.');
-        api.dispatch(logout());
+      if (await refreshSession(api, extraOptions)) {
+        result = await baseQuery(requestArgs, api, extraOptions);
       }
     } else if (!suppressErrorToast) {
       notifyApiError(result.error);
@@ -202,6 +226,7 @@ export const apiSlice = createApi({
     'TenantSettings',
     'Firm',
     'Report',
+    'Account',
   ],
   endpoints: () => ({}),
 });

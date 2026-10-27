@@ -13,6 +13,7 @@ export interface GoogleExchangeResponse {
     auth?: AuthResponse['data'];
     memberships?: SessionMembership[];
     provisioning?: { state: string; demoDays?: number };
+    provisioningToken?: string;
   };
   message: string;
 }
@@ -28,7 +29,12 @@ export const authApi = apiSlice.injectEndpoints({
     }),
     googleExchange: builder.mutation<
       GoogleExchangeResponse,
-      { credential: string; source: 'web' | 'android'; requestedUserId?: string }
+      {
+        credential: string;
+        source: 'web' | 'android';
+        requestedUserId?: string;
+        consents?: Array<{ consentType: 'PRIVACY' | 'TERMS'; documentVersion: string }>;
+      }
     >({
       query: (body) => ({ url: '/auth/google/exchange', method: 'POST', body }),
     }),

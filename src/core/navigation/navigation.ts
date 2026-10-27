@@ -13,6 +13,7 @@ import {
   swapHorizontal,
   pricetags,
   informationCircleOutline,
+  walletOutline,
 } from 'ionicons/icons';
 import { ROUTES } from '@core/constants';
 import { hasAccessToTab, type TabPermission } from '@core/permissions/rolePermissions';
@@ -147,6 +148,13 @@ export const navigationItems: readonly NavigationItem[] = [
     group: 'manage',
     permission: 'import-export',
     commercialFeature: 'IMPORT_CUSTOMER_PRODUCT',
+  },
+  {
+    id: 'account',
+    href: ROUTES.ACCOUNT,
+    labelKey: 'account.title',
+    icon: walletOutline,
+    group: 'more',
   },
   {
     id: 'about',
