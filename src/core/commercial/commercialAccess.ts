@@ -55,6 +55,14 @@ const denialMessageKeys: Record<CommercialDenial['code'], string> = {
   COMMERCIAL_ROLE_DENIED: 'commercial.roleDenied',
 };
 
+const denialActions = new Set<CommercialDenial['action']>([
+  'UPGRADE',
+  'RENEW',
+  'CONTACT_SUPPORT',
+  'WAIT',
+  'REFRESH',
+]);
+
 const commercialMessages = {
   en: en.commercial,
   gu: gu.commercial,
@@ -75,5 +83,10 @@ export const isCommercialDenial = (value: unknown): value is CommercialDenial =>
     typeof value === 'object' &&
     'code' in value &&
     typeof value.code === 'string' &&
-    value.code.startsWith('COMMERCIAL_')
+    Object.prototype.hasOwnProperty.call(denialMessageKeys, value.code) &&
+    'reason' in value &&
+    typeof value.reason === 'string' &&
+    'action' in value &&
+    typeof value.action === 'string' &&
+    denialActions.has(value.action as CommercialDenial['action'])
   );

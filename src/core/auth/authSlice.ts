@@ -44,6 +44,17 @@ interface ProfileUpdateRequest {
   sessionVersion: number;
 }
 
+interface SessionBoundPayload {
+  sessionVersion: number;
+  userId: string;
+  refreshToken: string;
+}
+
+interface TokenRefreshPayload extends SessionBoundPayload {
+  accessToken: string;
+  nextRefreshToken: string;
+}
+
 const storedUser: User | null = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || 'null');
 
 const initialState: AuthState = {
@@ -120,12 +131,16 @@ const authSlice = createSlice({
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
       localStorage.setItem(STORAGE_KEYS.MUST_CHANGE_PASSWORD, String(state.mustChangePassword));
     },
-    updateTokens: (state, action: PayloadAction<{ accessToken: string; refreshToken: string }>) => {
-      if (!state.user || !action.payload.accessToken || !action.payload.refreshToken) return;
+    updateTokens: (state, action: PayloadAction<TokenRefreshPayload>) => {
+      if (!state.user || !action.payload.accessToken || !action.payload.nextRefreshToken) return;
+      if (state.user.id !== action.payload.userId) return;
+      if (state.sessionVersion !== action.payload.sessionVersion) return;
+      if (state.refreshToken !== action.payload.refreshToken) return;
+      if (localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) !== action.payload.refreshToken) return;
       state.accessToken = action.payload.accessToken;
-      state.refreshToken = action.payload.refreshToken;
+      state.refreshToken = action.payload.nextRefreshToken;
       localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, action.payload.accessToken);
-      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, action.payload.refreshToken);
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, action.payload.nextRefreshToken);
     },
     setCommercialAccess: (state, action: PayloadAction<CommercialAccessSummary>) => {
       if (!state.sessionContext) return;
@@ -135,6 +150,32 @@ const authSlice = createSlice({
     setSessionContext: (state, action: PayloadAction<SessionContext>) => {
       state.sessionContext = action.payload;
       localStorage.setItem(STORAGE_KEYS.SESSION_CONTEXT, JSON.stringify(action.payload));
+    },
+    setSessionContextForSession: (
+      state,
+      action: PayloadAction<SessionBoundPayload & { sessionContext: SessionContext }>
+    ) => {
+      if (!state.user || state.user.id !== action.payload.userId) return;
+      if (state.sessionVersion !== action.payload.sessionVersion) return;
+      if (state.refreshToken !== action.payload.refreshToken) return;
+      if (localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) !== action.payload.refreshToken) return;
+      state.sessionContext = action.payload.sessionContext;
+      localStorage.setItem(
+        STORAGE_KEYS.SESSION_CONTEXT,
+        JSON.stringify(action.payload.sessionContext)
+      );
+    },
+    setCommercialAccessForSession: (
+      state,
+      action: PayloadAction<SessionBoundPayload & { commercialAccess: CommercialAccessSummary }>
+    ) => {
+      if (!state.user || state.user.id !== action.payload.userId) return;
+      if (state.sessionVersion !== action.payload.sessionVersion) return;
+      if (state.refreshToken !== action.payload.refreshToken) return;
+      if (localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) !== action.payload.refreshToken) return;
+      if (!state.sessionContext) return;
+      state.sessionContext.commercialAccess = action.payload.commercialAccess;
+      localStorage.setItem(STORAGE_KEYS.SESSION_CONTEXT, JSON.stringify(state.sessionContext));
     },
     beginCurrentUserProfileUpdate: (state, action: PayloadAction<ProfileUpdateRequest>) => {
       if (!state.user || action.payload.userId !== state.user.id) return;
@@ -197,6 +238,8 @@ export const {
   updateTokens,
   setCommercialAccess,
   setSessionContext,
+  setCommercialAccessForSession,
+  setSessionContextForSession,
   beginCurrentUserProfileUpdate,
   updateCurrentUser,
   finishCurrentUserProfileUpdate,

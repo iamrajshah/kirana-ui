@@ -1,7 +1,12 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { API_BASE_URL, STORAGE_KEYS } from '../constants';
-import { logout, setCommercialAccess, setSessionContext, updateTokens } from '../auth/authSlice';
+import {
+  logout,
+  setCommercialAccessForSession,
+  setSessionContextForSession,
+  updateTokens,
+} from '../auth/authSlice';
 import { notificationService } from '../services/notificationService';
 import {
   commercialDenialMessage,
@@ -36,29 +41,157 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
-let refreshInFlight: Promise<boolean> | null = null;
+type QueryApi = Parameters<typeof baseQuery>[1];
+type QueryExtraOptions = Parameters<typeof baseQuery>[2];
+
+interface AuthSnapshot {
+  sessionVersion: number;
+  userId: string;
+  refreshToken: string;
+}
+
+const SESSION_SENSITIVE_TAGS = [
+  'User',
+  'Customer',
+  'Product',
+  'Inventory',
+  'Invoice',
+  'Payment',
+  'Dashboard',
+  'Category',
+  'Import',
+  'Supplier',
+  'Purchase',
+  'TenantSettings',
+  'Firm',
+  'Report',
+] as const;
+
+const readAuthSnapshot = (api: QueryApi): AuthSnapshot | null => {
+  const auth = (
+    api.getState() as {
+      auth?: {
+        user?: { id?: string } | null;
+        refreshToken?: string | null;
+        sessionVersion?: number;
+      };
+    }
+  ).auth;
+  const refreshToken = auth?.refreshToken ?? localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+  if (!auth?.user?.id || typeof auth.sessionVersion !== 'number' || !refreshToken) return null;
+  return { userId: auth.user.id, sessionVersion: auth.sessionVersion, refreshToken };
+};
+
+const isCurrentSession = (api: QueryApi, expected: AuthSnapshot): boolean => {
+  const current = readAuthSnapshot(api);
+  return Boolean(
+    current &&
+      current.userId === expected.userId &&
+      current.sessionVersion === expected.sessionVersion &&
+      current.refreshToken === expected.refreshToken &&
+      localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) === expected.refreshToken
+  );
+};
+
+const contextRefreshes = new Map<string, Promise<void>>();
+const CONTEXT_REFRESH_TIMEOUT_MS = 5_000;
+
+const withTimeout = async <T>(request: Promise<T>): Promise<T | null> => {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      request,
+      new Promise<null>((resolve) => {
+        timeout = setTimeout(() => resolve(null), CONTEXT_REFRESH_TIMEOUT_MS);
+      }),
+    ]);
+  } catch {
+    return null;
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+};
+
+const synchronizeSessionState = (
+  api: QueryApi,
+  extraOptions: QueryExtraOptions,
+  expected: AuthSnapshot,
+  observedAccessVersion?: string
+): Promise<void> => {
+  const key = `${expected.sessionVersion}:${expected.userId}:${expected.refreshToken}:${observedAccessVersion ?? 'refresh'}`;
+  const existing = contextRefreshes.get(key);
+  if (existing) return existing;
+
+  const synchronization = (async () => {
+    if (!isCurrentSession(api, expected)) return;
+    const previousVersion = (
+      (api.getState() as { auth?: { sessionContext?: SessionContext | null } }).auth?.sessionContext
+        ?.commercialAccess as CommercialAccessSummary | undefined
+    )?.accessStateVersion;
+    const [sessionResult, accessResult] = await Promise.all([
+      withTimeout(Promise.resolve(baseQuery('/auth/session-context', api, extraOptions))),
+      withTimeout(Promise.resolve(baseQuery('/subscription/access', api, extraOptions))),
+    ]);
+    if (!isCurrentSession(api, expected)) return;
+
+    const session = (sessionResult?.data as { data?: unknown } | undefined)?.data;
+    if (session && typeof session === 'object' && 'identity' in session) {
+      api.dispatch(
+        setSessionContextForSession({
+          ...expected,
+          sessionContext: session as SessionContext,
+        })
+      );
+    }
+    const access = (accessResult?.data as { data?: unknown } | undefined)?.data;
+    if (access && typeof access === 'object' && 'planCode' in access) {
+      const commercialAccess = access as CommercialAccessSummary;
+      api.dispatch(
+        setCommercialAccessForSession({
+          ...expected,
+          commercialAccess,
+        })
+      );
+      if (previousVersion && previousVersion !== commercialAccess.accessStateVersion) {
+        api.dispatch(apiSlice.util.invalidateTags([...SESSION_SENSITIVE_TAGS]));
+      }
+    }
+  })().finally(() => {
+    if (contextRefreshes.get(key) === synchronization) contextRefreshes.delete(key);
+  });
+  contextRefreshes.set(key, synchronization);
+  return synchronization;
+};
+
+let refreshInFlight:
+  | { snapshot: AuthSnapshot; promise: Promise<boolean> }
+  | null = null;
 
 const refreshSession = (
-  api: Parameters<typeof baseQuery>[1],
-  extraOptions: Parameters<typeof baseQuery>[2]
+  api: QueryApi,
+  extraOptions: QueryExtraOptions
 ): Promise<boolean> => {
-  if (refreshInFlight) return refreshInFlight;
+  const snapshot = readAuthSnapshot(api);
+  if (!snapshot) {
+    notificationService.error('Session expired. Please login again.');
+    api.dispatch(logout());
+    return Promise.resolve(false);
+  }
+  if (
+    refreshInFlight &&
+    refreshInFlight.snapshot.sessionVersion === snapshot.sessionVersion &&
+    refreshInFlight.snapshot.userId === snapshot.userId &&
+    refreshInFlight.snapshot.refreshToken === snapshot.refreshToken
+  ) {
+    return refreshInFlight.promise;
+  }
 
-  refreshInFlight = (async () => {
-    const state = api.getState() as { auth?: { refreshToken?: string | null } };
-    const refreshToken =
-      state.auth?.refreshToken ?? localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-    if (!refreshToken) {
-      notificationService.error('Session expired. Please login again.');
-      api.dispatch(logout());
-      return false;
-    }
-
+  const promise = (async () => {
     const refreshResult = await baseQuery(
       {
         url: '/auth/refresh-token',
         method: 'POST',
-        body: { refresh_token: refreshToken },
+        body: { refresh_token: snapshot.refreshToken },
       },
       api,
       extraOptions
@@ -67,33 +200,32 @@ const refreshSession = (
       | { data?: { accessToken?: string; refreshToken?: string } }
       | undefined;
     if (!payload?.data?.accessToken || !payload.data.refreshToken) {
-      notificationService.error('Session expired. Please login again.');
-      api.dispatch(logout());
+      if (isCurrentSession(api, snapshot)) {
+        notificationService.error('Session expired. Please login again.');
+        api.dispatch(logout());
+      }
       return false;
     }
+    if (!isCurrentSession(api, snapshot)) return false;
 
-    api.dispatch(updateTokens(payload.data as { accessToken: string; refreshToken: string }));
-
-    // Refreshing a rotating session also revalidates server-owned lifecycle state. The
-    // shape guards keep older deployments backward compatible during a rolling release.
-    const [sessionResult, accessResult] = await Promise.all([
-      baseQuery('/auth/session-context', api, extraOptions),
-      baseQuery('/subscription/access', api, extraOptions),
-    ]);
-    const session = (sessionResult.data as { data?: unknown } | undefined)?.data;
-    if (session && typeof session === 'object' && 'identity' in session) {
-      api.dispatch(setSessionContext(session as SessionContext));
-    }
-    const access = (accessResult.data as { data?: unknown } | undefined)?.data;
-    if (access && typeof access === 'object' && 'planCode' in access) {
-      api.dispatch(setCommercialAccess(access as CommercialAccessSummary));
-    }
+    api.dispatch(
+      updateTokens({
+        ...snapshot,
+        accessToken: payload.data.accessToken,
+        nextRefreshToken: payload.data.refreshToken,
+      })
+    );
+    const refreshedSession = { ...snapshot, refreshToken: payload.data.refreshToken };
+    if (!isCurrentSession(api, refreshedSession)) return false;
+    void synchronizeSessionState(api, extraOptions, refreshedSession);
     return true;
-  })().finally(() => {
-    refreshInFlight = null;
+  })();
+  const entry = { snapshot, promise };
+  refreshInFlight = entry;
+  void promise.finally(() => {
+    if (refreshInFlight === entry) refreshInFlight = null;
   });
-
-  return refreshInFlight;
+  return promise;
 };
 
 const notifyApiError = (error: FetchBaseQueryError): void => {
@@ -156,44 +288,22 @@ const baseQueryWithReauth: BaseQueryFn<ApiRequestArgs, unknown, FetchBaseQueryEr
         ? errorData.commercial
         : null;
     if (isCommercialDenial(commercialDenial)) {
+      const snapshot = readAuthSnapshot(api);
       const previousVersion = (
-        (api.getState() as { auth?: { sessionContext?: SessionContext | null } }).auth
-          ?.sessionContext?.commercialAccess as CommercialAccessSummary | undefined
+        (api.getState() as { auth?: { sessionContext?: SessionContext } }).auth?.sessionContext
+          ?.commercialAccess as CommercialAccessSummary | undefined
       )?.accessStateVersion;
       if (
-        !commercialDenial.accessStateVersion ||
-        commercialDenial.accessStateVersion !== previousVersion
+        snapshot &&
+        (!commercialDenial.accessStateVersion ||
+          commercialDenial.accessStateVersion !== previousVersion)
       ) {
-        const [sessionResult, accessResult] = await Promise.all([
-          baseQuery('/auth/session-context', api, extraOptions),
-          baseQuery('/subscription/access', api, extraOptions),
-        ]);
-        const sessionData = sessionResult.data as { data?: SessionContext } | undefined;
-        if (sessionData?.data) api.dispatch(setSessionContext(sessionData.data));
-        const accessData = accessResult.data as { data?: CommercialAccessSummary } | undefined;
-        if (accessData?.data) {
-          api.dispatch(setCommercialAccess(accessData.data));
-          if (previousVersion && previousVersion !== accessData.data.accessStateVersion) {
-            api.dispatch(
-              apiSlice.util.invalidateTags([
-                'User',
-                'Customer',
-                'Product',
-                'Inventory',
-                'Invoice',
-                'Payment',
-                'Dashboard',
-                'Category',
-                'Import',
-                'Supplier',
-                'Purchase',
-                'TenantSettings',
-                'Firm',
-                'Report',
-              ])
-            );
-          }
-        }
+        void synchronizeSessionState(
+          api,
+          extraOptions,
+          snapshot,
+          commercialDenial.accessStateVersion
+        );
       }
     }
     // Handle different error types

@@ -20,6 +20,7 @@ describe('commercial API denial recovery', () => {
   beforeEach(() => {
     localStorage.clear();
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, 'access');
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, 'refresh');
     localStorage.setItem(
       STORAGE_KEYS.SESSION_CONTEXT,
       JSON.stringify({
@@ -134,10 +135,102 @@ describe('commercial API denial recovery', () => {
     await expect(
       store.dispatch(probeApi.endpoints.commercialWriteProbe.initiate()).unwrap()
     ).rejects.toMatchObject({ status: 403 });
-    expect(store.getState().auth.sessionContext?.commercialAccess).toMatchObject({
-      state: 'READ_ONLY',
-      accessStateVersion: 'new',
-    });
+    await vi.waitFor(() =>
+      expect(store.getState().auth.sessionContext?.commercialAccess).toMatchObject({
+        state: 'READ_ONLY',
+        accessStateVersion: 'new',
+      })
+    );
     expect(notificationService.error).toHaveBeenCalledWith(expect.stringMatching(/renew/i));
+  });
+
+  it('coalesces context synchronization for concurrent denials at the same version', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = input instanceof Request ? input.url : String(input);
+        if (url.includes('/auth/session-context')) {
+          return response({
+            data: {
+              identity: {
+                id: '1',
+                email: null,
+                displayName: null,
+                status: 'ACTIVE',
+                accessStateVersion: 2,
+              },
+              memberships: [],
+              selected: { userId: '1', tenantId: '7' },
+              provisioning: { state: 'READY' },
+              commercialAccess: {
+                planCode: 'PRO',
+                state: 'READ_ONLY',
+                accessStateVersion: 'new',
+                entitlements: ['CUSTOM_BARCODE'],
+                limits: { staff: 7, firms: 1 },
+                demoExpiresAt: null,
+                endsAt: null,
+                graceExpiresAt: null,
+              },
+            },
+          });
+        }
+        if (url.includes('/subscription/access')) {
+          return response({
+            data: {
+              planCode: 'PRO',
+              state: 'READ_ONLY',
+              accessStateVersion: 'new',
+              entitlements: ['CUSTOM_BARCODE'],
+              limits: { staff: 7, firms: 1 },
+              demoExpiresAt: null,
+              endsAt: null,
+              graceExpiresAt: null,
+            },
+          });
+        }
+        return response(
+          {
+            success: false,
+            commercial: {
+              code: 'COMMERCIAL_READ_ONLY',
+              reason: 'read only',
+              action: 'RENEW',
+              accessStateVersion: 'new',
+            },
+          },
+          403
+        );
+      })
+    );
+    const context = JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSION_CONTEXT) || 'null');
+    const store = configureStore({
+      reducer: { auth: authReducer, [apiSlice.reducerPath]: apiSlice.reducer },
+      middleware: (defaults) => defaults().concat(apiSlice.middleware),
+      preloadedState: {
+        auth: {
+          user: { id: '1', name: 'Owner', email: null, phone: '1', roles: ['OWNER'] },
+          accessToken: 'access',
+          refreshToken: 'refresh',
+          sessionVersion: 1,
+          profileUpdateSequence: 0,
+          lastAppliedProfileUpdateSequence: 0,
+          profileUpdateRequests: {},
+          sessionContext: context,
+        },
+      },
+    });
+
+    await Promise.allSettled([
+      store.dispatch(probeApi.endpoints.commercialWriteProbe.initiate()).unwrap(),
+      store.dispatch(probeApi.endpoints.commercialWriteProbe.initiate()).unwrap(),
+    ]);
+    await vi.waitFor(() => {
+      const calls = vi
+        .mocked(fetch)
+        .mock.calls.map(([input]) => (input instanceof Request ? input.url : String(input)));
+      expect(calls.filter((url) => url.includes('/auth/session-context'))).toHaveLength(1);
+      expect(calls.filter((url) => url.includes('/subscription/access'))).toHaveLength(1);
+    });
   });
 });

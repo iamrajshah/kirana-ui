@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { commercialDenialMessage, canUseCommercialFeature } from './commercialAccess';
+import {
+  commercialDenialMessage,
+  canUseCommercialFeature,
+  isCommercialDenial,
+} from './commercialAccess';
 
 const summary = {
   planCode: 'PRO' as const,
@@ -27,5 +31,25 @@ describe('commercial client helpers', () => {
     expect(commercialDenialMessage({ code: code as never, reason: '', action: 'UPGRADE' })).toMatch(
       new RegExp(phrase, 'i')
     );
+  });
+
+  it('rejects unknown or malformed commercial denial payloads', () => {
+    expect(
+      isCommercialDenial({
+        code: 'COMMERCIAL_UNKNOWN',
+        reason: 'unknown',
+        action: 'UPGRADE',
+      })
+    ).toBe(false);
+    expect(
+      isCommercialDenial({
+        code: 'COMMERCIAL_READ_ONLY',
+        reason: 'read only',
+        action: 'UNKNOWN',
+      })
+    ).toBe(false);
+    expect(
+      isCommercialDenial({ code: 'COMMERCIAL_READ_ONLY', action: 'RENEW' })
+    ).toBe(false);
   });
 });

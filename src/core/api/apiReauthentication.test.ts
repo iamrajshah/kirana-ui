@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { configureStore } from '@reduxjs/toolkit';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import authReducer from '@core/auth/authSlice';
+import authReducer, { logout, setCredentials } from '@core/auth/authSlice';
 import { STORAGE_KEYS } from '@core/constants';
 import { apiSlice } from './apiSlice';
 
@@ -10,11 +10,58 @@ const probeApi = apiSlice.injectEndpoints({
     protectedProbe: builder.query<{ value: number }, number>({
       query: (id) => `/protected/${id}`,
     }),
+    dashboardProbe: builder.query<{ value: number }, void>({
+      query: () => '/dashboard-probe',
+      providesTags: ['Dashboard'],
+    }),
   }),
 });
 
 const response = (body: object, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+
+const commercialAccess = (version = 'new-version') => ({
+  planCode: 'PRO',
+  state: 'ACTIVE',
+  accessStateVersion: version,
+  entitlements: ['CORE_POS'],
+  limits: { staff: 7, firms: 1 },
+  demoExpiresAt: null,
+  endsAt: null,
+  graceExpiresAt: null,
+});
+
+const sessionContext = (version = 'new-version') => ({
+  identity: {
+    id: 'identity-1',
+    email: 'owner@example.com',
+    displayName: 'Owner',
+    status: 'ACTIVE',
+    accessStateVersion: 2,
+  },
+  memberships: [],
+  selected: { userId: '1', tenantId: 'tenant-1' },
+  commercialAccess: commercialAccess(version),
+  provisioning: { state: 'READY' },
+});
+
+const createStore = () =>
+  configureStore({
+    reducer: { auth: authReducer, [apiSlice.reducerPath]: apiSlice.reducer },
+    middleware: (defaults) => defaults().concat(apiSlice.middleware),
+    preloadedState: {
+      auth: {
+        user: { id: '1', name: 'Owner', email: null, phone: '1', roles: ['OWNER'] },
+        accessToken: 'expired-access',
+        refreshToken: 'valid-refresh',
+        sessionVersion: 1,
+        profileUpdateSequence: 0,
+        lastAppliedProfileUpdateSequence: 0,
+        profileUpdateRequests: {},
+        sessionContext: sessionContext('old-version'),
+      },
+    },
+  });
 
 describe('API refresh coordination', () => {
   beforeEach(() => {
@@ -37,6 +84,12 @@ describe('API refresh coordination', () => {
         if (url.includes('/auth/refresh-token')) {
           return response({ data: { accessToken: 'new-access', refreshToken: 'new-refresh' } });
         }
+        if (url.includes('/auth/session-context')) {
+          return response({ data: sessionContext() });
+        }
+        if (url.includes('/subscription/access')) {
+          return response({ data: commercialAccess() });
+        }
         const request = input instanceof Request ? input : null;
         if (request?.headers.get('authorization') === 'Bearer new-access') {
           return response({ data: { value: 1 } });
@@ -51,21 +104,7 @@ describe('API refresh coordination', () => {
   });
 
   it('uses one rotating refresh request for concurrent 401 responses and retries both calls', async () => {
-    const store = configureStore({
-      reducer: { auth: authReducer, [apiSlice.reducerPath]: apiSlice.reducer },
-      middleware: (defaults) => defaults().concat(apiSlice.middleware),
-      preloadedState: {
-        auth: {
-          user: { id: '1', name: 'Owner', email: null, phone: '1', roles: ['OWNER'] },
-          accessToken: 'expired-access',
-          refreshToken: 'valid-refresh',
-          sessionVersion: 1,
-          profileUpdateSequence: 0,
-          lastAppliedProfileUpdateSequence: 0,
-          profileUpdateRequests: {},
-        },
-      },
-    });
+    const store = createStore();
 
     const results = await Promise.allSettled([
       store
@@ -82,5 +121,102 @@ describe('API refresh coordination', () => {
       .mock.calls.map(([input]) => (input instanceof Request ? input.url : String(input)));
     expect(calls.filter((url) => url.includes('/auth/refresh-token'))).toHaveLength(1);
     expect(store.getState().auth.accessToken).toBe('new-access');
+    await vi.waitFor(() => {
+      expect(store.getState().auth.sessionContext?.commercialAccess).toMatchObject({
+        accessStateVersion: 'new-version',
+      });
+    });
+    expect(calls.filter((url) => url.includes('/auth/session-context'))).toHaveLength(1);
+    expect(calls.filter((url) => url.includes('/subscription/access'))).toHaveLength(1);
+  });
+
+  it('invalidates tenant caches when a token refresh discovers a new access version', async () => {
+    let dashboardCalls = 0;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = input instanceof Request ? input.url : String(input);
+      if (url.includes('/dashboard-probe')) {
+        dashboardCalls += 1;
+        return response({ data: { value: dashboardCalls } });
+      }
+      if (url.includes('/auth/refresh-token')) {
+        return response({ data: { accessToken: 'new-access', refreshToken: 'new-refresh' } });
+      }
+      if (url.includes('/auth/session-context')) return response({ data: sessionContext() });
+      if (url.includes('/subscription/access')) return response({ data: commercialAccess() });
+      const request = input instanceof Request ? input : null;
+      return request?.headers.get('authorization') === 'Bearer new-access'
+        ? response({ data: { value: 1 } })
+        : response({ message: 'expired' }, 401);
+    });
+    const store = createStore();
+    const dashboardSubscription = store.dispatch(probeApi.endpoints.dashboardProbe.initiate());
+    await dashboardSubscription.unwrap();
+
+    await store
+      .dispatch(probeApi.endpoints.protectedProbe.initiate(9, { forceRefetch: true }))
+      .unwrap();
+
+    await vi.waitFor(() =>
+      expect(probeApi.endpoints.dashboardProbe.select()(store.getState()).data).toEqual({
+        data: { value: 2 },
+      })
+    );
+    dashboardSubscription.unsubscribe();
+  });
+
+  it('retries the original request without waiting for optional context reads', async () => {
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = input instanceof Request ? input.url : String(input);
+      if (url.includes('/auth/refresh-token')) {
+        return response({ data: { accessToken: 'new-access', refreshToken: 'new-refresh' } });
+      }
+      if (url.includes('/auth/session-context') || url.includes('/subscription/access')) {
+        return new Promise<Response>(() => undefined);
+      }
+      const request = input instanceof Request ? input : null;
+      return request?.headers.get('authorization') === 'Bearer new-access'
+        ? response({ data: { value: 1 } })
+        : response({ message: 'expired' }, 401);
+    });
+    const store = createStore();
+
+    await expect(
+      store.dispatch(probeApi.endpoints.protectedProbe.initiate(3, { forceRefetch: true })).unwrap()
+    ).resolves.toEqual({ data: { value: 1 } });
+  });
+
+  it('does not let a delayed refresh overwrite a replacement login', async () => {
+    let resolveRefresh!: (value: Response) => void;
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = input instanceof Request ? input.url : String(input);
+      if (url.includes('/auth/refresh-token')) {
+        return new Promise<Response>((resolve) => {
+          resolveRefresh = resolve;
+        });
+      }
+      return response({ message: 'expired' }, 401);
+    });
+    const store = createStore();
+    const pending = store.dispatch(
+      probeApi.endpoints.protectedProbe.initiate(4, { forceRefetch: true })
+    );
+    await vi.waitFor(() => expect(resolveRefresh).toBeTypeOf('function'));
+
+    store.dispatch(logout());
+    store.dispatch(
+      setCredentials({
+        user: { id: '2', name: 'Next Owner', email: null, phone: '2', roles: ['OWNER'] },
+        tenant: { id: 'tenant-2', name: 'Next Shop', status: 'ACTIVE' },
+        tokens: { accessToken: 'next-access', refreshToken: 'next-refresh' },
+      })
+    );
+    resolveRefresh(
+      response({ data: { accessToken: 'stale-access', refreshToken: 'stale-refresh' } })
+    );
+    await expect(pending.unwrap()).rejects.toMatchObject({ status: 401 });
+
+    expect(store.getState().auth.user?.id).toBe('2');
+    expect(store.getState().auth.accessToken).toBe('next-access');
+    expect(store.getState().auth.refreshToken).toBe('next-refresh');
   });
 });

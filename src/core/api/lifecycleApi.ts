@@ -82,7 +82,9 @@ export const lifecycleApi = apiSlice.injectEndpoints({
     >({
       query: (body) => ({ url: '/auth/membership/select', method: 'POST', body }),
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-        dispatch(setCredentials((await queryFulfilled).data.data));
+        const credentials = (await queryFulfilled).data.data;
+        dispatch(setCredentials(credentials));
+        dispatch(apiSlice.util.resetApiState());
       },
     }),
   }),
