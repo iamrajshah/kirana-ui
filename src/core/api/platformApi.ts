@@ -53,7 +53,7 @@ export interface PlatformTenantDetails {
     subscriptionId: string;
     plan: { code: string; name: string; version: number };
     state: string;
-    billingCycle: 'MONTHLY' | 'YEARLY' | null;
+    billingCycle: 'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY' | null;
     startsAt: string;
     endsAt: string | null;
     demoExpiresAt: string | null;
@@ -78,7 +78,8 @@ export interface PlatformPlan {
   name: string;
   description: string | null;
   version: number | null;
-  monthlyPricePaise: number | null;
+  quarterlyPricePaise: number | null;
+  halfYearlyPricePaise: number | null;
   yearlyPricePaise: number | null;
   limits: { staff: number | null; firms: number | null };
   entitlements: string[];
@@ -288,6 +289,8 @@ export const platformApi = {
     code: 'STARTER' | 'PRO' | 'BUSINESS',
     input: {
       monthlyPricePaise: number;
+      quarterlyPricePaise: number;
+      halfYearlyPricePaise: number;
       yearlyPricePaise: number;
       staffLimit: number | null;
       firmLimit: number | null;
@@ -311,7 +314,7 @@ export const platformApi = {
     id: string,
     input: {
       planCode: 'STARTER' | 'PRO' | 'BUSINESS';
-      billingCycle: 'MONTHLY' | 'YEARLY';
+      billingCycle: 'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY';
       shopName: string;
       ownerName: string;
       phone: string;
@@ -334,7 +337,7 @@ export const platformApi = {
     );
   },
 
-  changeSubscription(id: string, planCode: string, billingCycle: 'MONTHLY' | 'YEARLY') {
+  changeSubscription(id: string, planCode: string, billingCycle: 'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY') {
     return platformRequest<{ applied: boolean; subscriptionId: string; conflicts: unknown[] }>(
       `/platform/tenants/${id}/subscription`,
       {

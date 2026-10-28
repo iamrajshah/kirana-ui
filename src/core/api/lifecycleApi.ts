@@ -9,16 +9,32 @@ export interface PublicPlan {
   description: string | null;
   version: number;
   currency: string;
-  monthlyPricePaise: number;
+  quarterlyPricePaise: number;
+  halfYearlyPricePaise: number;
   yearlyPricePaise: number;
   staffLimit: number | null;
   firmLimit: number | null;
   entitlements: string[];
 }
 
+export interface PublicAddOn {
+  code: 'EXTRA_STAFF' | 'EXTRA_FIRM';
+  name: string;
+  description: string;
+  availableOn: string[];
+  quarterlyPricePaise: number;
+  halfYearlyPricePaise: number;
+  yearlyPricePaise: number;
+}
+
 export interface PublicProductInformation {
   plans: PublicPlan[];
-  billing: { periods: readonly ['MONTHLY', 'YEARLY']; yearlyRecommended: boolean };
+  addOns: PublicAddOn[];
+  billing: {
+    periods: readonly ['QUARTERLY', 'HALF_YEARLY', 'YEARLY'];
+    yearlyRecommended: boolean;
+    taxes: string;
+  };
   legal: { privacyVersion: string; termsVersion: string };
   support: { email: string };
   accountDeletionUrl: string;

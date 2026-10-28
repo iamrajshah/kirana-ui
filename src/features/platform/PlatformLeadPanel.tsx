@@ -19,7 +19,7 @@ export const PlatformLeadPanel: React.FC<Props> = ({ plans, onActivated }) => {
   const [details, setDetails] = useState<PlatformLeadDetails | null>(null);
   const [leadSearch, setLeadSearch] = useState('');
   const [planCode, setPlanCode] = useState<'STARTER' | 'PRO' | 'BUSINESS'>('PRO');
-  const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'YEARLY'>('YEARLY');
+  const [billingCycle, setBillingCycle] = useState<'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY'>('YEARLY');
   const [form, setForm] = useState({
     shopName: '',
     ownerName: '',
@@ -326,7 +326,8 @@ export const PlatformLeadPanel: React.FC<Props> = ({ plans, onActivated }) => {
                 onChange={(event) => setBillingCycle(event.target.value as typeof billingCycle)}
               >
                 <option value="YEARLY">{t('platform.commercial.yearly')}</option>
-                <option value="MONTHLY">{t('platform.commercial.monthly')}</option>
+                <option value="HALF_YEARLY">{t('account.half_yearly')}</option>
+                <option value="QUARTERLY">{t('account.quarterly')}</option>
               </select>
             </label>
             <button type="button" onClick={() => void activate()} disabled={busy}>

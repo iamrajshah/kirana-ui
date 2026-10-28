@@ -22,7 +22,7 @@ export const PlatformCommercialPanel: React.FC<Props> = ({ tenant, plans, onChan
   const [planCode, setPlanCode] = useState(
     paidPlanCodes.has(currentPlanCode) ? currentPlanCode : ''
   );
-  const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'YEARLY'>(tenant.commercial?.billingCycle || 'YEARLY');
+  const [billingCycle, setBillingCycle] = useState<'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY'>(tenant.commercial?.billingCycle || 'YEARLY');
   const [preview, setPreview] = useState<PlanPreview | null>(null);
   const previewRequestId = useRef(0);
   const [busy, setBusy] = useState(false);
@@ -109,7 +109,7 @@ export const PlatformCommercialPanel: React.FC<Props> = ({ tenant, plans, onChan
 
       <div className="platform-commercial-form">
         <label>{t('platform.commercial.targetPlan')}<select value={planCode} onChange={(event) => { previewRequestId.current += 1; setBusy(false); setPlanCode(event.target.value); setPreview(null); }}><option value="">{t('platform.commercial.selectPaidPlan')}</option>{paidPlans.map((plan) => <option key={plan.code} value={plan.code}>{plan.name} {t('platform.commercial.version', { version: plan.version })}</option>)}</select></label>
-        <label>{t('platform.commercial.billingCycle')}<select value={billingCycle} onChange={(event) => setBillingCycle(event.target.value as 'MONTHLY' | 'YEARLY')}><option value="YEARLY">{t('platform.commercial.yearly')}</option><option value="MONTHLY">{t('platform.commercial.monthly')}</option></select></label>
+        <label>{t('platform.commercial.billingCycle')}<select value={billingCycle} onChange={(event) => setBillingCycle(event.target.value as typeof billingCycle)}><option value="YEARLY">{t('platform.commercial.yearly')}</option><option value="HALF_YEARLY">{t('account.half_yearly')}</option><option value="QUARTERLY">{t('account.quarterly')}</option></select></label>
         <button type="button" onClick={() => void previewPlan()} disabled={busy || !planCode}>{t('platform.commercial.previewChange')}</button>
       </div>
       {preview && <div className={preview.result.canActivate ? 'platform-commercial-preview ready' : 'platform-commercial-preview blocked'} role="status">
