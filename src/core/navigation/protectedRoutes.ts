@@ -51,6 +51,7 @@ const mainLayoutRouteIds = [
   'users',
   'categories',
   'import-export',
+  'shifts',
 ] as const;
 
 export const protectedMainLayoutRoutes: readonly ProtectedRouteAccess[] = mainLayoutRouteIds.map(
@@ -71,6 +72,7 @@ export const mainLayoutPaths: readonly string[] = [
   ROUTES.ABOUT,
   ROUTES.ACCOUNT,
   ROUTES.ACCOUNT_RENEWAL,
+  ROUTES.GETTING_STARTED,
   ROUTES.RESTRICTED,
   ...protectedPageRoutes.map(({ path }) => path),
   ...protectedMainLayoutRoutes.map(({ path }) => path),

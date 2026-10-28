@@ -20,6 +20,11 @@ export const mapReceiptDocument = (
     document.document_mode === 'GST_TAX_INVOICE' && !document.legacy
       ? 'GST_TAX_INVOICE'
       : 'SIMPLE_RECEIPT',
+  branding: {
+    template: document.branding?.template ?? 'CLASSIC',
+    brandColor: document.branding?.brand_color ?? '#087F5B',
+    logoUrl: document.branding?.logo_url ?? null,
+  },
   issuedAt: document.issued_at,
   isLegacy: document.legacy,
   cancellationMarker: document.cancellation.cancelled ? document.cancellation.marker : null,

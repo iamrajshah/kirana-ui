@@ -43,6 +43,11 @@ export interface ReceiptViewModel {
   invoiceNumber: string;
   title: 'Receipt' | 'Tax Invoice';
   mode: ReceiptDocumentMode;
+  branding: {
+    template: 'CLASSIC' | 'MODERN' | 'COMPACT';
+    brandColor: string;
+    logoUrl: string | null;
+  };
   issuedAt: string | null;
   isLegacy: boolean;
   cancellationMarker: string | null;

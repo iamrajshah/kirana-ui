@@ -1404,7 +1404,8 @@
     "documentUnavailableHint": "बिल लोड झाले नाही. प्रवेश किंवा कनेक्शन तपासून पुन्हा प्रयत्न करा.",
     "paymentRequiresCustomer": "नंतरचे पेमेंट नोंदवण्यापूर्वी ग्राहक निवडा.",
     "notIssued": "जारी केलेले नाही",
-    "draftHint": "हा मसुदा अजून ग्राहक दस्तऐवज नाही. विक्री पूर्ण करण्यासाठी तो उघडा."
+    "draftHint": "हा मसुदा अजून ग्राहक दस्तऐवज नाही. विक्री पूर्ण करण्यासाठी तो उघडा.",
+    "whatsAppReceipt": "WhatsApp पावती", "whatsAppReminder": "WhatsApp पेमेंट स्मरण", "whatsAppInvalidPhone": "आधी ग्राहकाचा योग्य भारतीय मोबाइल क्रमांक जोडा."
   },
   "about": {
     "title": "माहिती",
@@ -1457,6 +1458,7 @@
     "paperWidth": "डीफॉल्ट थर्मल पेपर",
     "paper": { "MM58": "58 मिमी (लहान)", "MM80": "80 मिमी (शिफारस केलेले)" },
     "footer": "पावती फूटर (ऐच्छिक)",
+    "branding": "पावती ब्रँडिंग", "brandingHint": "पुढील पावत्यांची शैली निवडा. जुन्या पावत्या बदलणार नाहीत.", "brandColor": "ब्रँड रंग (#RRGGBB)", "logoUrl": "HTTPS लोगो URL (ऐच्छिक)", "templates": { "CLASSIC": "क्लासिक", "MODERN": "मॉडर्न", "COMPACT": "कॉम्पॅक्ट" },
     "gstDetails": "GST चलन प्रोफाइल",
     "gstDetailsHint": "GST चलन सक्रिय करण्यापूर्वी हे कायदेशीर तपशील आवश्यक आहेत.",
     "supplierName": "दुकानाचे कायदेशीर नाव",
@@ -1487,6 +1489,12 @@
     "saved": "बिल सेटिंग्ज जतन झाल्या",
     "saveFailed": "बिल सेटिंग्ज जतन झाल्या नाहीत",
     "loadFailed": "बिल सेटिंग्ज लोड झाल्या नाहीत"
+  },
+  "shifts": {
+    "title": "कॅश शिफ्ट", "eyebrow": "काउंटर नियंत्रण", "heading": "कॅश उघडा, मोजा आणि बंद करा", "description": "कॅश पेमेंट व नोंदवलेल्या हालचालींशी ड्रॉवर जुळवा.", "open": "उघडी", "closed": "बंद", "openShift": "शिफ्ट उघडा", "openingCash": "सुरुवातीची कॅश", "counter": "काउंटर नाव (ऐच्छिक)", "openedSuccess": "शिफ्ट उघडली", "liveSummary": "थेट सारांश", "cashSales": "कॅश विक्री", "cashIn": "कॅश जमा", "cashOut": "कॅश काढली", "expectedCash": "अपेक्षित कॅश", "cashMovement": "कॅश हालचाल नोंदवा", "movementType": "हालचाल प्रकार", "reason": "कारण", "saveMovement": "जतन करा", "adjustmentSaved": "कॅश हालचाल जतन झाली", "closeShift": "शिफ्ट बंद करा", "countHint": "ड्रॉवर मोजा. अपेक्षित कॅश {{amount}} आहे.", "countedCash": "मोजलेली कॅश", "closingNote": "बंद नोंद (ऐच्छिक)", "variance": "फरक", "closedSuccess": "शिफ्ट बंद झाली", "recent": "अलीकडील शिफ्ट", "failed": "शिफ्ट अपडेट झाली नाही"
+  },
+  "onboarding": {
+    "title": "सुरुवात", "eyebrow": "दुकान सेटअप", "heading": "पहिल्या बिलासाठी तयार व्हा", "description": "दुकान योग्य पद्धतीने सेट करण्यासाठी ही यादी पूर्ण करा.", "open": "उघडा", "steps": { "profile": { "title": "दुकान व बिल ओळख", "description": "दुकान, पावती, लोगो आणि GST तपशील तपासा." }, "products": { "title": "उत्पादने व स्टॉक", "description": "किंमत, बारकोड व सुरुवातीचा स्टॉक जोडा." }, "staff": { "title": "स्टाफ जोडा", "description": "फक्त आवश्यक लोकांना प्रवेश द्या." }, "shift": { "title": "कॅश काउंटर उघडा", "description": "सुरुवातीची कॅश नोंदवा." }, "sale": { "title": "सराव विक्री", "description": "ग्राहकांपूर्वी एक बिल तयार करून शेअर करा." } }, "helpTitle": "मदत हवी?", "helpDescription": "स्क्रीन आणि समस्येसह मदत विनंती पाठवा.", "contactSupport": "मदत घ्या"
   },
   "foundation": {
     "login": {

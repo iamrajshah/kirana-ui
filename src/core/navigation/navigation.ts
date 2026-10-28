@@ -14,6 +14,8 @@ import {
   pricetags,
   informationCircleOutline,
   walletOutline,
+  timerOutline,
+  schoolOutline,
 } from 'ionicons/icons';
 import { ROUTES } from '@core/constants';
 import { hasAccessToTab, type TabPermission } from '@core/permissions/rolePermissions';
@@ -154,6 +156,21 @@ export const navigationItems: readonly NavigationItem[] = [
     href: ROUTES.ACCOUNT,
     labelKey: 'account.title',
     icon: walletOutline,
+    group: 'more',
+  },
+  {
+    id: 'shifts',
+    href: ROUTES.SHIFTS,
+    labelKey: 'shifts.title',
+    icon: timerOutline,
+    group: 'manage',
+    permission: 'shifts',
+  },
+  {
+    id: 'getting-started',
+    href: ROUTES.GETTING_STARTED,
+    labelKey: 'onboarding.title',
+    icon: schoolOutline,
     group: 'more',
   },
   {

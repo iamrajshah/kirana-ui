@@ -156,6 +156,12 @@ remain usable. Cashiers continue to see their normal operational dashboard.
 - Every modal and drawer needs a clear close action, keyboard focus handling, and
   useful loading, empty, error, and retry states.
 - Responsive behavior must be checked at mobile, tablet, and desktop widths.
+- Receipt template, colour, and HTTPS logo settings apply to new finalized bills;
+  historical bills render their frozen branding snapshot.
+- Cash shifts remain optional. Cashiers can open, adjust, and close only their
+  own drawer; owners and managers can see recent staff shifts.
+- WhatsApp receipt/reminder sharing is a user-initiated `wa.me` handoff. It does
+  not send automatically and must not claim that a PDF attachment was delivered.
 
 ## Billing safety rules
 
@@ -216,8 +222,7 @@ backup retention, secrets rotation, and availability targets.
 
 Offline billing requires an explicit outbox, conflict, stock, and payment
 reconciliation design and should not be represented as ready. Smart reorder
-suggestions and WhatsApp paste-to-bill are valuable follow-on features. Direct
-WhatsApp ingestion additionally needs provider, consent, privacy, and cost
-decisions. Shift opening/closing should remain optional because many target
-shops have the same owner operating the counter. Batch-aware stock and expiry
+suggestions and WhatsApp paste-to-bill are valuable follow-on features. Automated
+WhatsApp delivery or ingestion additionally needs provider, consent, privacy,
+and cost decisions. Batch-aware stock and expiry
 management is also pending; label dates alone do not change inventory truth.

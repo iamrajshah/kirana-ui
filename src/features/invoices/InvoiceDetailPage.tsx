@@ -36,6 +36,7 @@ import {
   type ReceiptOutputAction,
   useReceiptOutput,
 } from './receipt';
+import { openWhatsAppReceipt } from './receipt/whatsapp';
 import './InvoiceDetailPage.css';
 
 const InvoiceDetailPage: React.FC = () => {
@@ -227,6 +228,21 @@ const InvoiceDetailPage: React.FC = () => {
               >
                 {t('invoiceDetail.share')}
               </IonButton>
+              {receipt.customer.kind === 'named' && receipt.customer.phone && (
+                <IonButton
+                  color="success"
+                  fill="outline"
+                  onClick={() => {
+                    if (!openWhatsAppReceipt(receipt)) {
+                      setToast({ color: 'danger', message: t('invoiceDetail.whatsAppInvalidPhone') });
+                    }
+                  }}
+                >
+                  {Number(receipt.payment.remaining) > 0
+                    ? t('invoiceDetail.whatsAppReminder')
+                    : t('invoiceDetail.whatsAppReceipt')}
+                </IonButton>
+              )}
             </div>
             {outputMessage && (
               <p
