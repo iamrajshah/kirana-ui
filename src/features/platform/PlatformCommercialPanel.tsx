@@ -22,7 +22,12 @@ export const PlatformCommercialPanel: React.FC<Props> = ({ tenant, plans, onChan
   const [planCode, setPlanCode] = useState(
     paidPlanCodes.has(currentPlanCode) ? currentPlanCode : ''
   );
-  const [billingCycle, setBillingCycle] = useState<'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY'>(tenant.commercial?.billingCycle || 'YEARLY');
+  const currentBillingCycle = tenant.commercial?.billingCycle;
+  const [billingCycle, setBillingCycle] = useState<'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY'>(
+    currentBillingCycle === 'QUARTERLY' || currentBillingCycle === 'HALF_YEARLY'
+      ? currentBillingCycle
+      : 'YEARLY'
+  );
   const [preview, setPreview] = useState<PlanPreview | null>(null);
   const previewRequestId = useRef(0);
   const [busy, setBusy] = useState(false);

@@ -6,7 +6,7 @@ export interface RenewalRequest {
   id: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
   plan: { code: string; name: string; version: number };
-  billingCycle: 'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY';
+  billingCycle: 'MONTHLY' | 'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY';
   provider: string;
   transactionReference: string;
   amountPaise: number;

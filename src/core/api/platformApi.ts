@@ -53,7 +53,7 @@ export interface PlatformTenantDetails {
     subscriptionId: string;
     plan: { code: string; name: string; version: number };
     state: string;
-    billingCycle: 'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY' | null;
+    billingCycle: 'MONTHLY' | 'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY' | null;
     startsAt: string;
     endsAt: string | null;
     demoExpiresAt: string | null;
