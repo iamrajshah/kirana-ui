@@ -10,6 +10,24 @@
     "roleDenied": "Your staff role does not allow this operation. Contact your owner.",
     "demoDocumentMarker": "DEMO — NOT A VALID BUSINESS DOCUMENT"
   },
+  "security": {
+    "title": "Devices & security",
+    "description": "Review devices signed in to this account. Shop owners can manage devices only for staff in this shop.",
+    "staffMember": "Staff member",
+    "thisDevice": "This device",
+    "noDevices": "No active devices",
+    "lastSeen": "Last seen {{date}}",
+    "platform": { "web": "Web", "android": "Android" },
+    "revokeDevice": "Remove device",
+    "deviceRevoked": "Device access removed",
+    "revokeFailed": "Could not remove this device",
+    "logoutCurrent": "Log out this device",
+    "logoutAll": "Log out all devices",
+    "logoutFailed": "Could not log out",
+    "deviceLimitTitle": "Device limit reached",
+    "deviceLimitDescription": "Your plan allows {{limit}} active devices. Choose an older device to replace.",
+    "replaceDevice": "Replace this device"
+  },
   "workspace": {
     "sell": "Sales",
     "stock": "Stock & purchasing",

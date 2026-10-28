@@ -47,6 +47,22 @@ vi.mock('@core/api/lifecycleApi', () => ({
     },
   }),
 }));
+vi.mock('@core/auth/deviceIdentity', () => ({
+  getDeviceDescriptor: () =>
+    Promise.resolve({ installationId: 'install-1', platform: 'WEB', name: 'Web · Test' }),
+}));
+vi.mock('./DeviceLimitDialog', () => ({
+  DeviceLimitDialog: ({
+    details,
+    onReplace,
+  }: {
+    details: { devices: Array<{ id: string; name: string; platform: 'WEB'; lastSeenAt: string }> } | null;
+    onReplace: (device: { id: string; name: string; platform: 'WEB'; lastSeenAt: string }) => void;
+  }) =>
+    details ? (
+      <button onClick={() => onReplace(details.devices[0])}>replace-old-device</button>
+    ) : null,
+}));
 vi.mock('./DemoProvisioningPanel', () => ({
   DemoProvisioningPanel: () => <div>demo-provisioning-panel</div>,
 }));
@@ -177,6 +193,38 @@ describe('LoginPage', () => {
     await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/change-password'));
   });
 
+  it('lets a user replace an existing device when the plan limit is reached', async () => {
+    const oldDevice = {
+      id: 'device-old',
+      name: 'Old counter',
+      platform: 'WEB' as const,
+      lastSeenAt: '2026-10-01T00:00:00.000Z',
+    };
+    const auth = { access_token: 'access', refresh_token: 'refresh', user: { id: '1' } };
+    mocks.login
+      .mockRejectedValueOnce({
+        data: { code: 'DEVICE_LIMIT_REACHED', details: { limit: 2, devices: [oldDevice] } },
+      })
+      .mockResolvedValueOnce({ success: true, data: auth });
+    render(<LoginPage />);
+    fireEvent.change(screen.getByLabelText('auth.emailOrPhone'), {
+      target: { value: 'owner@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText('auth.password'), { target: { value: 'secret' } });
+    fireEvent.click(screen.getByRole('button', { name: 'auth.loginButton' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'replace-old-device' }));
+
+    await waitFor(() =>
+      expect(mocks.login).toHaveBeenLastCalledWith({
+        email: 'owner@example.com',
+        password: 'secret',
+        device: { installationId: 'install-1', platform: 'WEB', name: 'Web · Test' },
+        replaceDeviceId: 'device-old',
+      })
+    );
+    expect(mocks.replace).toHaveBeenCalledWith('/dashboard');
+  });
+
   it('stores a normalized Google session and navigates safely after provider success', async () => {
     const auth = {
       tokens: { accessToken: 'access', refreshToken: 'refresh' },
@@ -197,6 +245,8 @@ describe('LoginPage', () => {
       expect(mocks.googleExchange).toHaveBeenCalledWith({
         credential: 'google-credential',
         source: 'web',
+        device: { installationId: 'install-1', platform: 'WEB', name: 'Web · Test' },
+        replaceDeviceId: undefined,
         consents: [
           { consentType: 'PRIVACY', documentVersion: 'privacy-v1' },
           { consentType: 'TERMS', documentVersion: 'terms-v1' },
@@ -240,11 +290,15 @@ describe('LoginPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'google-provider-success' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Shop B' }));
 
-    expect(mocks.selectMembership).toHaveBeenCalledWith({
-      userId: '8',
-      credential: 'google-credential',
-      source: 'web',
-    });
+    await waitFor(() =>
+      expect(mocks.selectMembership).toHaveBeenCalledWith({
+        userId: '8',
+        credential: 'google-credential',
+        source: 'web',
+        device: { installationId: 'install-1', platform: 'WEB', name: 'Web · Test' },
+        replaceDeviceId: undefined,
+      })
+    );
     await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/dashboard'));
   });
 
@@ -280,6 +334,7 @@ describe('LoginPage', () => {
       expect(mocks.linkGoogle).toHaveBeenCalledWith({
         credential: 'google-credential',
         source: 'web',
+        device: { installationId: 'install-1', platform: 'WEB', name: 'Web · Test' },
       })
     );
     expect(mocks.dispatch).toHaveBeenCalledWith({

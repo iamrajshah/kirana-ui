@@ -10,6 +10,24 @@
     "roleDenied": "आपकी कर्मचारी भूमिका इस काम की अनुमति नहीं देती। मालिक से संपर्क करें।",
     "demoDocumentMarker": "DEMO — NOT A VALID BUSINESS DOCUMENT"
   },
+  "security": {
+    "title": "डिवाइस और सुरक्षा",
+    "description": "इस खाते में साइन इन डिवाइस देखें। दुकान मालिक केवल इसी दुकान के स्टाफ के डिवाइस संभाल सकते हैं।",
+    "staffMember": "स्टाफ सदस्य",
+    "thisDevice": "यह डिवाइस",
+    "noDevices": "कोई सक्रिय डिवाइस नहीं",
+    "lastSeen": "अंतिम उपयोग {{date}}",
+    "platform": { "web": "वेब", "android": "एंड्रॉइड" },
+    "revokeDevice": "डिवाइस हटाएँ",
+    "deviceRevoked": "डिवाइस की पहुँच हटा दी गई",
+    "revokeFailed": "डिवाइस नहीं हटाया जा सका",
+    "logoutCurrent": "इस डिवाइस से लॉग आउट",
+    "logoutAll": "सभी डिवाइस से लॉग आउट",
+    "logoutFailed": "लॉग आउट नहीं हो सका",
+    "deviceLimitTitle": "डिवाइस सीमा पूरी हुई",
+    "deviceLimitDescription": "आपकी योजना में {{limit}} सक्रिय डिवाइस हैं। बदलने के लिए पुराना डिवाइस चुनें।",
+    "replaceDevice": "इस डिवाइस को बदलें"
+  },
   "workspace": {
     "sell": "बिक्री",
     "stock": "स्टॉक और खरीद",

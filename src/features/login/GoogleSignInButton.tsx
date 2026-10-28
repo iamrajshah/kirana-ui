@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { WebGoogleIdentityProvider } from './googleIdentityProvider';
+import { AndroidCredentialProvider, WebGoogleIdentityProvider } from './googleIdentityProvider';
 import { useTranslation } from 'react-i18next';
+import { isNativeAndroid } from '@core/auth/deviceIdentity';
+import { KiranaNativeAuth } from '@core/auth/nativeAuthPlugin';
 
 export const GoogleSignInButton: React.FC<{
   onCredential: (credential: string, source: 'web' | 'android') => void;
@@ -14,7 +16,13 @@ export const GoogleSignInButton: React.FC<{
 
   useEffect(() => {
     if (!entryEnabled || !target.current || !clientId) return;
-    return new WebGoogleIdentityProvider(clientId).render(target.current, {
+    const provider = isNativeAndroid()
+      ? new AndroidCredentialProvider(async () => {
+          const result = await KiranaNativeAuth.signInWithGoogle({ serverClientId: clientId });
+          return result.credential;
+        })
+      : new WebGoogleIdentityProvider(clientId);
+    return provider.render(target.current, {
       onCredential: (identity) => onCredential(identity.credential, identity.source),
       onCancel,
       onError,

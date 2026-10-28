@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { STORAGE_KEYS } from '../constants';
 import type { SessionContext, User } from '../types';
 import type { CommercialAccessSummary } from '@core/commercial';
+import { isNativeAndroid } from './deviceIdentity';
 
 interface AuthState {
   user: User | null;
@@ -56,11 +57,17 @@ interface TokenRefreshPayload extends SessionBoundPayload {
 }
 
 const storedUser: User | null = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || 'null');
+const storeWebToken = (key: string, value: string) => {
+  if (!isNativeAndroid()) localStorage.setItem(key, value);
+};
+const webToken = (key: string) => (isNativeAndroid() ? null : localStorage.getItem(key));
+const isPersistedTokenCurrent = (key: string, expected: string | null) =>
+  isNativeAndroid() || localStorage.getItem(key) === expected;
 
 const initialState: AuthState = {
   user: storedUser,
-  accessToken: localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN),
-  refreshToken: localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN),
+  accessToken: webToken(STORAGE_KEYS.ACCESS_TOKEN),
+  refreshToken: webToken(STORAGE_KEYS.REFRESH_TOKEN),
   sessionVersion: storedUser ? 1 : 0,
   profileUpdateSequence: 0,
   lastAppliedProfileUpdateSequence: 0,
@@ -127,8 +134,8 @@ const authSlice = createSlice({
       }
 
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, access_token);
-      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
+      storeWebToken(STORAGE_KEYS.ACCESS_TOKEN, access_token);
+      storeWebToken(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
       localStorage.setItem(STORAGE_KEYS.MUST_CHANGE_PASSWORD, String(state.mustChangePassword));
     },
     updateTokens: (state, action: PayloadAction<TokenRefreshPayload>) => {
@@ -136,11 +143,11 @@ const authSlice = createSlice({
       if (state.user.id !== action.payload.userId) return;
       if (state.sessionVersion !== action.payload.sessionVersion) return;
       if (state.refreshToken !== action.payload.refreshToken) return;
-      if (localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) !== action.payload.refreshToken) return;
+      if (!isPersistedTokenCurrent(STORAGE_KEYS.REFRESH_TOKEN, action.payload.refreshToken)) return;
       state.accessToken = action.payload.accessToken;
       state.refreshToken = action.payload.nextRefreshToken;
-      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, action.payload.accessToken);
-      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, action.payload.nextRefreshToken);
+      storeWebToken(STORAGE_KEYS.ACCESS_TOKEN, action.payload.accessToken);
+      storeWebToken(STORAGE_KEYS.REFRESH_TOKEN, action.payload.nextRefreshToken);
     },
     setCommercialAccess: (state, action: PayloadAction<CommercialAccessSummary>) => {
       if (!state.sessionContext) return;
@@ -158,7 +165,7 @@ const authSlice = createSlice({
       if (!state.user || state.user.id !== action.payload.userId) return;
       if (state.sessionVersion !== action.payload.sessionVersion) return;
       if (state.refreshToken !== action.payload.refreshToken) return;
-      if (localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) !== action.payload.refreshToken) return;
+      if (!isPersistedTokenCurrent(STORAGE_KEYS.REFRESH_TOKEN, action.payload.refreshToken)) return;
       state.sessionContext = action.payload.sessionContext;
       localStorage.setItem(
         STORAGE_KEYS.SESSION_CONTEXT,
@@ -172,7 +179,7 @@ const authSlice = createSlice({
       if (!state.user || state.user.id !== action.payload.userId) return;
       if (state.sessionVersion !== action.payload.sessionVersion) return;
       if (state.refreshToken !== action.payload.refreshToken) return;
-      if (localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) !== action.payload.refreshToken) return;
+      if (!isPersistedTokenCurrent(STORAGE_KEYS.REFRESH_TOKEN, action.payload.refreshToken)) return;
       if (!state.sessionContext) return;
       state.sessionContext.commercialAccess = action.payload.commercialAccess;
       localStorage.setItem(STORAGE_KEYS.SESSION_CONTEXT, JSON.stringify(state.sessionContext));
@@ -192,7 +199,7 @@ const authSlice = createSlice({
       if (action.payload.id !== state.user.id) return;
       if (action.payload.sessionVersion !== state.sessionVersion) return;
       if (requestSequence < state.lastAppliedProfileUpdateSequence) return;
-      if (localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) !== state.accessToken) return;
+      if (!isPersistedTokenCurrent(STORAGE_KEYS.ACCESS_TOKEN, state.accessToken)) return;
 
       const { name, phone, email } = action.payload;
       state.user = {
@@ -210,6 +217,15 @@ const authSlice = createSlice({
     completeFirstLogin: (state) => {
       state.mustChangePassword = false;
       localStorage.setItem(STORAGE_KEYS.MUST_CHANGE_PASSWORD, 'false');
+    },
+    hydrateSessionTokens: (
+      state,
+      action: PayloadAction<{ accessToken: string; refreshToken: string } | null>
+    ) => {
+      if (!action.payload || !state.user) return;
+      state.accessToken = action.payload.accessToken;
+      state.refreshToken = action.payload.refreshToken;
+      state.sessionVersion += 1;
     },
     logout: (state) => {
       state.user = null;
@@ -244,6 +260,7 @@ export const {
   updateCurrentUser,
   finishCurrentUserProfileUpdate,
   completeFirstLogin,
+  hydrateSessionTokens,
   logout,
 } = authSlice.actions;
 export default authSlice.reducer;

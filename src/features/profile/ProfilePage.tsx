@@ -31,6 +31,7 @@ import { DocumentSettingsCard } from './DocumentSettingsCard';
 import { FirmSettingsCard } from './FirmSettingsCard';
 import { canEditTenantDocumentSettings } from './documentSettingsAccess';
 import './ProfilePage.css';
+import { DeviceSecurityCard } from './DeviceSecurityCard';
 
 export const ProfilePage: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -216,6 +217,8 @@ export const ProfilePage: React.FC = () => {
             </div>
           </IonCardContent>
         </IonCard>
+
+        <DeviceSecurityCard />
 
         <IonToast
           isOpen={showSuccess}
