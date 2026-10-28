@@ -23,7 +23,7 @@ export const RenewalPage: React.FC = () => {
   const [submitRenewal, submitState] = useSubmitRenewalMutation();
   const [uploadProof, uploadState] = useUploadRenewalProofMutation();
   const [planCode, setPlanCode] = useState<'STARTER' | 'PRO' | 'BUSINESS'>('PRO');
-  const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'YEARLY'>('YEARLY');
+  const [billingCycle, setBillingCycle] = useState<'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY'>('YEARLY');
   const [provider, setProvider] = useState('BANK_TRANSFER');
   const [reference, setReference] = useState('');
   const [amount, setAmount] = useState('');
@@ -121,7 +121,8 @@ export const RenewalPage: React.FC = () => {
                     onChange={(event) => setBillingCycle(event.target.value as typeof billingCycle)}
                   >
                     <option value="YEARLY">{t('account.yearly')}</option>
-                    <option value="MONTHLY">{t('account.monthly')}</option>
+                    <option value="HALF_YEARLY">{t('account.half_yearly')}</option>
+                    <option value="QUARTERLY">{t('account.quarterly')}</option>
                   </select>
                 </label>
               </div>

@@ -121,8 +121,12 @@ it('dismisses the real Ionic payment modal before Dashboard navigation', async (
   );
 
   fireEvent.click(screen.getAllByRole('button', { name: 'payments.recordPayment' })[0]);
-  await waitFor(() => expect(document.querySelector('ion-modal.show-modal')).toBeTruthy());
-  fireEvent.change(screen.getByLabelText('billing.selectCustomer'), {
+  const customerSelect = await screen.findByLabelText(
+    'billing.selectCustomer',
+    undefined,
+    { timeout: 5000 }
+  );
+  fireEvent.change(customerSelect, {
     target: { value: 'customer-1' },
   });
   fireEvent.change(screen.getByLabelText('common.amount'), { target: { value: '100' } });

@@ -14,6 +14,30 @@ import {
   useSelectAccountMembershipMutation,
 } from '@core/api/lifecycleApi';
 
+type BillingPeriod = 'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY';
+
+const planFeatures: Record<string, string[]> = {
+  STARTER: ['fastBilling', 'khata', 'inventoryPurchases', 'essentialReports', 'backupExport'],
+  PRO: ['fastBilling', 'khata', 'inventoryPurchases', 'advancedReports', 'importExcel', 'customBarcode'],
+  BUSINESS: ['fastBilling', 'advancedReports', 'customBarcode', 'multiFirm', 'staffRoles', 'firmAccounting'],
+};
+
+const planAudience: Record<string, string> = {
+  STARTER: 'smallShop',
+  PRO: 'busyShop',
+  BUSINESS: 'multiFirmShop',
+};
+
+const priceFor = (
+  item: { quarterlyPricePaise: number; halfYearlyPricePaise: number; yearlyPricePaise: number },
+  billing: BillingPeriod
+) =>
+  billing === 'QUARTERLY'
+    ? item.quarterlyPricePaise
+    : billing === 'HALF_YEARLY'
+      ? item.halfYearlyPricePaise
+      : item.yearlyPricePaise;
+
 const money = (paise: number) =>
   new Intl.NumberFormat('en-IN', {
     style: 'currency',
@@ -33,7 +57,7 @@ export const SubscriptionAccountPage: React.FC = () => {
   const access = commercialFromSession(session);
   const { data: product } = useGetPublicProductQuery();
   const { data: account } = useGetAccountSummaryQuery();
-  const [billing, setBilling] = useState<'MONTHLY' | 'YEARLY'>('YEARLY');
+  const [billing, setBilling] = useState<BillingPeriod>('YEARLY');
   const [reason, setReason] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const [support, setSupport] = useState({ subject: '', message: '' });
@@ -93,7 +117,7 @@ export const SubscriptionAccountPage: React.FC = () => {
                 role="group"
                 aria-label={t('account.billingPeriod')}
               >
-                {(['MONTHLY', 'YEARLY'] as const).map((period) => (
+                {(['QUARTERLY', 'HALF_YEARLY', 'YEARLY'] as const).map((period) => (
                   <button
                     key={period}
                     type="button"
@@ -106,20 +130,42 @@ export const SubscriptionAccountPage: React.FC = () => {
                 ))}
               </div>
             </div>
-            <div className="mt-4 grid gap-4 md:grid-cols-3">
-              {product?.plans.map((plan) => (
+            {product?.plans.some((plan) => plan.code === 'DEMO') && (
+              <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-[var(--ion-color-primary)] bg-[color-mix(in_srgb,var(--ion-color-primary)_10%,transparent)] p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-bold uppercase tracking-wide text-[var(--ion-color-primary)]">{t('account.demoTitle')}</p>
+                  <p className="mt-1">{t('account.demoDescription')}</p>
+                </div>
+                <a className="font-semibold text-[var(--ion-color-primary)]" href={`mailto:${product?.support.email}?subject=${encodeURIComponent('Start Kirana 7-day demo')}`}>
+                  {t('account.startDemo')} →
+                </a>
+              </div>
+            )}
+            <div className="mt-5 grid gap-5 lg:grid-cols-3">
+              {product?.plans.filter((plan) => plan.code !== 'DEMO').map((plan) => (
                 <article
                   key={plan.code}
-                  className="rounded-xl border border-[var(--ion-color-light-shade)] p-4"
+                  className={`relative flex flex-col rounded-2xl border p-5 shadow-sm ${plan.code === 'PRO' ? 'border-2 border-[var(--ion-color-primary)] bg-[color-mix(in_srgb,var(--ion-color-primary)_5%,var(--ion-card-background))]' : 'border-[var(--ion-color-light-shade)] bg-[var(--ion-card-background)]'}`}
                 >
+                  {plan.code === 'PRO' && <span className="absolute -top-3 right-4 rounded-full bg-[var(--ion-color-primary)] px-3 py-1 text-xs font-bold text-white">{t('account.mostPopular')}</span>}
                   <h3 className="text-xl font-semibold">{plan.name}</h3>
                   <p className="mt-1 text-sm">{plan.description}</p>
+                  <p className="mt-3 text-sm font-semibold text-[var(--ion-color-primary)]">{t('account.bestFor')}: {t(`account.planAudience.${planAudience[plan.code]}`)}</p>
                   <p className="mt-4 text-2xl font-bold">
-                    {money(billing === 'YEARLY' ? plan.yearlyPricePaise : plan.monthlyPricePaise)}
+                    {money(priceFor(plan, billing))}
                     <span className="text-sm font-normal">
-                      /{billing === 'YEARLY' ? t('account.year') : t('account.month')}
+                      /{t(`account.term.${billing.toLowerCase()}`)}
                     </span>
                   </p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--ion-color-medium)]">{t('account.gstExclusive')}</p>
+                  <div className="mt-4 flex flex-wrap gap-2 text-sm font-semibold">
+                    <span className="rounded-full bg-[var(--ion-color-light)] px-3 py-1 text-[var(--ion-color-dark)]">{t('account.allDevices')}</span>
+                    <span className="rounded-full bg-[var(--ion-color-light)] px-3 py-1 text-[var(--ion-color-dark)]">{t('account.staffCount', { count: plan.staffLimit })}</span>
+                    <span className="rounded-full bg-[var(--ion-color-light)] px-3 py-1 text-[var(--ion-color-dark)]">{t('account.firmCount', { count: plan.firmLimit })}</span>
+                  </div>
+                  <ul className="mt-5 flex-1 space-y-2 text-sm">
+                    {(planFeatures[plan.code] ?? []).map((feature) => <li key={feature} className="flex gap-2"><span className="font-bold text-[var(--ion-color-success)]">✓</span><span>{t(`account.features.${feature}`)}</span></li>)}
+                  </ul>
                   <p className="mt-2 text-sm">
                     {t('account.planLimits', {
                       staff: plan.staffLimit ?? '∞',
@@ -127,7 +173,7 @@ export const SubscriptionAccountPage: React.FC = () => {
                     })}
                   </p>
                   <a
-                    className="mt-4 inline-block text-[var(--ion-color-primary)]"
+                    className="mt-5 inline-flex justify-center rounded-lg bg-[var(--ion-color-primary)] px-4 py-3 font-semibold text-white"
                     href={`mailto:${product.support.email}?subject=${encodeURIComponent(`Kirana ${plan.name} plan`)}`}
                   >
                     {t('account.contactToBuy')}
@@ -135,6 +181,7 @@ export const SubscriptionAccountPage: React.FC = () => {
                 </article>
               ))}
             </div>
+            {product?.addOns?.length ? <div className="mt-8 border-t border-[var(--ion-color-light-shade)] pt-6"><h3 className="text-xl font-semibold">{t('account.addOnsTitle')}</h3><p className="mt-1 text-sm">{t('account.addOnsDescription')}</p><div className="mt-4 grid gap-3 sm:grid-cols-2">{product.addOns.map((addOn) => <article key={addOn.code} className="rounded-xl border border-[var(--ion-color-light-shade)] p-4"><div className="flex items-start justify-between gap-3"><div><h4 className="font-semibold">{addOn.name}</h4><p className="mt-1 text-sm">{addOn.description}</p></div><p className="whitespace-nowrap font-bold">{money(priceFor(addOn, billing))}<span className="text-xs font-normal">/{t(`account.term.${billing.toLowerCase()}`)}</span></p></div><p className="mt-3 text-xs font-semibold text-[var(--ion-color-primary)]">{t('account.availableOn', { plans: addOn.availableOn.join(', ') })} · {t('account.gstExclusive')}</p></article>)}</div></div> : null}
           </section>
 
           <section className="rounded-2xl bg-[var(--ion-card-background)] p-5 shadow-sm">
