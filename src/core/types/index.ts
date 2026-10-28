@@ -42,6 +42,7 @@ export interface SessionContext {
     | { state: string; demoExpiresAt: string | null; endsAt: string | null }
     | null;
   provisioning: { state: string; demoDays?: number };
+  currentDeviceId?: string | null;
 }
 
 export interface AuthResponse {

@@ -28,6 +28,7 @@ vi.mock('@core/api/userApi', () => ({ useUpdateProfileMutation: () => [vi.fn(), 
 vi.mock('../../contexts/useTheme', () => ({ useTheme: () => ({ theme: 'light', toggleTheme: vi.fn() }) }));
 vi.mock('./DocumentSettingsCard', () => ({ DocumentSettingsCard: () => null }));
 vi.mock('./FirmSettingsCard', () => ({ FirmSettingsCard: () => <div>firm-settings</div> }));
+vi.mock('./DeviceSecurityCard', () => ({ DeviceSecurityCard: () => <div>device-security</div> }));
 
 describe('ProfilePage', () => {
   afterEach(cleanup);

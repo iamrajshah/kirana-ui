@@ -28,8 +28,7 @@ The committed Capacitor project uses application ID
 ```bash
 npm run build
 npx cap sync android
-cd android
-./gradlew test lint assembleDebug
+npm run android:verify
 ```
 
 Before a signed candidate:
@@ -40,8 +39,8 @@ Before a signed candidate:
   the exact package plus debug/release SHA-1 and SHA-256 fingerprints;
 - keep `google-services.json`, signing keys, and `key.properties` out of git;
 - verify Google sign-in on a physical device, then app resume, rotating-token
-  refresh, membership selection, deletion navigation, slow network, dropped
-  network, and reconnect;
+  refresh, two-device replacement, current/all-device logout, membership
+  selection, deletion navigation, slow network, dropped network, and reconnect;
 - create and verify a signed AAB using the protected release keystore.
 
 Generating the Android project is release preparation, not proof that

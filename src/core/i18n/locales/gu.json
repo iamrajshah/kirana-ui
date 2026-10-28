@@ -10,6 +10,24 @@
     "roleDenied": "તમારી કર્મચારી ભૂમિકા આ કાર્યની મંજૂરી આપતી નથી. માલિકનો સંપર્ક કરો.",
     "demoDocumentMarker": "DEMO — NOT A VALID BUSINESS DOCUMENT"
   },
+  "security": {
+    "title": "ડિવાઇસ અને સુરક્ષા",
+    "description": "આ ખાતામાં સાઇન ઇન થયેલા ડિવાઇસ જુઓ. દુકાન માલિક ફક્ત આ દુકાનના સ્ટાફના ડિવાઇસ સંભાળી શકે છે.",
+    "staffMember": "સ્ટાફ સભ્ય",
+    "thisDevice": "આ ડિવાઇસ",
+    "noDevices": "કોઈ સક્રિય ડિવાઇસ નથી",
+    "lastSeen": "છેલ્લે વપરાયેલ {{date}}",
+    "platform": { "web": "વેબ", "android": "એન્ડ્રોઇડ" },
+    "revokeDevice": "ડિવાઇસ દૂર કરો",
+    "deviceRevoked": "ડિવાઇસ ઍક્સેસ દૂર થઈ",
+    "revokeFailed": "ડિવાઇસ દૂર થઈ શક્યું નહીં",
+    "logoutCurrent": "આ ડિવાઇસમાંથી લૉગ આઉટ",
+    "logoutAll": "બધા ડિવાઇસમાંથી લૉગ આઉટ",
+    "logoutFailed": "લૉગ આઉટ થઈ શક્યું નહીં",
+    "deviceLimitTitle": "ડિવાઇસ મર્યાદા પૂર્ણ થઈ",
+    "deviceLimitDescription": "તમારી યોજનામાં {{limit}} સક્રિય ડિવાઇસ માન્ય છે. બદલવા માટે જૂનું ડિવાઇસ પસંદ કરો.",
+    "replaceDevice": "આ ડિવાઇસ બદલો"
+  },
   "workspace": {
     "sell": "વેચાણ",
     "stock": "સ્ટોક અને ખરીદી",
