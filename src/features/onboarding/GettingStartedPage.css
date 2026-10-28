@@ -1,0 +1,12 @@
+.getting-started { margin: 0 auto; max-width: 980px; padding: clamp(1rem, 4vw, 2.5rem); }
+.getting-started > header { margin-bottom: 1.5rem; }
+.getting-started > header p { color: var(--ion-color-primary); font-weight: 800; margin: 0; text-transform: uppercase; }
+.getting-started > header h1 { font-size: clamp(2rem, 5vw, 3.4rem); margin: .25rem 0; }
+.getting-started > header span { color: var(--ion-color-medium-shade); }
+.getting-started__steps ion-card-content { align-items: center; display: grid; gap: 1rem; grid-template-columns: auto 1fr auto; }
+.getting-started__steps b { align-items: center; background: color-mix(in srgb, var(--ion-color-primary) 16%, transparent); border-radius: 50%; color: var(--ion-color-primary); display: flex; height: 2.4rem; justify-content: center; width: 2.4rem; }
+.getting-started__steps h2, .getting-started__steps p { margin: 0; }
+.getting-started__steps p { color: var(--ion-color-medium-shade); margin-top: .25rem; }
+.getting-started__help { align-items: center; background: color-mix(in srgb, var(--ion-color-primary) 10%, var(--ion-card-background)); border-radius: 18px; display: flex; justify-content: space-between; margin-top: 1.5rem; padding: 1.25rem; }
+.getting-started__help h2, .getting-started__help p { margin: 0; }
+@media (max-width: 620px) { .getting-started__steps ion-card-content { grid-template-columns: auto 1fr; } .getting-started__steps ion-button { grid-column: 1 / -1; } .getting-started__help { align-items: stretch; flex-direction: column; gap: 1rem; } }

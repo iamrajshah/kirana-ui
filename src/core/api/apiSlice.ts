@@ -333,7 +333,7 @@ const baseQueryWithReauth: BaseQueryFn<ApiRequestArgs, unknown, FetchBaseQueryEr
 
 export const apiSlice = createApi({
   baseQuery: baseQueryWithReauth,
-  tagTypes: [
+    tagTypes: [
     'User',
     'Customer',
     'Product',
@@ -350,6 +350,7 @@ export const apiSlice = createApi({
     'Report',
     'Account',
     'Renewal',
+    'Shift',
   ],
   endpoints: () => ({}),
 });

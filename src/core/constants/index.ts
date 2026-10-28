@@ -46,6 +46,8 @@ export const ROUTES = {
   ACCOUNT_RENEWAL: '/account/renewal',
   ACCOUNT_EXPORT: '/account/export',
   RESTRICTED: '/restricted',
+  SHIFTS: '/shifts',
+  GETTING_STARTED: '/getting-started',
 } as const;
 
 // Storage Keys

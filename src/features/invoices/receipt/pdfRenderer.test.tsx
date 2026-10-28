@@ -9,6 +9,7 @@ const receiptFor = (name: string, footer: string): ReceiptViewModel => ({
   invoiceNumber: 'INV-42',
   title: 'Receipt',
   mode: 'SIMPLE_RECEIPT',
+  branding: { template: 'CLASSIC', brandColor: '#087F5B', logoUrl: null },
   issuedAt: '2026-10-15T10:30:00.000Z',
   isLegacy: false,
   cancellationMarker: null,

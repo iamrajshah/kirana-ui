@@ -215,6 +215,7 @@ describe('protected route configuration', () => {
       [ROUTES.USERS, 'users'],
       [ROUTES.CATEGORIES, 'products'],
       [ROUTES.IMPORT_EXPORT, 'import-export'],
+      [ROUTES.SHIFTS, 'shifts'],
     ]);
   });
 });
