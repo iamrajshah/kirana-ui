@@ -14,6 +14,8 @@ import {
   type CommercialAccessSummary,
 } from '@core/commercial';
 import type { SessionContext } from '@core/types';
+import { getDeviceDescriptor, isNativeAndroid } from '@core/auth/deviceIdentity';
+import { persistTokens } from '@core/auth/tokenVault';
 
 export type ApiRequestArgs =
   | string
@@ -77,7 +79,9 @@ const readAuthSnapshot = (api: QueryApi): AuthSnapshot | null => {
       };
     }
   ).auth;
-  const refreshToken = auth?.refreshToken ?? localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+  const refreshToken =
+    auth?.refreshToken ??
+    (isNativeAndroid() ? null : localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN));
   if (!auth?.user?.id || typeof auth.sessionVersion !== 'number' || !refreshToken) return null;
   return { userId: auth.user.id, sessionVersion: auth.sessionVersion, refreshToken };
 };
@@ -89,7 +93,8 @@ const isCurrentSession = (api: QueryApi, expected: AuthSnapshot): boolean => {
     current.userId === expected.userId &&
     current.sessionVersion === expected.sessionVersion &&
     current.refreshToken === expected.refreshToken &&
-    localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) === expected.refreshToken
+    (isNativeAndroid() ||
+      localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) === expected.refreshToken)
   );
 };
 
@@ -186,7 +191,10 @@ const refreshSession = (api: QueryApi, extraOptions: QueryExtraOptions): Promise
       {
         url: '/auth/refresh-token',
         method: 'POST',
-        body: { refresh_token: snapshot.refreshToken },
+        body: {
+          refresh_token: snapshot.refreshToken,
+          device: await getDeviceDescriptor(),
+        },
       },
       api,
       extraOptions
@@ -202,6 +210,15 @@ const refreshSession = (api: QueryApi, extraOptions: QueryExtraOptions): Promise
       return false;
     }
     if (!isCurrentSession(api, snapshot)) return false;
+
+    // A rotated native refresh token must be durable before Redux accepts it; otherwise an
+    // Android process kill between those steps can strand the installation on the old token.
+    if (isNativeAndroid()) {
+      await persistTokens({
+        accessToken: payload.data.accessToken,
+        refreshToken: payload.data.refreshToken,
+      });
+    }
 
     api.dispatch(
       updateTokens({
@@ -316,7 +333,7 @@ const baseQueryWithReauth: BaseQueryFn<ApiRequestArgs, unknown, FetchBaseQueryEr
 
 export const apiSlice = createApi({
   baseQuery: baseQueryWithReauth,
-  tagTypes: [
+    tagTypes: [
     'User',
     'Customer',
     'Product',
@@ -333,6 +350,7 @@ export const apiSlice = createApi({
     'Report',
     'Account',
     'Renewal',
+    'Shift',
   ],
   endpoints: () => ({}),
 });

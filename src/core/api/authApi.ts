@@ -1,5 +1,6 @@
 import { apiSlice } from './apiSlice';
 import type { AuthResponse, ApiResponse, SessionMembership } from '../types';
+import type { DeviceDescriptor } from '../auth/deviceIdentity';
 export type { SessionMembership } from '../types';
 
 export interface GoogleExchangeResponse {
@@ -18,9 +19,28 @@ export interface GoogleExchangeResponse {
   message: string;
 }
 
+export interface ActiveDevice {
+  id: string;
+  name: string;
+  platform: 'WEB' | 'ANDROID';
+  lastSeenAt: string;
+  current?: boolean;
+  userId?: string;
+}
+
+export interface DeviceLimitDetails {
+  limit: number;
+  devices: ActiveDevice[];
+}
+
+type SessionDeviceRequest = { device: DeviceDescriptor; replaceDeviceId?: string };
+
 export const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    login: builder.mutation<AuthResponse, { email?: string; phone?: string; password: string }>({
+    login: builder.mutation<
+      AuthResponse,
+      ({ email?: string; phone?: string; password: string } & SessionDeviceRequest)
+    >({
       query: (credentials) => ({
         url: '/auth/login',
         method: 'POST',
@@ -33,6 +53,8 @@ export const authApi = apiSlice.injectEndpoints({
         credential: string;
         source: 'web' | 'android';
         requestedUserId?: string;
+        device: DeviceDescriptor;
+        replaceDeviceId?: string;
         consents?: Array<{ consentType: 'PRIVACY' | 'TERMS'; documentVersion: string }>;
       }
     >({
@@ -40,13 +62,19 @@ export const authApi = apiSlice.injectEndpoints({
     }),
     linkGoogle: builder.mutation<
       { success: boolean; data: { auth: AuthResponse['data'] } },
-      { credential: string; source: 'web' | 'android' }
+      { credential: string; source: 'web' | 'android'; device: DeviceDescriptor }
     >({
       query: (body) => ({ url: '/auth/google/link', method: 'POST', body }),
     }),
     selectMembership: builder.mutation<
       GoogleExchangeResponse,
-      { credential: string; source: 'web' | 'android'; userId: string }
+      {
+        credential: string;
+        source: 'web' | 'android';
+        userId: string;
+        device: DeviceDescriptor;
+        replaceDeviceId?: string;
+      }
     >({
       query: ({ userId, ...body }) => ({
         url: '/auth/google/exchange',
@@ -54,18 +82,33 @@ export const authApi = apiSlice.injectEndpoints({
         body: { ...body, requestedUserId: userId },
       }),
     }),
-    refreshToken: builder.mutation<AuthResponse, { refresh_token: string }>({
+    refreshToken: builder.mutation<
+      ApiResponse<{ accessToken: string; refreshToken: string }>,
+      { refresh_token: string; device: DeviceDescriptor }
+    >({
       query: (body) => ({
-        url: '/auth/refresh',
+        url: '/auth/refresh-token',
         method: 'POST',
         body,
       }),
     }),
-    logout: builder.mutation<ApiResponse<null>, void>({
-      query: () => ({
+    logout: builder.mutation<
+      ApiResponse<null>,
+      { scope: 'current' | 'all'; refresh_token?: string }
+    >({
+      query: (body) => ({
         url: '/auth/logout',
         method: 'POST',
+        body,
       }),
+    }),
+    getDevices: builder.query<ApiResponse<ActiveDevice[]>, { userId?: string } | void>({
+      query: (params) => ({ url: '/auth/devices', params: params || {} }),
+      providesTags: ['User'],
+    }),
+    revokeDevice: builder.mutation<ApiResponse<null>, string>({
+      query: (deviceId) => ({ url: `/auth/devices/${deviceId}`, method: 'DELETE' }),
+      invalidatesTags: ['User'],
     }),
   }),
 });
@@ -77,4 +120,6 @@ export const {
   useSelectMembershipMutation,
   useRefreshTokenMutation,
   useLogoutMutation,
+  useGetDevicesQuery,
+  useRevokeDeviceMutation,
 } = authApi;

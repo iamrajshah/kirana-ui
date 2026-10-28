@@ -10,6 +10,24 @@
     "roleDenied": "आपकी कर्मचारी भूमिका इस काम की अनुमति नहीं देती। मालिक से संपर्क करें।",
     "demoDocumentMarker": "DEMO — NOT A VALID BUSINESS DOCUMENT"
   },
+  "security": {
+    "title": "डिवाइस और सुरक्षा",
+    "description": "इस खाते में साइन इन डिवाइस देखें। दुकान मालिक केवल इसी दुकान के स्टाफ के डिवाइस संभाल सकते हैं।",
+    "staffMember": "स्टाफ सदस्य",
+    "thisDevice": "यह डिवाइस",
+    "noDevices": "कोई सक्रिय डिवाइस नहीं",
+    "lastSeen": "अंतिम उपयोग {{date}}",
+    "platform": { "web": "वेब", "android": "एंड्रॉइड" },
+    "revokeDevice": "डिवाइस हटाएँ",
+    "deviceRevoked": "डिवाइस की पहुँच हटा दी गई",
+    "revokeFailed": "डिवाइस नहीं हटाया जा सका",
+    "logoutCurrent": "इस डिवाइस से लॉग आउट",
+    "logoutAll": "सभी डिवाइस से लॉग आउट",
+    "logoutFailed": "लॉग आउट नहीं हो सका",
+    "deviceLimitTitle": "डिवाइस सीमा पूरी हुई",
+    "deviceLimitDescription": "आपकी योजना में {{limit}} सक्रिय डिवाइस हैं। बदलने के लिए पुराना डिवाइस चुनें।",
+    "replaceDevice": "इस डिवाइस को बदलें"
+  },
   "workspace": {
     "sell": "बिक्री",
     "stock": "स्टॉक और खरीद",
@@ -1401,7 +1419,8 @@
     "documentUnavailableHint": "बिल लोड नहीं हो सका। अपनी पहुंच या कनेक्शन जांचकर फिर प्रयास करें।",
     "paymentRequiresCustomer": "बाद का भुगतान दर्ज करने से पहले ग्राहक चुनें।",
     "notIssued": "जारी नहीं हुआ",
-    "draftHint": "यह ड्राफ्ट अभी ग्राहक दस्तावेज़ नहीं है। बिक्री पूरी करने के लिए इसे खोलें।"
+    "draftHint": "यह ड्राफ्ट अभी ग्राहक दस्तावेज़ नहीं है। बिक्री पूरी करने के लिए इसे खोलें।",
+    "whatsAppReceipt": "WhatsApp पर रसीद", "whatsAppReminder": "WhatsApp भुगतान याद दिलाएँ", "whatsAppInvalidPhone": "पहले ग्राहक का सही भारतीय मोबाइल नंबर जोड़ें।"
   },
   "about": {
     "title": "परिचय",
@@ -1454,6 +1473,7 @@
     "paperWidth": "डिफ़ॉल्ट थर्मल पेपर",
     "paper": { "MM58": "58 मिमी (कॉम्पैक्ट)", "MM80": "80 मिमी (अनुशंसित)" },
     "footer": "रसीद फुटर (वैकल्पिक)",
+    "branding": "रसीद ब्रांडिंग", "brandingHint": "आने वाली रसीदों की शैली चुनें। पुरानी रसीद नहीं बदलेगी।", "brandColor": "ब्रांड रंग (#RRGGBB)", "logoUrl": "HTTPS लोगो URL (वैकल्पिक)", "templates": { "CLASSIC": "क्लासिक", "MODERN": "मॉडर्न", "COMPACT": "कॉम्पैक्ट" },
     "gstDetails": "GST इनवॉइस प्रोफ़ाइल",
     "gstDetailsHint": "GST इनवॉइस सक्रिय करने से पहले ये कानूनी विवरण आवश्यक हैं।",
     "supplierName": "दुकान का कानूनी नाम",
@@ -1484,6 +1504,12 @@
     "saved": "बिल सेटिंग्स सहेजी गईं",
     "saveFailed": "बिल सेटिंग्स सहेजी नहीं जा सकीं",
     "loadFailed": "बिल सेटिंग्स लोड नहीं हो सकीं"
+  },
+  "shifts": {
+    "title": "कैश शिफ्ट", "eyebrow": "काउंटर नियंत्रण", "heading": "कैश खोलें, गिनें और बंद करें", "description": "कैश भुगतान और दर्ज लेन-देन से दराज का मिलान करें।", "open": "खुली", "closed": "बंद", "openShift": "शिफ्ट खोलें", "openingCash": "शुरुआती कैश", "counter": "काउंटर नाम (वैकल्पिक)", "openedSuccess": "शिफ्ट खुल गई", "liveSummary": "लाइव सारांश", "cashSales": "कैश बिक्री", "cashIn": "कैश जोड़ा", "cashOut": "कैश निकाला", "expectedCash": "अपेक्षित कैश", "cashMovement": "कैश गतिविधि दर्ज करें", "movementType": "गतिविधि प्रकार", "reason": "कारण", "saveMovement": "सहेजें", "adjustmentSaved": "कैश गतिविधि सहेजी गई", "closeShift": "शिफ्ट बंद करें", "countHint": "दराज गिनें। अपेक्षित कैश {{amount}} है।", "countedCash": "गिना हुआ कैश", "closingNote": "बंद नोट (वैकल्पिक)", "variance": "अंतर", "closedSuccess": "शिफ्ट बंद हुई", "recent": "हाल की शिफ्ट", "failed": "शिफ्ट अपडेट नहीं हुई"
+  },
+  "onboarding": {
+    "title": "शुरुआत", "eyebrow": "दुकान सेटअप", "heading": "पहले बिल के लिए तैयार हों", "description": "दुकान सही तरह सेट करने के लिए यह सूची पूरी करें।", "open": "खोलें", "steps": { "profile": { "title": "दुकान और बिल पहचान", "description": "दुकान, रसीद, लोगो और GST विवरण जाँचें।" }, "products": { "title": "उत्पाद और स्टॉक", "description": "कीमत, बारकोड और शुरुआती स्टॉक जोड़ें।" }, "staff": { "title": "स्टाफ जोड़ें", "description": "केवल जरूरी लोगों को पहुँच दें।" }, "shift": { "title": "कैश काउंटर खोलें", "description": "शुरुआती कैश दर्ज करें।" }, "sale": { "title": "अभ्यास बिक्री", "description": "ग्राहक से पहले एक बिल बनाकर साझा करें।" } }, "helpTitle": "मदद चाहिए?", "helpDescription": "स्क्रीन और समस्या के साथ सहायता अनुरोध भेजें।", "contactSupport": "सहायता लें"
   },
   "foundation": {
     "login": {

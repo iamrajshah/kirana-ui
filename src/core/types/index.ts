@@ -42,6 +42,7 @@ export interface SessionContext {
     | { state: string; demoExpiresAt: string | null; endsAt: string | null }
     | null;
   provisioning: { state: string; demoDays?: number };
+  currentDeviceId?: string | null;
 }
 
 export interface AuthResponse {
@@ -118,6 +119,7 @@ export interface ProductVariant {
 
 export type DocumentMode = 'SIMPLE_RECEIPT' | 'GST_TAX_INVOICE';
 export type ReceiptPaperWidth = 'MM58' | 'MM80';
+export type ReceiptTemplate = 'CLASSIC' | 'MODERN' | 'COMPACT';
 export type UqcCode =
   | 'BAG'
   | 'BAL'
@@ -152,6 +154,9 @@ export interface TenantDocumentSettings {
   footer: string | null;
   authorized_signatory: string | null;
   default_paper_width: ReceiptPaperWidth;
+  receipt_template: ReceiptTemplate;
+  brand_color: string;
+  logo_url: string | null;
   settings_version: number;
   created_at: string | null;
   updated_at: string | null;
@@ -178,6 +183,9 @@ export type UpdateTenantDocumentSettings = Partial<
     | 'footer'
     | 'authorized_signatory'
     | 'default_paper_width'
+    | 'receipt_template'
+    | 'brand_color'
+    | 'logo_url'
   >
 >;
 
@@ -275,6 +283,11 @@ export interface FinalizedDocumentDto {
   invoice_number: string | null;
   issued_at: string | null;
   document_mode: DocumentMode;
+  branding?: {
+    template: ReceiptTemplate;
+    brand_color: string;
+    logo_url: string | null;
+  };
   legacy: boolean;
   cancellation: { cancelled: boolean; marker: string | null };
   commercial?: { is_demo: boolean; marker: string | null };
@@ -328,6 +341,34 @@ export interface FinalizedDocumentDto {
       created_at: string | null;
     }>;
   };
+}
+
+export interface ShiftAdjustment {
+  id: string;
+  type: 'CASH_IN' | 'CASH_OUT';
+  amount: string;
+  note: string;
+  created_at: string;
+}
+
+export interface ShiftSession {
+  id: string;
+  user_id: string;
+  user_name: string | null;
+  counter_label: string | null;
+  status: 'OPEN' | 'CLOSED';
+  opening_cash: string;
+  cash_sales: string;
+  cash_in: string;
+  cash_out: string;
+  expected_cash: string | null;
+  counted_cash: string | null;
+  variance: string | null;
+  opening_note: string | null;
+  closing_note: string | null;
+  opened_at: string;
+  closed_at: string | null;
+  adjustments: ShiftAdjustment[];
 }
 
 export interface Payment {

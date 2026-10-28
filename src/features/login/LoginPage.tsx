@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   IonContent,
   IonPage,
@@ -28,6 +28,10 @@ import { useHistory } from 'react-router-dom';
 import { GoogleSignInButton } from './GoogleSignInButton';
 import { DemoProvisioningPanel } from './DemoProvisioningPanel';
 import { useGetPublicProductQuery } from '@core/api/lifecycleApi';
+import { getDeviceDescriptor } from '@core/auth/deviceIdentity';
+import { readDeviceLimit } from '@core/auth/deviceLimit';
+import type { DeviceLimitDetails } from '@core/api/authApi';
+import { DeviceLimitDialog } from './DeviceLimitDialog';
 
 export const LoginPage: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -52,6 +56,9 @@ export const LoginPage: React.FC = () => {
   const [linkRequired, setLinkRequired] = useState(false);
   const [legalAccepted, setLegalAccepted] = useState(false);
   const [provisioningToken, setProvisioningToken] = useState('');
+  const [deviceLimit, setDeviceLimit] = useState<DeviceLimitDetails | null>(null);
+  const [deviceRetryBusy, setDeviceRetryBusy] = useState(false);
+  const deviceRetry = useRef<((replaceDeviceId: string) => Promise<void>) | null>(null);
 
   const languages = [
     { code: 'en', name: 'English' },
@@ -65,7 +72,18 @@ export const LoginPage: React.FC = () => {
     localStorage.setItem('i18nextLng', langCode);
   };
 
-  const handleLogin = async () => {
+  const handleDeviceLimit = useCallback(
+    (err: unknown, retry: (replaceDeviceId: string) => Promise<void>) => {
+      const details = readDeviceLimit(err);
+      if (!details) return false;
+      deviceRetry.current = retry;
+      setDeviceLimit(details);
+      return true;
+    },
+    []
+  );
+
+  const handleLogin = async (replaceDeviceId?: string) => {
     setError('');
 
     if (!emailOrPhone || !password) {
@@ -80,12 +98,13 @@ export const LoginPage: React.FC = () => {
           ? { phone: emailOrPhone, password }
           : { email: emailOrPhone, password };
 
-      const response = await login(credentials).unwrap();
+      const device = await getDeviceDescriptor();
+      const response = await login({ ...credentials, device, replaceDeviceId }).unwrap();
 
       if (response.success && response.data) {
         if (linkRequired && googleCredential) {
           dispatch(setCredentials(response.data));
-          const linked = await linkGoogle(googleCredential).unwrap();
+          const linked = await linkGoogle({ ...googleCredential, device }).unwrap();
           dispatch(setCredentials(linked.data.auth));
           history.replace(
             linked.data.auth.isFirstLogin ? ROUTES.CHANGE_PASSWORD : ROUTES.DASHBOARD
@@ -98,6 +117,7 @@ export const LoginPage: React.FC = () => {
         setError(response.message || t('auth.loginError'));
       }
     } catch (err: unknown) {
+      if (handleDeviceLimit(err, (deviceId) => handleLogin(deviceId))) return;
       // Handle different error types
       let errorMessage = t('auth.loginError');
       const details =
@@ -122,7 +142,7 @@ export const LoginPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleLogin();
+    void handleLogin();
   };
 
   const finishAuthentication = useCallback(
@@ -134,7 +154,11 @@ export const LoginPage: React.FC = () => {
   );
 
   const handleGoogleCredential = useCallback(
-    async (credential: string, source: 'web' | 'android' = 'web') => {
+    async (
+      credential: string,
+      source: 'web' | 'android' = 'web',
+      replaceDeviceId?: string
+    ) => {
       if (!legalAccepted) {
         setError(t('auth.acceptLegalRequired'));
         return;
@@ -147,6 +171,8 @@ export const LoginPage: React.FC = () => {
         const response = await googleExchange({
           credential,
           source,
+          device: await getDeviceDescriptor(),
+          replaceDeviceId,
           consents: productInformation
             ? [
                 {
@@ -171,6 +197,12 @@ export const LoginPage: React.FC = () => {
           setIdentityOutcome(t('auth.googleLinkRequired'));
         }
       } catch (err: unknown) {
+        if (
+          handleDeviceLimit(err, (deviceId) =>
+            handleGoogleCredential(credential, source, deviceId)
+          )
+        )
+          return;
         setError(
           apiErrorMessage(
             err && typeof err === 'object' ? (err as never) : {},
@@ -180,20 +212,23 @@ export const LoginPage: React.FC = () => {
         );
       }
     },
-    [finishAuthentication, googleExchange, legalAccepted, productInformation, t]
+    [finishAuthentication, googleExchange, handleDeviceLimit, legalAccepted, productInformation, t]
   );
 
-  const handleMembership = async (membership: SessionMembership) => {
+  const handleMembership = async (membership: SessionMembership, replaceDeviceId?: string) => {
     if (!googleCredential) return;
     setError('');
     try {
       const response = await selectMembership({
         ...googleCredential,
         userId: membership.userId,
+        device: await getDeviceDescriptor(),
+        replaceDeviceId,
       }).unwrap();
       if (response.data.auth) finishAuthentication(response.data.auth);
       else setError(t('auth.googleError'));
     } catch (err: unknown) {
+      if (handleDeviceLimit(err, (deviceId) => handleMembership(membership, deviceId))) return;
       setError(
         apiErrorMessage(
           err && typeof err === 'object' ? (err as never) : {},
@@ -390,6 +425,24 @@ export const LoginPage: React.FC = () => {
           duration={4000}
           color="danger"
           position="top"
+        />
+        <DeviceLimitDialog
+          details={deviceLimit}
+          busy={deviceRetryBusy}
+          onCancel={() => {
+            deviceRetry.current = null;
+            setDeviceLimit(null);
+          }}
+          onReplace={(device) => {
+            const retry = deviceRetry.current;
+            if (!retry) return;
+            setDeviceRetryBusy(true);
+            void retry(device.id).finally(() => {
+              setDeviceRetryBusy(false);
+              setDeviceLimit(null);
+              deviceRetry.current = null;
+            });
+          }}
         />
       </IonContent>
     </IonPage>

@@ -21,7 +21,11 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
   const isGst = receipt.mode === 'GST_TAX_INVOICE';
 
   return (
-    <article className={`sale-receipt sale-receipt--${isGst ? 'gst' : 'simple'} ${className}`.trim()} aria-label={`${receipt.title} ${receipt.invoiceNumber}`}>
+    <article
+      className={`sale-receipt sale-receipt--${isGst ? 'gst' : 'simple'} sale-receipt--${receipt.branding.template.toLowerCase()} ${className}`.trim()}
+      style={{ '--receipt-brand': receipt.branding.brandColor } as React.CSSProperties}
+      aria-label={`${receipt.title} ${receipt.invoiceNumber}`}
+    >
       {receipt.demoMarker && (
         <div className="sale-receipt__demo" role="status">{receipt.demoMarker}</div>
       )}
@@ -32,6 +36,7 @@ export const ReceiptDocument: React.FC<ReceiptDocumentProps> = ({
       )}
       <header className="sale-receipt__header">
         <div>
+          {receipt.branding.logoUrl && <img className="sale-receipt__logo" src={receipt.branding.logoUrl} alt="" />}
           <h1>{receipt.supplier.name}</h1>
           {receipt.supplier.address && <p>{receipt.supplier.address}</p>}
           {receipt.supplier.phone && <p>{receipt.supplier.phone}</p>}

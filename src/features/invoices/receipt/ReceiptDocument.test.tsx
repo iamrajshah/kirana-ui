@@ -13,6 +13,7 @@ const receipt = (mode: ReceiptViewModel['mode'] = 'SIMPLE_RECEIPT'): ReceiptView
   invoiceNumber: 'INV-42',
   title: mode === 'GST_TAX_INVOICE' ? 'Tax Invoice' : 'Receipt',
   mode,
+  branding: { template: 'CLASSIC', brandColor: '#087F5B', logoUrl: null },
   issuedAt: '2026-10-15T10:30:00.000Z',
   isLegacy: false,
   cancellationMarker: null,

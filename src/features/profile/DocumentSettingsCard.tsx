@@ -33,6 +33,9 @@ const toForm = (settings: TenantDocumentSettings): UpdateTenantDocumentSettings 
     {
       document_mode: settings.document_mode,
       default_paper_width: settings.default_paper_width,
+      receipt_template: settings.receipt_template,
+      brand_color: settings.brand_color,
+      logo_url: settings.logo_url,
     }
   );
 
@@ -42,6 +45,9 @@ const toPayload = (form: UpdateTenantDocumentSettings): UpdateTenantDocumentSett
     {
       document_mode: form.document_mode,
       default_paper_width: form.default_paper_width,
+      receipt_template: form.receipt_template,
+      brand_color: form.brand_color,
+      logo_url: form.logo_url?.trim() || null,
     }
   );
 
@@ -112,6 +118,27 @@ export const DocumentSettingsCard: React.FC = () => {
                 { value: 'GST_TAX_INVOICE', label: t('documentSettings.gstTaxInvoice') },
               ]}
             />
+            <fieldset className="document-settings-gst document-settings-branding">
+              <legend>{t('documentSettings.branding')}</legend>
+              <p>{t('documentSettings.brandingHint')}</p>
+              <div className="document-settings-template-grid">
+                {(['CLASSIC', 'MODERN', 'COMPACT'] as const).map((template) => (
+                  <button
+                    key={template}
+                    type="button"
+                    className={form.receipt_template === template ? 'document-template document-template--active' : 'document-template'}
+                    onClick={() => setField('receipt_template', template)}
+                  >
+                    <span className={`document-template__preview document-template__preview--${template.toLowerCase()}`} />
+                    <strong>{t(`documentSettings.templates.${template}`)}</strong>
+                  </button>
+                ))}
+              </div>
+              <div className="document-settings-grid">
+                <Input label={t('documentSettings.brandColor')} value={form.brand_color || '#087F5B'} onChange={(value) => setField('brand_color', value.toUpperCase())} maxLength={7} />
+                <Input label={t('documentSettings.logoUrl')} value={form.logo_url || ''} onChange={(value) => setField('logo_url', value)} type="text" />
+              </div>
+            </fieldset>
             <Select
               label={t('documentSettings.paperWidth')}
               value={form.default_paper_width || 'MM80'}

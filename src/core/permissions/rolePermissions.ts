@@ -13,6 +13,7 @@ export const ROLE_PERMISSIONS = {
     'reports',
     'users',
     'import-export',
+    'shifts',
   ],
   MANAGER: [
     'dashboard',
@@ -26,6 +27,7 @@ export const ROLE_PERMISSIONS = {
     'payments',
     'reports',
     'import-export',
+    'shifts',
   ],
   CASHIER: [
     'dashboard',
@@ -33,6 +35,7 @@ export const ROLE_PERMISSIONS = {
     'customers',
     'invoices',
     'payments',
+    'shifts',
   ],
 } as const;
 

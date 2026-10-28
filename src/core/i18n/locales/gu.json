@@ -10,6 +10,24 @@
     "roleDenied": "તમારી કર્મચારી ભૂમિકા આ કાર્યની મંજૂરી આપતી નથી. માલિકનો સંપર્ક કરો.",
     "demoDocumentMarker": "DEMO — NOT A VALID BUSINESS DOCUMENT"
   },
+  "security": {
+    "title": "ડિવાઇસ અને સુરક્ષા",
+    "description": "આ ખાતામાં સાઇન ઇન થયેલા ડિવાઇસ જુઓ. દુકાન માલિક ફક્ત આ દુકાનના સ્ટાફના ડિવાઇસ સંભાળી શકે છે.",
+    "staffMember": "સ્ટાફ સભ્ય",
+    "thisDevice": "આ ડિવાઇસ",
+    "noDevices": "કોઈ સક્રિય ડિવાઇસ નથી",
+    "lastSeen": "છેલ્લે વપરાયેલ {{date}}",
+    "platform": { "web": "વેબ", "android": "એન્ડ્રોઇડ" },
+    "revokeDevice": "ડિવાઇસ દૂર કરો",
+    "deviceRevoked": "ડિવાઇસ ઍક્સેસ દૂર થઈ",
+    "revokeFailed": "ડિવાઇસ દૂર થઈ શક્યું નહીં",
+    "logoutCurrent": "આ ડિવાઇસમાંથી લૉગ આઉટ",
+    "logoutAll": "બધા ડિવાઇસમાંથી લૉગ આઉટ",
+    "logoutFailed": "લૉગ આઉટ થઈ શક્યું નહીં",
+    "deviceLimitTitle": "ડિવાઇસ મર્યાદા પૂર્ણ થઈ",
+    "deviceLimitDescription": "તમારી યોજનામાં {{limit}} સક્રિય ડિવાઇસ માન્ય છે. બદલવા માટે જૂનું ડિવાઇસ પસંદ કરો.",
+    "replaceDevice": "આ ડિવાઇસ બદલો"
+  },
   "workspace": {
     "sell": "વેચાણ",
     "stock": "સ્ટોક અને ખરીદી",
@@ -1396,7 +1414,8 @@
     "documentUnavailableHint": "બિલ લોડ થઈ શક્યું નથી. ઍક્સેસ અથવા કનેક્શન તપાસીને ફરી પ્રયાસ કરો.",
     "paymentRequiresCustomer": "પછીની ચુકવણી નોંધતા પહેલાં ગ્રાહક પસંદ કરો.",
     "notIssued": "જારી થયું નથી",
-    "draftHint": "આ ડ્રાફ્ટ હજુ ગ્રાહક દસ્તાવેજ નથી. વેચાણ પૂર્ણ કરવા તેને ખોલો."
+    "draftHint": "આ ડ્રાફ્ટ હજુ ગ્રાહક દસ્તાવેજ નથી. વેચાણ પૂર્ણ કરવા તેને ખોલો.",
+    "whatsAppReceipt": "WhatsApp રસીદ", "whatsAppReminder": "WhatsApp ચુકવણી યાદ", "whatsAppInvalidPhone": "પહેલાં ગ્રાહકનો સાચો ભારતીય મોબાઇલ નંબર ઉમેરો."
   },
   "about": {
     "title": "વિશે",
@@ -1449,6 +1468,7 @@
     "paperWidth": "ડિફૉલ્ટ થર્મલ પેપર",
     "paper": { "MM58": "58 મિમી (નાનું)", "MM80": "80 મિમી (ભલામણ કરેલ)" },
     "footer": "રસીદ ફૂટર (વૈકલ્પિક)",
+    "branding": "રસીદ બ્રાન્ડિંગ", "brandingHint": "આગામી રસીદની શૈલી પસંદ કરો. જૂની રસીદ બદલાશે નહીં.", "brandColor": "બ્રાન્ડ રંગ (#RRGGBB)", "logoUrl": "HTTPS લોગો URL (વૈકલ્પિક)", "templates": { "CLASSIC": "ક્લાસિક", "MODERN": "મોડર્ન", "COMPACT": "કોમ્પેક્ટ" },
     "gstDetails": "GST ઇન્વૉઇસ પ્રોફાઇલ",
     "gstDetailsHint": "GST ઇન્વૉઇસ સક્રિય કરતા પહેલાં આ કાનૂની વિગતો જરૂરી છે.",
     "supplierName": "દુકાનનું કાનૂની નામ",
@@ -1479,6 +1499,12 @@
     "saved": "બિલ સેટિંગ્સ સાચવાઈ",
     "saveFailed": "બિલ સેટિંગ્સ સાચવી શકાઈ નહીં",
     "loadFailed": "બિલ સેટિંગ્સ લોડ થઈ શકી નહીં"
+  },
+  "shifts": {
+    "title": "કેશ શિફ્ટ", "eyebrow": "કાઉન્ટર નિયંત્રણ", "heading": "કેશ ખોલો, ગણો અને બંધ કરો", "description": "કેશ ચુકવણી અને નોંધેલી હિલચાલ સાથે ડ્રોઅર મેળવો.", "open": "ખુલ્લી", "closed": "બંધ", "openShift": "શિફ્ટ ખોલો", "openingCash": "શરૂઆતની કેશ", "counter": "કાઉન્ટર નામ (વૈકલ્પિક)", "openedSuccess": "શિફ્ટ ખુલી", "liveSummary": "લાઇવ સારાંશ", "cashSales": "કેશ વેચાણ", "cashIn": "કેશ ઉમેર્યું", "cashOut": "કેશ કાઢ્યું", "expectedCash": "અપેક્ષિત કેશ", "cashMovement": "કેશ હિલચાલ નોંધો", "movementType": "હિલચાલ પ્રકાર", "reason": "કારણ", "saveMovement": "સાચવો", "adjustmentSaved": "કેશ હિલચાલ સાચવાઈ", "closeShift": "શિફ્ટ બંધ કરો", "countHint": "ડ્રોઅર ગણો. અપેક્ષિત કેશ {{amount}} છે.", "countedCash": "ગણેલી કેશ", "closingNote": "બંધ નોંધ (વૈકલ્પિક)", "variance": "તફાવત", "closedSuccess": "શિફ્ટ બંધ થઈ", "recent": "તાજેતરની શિફ્ટ", "failed": "શિફ્ટ અપડેટ થઈ નહીં"
+  },
+  "onboarding": {
+    "title": "શરૂઆત", "eyebrow": "દુકાન સેટઅપ", "heading": "પહેલા બિલ માટે તૈયાર થાઓ", "description": "દુકાન યોગ્ય રીતે સેટ કરવા આ યાદી પૂર્ણ કરો.", "open": "ખોલો", "steps": { "profile": { "title": "દુકાન અને બિલ ઓળખ", "description": "દુકાન, રસીદ, લોગો અને GST વિગતો તપાસો." }, "products": { "title": "પ્રોડક્ટ અને સ્ટોક", "description": "ભાવ, બારકોડ અને શરૂઆતનો સ્ટોક ઉમેરો." }, "staff": { "title": "સ્ટાફ ઉમેરો", "description": "માત્ર જરૂરી લોકોને ઍક્સેસ આપો." }, "shift": { "title": "કેશ કાઉન્ટર ખોલો", "description": "શરૂઆતની કેશ નોંધો." }, "sale": { "title": "પ્રેક્ટિસ વેચાણ", "description": "ગ્રાહકો પહેલાં એક બિલ બનાવી શેર કરો." } }, "helpTitle": "મદદ જોઈએ?", "helpDescription": "સ્ક્રીન અને સમસ્યા સાથે સહાય વિનંતી મોકલો.", "contactSupport": "સહાય મેળવો"
   },
   "foundation": {
     "login": {

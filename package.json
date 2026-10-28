@@ -15,7 +15,7 @@
     "ionic:serve": "vite",
     "ionic:build": "vite build",
     "android:sync": "npm run build && cap sync android",
-    "android:verify": "cd android && ./gradlew test lint assembleDebug"
+    "android:verify": "cd android && ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug"
   },
   "dependencies": {
     "@capacitor-community/barcode-scanner": "^4.0.1",

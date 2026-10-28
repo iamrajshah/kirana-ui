@@ -6,6 +6,7 @@
 @import '@fontsource/noto-sans-gujarati/700.css';
 
 .sale-receipt {
+  --receipt-brand: #087f5b;
   --receipt-rule: color-mix(in srgb, var(--ion-text-color, #111827) 22%, transparent);
   box-sizing: border-box;
   width: min(100%, 820px);
@@ -18,6 +19,14 @@
   font-family: 'Noto Sans', 'Noto Sans Devanagari', 'Noto Sans Gujarati', sans-serif;
   font-variant-numeric: tabular-nums;
 }
+.sale-receipt__logo { display: block; height: 54px; margin-bottom: 8px; max-width: 160px; object-fit: contain; object-position: left center; }
+.sale-receipt--modern { border-top: 8px solid var(--receipt-brand); }
+.sale-receipt--modern .sale-receipt__identity strong,
+.sale-receipt--modern .sale-receipt__header h1 { color: var(--receipt-brand); }
+.sale-receipt--compact { border-radius: 8px; padding: 14px; }
+.sale-receipt--compact .sale-receipt__party { margin: 10px 0; padding: 8px 0; }
+.sale-receipt--compact .sale-receipt__item { padding: 6px 0; }
+.sale-receipt--compact .sale-receipt__footer { margin-top: 12px; }
 
 .sale-receipt * { box-sizing: border-box; }
 .sale-receipt h1, .sale-receipt p { margin: 0; }
@@ -124,6 +133,8 @@
     color: #000 !important;
     font-size: 8pt;
   }
+  .sale-receipt--modern { border-top: 1mm solid var(--receipt-brand); }
+  .sale-receipt__logo { height: 12mm; max-width: 35mm; }
   html[data-receipt-paper='58mm'] .sale-receipt { --receipt-paper-width: 58mm; }
   html[data-receipt-paper='80mm'] .sale-receipt { --receipt-paper-width: 80mm; }
   .sale-receipt__header, .sale-receipt__summary { grid-template-columns: 1fr; gap: 2mm; }

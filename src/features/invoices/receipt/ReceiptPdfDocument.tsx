@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Document,
   Font,
+  Image,
   Page,
   StyleSheet,
   Text as ReactPdfText,
@@ -74,6 +75,7 @@ const styles = StyleSheet.create({
   payment: { backgroundColor: '#f8fafc', border: '1 solid #cbd5e1', marginTop: 14, padding: 9 },
   paymentStatus: { fontSize: 12, fontWeight: 700, marginBottom: 3 },
   footer: { color: '#475569', marginTop: 20, textAlign: 'center' },
+  logo: { height: 42, marginBottom: 6, maxWidth: 120, objectFit: 'contain', objectPosition: 'left' },
 });
 
 const money = (value: string) => `INR ${value}`;
@@ -86,11 +88,17 @@ export const ReceiptPdfDocument: React.FC<{ receipt: ReceiptViewModel }> = ({ re
 
   return (
     <Document title={`${receipt.title} ${receipt.invoiceNumber}`} author={receipt.supplier.name}>
-      <Page size="A4" style={[styles.page, { fontFamily: 'Receipt Latin' }]}>
+      <Page size="A4" style={[
+        styles.page,
+        { fontFamily: 'Receipt Latin' },
+        receipt.branding.template === 'MODERN' ? { borderTop: `6 solid ${receipt.branding.brandColor}` } : {},
+        receipt.branding.template === 'COMPACT' ? { padding: 22 } : {},
+      ]}>
         {receipt.cancellationMarker && <Text style={styles.cancellation}>{receipt.cancellationMarker}</Text>}
         <View style={styles.header}>
           <View>
-            <Text style={styles.store}>{receipt.supplier.name}</Text>
+            {receipt.branding.logoUrl && <Image src={receipt.branding.logoUrl} style={styles.logo} />}
+            <Text style={[styles.store, receipt.branding.template === 'MODERN' ? { color: receipt.branding.brandColor } : {}]}>{receipt.supplier.name}</Text>
             {receipt.supplier.address && <Text>{receipt.supplier.address}</Text>}
             {receipt.supplier.phone && <Text>{receipt.supplier.phone}</Text>}
             {gst && receipt.supplier.gstin && <Text>{labels.gstin}: {receipt.supplier.gstin}</Text>}

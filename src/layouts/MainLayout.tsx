@@ -114,6 +114,8 @@ const InvoiceDetailPage = lazy(() => import('@features/invoices/InvoiceDetailPag
 const SupplierLedgerPage = lazy(() => import('@features/suppliers/SupplierLedgerPage'));
 const CreatePurchasePage = lazy(() => import('@features/purchases/CreatePurchasePage'));
 const PurchaseDetailPage = lazy(() => import('@features/purchases/PurchaseDetailPage'));
+const ShiftsPage = lazy(() => import('@features/shifts/ShiftsPage'));
+const GettingStartedPage = lazy(() => import('@features/onboarding/GettingStartedPage'));
 
 const priorityRoutePreloaders: readonly { href: string; load: RouteLoader }[] = [
   { href: ROUTES.BILLING, load: loadBillingPage },
@@ -136,6 +138,7 @@ const mainPageComponents: Record<string, React.ComponentType> = {
   [ROUTES.USERS]: UsersPage,
   [ROUTES.CATEGORIES]: CategoriesPage,
   [ROUTES.IMPORT_EXPORT]: ImportExportPage,
+  [ROUTES.SHIFTS]: ShiftsPage,
 };
 
 const protectedPageComponents: Record<ProtectedPageRouteId, React.ComponentType> = {
@@ -235,6 +238,7 @@ export const MainLayout: React.FC = () => {
                 );
               })}
               <Route exact path={ROUTES.ABOUT} render={() => renderPage(AboutPage)} />
+              <Route exact path={ROUTES.GETTING_STARTED} render={() => renderPage(GettingStartedPage)} />
             </IonRouterOutlet>
 
             <IonTabBar slot="bottom" className="workspace-bottom-tabs" selectedTab={selectedTab}>

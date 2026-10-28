@@ -10,6 +10,24 @@
     "roleDenied": "Your staff role does not allow this operation. Contact your owner.",
     "demoDocumentMarker": "DEMO — NOT A VALID BUSINESS DOCUMENT"
   },
+  "security": {
+    "title": "Devices & security",
+    "description": "Review devices signed in to this account. Shop owners can manage devices only for staff in this shop.",
+    "staffMember": "Staff member",
+    "thisDevice": "This device",
+    "noDevices": "No active devices",
+    "lastSeen": "Last seen {{date}}",
+    "platform": { "web": "Web", "android": "Android" },
+    "revokeDevice": "Remove device",
+    "deviceRevoked": "Device access removed",
+    "revokeFailed": "Could not remove this device",
+    "logoutCurrent": "Log out this device",
+    "logoutAll": "Log out all devices",
+    "logoutFailed": "Could not log out",
+    "deviceLimitTitle": "Device limit reached",
+    "deviceLimitDescription": "Your plan allows {{limit}} active devices. Choose an older device to replace.",
+    "replaceDevice": "Replace this device"
+  },
   "workspace": {
     "sell": "Sales",
     "stock": "Stock & purchasing",
@@ -1401,7 +1419,10 @@
     "documentUnavailableHint": "This bill could not be loaded. Check your access or connection, then try again.",
     "paymentRequiresCustomer": "Select a customer before recording a later payment.",
     "notIssued": "Not issued",
-    "draftHint": "This draft is not yet a customer document. Resume it to finish the sale."
+    "draftHint": "This draft is not yet a customer document. Resume it to finish the sale.",
+    "whatsAppReceipt": "WhatsApp receipt",
+    "whatsAppReminder": "WhatsApp payment reminder",
+    "whatsAppInvalidPhone": "Add a valid Indian mobile number for this customer first."
   },
   "about": {
     "title": "About",
@@ -1454,6 +1475,11 @@
     "paperWidth": "Default thermal paper",
     "paper": { "MM58": "58 mm (compact)", "MM80": "80 mm (recommended)" },
     "footer": "Receipt footer (optional)",
+    "branding": "Receipt branding",
+    "brandingHint": "Choose a style for future receipts. Issued bills keep their original branding.",
+    "brandColor": "Brand colour (#RRGGBB)",
+    "logoUrl": "HTTPS logo URL (optional)",
+    "templates": { "CLASSIC": "Classic", "MODERN": "Modern", "COMPACT": "Compact" },
     "gstDetails": "GST invoice profile",
     "gstDetailsHint": "These legal details are required before GST invoices can be activated.",
     "supplierName": "Legal shop name",
@@ -1484,6 +1510,24 @@
     "saved": "Bill settings saved",
     "saveFailed": "Couldn't save bill settings",
     "loadFailed": "Couldn't load bill settings"
+  },
+  "shifts": {
+    "title": "Cash shift", "eyebrow": "Counter control", "heading": "Open, count and close cash", "description": "Match the cash drawer with cash payments and recorded movements.",
+    "open": "Open", "closed": "Closed", "openShift": "Open shift", "openingCash": "Opening cash", "counter": "Counter name (optional)", "openedSuccess": "Shift opened",
+    "liveSummary": "Live shift summary", "cashSales": "Cash sales", "cashIn": "Cash added", "cashOut": "Cash removed", "expectedCash": "Expected cash",
+    "cashMovement": "Record cash movement", "movementType": "Movement type", "reason": "Reason", "saveMovement": "Save movement", "adjustmentSaved": "Cash movement saved",
+    "closeShift": "Close shift", "countHint": "Count the drawer. Expected cash is {{amount}}.", "countedCash": "Counted cash", "closingNote": "Closing note (optional)", "variance": "Difference", "closedSuccess": "Shift closed", "recent": "Recent shifts", "failed": "Couldn't update the shift"
+  },
+  "onboarding": {
+    "title": "Getting started", "eyebrow": "Shop setup", "heading": "Be ready for the first bill", "description": "Use this practical checklist to set up the shop without guessing.", "open": "Open step",
+    "steps": {
+      "profile": { "title": "Set shop and bill identity", "description": "Confirm shop details, receipt style, logo and GST mode." },
+      "products": { "title": "Add products and stock", "description": "Start with everyday products, prices, barcodes and opening stock." },
+      "staff": { "title": "Invite staff", "description": "Add only the people who need billing or management access." },
+      "shift": { "title": "Open the cash counter", "description": "Record opening cash so closing differences are visible." },
+      "sale": { "title": "Complete a practice sale", "description": "Create, collect, print and share one bill before serving customers." }
+    },
+    "helpTitle": "Need help?", "helpDescription": "Send a support request with the exact screen and problem.", "contactSupport": "Contact support"
   },
   "foundation": {
     "login": {

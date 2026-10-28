@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Route, Redirect, Switch } from 'react-router';
 import { IonApp, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
@@ -10,6 +10,8 @@ import { PrivateRoute } from '@layouts/PrivateRoute';
 import ToastContainer from '@components/ToastContainer';
 import { ThemeProvider } from './contexts/ThemeContext';
 import i18n from './core/i18n';
+import { hydrateTokens } from '@core/auth/tokenVault';
+import { hydrateSessionTokens } from '@core/auth/authSlice';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -63,6 +65,7 @@ const PublicHelpPage = lazy(() =>
   import('@features/legal/PublicHelpPage').then((module) => ({ default: module.PublicHelpPage }))
 );
 const App: React.FC = () => {
+  const [authReady, setAuthReady] = useState(false);
   useEffect(() => {
     // Load saved language from localStorage
     const savedLanguage = localStorage.getItem('i18nextLng');
@@ -70,6 +73,30 @@ const App: React.FC = () => {
       i18n.changeLanguage(savedLanguage);
     }
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    void hydrateTokens()
+      .then((tokens) => {
+        if (active && tokens) store.dispatch(hydrateSessionTokens(tokens));
+      })
+      .finally(() => {
+        if (active) setAuthReady(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (!authReady) {
+    return (
+      <IonApp>
+        <div className="workspace-state" role="status">
+          {i18n.t('common.loading')}
+        </div>
+      </IonApp>
+    );
+  }
 
   return (
     <Provider store={store}>
