@@ -14,6 +14,7 @@ import {
 } from '@core/api/shiftApi';
 import { apiErrorMessage } from '@core/services/notificationService';
 import { formatCurrency, formatDateTime } from '@utils/helpers';
+import { calculateCashVariance, requiresVarianceExplanation } from './shiftReconciliation';
 import './ShiftsPage.css';
 
 const amount = (value: string) => Number(value || 0);
@@ -35,6 +36,8 @@ const ShiftsPage: React.FC = () => {
   const [notice, setNotice] = useState<{ error: boolean; text: string } | null>(null);
   const current = currentQuery.data?.data ?? null;
   const expected = useMemo(() => amount(current?.expected_cash ?? '0'), [current?.expected_cash]);
+  const variance = calculateCashVariance(countedCash, expected);
+  const varianceExplanationRequired = requiresVarianceExplanation(variance, closingNote);
 
   const run = async (action: () => Promise<unknown>, success: string) => {
     setNotice(null);
@@ -106,9 +109,10 @@ const ShiftsPage: React.FC = () => {
                   <IonCardContent className="shift-form">
                     <p>{t('shifts.countHint', { amount: formatCurrency(expected) })}</p>
                     <Input label={t('shifts.countedCash')} value={countedCash} onChange={setCountedCash} type="number" min={0} />
-                    <Input label={t('shifts.closingNote')} value={closingNote} onChange={setClosingNote} maxLength={255} />
-                    {countedCash !== '' && <p className={Number(countedCash) - expected === 0 ? 'shift-variance' : 'shift-variance shift-variance--warning'}>{t('shifts.variance')}: {formatCurrency(Number(countedCash) - expected)}</p>}
-                    <IonButton color="warning" disabled={closing || countedCash === ''} onClick={() => void run(
+                    <Input label={t(varianceExplanationRequired ? 'shifts.closingNoteRequired' : 'shifts.closingNote')} value={closingNote} onChange={setClosingNote} maxLength={255} />
+                    {variance !== null && <p className={variance === 0 ? 'shift-variance' : 'shift-variance shift-variance--warning'}>{t('shifts.variance')}: {formatCurrency(variance)}</p>}
+                    {varianceExplanationRequired && <p role="alert" className="shift-variance shift-variance--warning">{t('shifts.varianceReasonRequired')}</p>}
+                    <IonButton color="warning" disabled={closing || countedCash === '' || varianceExplanationRequired} onClick={() => void run(
                       () => closeShift({ id: current.id, counted_cash: Number(countedCash), closing_note: closingNote.trim() || undefined }).unwrap(),
                       t('shifts.closedSuccess')
                     )}>{t('shifts.closeShift')}</IonButton>
