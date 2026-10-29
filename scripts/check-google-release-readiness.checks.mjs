@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 import {
   inspectGoogleBuildConfig,
+  loadGoogleReleaseEnvironment,
   probeGoogleServerReadiness,
 } from './check-google-release-readiness.mjs';
 
@@ -29,6 +33,19 @@ test('requires every deployment input when a Google release is requested', () =>
     'VITE_GOOGLE_ENTRY_ENABLED_NOT_TRUE',
     'VITE_API_BASE_URL_MISSING',
   ]);
+});
+
+test('checks the same production env files that Vite loads for a release build', async (context) => {
+  const directory = await mkdtemp(join(tmpdir(), 'kirana-google-release-'));
+  context.after(() => rm(directory, { recursive: true, force: true }));
+  await writeFile(
+    join(directory, '.env.production'),
+    `VITE_GOOGLE_ENTRY_ENABLED=true\nVITE_GOOGLE_WEB_CLIENT_ID=${webClientId}\n`
+  );
+
+  const environment = loadGoogleReleaseEnvironment(directory, {});
+  assert.deepEqual(inspectGoogleBuildConfig(environment).blockers, []);
+  assert.equal(environment.VITE_GOOGLE_ENTRY_ENABLED, 'true');
 });
 
 test('accepts an enabled client only when the server verifier is ready', async () => {

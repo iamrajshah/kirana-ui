@@ -1,4 +1,14 @@
+import { loadEnv } from 'vite';
+
 const clientIdPattern = /^\d+-[a-z0-9_-]+\.apps\.googleusercontent\.com$/i;
+
+export const loadGoogleReleaseEnvironment = (
+  directory = process.cwd(),
+  processEnvironment = process.env
+) => ({
+  ...loadEnv('production', directory, ''),
+  ...processEnvironment,
+});
 
 export const inspectGoogleBuildConfig = (environment = process.env, options = {}) => {
   const enabled = environment.VITE_GOOGLE_ENTRY_ENABLED === 'true';
@@ -51,7 +61,10 @@ export const probeGoogleServerReadiness = async (apiBaseUrl, fetcher = fetch) =>
 
 const run = async () => {
   const probeApi = process.argv.includes('--probe-api');
-  const config = inspectGoogleBuildConfig(process.env, { required: probeApi, probeApi });
+  const config = inspectGoogleBuildConfig(loadGoogleReleaseEnvironment(), {
+    required: probeApi,
+    probeApi,
+  });
   const blockers = [...config.blockers];
 
   if (probeApi && blockers.length === 0) {
