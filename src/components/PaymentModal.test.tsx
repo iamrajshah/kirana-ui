@@ -298,5 +298,8 @@ describe('PaymentModal completion', () => {
       'var(--kirana-surface-accent-strong)'
     );
     expect(screen.getByRole('status').getAttribute('style')).toContain('var(--ion-text-color)');
+    expect(screen.getByTestId('split-payment-hint').getAttribute('style')).toContain(
+      'var(--ion-text-color-secondary)'
+    );
   });
 });

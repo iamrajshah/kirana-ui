@@ -350,7 +350,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
         {effectivePaymentType === 'split' && (
           <section aria-label={t('payment.splitPayment')} className="mb-4 space-y-3">
-            <p className="text-sm" style={{ color: '#666' }}>
+            <p
+              className="text-sm"
+              data-testid="split-payment-hint"
+              style={{ color: 'var(--ion-text-color-secondary)' }}
+            >
               {splitLocked ? t('payment.splitRetryHint') : t('payment.splitHint')}
             </p>
             {splitTenders.map((tender, index) => {
