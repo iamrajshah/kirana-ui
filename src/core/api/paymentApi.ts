@@ -1,6 +1,19 @@
 import { apiSlice } from './apiSlice';
 import type { ApiResponse, PaginatedApiResponse, Payment, PaymentMode } from '../types';
 
+export interface SplitPaymentTender {
+  payment_mode: Exclude<PaymentMode, 'ADJUSTMENT'>;
+  amount: number;
+  reference_note?: string;
+}
+
+export interface SplitPaymentResult {
+  invoice_id: string;
+  total_amount: string;
+  tenders: Array<SplitPaymentTender & { id: string }>;
+  replayed: boolean;
+}
+
 export const paymentApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getPayments: builder.query<
@@ -39,7 +52,31 @@ export const paymentApi = apiSlice.injectEndpoints({
         ...(body.customer_id ? (['Customer'] as const) : []),
       ],
     }),
+    createSplitPayment: builder.mutation<
+      ApiResponse<SplitPaymentResult>,
+      {
+        customer_id?: string;
+        invoice_id: string;
+        tenders: SplitPaymentTender[];
+        idempotency_key: string;
+      }
+    >({
+      query: (body) => ({
+        url: '/payments/split',
+        method: 'POST',
+        body,
+        headers: { 'idempotency-key': body.idempotency_key },
+      }),
+      invalidatesTags: (result, error, body) => [
+        'Payment',
+        'Invoice',
+        'Dashboard',
+        'Report',
+        ...(body.customer_id ? (['Customer'] as const) : []),
+      ],
+    }),
   }),
 });
 
-export const { useGetPaymentsQuery, useCreatePaymentMutation } = paymentApi;
+export const { useGetPaymentsQuery, useCreatePaymentMutation, useCreateSplitPaymentMutation } =
+  paymentApi;

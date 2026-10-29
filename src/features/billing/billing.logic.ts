@@ -57,6 +57,11 @@ export interface PendingBillingCheckout {
   previousBalance: number;
   customerId: string | null;
   paymentIdempotencyKey: string;
+  splitTenders?: Array<{
+    payment_mode: 'CASH' | 'UPI' | 'CARD' | 'BANK';
+    amount: number;
+    reference_note?: string;
+  }>;
 }
 
 interface StoredBillingCompletion extends BillingStorageOwner {
@@ -100,6 +105,21 @@ const removeStoredValue = (key: string) => {
 
 const belongsToOwner = (value: Partial<BillingStorageOwner>, owner: BillingStorageOwner) =>
   value.userId === owner.userId && value.tenantId === owner.tenantId;
+
+const isStoredSplitTender = (
+  tender: unknown
+): tender is NonNullable<PendingBillingCheckout['splitTenders']>[number] =>
+  typeof tender === 'object' &&
+  tender !== null &&
+  'payment_mode' in tender &&
+  ['CASH', 'UPI', 'CARD', 'BANK'].includes(String(tender.payment_mode)) &&
+  'amount' in tender &&
+  typeof tender.amount === 'number' &&
+  Number.isFinite(tender.amount) &&
+  tender.amount > 0 &&
+  (!('reference_note' in tender) ||
+    tender.reference_note === undefined ||
+    typeof tender.reference_note === 'string');
 
 export const loadBillingCompletion = (owner: BillingStorageOwner): string | null => {
   const stored = readStoredValue(
@@ -148,6 +168,18 @@ export const loadPendingBillingCheckout = (
     if (stored) removeStoredValue(BILLING_PENDING_CHECKOUT_STORAGE_KEY);
     return null;
   }
+  const storedSplitTenders = stored.splitTenders;
+  const splitTenders =
+    Array.isArray(storedSplitTenders) &&
+    storedSplitTenders.length >= 2 &&
+    storedSplitTenders.length <= 4 &&
+    storedSplitTenders.every(isStoredSplitTender) &&
+    new Set(storedSplitTenders.map((tender) => tender.payment_mode)).size ===
+      storedSplitTenders.length &&
+    storedSplitTenders.reduce((total, tender) => total + Math.round(tender.amount * 100), 0) ===
+      Math.round(stored.payable * 100)
+      ? storedSplitTenders
+      : undefined;
   return {
     invoiceId: stored.invoiceId.trim(),
     payable: stored.payable,
@@ -157,6 +189,7 @@ export const loadPendingBillingCheckout = (
         : 0,
     customerId: typeof stored.customerId === 'string' ? stored.customerId : null,
     paymentIdempotencyKey: stored.paymentIdempotencyKey,
+    ...(splitTenders && splitTenders.length >= 2 ? { splitTenders } : {}),
   };
 };
 

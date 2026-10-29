@@ -1447,7 +1447,17 @@
     "cash": "Cash",
     "upi": "UPI",
     "card": "Card",
-    "bankTransfer": "Bank Transfer"
+    "bankTransfer": "Bank Transfer",
+    "splitPayment": "Split Payment",
+    "splitHint": "Divide this bill across two or more payment modes. The bill is saved only when every tender succeeds.",
+    "splitRetryHint": "Retrying the saved tender set. Amounts are locked to prevent a duplicate or mismatched payment.",
+    "tenderNumber": "Tender {{number}}",
+    "tenderAmount": "Tender Amount",
+    "splitModesUnique": "Choose a different payment mode for each tender.",
+    "splitRemaining": "Remaining",
+    "splitOver": "Over by",
+    "addTender": "Add another payment mode",
+    "removeTender": "Remove"
   },
   "taxFields": {
     "customerDetails": "GST & address details (optional)",
