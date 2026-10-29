@@ -33,4 +33,3 @@ const outputDirectory = resolve(root, 'dist');
 mkdirSync(outputDirectory, { recursive: true });
 writeFileSync(resolve(outputDirectory, 'release.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 process.stdout.write(`Wrote release manifest for ${manifest.application}@${manifest.revision}\n`);
-
