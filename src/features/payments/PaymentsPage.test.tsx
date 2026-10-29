@@ -5,6 +5,7 @@ import { PaymentsPage } from './PaymentsPage';
 
 const query = vi.hoisted(() => ({ data: undefined as unknown, isError: false, refetch: vi.fn() }));
 const createPayment = vi.hoisted(() => vi.fn());
+const dismissPaymentModal = vi.hoisted(() => vi.fn<[], Promise<void>>());
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
@@ -75,6 +76,17 @@ vi.mock('@components', () => ({
 }));
 vi.mock('@ionic/react', () => {
   const Container = ({ children }: PropsWithChildren) => <div>{children}</div>;
+  const IonModal = React.forwardRef<
+    { dismiss: () => Promise<void> },
+    PropsWithChildren<{ isOpen?: boolean }>
+  >(({ children, isOpen }, ref) => {
+    React.useImperativeHandle(ref, () => ({ dismiss: dismissPaymentModal }));
+    return (
+      <div data-testid="payment-modal" data-open={String(Boolean(isOpen))}>
+        {children}
+      </div>
+    );
+  });
   return {
     IonPage: Container,
     IonContent: Container,
@@ -84,11 +96,7 @@ vi.mock('@ionic/react', () => {
     IonIcon: Container,
     IonFab: Container,
     IonFabButton: Container,
-    IonModal: ({ children, isOpen }: PropsWithChildren<{ isOpen?: boolean }>) => (
-      <div data-testid="payment-modal" data-open={String(Boolean(isOpen))}>
-        {children}
-      </div>
-    ),
+    IonModal,
     IonButtons: Container,
     IonToast: ({ message, isOpen }: { message: string; isOpen: boolean }) =>
       isOpen ? <div>{message}</div> : null,
@@ -108,6 +116,8 @@ beforeEach(() => {
   query.isError = false;
   query.refetch.mockClear();
   createPayment.mockClear();
+  dismissPaymentModal.mockReset();
+  dismissPaymentModal.mockResolvedValue();
   customersQuery.data = { data: [] };
 });
 afterEach(cleanup);
@@ -191,6 +201,12 @@ it('keeps the Ionic modal mounted while its successful dismissal completes', asy
     data: [{ id: 'customer-1', name: 'Amit Patel', phone: '9000000201' }],
   };
   createPayment.mockReturnValue({ unwrap: () => Promise.resolve({ data: { id: 'payment-1' } }) });
+  let completeDismissal: (() => void) | undefined;
+  dismissPaymentModal.mockReturnValue(
+    new Promise<void>((resolve) => {
+      completeDismissal = resolve;
+    })
+  );
 
   render(<PaymentsPage />);
 
@@ -202,6 +218,11 @@ it('keeps the Ionic modal mounted while its successful dismissal completes', asy
   fireEvent.change(screen.getByLabelText('common.amount'), { target: { value: '100' } });
   fireEvent.click(screen.getByRole('button', { name: 'common.save' }));
 
+  await waitFor(() => expect(dismissPaymentModal).toHaveBeenCalledOnce());
+  expect(screen.getByTestId('payment-modal').getAttribute('data-open')).toBe('true');
+  expect(screen.queryByText('payments.paymentRecorded')).toBeNull();
+
+  completeDismissal?.();
   await waitFor(() => {
     expect(screen.getByTestId('payment-modal').getAttribute('data-open')).toBe('false');
   });
