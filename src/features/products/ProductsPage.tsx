@@ -83,6 +83,7 @@ export const ProductsPage: React.FC = () => {
   const [size, setSize] = useState('');
   const [packaging, setPackaging] = useState<string | null>(null);
   const [price, setPrice] = useState('');
+  const [mrpPrice, setMrpPrice] = useState('');
   const [gstPercent, setGstPercent] = useState('');
   const [sku, setSku] = useState('');
   const [hsnCode, setHsnCode] = useState('');
@@ -133,6 +134,7 @@ export const ProductsPage: React.FC = () => {
     setSize('');
     setPackaging(null);
     setPrice('');
+    setMrpPrice('');
     setGstPercent('');
     setSku('');
     setHsnCode('');
@@ -153,6 +155,11 @@ export const ProductsPage: React.FC = () => {
         setShowError(true);
         return;
       }
+      if (mrpPrice && parseFloat(mrpPrice) < parseFloat(price)) {
+        setErrorMessage(t('products.mrpBelowSellingPrice'));
+        setShowError(true);
+        return;
+      }
 
       const productResult = await createProduct({
         name: productName,
@@ -167,6 +174,8 @@ export const ProductsPage: React.FC = () => {
           size: size || null,
           packaging: (packaging as Packaging | null) || null,
           price: parseFloat(price),
+          selling_price: parseFloat(price),
+          mrp_price: mrpPrice ? parseFloat(mrpPrice) : null,
           gst_percent: gstPercent ? parseFloat(gstPercent) : null,
           uqc_code: (uqcCode as UqcCode) || null,
           unit_label: unitLabel.trim() || null,
@@ -370,7 +379,8 @@ export const ProductsPage: React.FC = () => {
                   options={PACKAGING_OPTIONS}
                 />
 
-                <Input label={t('products.priceLabel')} type="number" value={price} onChange={setPrice} placeholder={t('products.enterPricePlaceholder')} />
+                <Input label={t('products.sellingPriceLabel')} type="number" value={price} onChange={setPrice} placeholder={t('products.enterPricePlaceholder')} />
+                <Input label={t('products.mrpPriceLabel')} type="number" value={mrpPrice} onChange={setMrpPrice} placeholder={t('products.enterMrpPlaceholder')} />
                 <Input label={t('products.skuLabel')} value={sku} onChange={setSku} placeholder={t('products.enterSKUCode')} />
 
                 <details className="product-tax-details">
