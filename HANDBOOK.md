@@ -22,12 +22,14 @@ workflow should remain understandable in English, Hindi, Marathi, and Gujarati.
 
 ### Current release snapshot — 30 October 2026
 
-The `dev` branch at `43d69a2` is the deployed demo baseline. It combines the
+Runtime revision `df2e4c5` is the 30 October demo release baseline. It combines the
 Modern Bazaar responsive shell, reliable navigation, fast billing, barcode
-labels, tenant backup/restore, and provable sale closure. The public demo is
-served by Cloudflare Pages and talks to the Railway API/MySQL environment. The
-stable site's release manifest must match the intended `dev` revision before a
-release is declared live.
+labels, tenant backup/restore, provable sale closure, Android 14+ share
+compatibility and secure-session restart recovery. Web/package/Android version
+metadata is aligned at `1.0.1`. The public demo is served by Cloudflare Pages
+and talks to the Railway API/MySQL environment. The stable site's release
+manifest must match the intended runtime revision before a release is declared
+live; a later docs-only merge does not require another app deployment.
 
 ### Platform-managed shop onboarding
 

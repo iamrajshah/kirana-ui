@@ -75,10 +75,31 @@ device/build evidence is attached.
 
 ### Android evidence — 30 October 2026
 
-The production web bundle and Capacitor Android sync completed for revision
-`43d69a2`. Gradle verification, emulator workflow evidence, approved store
-artwork, and a signed AAB are not recorded as complete in this document. Update
-this section only from captured command/device evidence; a successful web release
+Runtime revision `df2e4c5` aligns the web package and Android app at version
+`1.0.1` (`versionCode 2`) and completed the API 36 emulator gate:
+
+- all 365 UI tests, lint and the production bundle guard passed;
+- the Android receiver compatibility guard passed its three tests;
+- Gradle unit, lint and debug APK verification completed successfully (399
+  tasks);
+- connected instrumentation completed successfully on the Pixel 5 API 36 AVD
+  (467 tasks). The current native test is a smoke layer, so the installed-app
+  journeys below remain required evidence;
+- the native secure session survived force-stop/relaunch and activity/WebView
+  recreation, restoring Dashboard rather than Login;
+- the strict two-device policy was exercised by replacing an older demo device;
+- Dashboard, Billing and hardware Back passed on 393×851 phone and 1280×800
+  tablet viewports, with zero horizontal overflow;
+- clean logcat contained no app `SecurityException`, receiver-registration
+  failure or missing-asset error.
+
+The deterministic Capacitor Share 5 compatibility patch runs after install and
+before Android sync. It is idempotent and fails closed if the dependency source
+shape changes, preventing a silent incompatible upgrade.
+
+This is emulator evidence, not Play Store approval. Approved store artwork, a
+protected release keystore, signed AAB, physical-device pass and Google
+Credential Manager/OAuth proof remain release gates. A successful web release
 must never be reused as Android proof.
 
 ## iOS status
