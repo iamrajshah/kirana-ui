@@ -146,6 +146,12 @@ export interface PurchaseRegisterResponse extends ApiResponse<PurchaseRegister[]
     total_outstanding?: number;
     total_pending?: number;
   };
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 export interface PurchaseTrendMonth {
