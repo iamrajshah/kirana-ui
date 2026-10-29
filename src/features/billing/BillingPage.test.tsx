@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   renewHeldBill: vi.fn(),
   createPayment: vi.fn(),
   createSplitPayment: vi.fn(),
+  getInvoiceForSplitRecovery: vi.fn(),
   scanBarcode: vi.fn(),
   createProductFromBarcode: vi.fn(),
   notifyError: vi.fn(),
@@ -156,6 +157,7 @@ vi.mock('@core/api/invoiceApi', () => ({
     isLoading: false,
     refetch: vi.fn(),
   }),
+  useLazyGetInvoiceByIdQuery: () => [apiTrigger(mocks.getInvoiceForSplitRecovery), {}],
   useGetFinalizedDocumentQuery: () => ({
     data: mocks.document ? { success: true, data: mocks.document } : undefined,
     isLoading: false,
@@ -286,6 +288,15 @@ beforeEach(() => {
   mocks.finalizeInvoice.mockResolvedValue({ data: { id: 'edit-1' } });
   mocks.renewHeldBill.mockResolvedValue({ data: { id: 'edit-1', version: 3 } });
   mocks.cancelInvoice.mockResolvedValue({ data: { id: 'edit-1' } });
+  mocks.getInvoiceForSplitRecovery.mockResolvedValue({
+    data: {
+      id: '42',
+      status: 'UNPAID',
+      total_amount: 100,
+      paid_amount: 0,
+      balance_amount: 100,
+    },
+  });
   mocks.scanBarcode.mockResolvedValue(matchedBarcode);
   mocks.user = { id: '7', name: 'Rajesh', roles: ['CASHIER'], tenant: { id: '1' } };
   mocks.createProductFromBarcode.mockResolvedValue({
@@ -983,6 +994,118 @@ describe('BillingPage', () => {
       expect(mocks.createPayment).not.toHaveBeenCalled();
       await waitFor(() => expect(screen.queryByLabelText('payment-recovery')).toBeNull());
       expect(localStorage.getItem('kirana_billing_pending_checkout')).toBeNull();
+    });
+
+    it.each([400, 409])(
+      'refreshes the invoice and reopens a definitely rejected split after HTTP %s',
+      async (status) => {
+        mocks.search = '';
+        const splitTenders = [
+          { payment_mode: 'CASH', amount: 75 },
+          { payment_mode: 'UPI', amount: 25, reference_note: 'upi-25' },
+        ];
+        localStorage.setItem(
+          'kirana_billing_pending_checkout',
+          JSON.stringify({
+            version: 1,
+            invoiceId: '42',
+            payable: 100,
+            previousBalance: 0,
+            customerId: '12',
+            paymentIdempotencyKey: 'rejected-split-key',
+            splitTenders,
+            userId: '7',
+            tenantId: '1',
+          })
+        );
+        mocks.createSplitPayment.mockRejectedValueOnce({ status });
+
+        render(<BillingPage />);
+        fireEvent.click(screen.getByRole('button', { name: 'retry split payment' }));
+
+        await waitFor(() => expect(mocks.getInvoiceForSplitRecovery).toHaveBeenCalledWith('42'));
+        await waitFor(() => {
+          const saved = JSON.parse(localStorage.getItem('kirana_billing_pending_checkout') || '{}');
+          expect(saved.paymentIdempotencyKey).not.toBe('rejected-split-key');
+          expect(saved.splitTenders).toBeUndefined();
+          expect(saved.invoiceId).toBe('42');
+        });
+      }
+    );
+
+    it.each([{ status: 500 }, { status: 'FETCH_ERROR' }])(
+      'keeps an uncertain split payload and key locked after $status',
+      async (error) => {
+        mocks.search = '';
+        const splitTenders = [
+          { payment_mode: 'CASH', amount: 75 },
+          { payment_mode: 'CARD', amount: 25, reference_note: 'approval-25' },
+        ];
+        localStorage.setItem(
+          'kirana_billing_pending_checkout',
+          JSON.stringify({
+            version: 1,
+            invoiceId: '42',
+            payable: 100,
+            previousBalance: 0,
+            customerId: null,
+            paymentIdempotencyKey: 'uncertain-split-key',
+            splitTenders,
+            userId: '7',
+            tenantId: '1',
+          })
+        );
+        mocks.createSplitPayment.mockRejectedValueOnce(error);
+
+        render(<BillingPage />);
+        fireEvent.click(screen.getByRole('button', { name: 'retry split payment' }));
+
+        await waitFor(() => expect(mocks.createSplitPayment).toHaveBeenCalledOnce());
+        const saved = JSON.parse(localStorage.getItem('kirana_billing_pending_checkout') || '{}');
+        expect(saved.paymentIdempotencyKey).toBe('uncertain-split-key');
+        expect(saved.splitTenders).toEqual(splitTenders);
+        expect(mocks.getInvoiceForSplitRecovery).not.toHaveBeenCalled();
+        expect(screen.getByLabelText('payment-recovery')).toBeTruthy();
+      }
+    );
+
+    it('completes recovery when a 409 refresh proves the split already paid the invoice', async () => {
+      mocks.search = '';
+      const splitTenders = [
+        { payment_mode: 'CASH', amount: 75 },
+        { payment_mode: 'UPI', amount: 25 },
+      ];
+      localStorage.setItem(
+        'kirana_billing_pending_checkout',
+        JSON.stringify({
+          version: 1,
+          invoiceId: '42',
+          payable: 100,
+          previousBalance: 0,
+          customerId: null,
+          paymentIdempotencyKey: 'committed-split-key',
+          splitTenders,
+          userId: '7',
+          tenantId: '1',
+        })
+      );
+      mocks.createSplitPayment.mockRejectedValueOnce({ status: 409 });
+      mocks.getInvoiceForSplitRecovery.mockResolvedValueOnce({
+        data: {
+          id: '42',
+          status: 'PAID',
+          total_amount: 100,
+          paid_amount: 100,
+          balance_amount: 0,
+        },
+      });
+
+      render(<BillingPage />);
+      fireEvent.click(screen.getByRole('button', { name: 'retry split payment' }));
+
+      await waitFor(() => expect(screen.queryByLabelText('payment-recovery')).toBeNull());
+      expect(localStorage.getItem('kirana_billing_pending_checkout')).toBeNull();
+      expect(mocks.notifySuccess).toHaveBeenCalledWith('billing.paymentRecordedSuccessfully');
     });
 
     it('uses an authoritative quote before finalization and payment', async () => {
