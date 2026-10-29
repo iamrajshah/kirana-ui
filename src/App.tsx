@@ -1,11 +1,12 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
-import { Route, Redirect, Switch } from 'react-router';
+import { Route, Switch } from 'react-router';
 import { IonApp, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Provider } from 'react-redux';
 import { store } from '@core/store';
 import { ROUTES } from '@core/constants';
 import { mainLayoutPaths } from '@core/navigation/protectedRoutes';
+import { RootRouteRedirect } from '@core/navigation/RootRouteRedirect';
 import { PrivateRoute } from '@layouts/PrivateRoute';
 import ToastContainer from '@components/ToastContainer';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -130,7 +131,7 @@ const App: React.FC = () => {
                   path={ROUTES.ACCOUNT_DELETION}
                   render={() => <PublicHelpPage page="deletion" />}
                 />
-                <Route exact path="/" render={() => <Redirect to={ROUTES.LOGIN} />} />
+                <Route exact path="/" component={RootRouteRedirect} />
                 <Route
                   exact
                   path={mainLayoutPaths}

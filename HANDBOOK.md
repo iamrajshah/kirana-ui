@@ -20,14 +20,14 @@ workflow should remain understandable in English, Hindi, Marathi, and Gujarati.
 
 ## What we have developed
 
-### Current release snapshot — 19 October 2026
+### Current release snapshot — 30 October 2026
 
-The `dev` branch at `de0505a` is the verified demo baseline. It combines the
+The `dev` branch at `43d69a2` is the deployed demo baseline. It combines the
 Modern Bazaar responsive shell, reliable navigation, fast billing, barcode
 labels, tenant backup/restore, and provable sale closure. The public demo is
-served by Netlify and talks to the Railway API/MySQL environment. Netlify
-automatic builds are intentionally paused to conserve the demo allowance;
-publish the UI manually only after a reviewed release batch is ready.
+served by Cloudflare Pages and talks to the Railway API/MySQL environment. The
+stable site's release manifest must match the intended `dev` revision before a
+release is declared live.
 
 ### Platform-managed shop onboarding
 
@@ -204,14 +204,15 @@ server's `/api/v1` base URL.
 
 ## Demo deployment
 
-- **UI:** [kirana-ui.netlify.app](https://kirana-ui.netlify.app), built from
-  `dev` with `npm run build` and `dist` as the publish directory.
+- **UI:** [kirana-pos.pages.dev](https://kirana-pos.pages.dev) on Cloudflare
+  Pages, built from `dev` with `npm run build` and `dist` as the publish
+  directory.
 - **API:** Railway, with the browser base URL ending in `/api/v1`.
 - **Database:** Railway MySQL, migrated by the server release process.
-- **Release policy:** Netlify automatic builds remain stopped. Verify locally
-  against the Railway API, combine UI changes into a release batch, then trigger
-  one manual production deploy. Server changes deploy through Railway only after
-  their PR is approved and merged.
+- **Release policy:** verify locally against the Railway API, combine UI changes
+  into a reviewed release batch, publish the intended `dev` revision, and verify
+  the stable site's release manifest. Server changes deploy through Railway only
+  after their PR is approved and merged.
 
 The fallback production API URL in source is a convenience for this demo, not a
 recommended production configuration. A production release should inject
