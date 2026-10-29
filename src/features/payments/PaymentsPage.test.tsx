@@ -5,6 +5,10 @@ import { PaymentsPage } from './PaymentsPage';
 
 const query = vi.hoisted(() => ({ data: undefined as unknown, isError: false, refetch: vi.fn() }));
 const createPayment = vi.hoisted(() => vi.fn());
+const pendingInvoicesQuery = vi.hoisted(() => ({
+  data: undefined as unknown,
+  isLoading: false,
+}));
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
@@ -17,7 +21,7 @@ const customersQuery = vi.hoisted(() => ({ data: { data: [] as Array<{ id: strin
 
 vi.mock('@core/api/customerApi', () => ({ useGetCustomersQuery: () => customersQuery }));
 vi.mock('@core/api/invoiceApi', () => ({
-  useLazyGetPendingInvoicesByCustomerQuery: () => [vi.fn(), { data: undefined, isLoading: false }],
+  useLazyGetPendingInvoicesByCustomerQuery: () => [vi.fn(), pendingInvoicesQuery],
 }));
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('@components', () => ({
@@ -109,6 +113,8 @@ beforeEach(() => {
   query.refetch.mockClear();
   createPayment.mockClear();
   customersQuery.data = { data: [] };
+  pendingInvoicesQuery.data = undefined;
+  pendingInvoicesQuery.isLoading = false;
 });
 afterEach(cleanup);
 
@@ -206,4 +212,31 @@ it('keeps the Ionic modal mounted while its successful dismissal completes', asy
     expect(screen.getByTestId('payment-modal').getAttribute('data-open')).toBe('false');
   });
   expect(screen.getByText('payments.paymentRecorded')).toBeTruthy();
+});
+
+it('explains that an unassigned collection settles oldest bills first', () => {
+  query.data = { data: [] };
+  customersQuery.data = {
+    data: [{ id: 'customer-1', name: 'Amit Patel', phone: '9000000201' }],
+  };
+  pendingInvoicesQuery.data = {
+    data: [
+      {
+        id: 'invoice-1',
+        invoice_number: 'INV-1',
+        total_amount: 500,
+        paid_amount: 0,
+        status: 'UNPAID',
+      },
+    ],
+  };
+
+  render(<PaymentsPage />);
+  fireEvent.click(screen.getAllByRole('button', { name: 'payments.recordPayment' })[0]);
+  fireEvent.change(screen.getByLabelText('billing.selectCustomer'), {
+    target: { value: 'customer-1' },
+  });
+
+  expect(screen.getByText('payments.oldestFirstHint')).toBeTruthy();
+  expect(screen.getByRole('option', { name: 'payments.generalPayment' })).toBeTruthy();
 });

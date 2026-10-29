@@ -318,19 +318,22 @@ export const PaymentsPage: React.FC = () => {
                   <div className="text-center py-2 text-sm">{t('payments.loadingInvoices')}</div>
                 )}
                 {customerId && pendingInvoicesData?.data && pendingInvoicesData.data.length > 0 && (
-                  <Select
-                    label={t('payments.selectInvoice')}
-                    value={invoiceId}
-                    onChange={setInvoiceId}
-                    options={[
-                      { value: '', label: t('payments.generalPayment') },
-                      ...pendingInvoicesData.data.map((inv) => ({
-                        value: inv.id,
-                        label: `${inv.invoice_number} - ${formatCurrency((inv.total_amount || 0) - (inv.paid_amount || 0))} (${inv.status})`,
-                      })),
-                    ]}
-                    placeholder={t('common.placeholders.selectInvoice')}
-                  />
+                  <>
+                    <Select
+                      label={t('payments.selectInvoice')}
+                      value={invoiceId}
+                      onChange={setInvoiceId}
+                      options={[
+                        { value: '', label: t('payments.generalPayment') },
+                        ...pendingInvoicesData.data.map((inv) => ({
+                          value: inv.id,
+                          label: `${inv.invoice_number} - ${formatCurrency((inv.total_amount || 0) - (inv.paid_amount || 0))} (${inv.status})`,
+                        })),
+                      ]}
+                      placeholder={t('common.placeholders.selectInvoice')}
+                    />
+                    {!invoiceId && <p className="form-note">{t('payments.oldestFirstHint')}</p>}
+                  </>
                 )}
                 <Input
                   label={t('common.amount')}
