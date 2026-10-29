@@ -137,6 +137,24 @@ describe('billing completion recovery', () => {
     expect(loadPendingBillingCheckout(owner)).toEqual(pending);
   });
 
+  it('preserves the exact split tenders needed for an idempotent checkout retry', () => {
+    const pending = {
+      invoiceId: '86',
+      payable: 125,
+      previousBalance: 0,
+      customerId: null,
+      paymentIdempotencyKey: 'split-retry-key',
+      splitTenders: [
+        { payment_mode: 'CASH' as const, amount: 75 },
+        { payment_mode: 'UPI' as const, amount: 50, reference_note: 'upi-50' },
+      ],
+    };
+
+    persistPendingBillingCheckout(pending, owner);
+
+    expect(loadPendingBillingCheckout(owner)).toEqual(pending);
+  });
+
   it('treats blocked browser storage as unavailable instead of throwing', () => {
     const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementationOnce(() => {
       throw new DOMException('Blocked', 'SecurityError');

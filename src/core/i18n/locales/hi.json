@@ -1449,7 +1449,17 @@
     "cash": "नकद",
     "upi": "UPI",
     "card": "कार्ड",
-    "bankTransfer": "बैंक ट्रांसफर"
+    "bankTransfer": "बैंक ट्रांसफर",
+    "splitPayment": "मिश्रित भुगतान",
+    "splitHint": "इस बिल को दो या अधिक भुगतान तरीकों में बाँटें। सभी भुगतान सफल होने पर ही बिल पूरा होगा।",
+    "splitRetryHint": "सहेजे गए भुगतानों को फिर से आज़माया जा रहा है। दोहरे या बदले हुए भुगतान से बचाने के लिए राशि लॉक है।",
+    "tenderNumber": "भुगतान {{number}}",
+    "tenderAmount": "भुगतान राशि",
+    "splitModesUnique": "हर भुगतान के लिए अलग तरीका चुनें।",
+    "splitRemaining": "शेष",
+    "splitOver": "अधिक",
+    "addTender": "एक और भुगतान तरीका जोड़ें",
+    "removeTender": "हटाएँ"
   },
   "taxFields": {
     "customerDetails": "GST और पता विवरण (वैकल्पिक)",

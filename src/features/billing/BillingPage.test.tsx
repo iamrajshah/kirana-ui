@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   finalizeInvoice: vi.fn(),
   renewHeldBill: vi.fn(),
   createPayment: vi.fn(),
+  createSplitPayment: vi.fn(),
   scanBarcode: vi.fn(),
   createProductFromBarcode: vi.fn(),
   notifyError: vi.fn(),
@@ -103,12 +104,26 @@ vi.mock('@components/PaymentModal', () => ({
     isOpen,
     onClose,
     onPayment,
+    onSplitPayment,
+    initialSplitTenders,
     invoiceAmount,
     previousBalance,
   }: {
     isOpen: boolean;
     onClose: () => void | Promise<void>;
     onPayment: (amount: number, mode: 'CASH') => Promise<void>;
+    onSplitPayment?: (
+      tenders: Array<{
+        payment_mode: 'CASH' | 'UPI' | 'CARD' | 'BANK';
+        amount: number;
+        reference_note?: string;
+      }>
+    ) => Promise<void>;
+    initialSplitTenders?: Array<{
+      payment_mode: 'CASH' | 'UPI' | 'CARD' | 'BANK';
+      amount: number;
+      reference_note?: string;
+    }>;
     invoiceAmount: number;
     previousBalance?: number;
   }) =>
@@ -119,6 +134,11 @@ vi.mock('@components/PaymentModal', () => ({
         data-previous-balance={previousBalance}
       >
         <button onClick={() => void onPayment(100, 'CASH')}>retry payment</button>
+        {onSplitPayment && initialSplitTenders && (
+          <button onClick={() => void onSplitPayment(initialSplitTenders)}>
+            retry split payment
+          </button>
+        )}
         <button onClick={() => void onClose()}>cancel checkout</button>
       </div>
     ) : null,
@@ -161,6 +181,7 @@ vi.mock('@core/api/tenantSettingsApi', () => ({
 
 vi.mock('@core/api/paymentApi', () => ({
   useCreatePaymentMutation: () => [apiTrigger(mocks.createPayment), { isLoading: false }],
+  useCreateSplitPaymentMutation: () => [apiTrigger(mocks.createSplitPayment), { isLoading: false }],
 }));
 
 vi.mock('@core/api/customerApi', () => ({
@@ -944,6 +965,43 @@ describe('BillingPage', () => {
       expect(await screen.findByText('billing.completion.title')).toBeTruthy();
       expect(mocks.historyReplace).not.toHaveBeenCalled();
       expect(screen.queryByLabelText('payment-recovery')).toBeNull();
+    });
+
+    it('recovers a saved split checkout through one atomic API request', async () => {
+      mocks.search = '';
+      const splitTenders = [
+        { payment_mode: 'CASH', amount: 75 },
+        { payment_mode: 'UPI', amount: 25, reference_note: 'upi-25' },
+      ];
+      localStorage.setItem(
+        'kirana_billing_pending_checkout',
+        JSON.stringify({
+          version: 1,
+          invoiceId: '42',
+          payable: 100,
+          previousBalance: 0,
+          customerId: '12',
+          paymentIdempotencyKey: 'split-payment-key',
+          splitTenders,
+          userId: '7',
+          tenantId: '1',
+        })
+      );
+      mocks.createSplitPayment.mockResolvedValueOnce({ data: { invoice_id: '42' } });
+
+      render(<BillingPage />);
+      fireEvent.click(screen.getByRole('button', { name: 'retry split payment' }));
+
+      await waitFor(() => expect(mocks.createSplitPayment).toHaveBeenCalledTimes(1));
+      expect(mocks.createSplitPayment).toHaveBeenCalledWith({
+        customer_id: '12',
+        invoice_id: '42',
+        tenders: splitTenders,
+        idempotency_key: 'split-payment-key',
+      });
+      expect(mocks.createPayment).not.toHaveBeenCalled();
+      await waitFor(() => expect(screen.queryByLabelText('payment-recovery')).toBeNull());
+      expect(localStorage.getItem('kirana_billing_pending_checkout')).toBeNull();
     });
 
     it('uses an authoritative quote before finalization and payment', async () => {
