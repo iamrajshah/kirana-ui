@@ -26,7 +26,7 @@ import { useHistory } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ROUTES } from '@core/constants';
 import { useAppDispatch } from '@hooks/useAppDispatch';
-import { completeFirstLogin } from '@core/auth/authSlice';
+import { logout } from '@core/auth/authSlice';
 import './ChangePasswordPage.css';
 
 export const ChangePasswordPage: React.FC = () => {
@@ -104,14 +104,14 @@ export const ChangePasswordPage: React.FC = () => {
         newPassword,
       }).unwrap();
 
-      dispatch(completeFirstLogin());
-
       setShowSuccess(true);
       resetForm();
       
-      // Redirect to dashboard after 1.5 seconds
+      // The server revokes every existing session after a password change.
+      // Clear the now-invalid local session and require a fresh sign-in.
       setTimeout(() => {
-        history.push(ROUTES.DASHBOARD);
+        dispatch(logout());
+        history.replace(ROUTES.LOGIN);
       }, 1500);
     } catch (error: unknown) {
       console.error('❌ Error changing password:', error);
