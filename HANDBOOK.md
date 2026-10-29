@@ -20,14 +20,30 @@ workflow should remain understandable in English, Hindi, Marathi, and Gujarati.
 
 ## What we have developed
 
-### Current release snapshot — 19 October 2026
+### Current release snapshot — 27 October 2026
 
-The `dev` branch at `de0505a` is the verified demo baseline. It combines the
+The `dev` branch at `f319a61` is the current commercial/demo baseline. It combines the
 Modern Bazaar responsive shell, reliable navigation, fast billing, barcode
-labels, tenant backup/restore, and provable sale closure. The public demo is
-served by Netlify and talks to the Railway API/MySQL environment. Netlify
-automatic builds are intentionally paused to conserve the demo allowance;
-publish the UI manually only after a reviewed release batch is ready.
+labels, tenant backup/restore, provable sale closure, Google entry, isolated demo
+shops, plan-aware feature gates, renewal recovery and restricted access. The
+public demo is served by Netlify and talks to the Railway API/MySQL environment.
+Netlify automatic builds are intentionally paused to conserve the shared Free
+allowance; publish the UI manually only after a reviewed release batch is ready.
+
+### SaaS account and subscription journey
+
+- Google sign-in identifies a prospect or licensed shop user through the server;
+  it does not make the browser authoritative for tenant or subscription access.
+- Demo users receive an isolated, retry-safe trial shop instead of sharing one
+  mutable public tenant.
+- The server returns commercial access and feature decisions. The UI explains
+  unavailable features but cannot grant access by hiding or showing controls.
+- Expired or restricted tenants enter a recovery mode that keeps account and
+  export actions reachable while business mutations remain blocked.
+- Renewal submission and status live in the shop-facing POS. Approval, plan
+  changes and platform operations live in the separate private `kirana-admin`
+  application.
+- Platform Admin authentication is never stored or handled by this POS.
 
 ### Platform-managed shop onboarding
 
@@ -139,8 +155,9 @@ remain usable. Cashiers continue to see their normal operational dashboard.
 - CASHIER gets billing-focused navigation and cannot receive access merely because
   a menu item was accidentally rendered.
 - Route protection is authoritative; hiding a button is only presentation.
-- Platform routes stay outside the tenant application shell, and Platform Admin
-  credentials never grant access to shop screens.
+- Platform operations live in the separate `kirana-admin` repository. Legacy
+  platform routes in this repository must not become a second admin console, and
+  Platform Admin credentials never grant access to shop screens.
 - Mobile keeps the small set of primary destinations. Less frequent setup belongs
   under More/Settings.
 - Dashboard deep links must take the operator to the relevant customer, product,
@@ -208,10 +225,17 @@ server's `/api/v1` base URL.
   `dev` with `npm run build` and `dist` as the publish directory.
 - **API:** Railway, with the browser base URL ending in `/api/v1`.
 - **Database:** Railway MySQL, migrated by the server release process.
+- **Platform Admin:** separate private `kirana-admin` application; it uses the
+  same Railway API through a same-origin proxy and is not bundled into this POS.
 - **Release policy:** Netlify automatic builds remain stopped. Verify locally
   against the Railway API, combine UI changes into a release batch, then trigger
   one manual production deploy. Server changes deploy through Railway only after
   their PR is approved and merged.
+
+Netlify credits are shared by every project in the account. When the account is
+on operational-only credits, existing sites remain live but neither Git-based nor
+manual production deploys can publish a release. Wait for the billing reset or
+upgrade; do not repeatedly retry builds.
 
 The fallback production API URL in source is a convenience for this demo, not a
 recommended production configuration. A production release should inject
