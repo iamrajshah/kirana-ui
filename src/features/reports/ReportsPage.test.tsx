@@ -5,6 +5,7 @@ import { ReportsPage } from './ReportsPage';
 
 const inventoryPayload = vi.hoisted(() => ({ value: null as unknown }));
 const purchasePayload = vi.hoisted(() => ({ value: [] as unknown[] }));
+const purchaseSummary = vi.hoisted(() => ({ value: undefined as unknown }));
 const salesPayload = vi.hoisted(() => ({ value: undefined as unknown }));
 const reportRequests = vi.hoisted(
   () =>
@@ -84,7 +85,11 @@ vi.mock('@core/api/reportsApi', () => {
     useGetTopSellingQuery: emptyReport('topSelling'),
     useGetSupplierOutstandingQuery: emptyReport('supplierOutstanding'),
     useGetPurchaseRegisterQuery: () => ({
-      data: { data: purchasePayload.value },
+      data: {
+        data: purchasePayload.value,
+        summary: purchaseSummary.value,
+        pagination: { total: purchasePayload.value.length, page: 1, limit: 50, totalPages: 1 },
+      },
       isLoading: false,
       ...reportRequests.purchaseRegister,
     }),
@@ -153,6 +158,7 @@ const item = {
 beforeEach(() => {
   inventoryPayload.value = null;
   purchasePayload.value = [];
+  purchaseSummary.value = undefined;
   salesPayload.value = undefined;
   Object.values(reportRequests).forEach((request) => {
     request.isError = false;
@@ -275,6 +281,39 @@ it('opens the registered purchase detail route from the purchase register', asyn
       .closest('[data-router-link]')
       ?.getAttribute('data-router-link')
   ).toBe('/purchases/purchase-1');
+});
+
+it('renders the canonical purchase register summary fields returned by the API', () => {
+  purchasePayload.value = [
+    {
+      id: 'purchase-1',
+      invoice_number: 'P-100',
+      supplier_name: 'Local Supplier',
+      supplier_phone: '123',
+      invoice_date: '2026-10-12',
+      item_count: 2,
+      total_amount: 1250,
+      pending_amount: 700,
+      status: 'PARTIAL',
+    },
+  ];
+  purchaseSummary.value = {
+    total_purchases: 4,
+    total_amount: 1250,
+    total_paid: 550,
+    total_outstanding: 700,
+  };
+
+  render(<ReportsPage />);
+  fireEvent.click(screen.getByText('purchase register'));
+
+  expect(screen.getByText('reports.totalPurchasesCount').nextElementSibling?.textContent).toBe('4');
+  expect(screen.getByText('reports.totalAmountLabel').nextElementSibling?.textContent).toContain(
+    '1,250'
+  );
+  expect(screen.getByText('reports.pendingAmountLabel').nextElementSibling?.textContent).toContain(
+    '700'
+  );
 });
 
 it('keeps a failed report separate from an empty report and retries it', () => {

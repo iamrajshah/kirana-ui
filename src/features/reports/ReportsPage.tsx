@@ -630,13 +630,8 @@ export const ReportsPage: React.FC = () => {
 
     const purchases = allPurchaseRegister;
     const summary = purchaseRegisterData?.summary;
-    const pagination = {
-      total: purchaseRegisterData?.data?.length || 0,
-      page: 1,
-      pageSize: 10,
-      totalPages: Math.ceil((purchaseRegisterData?.data?.length || 0) / 10),
-    };
-    const hasMore = pagination ? pagination.page < pagination.totalPages : false;
+    const pagination = purchaseRegisterData?.pagination;
+    const hasMore = Boolean(pagination && pagination.page < pagination.totalPages);
 
     if (purchases.length === 0 && !purchaseRegisterLoading)
       return <EmptyState message={t('reports.noPurchasesFound')} />;
@@ -658,7 +653,7 @@ export const ReportsPage: React.FC = () => {
             <IonCardContent>
               <div className="flex justify-between mb-2">
                 <span>{t('reports.totalPurchasesCount')}</span>
-                <strong>{summary.total_count || 0}</strong>
+                <strong>{summary.total_purchases ?? summary.total_count ?? 0}</strong>
               </div>
               <div className="flex justify-between mb-2">
                 <span>{t('reports.totalAmountLabel')}</span>
@@ -673,7 +668,7 @@ export const ReportsPage: React.FC = () => {
               <div className="flex justify-between">
                 <span>{t('reports.pendingAmountLabel')}</span>
                 <strong style={{ color: 'var(--ion-color-danger)' }}>
-                  {formatCurrency(summary.total_pending || 0)}
+                  {formatCurrency(summary.total_outstanding ?? summary.total_pending ?? 0)}
                 </strong>
               </div>
             </IonCardContent>
