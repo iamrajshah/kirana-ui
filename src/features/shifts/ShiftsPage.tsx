@@ -14,7 +14,11 @@ import {
 } from '@core/api/shiftApi';
 import { apiErrorMessage } from '@core/services/notificationService';
 import { formatCurrency, formatDateTime } from '@utils/helpers';
-import { calculateCashVariance, requiresVarianceExplanation } from './shiftReconciliation';
+import {
+  calculateCashVariance,
+  parseNonNegativeAmount,
+  requiresVarianceExplanation,
+} from './shiftReconciliation';
 import './ShiftsPage.css';
 
 const amount = (value: string) => Number(value || 0);
@@ -36,6 +40,9 @@ const ShiftsPage: React.FC = () => {
   const [notice, setNotice] = useState<{ error: boolean; text: string } | null>(null);
   const current = currentQuery.data?.data ?? null;
   const expected = useMemo(() => amount(current?.expected_cash ?? '0'), [current?.expected_cash]);
+  const openingCashValue = parseNonNegativeAmount(openingCash);
+  const adjustmentAmountValue = parseNonNegativeAmount(adjustmentAmount);
+  const countedCashValue = parseNonNegativeAmount(countedCash);
   const variance = calculateCashVariance(countedCash, expected);
   const varianceExplanationRequired = requiresVarianceExplanation(variance, closingNote);
 
@@ -48,6 +55,47 @@ const ShiftsPage: React.FC = () => {
     } catch (error: unknown) {
       setNotice({ error: true, text: apiErrorMessage(error, t('shifts.failed')) });
     }
+  };
+
+  const submitOpenShift = () => {
+    if (openingCashValue === null) return;
+    void run(
+      () =>
+        openShift({
+          opening_cash: openingCashValue,
+          counter_label: counter.trim() || undefined,
+        }).unwrap(),
+      t('shifts.openedSuccess')
+    );
+  };
+
+  const submitAdjustment = () => {
+    if (!current || adjustmentAmountValue === null || adjustmentAmountValue === 0) return;
+    const note = adjustmentNote.trim();
+    if (note.length < 2) return;
+    void run(
+      () =>
+        adjustShift({
+          id: current.id,
+          type: adjustmentType,
+          amount: adjustmentAmountValue,
+          note,
+        }).unwrap(),
+      t('shifts.adjustmentSaved')
+    );
+  };
+
+  const submitCloseShift = () => {
+    if (!current || countedCashValue === null || varianceExplanationRequired) return;
+    void run(
+      () =>
+        closeShift({
+          id: current.id,
+          counted_cash: countedCashValue,
+          closing_note: closingNote.trim() || undefined,
+        }).unwrap(),
+      t('shifts.closedSuccess')
+    );
   };
 
   return (
@@ -69,10 +117,9 @@ const ShiftsPage: React.FC = () => {
               <IonCardContent className="shift-form">
                 <Input label={t('shifts.openingCash')} value={openingCash} onChange={setOpeningCash} type="number" min={0} />
                 <Input label={t('shifts.counter')} value={counter} onChange={setCounter} maxLength={32} />
-                <IonButton disabled={opening || openingCash === ''} onClick={() => void run(
-                  () => openShift({ opening_cash: Number(openingCash), counter_label: counter.trim() || undefined }).unwrap(),
-                  t('shifts.openedSuccess')
-                )}>{opening ? t('common.loading') : t('shifts.openShift')}</IonButton>
+                <IonButton disabled={opening || openingCashValue === null} onClick={submitOpenShift}>
+                  {opening ? t('common.loading') : t('shifts.openShift')}
+                </IonButton>
               </IonCardContent>
             </IonCard>
           )}
@@ -97,10 +144,9 @@ const ShiftsPage: React.FC = () => {
                     ]} />
                     <Input label={t('common.amount')} value={adjustmentAmount} onChange={setAdjustmentAmount} type="number" min={0} />
                     <Input label={t('shifts.reason')} value={adjustmentNote} onChange={setAdjustmentNote} maxLength={255} />
-                    <IonButton fill="outline" disabled={adjusting || !adjustmentAmount || adjustmentNote.trim().length < 2} onClick={() => void run(
-                      () => adjustShift({ id: current.id, type: adjustmentType, amount: Number(adjustmentAmount), note: adjustmentNote.trim() }).unwrap(),
-                      t('shifts.adjustmentSaved')
-                    )}>{t('shifts.saveMovement')}</IonButton>
+                    <IonButton fill="outline" disabled={adjusting || adjustmentAmountValue === null || adjustmentAmountValue === 0 || adjustmentNote.trim().length < 2} onClick={submitAdjustment}>
+                      {t('shifts.saveMovement')}
+                    </IonButton>
                   </IonCardContent>
                 </IonCard>
 
@@ -112,10 +158,9 @@ const ShiftsPage: React.FC = () => {
                     <Input label={t(varianceExplanationRequired ? 'shifts.closingNoteRequired' : 'shifts.closingNote')} value={closingNote} onChange={setClosingNote} maxLength={255} />
                     {variance !== null && <p className={variance === 0 ? 'shift-variance' : 'shift-variance shift-variance--warning'}>{t('shifts.variance')}: {formatCurrency(variance)}</p>}
                     {varianceExplanationRequired && <p role="alert" className="shift-variance shift-variance--warning">{t('shifts.varianceReasonRequired')}</p>}
-                    <IonButton color="warning" disabled={closing || countedCash === '' || varianceExplanationRequired} onClick={() => void run(
-                      () => closeShift({ id: current.id, counted_cash: Number(countedCash), closing_note: closingNote.trim() || undefined }).unwrap(),
-                      t('shifts.closedSuccess')
-                    )}>{t('shifts.closeShift')}</IonButton>
+                    <IonButton color="warning" disabled={closing || countedCashValue === null || varianceExplanationRequired} onClick={submitCloseShift}>
+                      {t('shifts.closeShift')}
+                    </IonButton>
                   </IonCardContent>
                 </IonCard>
               </div>

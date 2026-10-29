@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { calculateCashVariance, requiresVarianceExplanation } from './shiftReconciliation';
+import {
+  calculateCashVariance,
+  parseNonNegativeAmount,
+  requiresVarianceExplanation,
+} from './shiftReconciliation';
 
 describe('shift cash reconciliation', () => {
   it('requires an explanation for a shortage or excess', () => {
@@ -15,5 +19,15 @@ describe('shift cash reconciliation', () => {
 
   it('does not report a variance before cash has been counted', () => {
     expect(calculateCashVariance('', 1000)).toBeNull();
+  });
+
+  it.each(['NaN', 'Infinity', '-1', '  '])('rejects an invalid cash amount: %s', (value) => {
+    expect(parseNonNegativeAmount(value)).toBeNull();
+    expect(calculateCashVariance(value, 1000)).toBeNull();
+  });
+
+  it('accepts zero and finite positive cash amounts', () => {
+    expect(parseNonNegativeAmount('0')).toBe(0);
+    expect(parseNonNegativeAmount('125.50')).toBe(125.5);
   });
 });
