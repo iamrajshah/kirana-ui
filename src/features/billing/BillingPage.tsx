@@ -217,6 +217,15 @@ export const BillingPage: React.FC = () => {
     [receiptDocument]
   );
   const receiptOutput = useReceiptOutput();
+  const resetReceiptOutput = receiptOutput.reset;
+
+  useEffect(() => {
+    if (location.pathname === ROUTES.BILLING || !completionInvoiceId) return;
+
+    clearBillingCompletion();
+    setCompletionInvoiceId(null);
+    resetReceiptOutput();
+  }, [completionInvoiceId, location.pathname, resetReceiptOutput]);
 
   const customerId = selectedCustomer?.id || '';
   const {

@@ -34,6 +34,7 @@ const mocks = vi.hoisted(() => ({
   settingsMode: 'SIMPLE_RECEIPT' as 'SIMPLE_RECEIPT' | 'GST_TAX_INVOICE',
   settingsLoading: false,
   customerDetail: null as Record<string, unknown> | null,
+  pathname: '/billing',
 }));
 
 const apiTrigger = (operation: ReturnType<typeof vi.fn>) => (payload: unknown) => ({
@@ -59,7 +60,7 @@ const matchedBarcode = {
 
 vi.mock('react-router-dom', () => ({
   useHistory: () => ({ replace: mocks.historyReplace, push: mocks.historyPush }),
-  useLocation: () => ({ search: mocks.search }),
+  useLocation: () => ({ pathname: mocks.pathname, search: mocks.search }),
 }));
 
 vi.mock('react-i18next', () => ({
@@ -238,6 +239,7 @@ beforeEach(() => {
   }));
   localStorage.clear();
   mocks.search = '?edit=edit-1';
+  mocks.pathname = '/billing';
   mocks.document = null;
   mocks.documentError = false;
   mocks.settingsMode = 'SIMPLE_RECEIPT';
@@ -885,6 +887,23 @@ describe('BillingPage', () => {
       expect(localStorage.getItem('kirana_billing_completion_invoice')).toBeNull();
       expect(screen.queryByText('billing.completion.title')).toBeNull();
       expect(mocks.historyReplace).toHaveBeenLastCalledWith('/billing');
+    });
+
+    it('clears a completed sale after leaving Billing so returning starts a new sale', () => {
+      localStorage.setItem(
+        'kirana_billing_completion_invoice',
+        JSON.stringify({ version: 1, invoiceId: '42', userId: '7', tenantId: '1' })
+      );
+      mocks.search = '';
+
+      const view = render(<BillingPage />);
+      expect(screen.getByText('billing.completion.title')).toBeTruthy();
+
+      mocks.pathname = '/invoices/42';
+      view.rerender(<BillingPage />);
+
+      expect(localStorage.getItem('kirana_billing_completion_invoice')).toBeNull();
+      expect(screen.queryByText('billing.completion.title')).toBeNull();
     });
 
     it('restores a saved completion by invoice identity and retries only the document read', () => {
