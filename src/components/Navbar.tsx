@@ -39,6 +39,7 @@ export const Navbar: React.FC<NavbarProps> = ({ title, backHref }) => {
   const [logoutError, setLogoutError] = useState('');
   const [logoutRequest, logoutState] = useLogoutMutation();
   const popoverRef = useRef<HTMLDivElement>(null);
+  const pendingAccountRoute = useRef<string | null>(null);
 
   const handleLogout = async () => {
     setLogoutError('');
@@ -61,13 +62,20 @@ export const Navbar: React.FC<NavbarProps> = ({ title, backHref }) => {
   };
 
   const navigateToProfile = () => {
+    pendingAccountRoute.current = ROUTES.PROFILE;
     setShowPopover(false);
-    history.push(ROUTES.PROFILE);
   };
 
   const navigateToChangePassword = () => {
+    pendingAccountRoute.current = ROUTES.CHANGE_PASSWORD;
     setShowPopover(false);
-    history.push(ROUTES.CHANGE_PASSWORD);
+  };
+
+  const handlePopoverDismiss = () => {
+    setShowPopover(false);
+    const route = pendingAccountRoute.current;
+    pendingAccountRoute.current = null;
+    if (route) history.push(route);
   };
 
   return (
@@ -115,7 +123,7 @@ export const Navbar: React.FC<NavbarProps> = ({ title, backHref }) => {
         isOpen={showPopover}
         trigger={undefined}
         reference="event"
-        onDidDismiss={() => setShowPopover(false)}
+        onDidDismiss={handlePopoverDismiss}
       >
         <IonList>
           <IonItem button={true} detail={false} onClick={navigateToProfile}>
