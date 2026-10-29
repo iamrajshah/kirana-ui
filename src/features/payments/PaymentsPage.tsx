@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Navbar } from '@components/Navbar';
 import {
   IonContent,
@@ -47,6 +47,7 @@ export const PaymentsPage: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const paymentModalRef = useRef<HTMLIonModalElement | null>(null);
 
   const [getPendingInvoices, { data: pendingInvoicesData, isLoading: loadingInvoices }] =
     useLazyGetPendingInvoicesByCustomerQuery();
@@ -97,8 +98,13 @@ export const PaymentsPage: React.FC = () => {
         idempotency_key: generateIdempotencyKey(),
       }).unwrap();
 
-      setShowSuccess(true);
+      try {
+        await paymentModalRef.current?.dismiss();
+      } catch {
+        // The controlled isOpen state remains the fallback if Ionic has already dismissed it.
+      }
       setShowModal(false);
+      setShowSuccess(true);
     } catch (err) {
       const error = err as { status?: number; data?: { message?: string }; message?: string };
       const errMsg = error?.data?.message || error?.message || t('payments.saveError');
@@ -278,6 +284,7 @@ export const PaymentsPage: React.FC = () => {
 
         {/* Record Payment Modal */}
         <IonModal
+          ref={paymentModalRef}
           isOpen={showModal}
           onDidDismiss={() => {
             setShowModal(false);
