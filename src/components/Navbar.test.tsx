@@ -43,15 +43,35 @@ vi.mock('react-router', () => ({
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('@ionic/react', () => {
   const Container = ({ children }: PropsWithChildren) => <div>{children}</div>;
-  const Item = ({ children, onClick, disabled }: PropsWithChildren & React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-    <button onClick={onClick} disabled={disabled}>{children}</button>
-  );
+  const Item = ({
+    children,
+    button: _button,
+    detail: _detail,
+    ...props
+  }: PropsWithChildren &
+    React.ButtonHTMLAttributes<HTMLButtonElement> & { button?: boolean; detail?: boolean }) => {
+    void _button;
+    void _detail;
+    return <button {...props}>{children}</button>;
+  };
   const Toast = ({ isOpen, message }: { isOpen: boolean; message: string }) =>
     isOpen ? <div>{message}</div> : null;
+  const Popover = ({
+    children,
+    isOpen,
+    onDidDismiss,
+  }: PropsWithChildren & { isOpen: boolean; onDidDismiss: () => void }) => {
+    const wasOpen = React.useRef(isOpen);
+    React.useEffect(() => {
+      if (wasOpen.current && !isOpen) onDidDismiss();
+      wasOpen.current = isOpen;
+    }, [isOpen, onDidDismiss]);
+    return <div>{children}</div>;
+  };
   return {
     IonHeader: Container, IonToolbar: Container, IonTitle: Container,
     IonButtons: Container, IonButton: Item, IonIcon: Container,
-    IonPopover: Container, IonList: Container, IonItem: Item,
+    IonPopover: Popover, IonList: Container, IonItem: Item,
     IonLabel: Container, IonToast: Toast,
     IonMenuButton: () => <button aria-label="menu" />,
     IonBackButton: ({ defaultHref }: { defaultHref: string }) => <a href={defaultHref}>back</a>,
@@ -78,6 +98,18 @@ describe('Navbar navigation', () => {
   it('keeps the menu button on workspace pages', () => {
     render(<Navbar title="Purchases" />);
     expect(screen.getByRole('button', { name: 'menu' })).toBeTruthy();
+  });
+
+  it('navigates from the account menu only after the popover has dismissed', async () => {
+    mocks.state.auth.user = {
+      id: '7', name: 'Owner', email: 'owner@example.com', roles: ['OWNER'],
+    };
+    render(<Navbar title="Dashboard" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'profile.accountMenu' }));
+    fireEvent.click(screen.getByText('profile.title'));
+
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith('/profile'));
   });
 
   it('revokes the current server session before clearing local authentication', async () => {
