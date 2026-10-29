@@ -14,5 +14,8 @@ invitations; it does not open generic demo admission. Configure the exact public
 web client ID in both `VITE_GOOGLE_WEB_CLIENT_ID` and the server
 `GOOGLE_WEB_CLIENT_IDS`, allow the production web origin in Google Cloud, and
 run `npm run release:google:check` before building. The check requires server
-`googleKnownIdentity` readiness and reports blocker codes without printing the
-client ID or any credential.
+`googleKnownIdentity` readiness and an exact SHA-256 match in the server's web
+audience fingerprints. Android fingerprints are evaluated separately and
+cannot satisfy the web check. Enabled production builds run the same probe
+automatically; disabled password-only builds remain offline-capable. Checks
+report blocker codes without printing the client ID or any credential.

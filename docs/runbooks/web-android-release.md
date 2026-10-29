@@ -26,9 +26,11 @@ configured client ID alone must never expose the launch surface.
    npm run build
    ```
 
-   The first command probes the configured API and prints only bounded blocker
-   codes. The build also fails if the UI flag is true while the public web
-   client ID is absent or malformed.
+   The first command explicitly checks a planned Google release. Every normal
+   production build also probes the configured API automatically when the UI
+   flag is true; a password-only build with the flag false performs no network
+   request. Enabled builds fail if the public web client ID is absent,
+   malformed, not ready on the server, or not an exact allow-list match.
 
 The Google Cloud OAuth web client must allow the exact production UI origin,
 currently `https://kirana-pos.pages.dev`, and later the custom domain.
@@ -36,6 +38,9 @@ Add the same client ID to server `GOOGLE_WEB_CLIENT_IDS`; never add a client
 secret to the UI. A paid invited owner requires server `GOOGLE_AUTH_ENABLED`
 and `COMMERCIAL_ACTIVATION_ENABLED`, but does not require generic
 `GOOGLE_NEW_ENTRY_ENABLED` or `DEMO_PROVISIONING_ENABLED`.
+The server returns only SHA-256 audience fingerprints, separated into web and
+Android lists. The release check compares the UI web client fingerprint only;
+an Android audience cannot accidentally make a web release pass.
 
 Netlify auto-publish stays disabled to conserve the allowance. A merged PR does
 not mean the UI is live.
