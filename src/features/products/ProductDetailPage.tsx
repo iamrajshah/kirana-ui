@@ -61,6 +61,7 @@ export const ProductDetailPage: React.FC = () => {
   const [editCategoryId, setEditCategoryId] = useState<number | null>(null);
   const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
   const [editSellingPrice, setEditSellingPrice] = useState('');
+  const [editMrpPrice, setEditMrpPrice] = useState('');
   const [editHsnCode, setEditHsnCode] = useState('');
   const [editGstPercent, setEditGstPercent] = useState('');
   const [editUqcCode, setEditUqcCode] = useState('');
@@ -94,6 +95,7 @@ export const ProductDetailPage: React.FC = () => {
     }
     setEditingVariant(variant);
     setEditSellingPrice(variant.selling_price?.toString() || variant.price.toString());
+    setEditMrpPrice(variant.mrp_price?.toString() || '');
     setEditGstPercent(variant.gst_percent?.toString() || '');
     setEditUqcCode(variant.uqc_code || '');
     setEditUnitLabel(variant.unit_label || '');
@@ -109,12 +111,19 @@ export const ProductDetailPage: React.FC = () => {
       setShowError(true);
       return;
     }
+    const mrpPrice = editMrpPrice ? parseFloat(editMrpPrice) : null;
+    if (mrpPrice !== null && (isNaN(mrpPrice) || mrpPrice < sellingPrice)) {
+      setErrorMessage(t('products.mrpBelowSellingPrice'));
+      setShowError(true);
+      return;
+    }
 
     try {
       await updateVariant({
         id: editingVariant.id,
         data: {
           selling_price: sellingPrice,
+          mrp_price: mrpPrice,
           gst_percent: editGstPercent ? parseFloat(editGstPercent) : null,
           uqc_code: (editUqcCode as UqcCode) || null,
           unit_label: editUnitLabel.trim() || null,
@@ -125,6 +134,7 @@ export const ProductDetailPage: React.FC = () => {
       setShowVariantEditModal(false);
       setEditingVariant(null);
       setEditSellingPrice('');
+      setEditMrpPrice('');
     } catch (err) {
       const error = err as { data?: { message?: string } };
       setErrorMessage(error?.data?.message || t('products.updateFailed'));
@@ -305,6 +315,16 @@ export const ProductDetailPage: React.FC = () => {
                           </IonLabel>
                         </IonItem>
                       )}
+                      {variant.mrp_price && (
+                        <IonItem>
+                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>
+                            {t('products.mrpShort')}
+                          </IonLabel>
+                          <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>
+                            {formatCurrency(Number(variant.mrp_price))}
+                          </IonLabel>
+                        </IonItem>
+                      )}
                       {variant.gst_percent && (
                         <IonItem>
                           <IonLabel style={{ color: 'var(--ion-text-color)' }}>
@@ -452,6 +472,7 @@ export const ProductDetailPage: React.FC = () => {
               setShowVariantEditModal(false);
               setEditingVariant(null);
               setEditSellingPrice('');
+              setEditMrpPrice('');
             }}
           >
             <IonHeader>
@@ -506,6 +527,14 @@ export const ProductDetailPage: React.FC = () => {
                   value={editSellingPrice}
                   onChange={setEditSellingPrice}
                   placeholder={t('products.enterPrice')}
+                />
+
+                <Input
+                  label={t('products.mrpPriceLabel')}
+                  type="number"
+                  value={editMrpPrice}
+                  onChange={setEditMrpPrice}
+                  placeholder={t('products.enterMrpPlaceholder')}
                 />
 
                 <Input label={t('products.gstLabel')} type="number" value={editGstPercent} onChange={setEditGstPercent} />
