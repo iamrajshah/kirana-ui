@@ -40,6 +40,8 @@ Maintainer: [Rajesh Shah (@iamrajshah)](https://github.com/iamrajshah)
 - Production Android project identity (`com.iamrajshah.kiranapos`) and a
   fail-closed Google-entry UI flag. Google remains hidden until server,
   OAuth, legal, signing, and device gates are complete.
+- Android 14+ share compatibility, secure-session restoration after activity or
+  process recreation, and aligned web/package/Android `1.0.1` version metadata.
 
 Offline billing queue, optional cashier shift cash, smart reorder, and WhatsApp
 list-to-cart are planned product work. They are not production-ready features yet.
@@ -147,11 +149,12 @@ npx cap open android
 
 Web and Capacitor share the same responsive UI. Native release signing and store
 submission remain separate deployment steps.
-The generated Android project is committed; follow
+The generated Android project is committed. The API 36 emulator release gate
+passes for the current runtime; follow
 [`docs/runbooks/web-android-release.md`](docs/runbooks/web-android-release.md).
 Credential Manager wiring, production OAuth fingerprints, approved store
-artwork, signed AAB/device evidence, and iOS Apple-login compliance remain
-release gates rather than completed claims.
+artwork, signed AAB/physical-device evidence, and iOS Apple-login compliance
+remain release gates rather than completed claims.
 
 ## Working agreement for humans and AI agents
 
