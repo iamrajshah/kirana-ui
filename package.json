@@ -6,7 +6,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && node scripts/write-release-manifest.mjs && npm run verify:production-bundle",
+    "build": "npm run verify:google-build-config && tsc && vite build && node scripts/write-release-manifest.mjs && npm run verify:production-bundle",
+    "verify:google-build-config": "node scripts/check-google-release-readiness.mjs",
+    "release:google:check": "node scripts/check-google-release-readiness.mjs --probe-api",
+    "test:release-config": "node --test scripts/check-google-release-readiness.checks.mjs",
     "verify:production-bundle": "node scripts/verify-production-bundle.mjs dist",
     "test": "vitest run",
     "preview": "vite preview",
