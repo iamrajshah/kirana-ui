@@ -23,7 +23,9 @@ interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPayment: (amount: number, mode: PaymentMode, reference?: string) => void | Promise<void>;
-  onSplitPayment?: (tenders: SplitPaymentTender[]) => void | Promise<void>;
+  onSplitPayment?: (
+    tenders: SplitPaymentTender[]
+  ) => void | SplitPaymentSubmissionOutcome | Promise<void | SplitPaymentSubmissionOutcome>;
   initialSplitTenders?: SplitPaymentTender[];
   invoiceAmount: number;
   previousBalance?: number;
@@ -31,6 +33,8 @@ interface PaymentModalProps {
   isLoading?: boolean;
   allowPartial?: boolean;
 }
+
+export type SplitPaymentSubmissionOutcome = 'completed' | 'rejected' | 'uncertain';
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
   isOpen,
@@ -101,7 +105,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       }));
       setSplitLocked(true);
       try {
-        await onSplitPayment(tenders);
+        const outcome = await onSplitPayment(tenders);
+        if (outcome === 'uncertain') return;
+        if (outcome === 'rejected') {
+          // The API definitely rejected the request and BillingPage confirmed
+          // that the invoice is still unpaid. The cashier can now correct the
+          // tender mix; the next submission uses a fresh idempotency key.
+          setSplitLocked(false);
+          return;
+        }
         setSplitTenders([
           { payment_mode: 'CASH', amount: '', reference_note: '' },
           { payment_mode: 'UPI', amount: '', reference_note: '' },
@@ -346,8 +358,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               return (
                 <div
                   key={`${index}-${tender.payment_mode}`}
+                  data-testid={`split-tender-card-${index}`}
                   className="rounded-xl border p-3"
-                  style={{ borderColor: '#d7dee8', backgroundColor: '#fafcff' }}
+                  style={{
+                    borderColor: 'var(--ion-border-color)',
+                    backgroundColor: 'var(--ion-card-background)',
+                    color: 'var(--ion-text-color)',
+                  }}
                 >
                   <div className="mb-2 flex items-center justify-between">
                     <strong>{t('payment.tenderNumber', { number: index + 1 })}</strong>
@@ -400,7 +417,18 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             <div
               role="status"
               className="flex items-center justify-between rounded-lg p-3 font-semibold"
-              style={{ backgroundColor: splitRemainingPaise === 0 ? '#e8f5e9' : '#fff3e0' }}
+              style={{
+                backgroundColor:
+                  splitRemainingPaise === 0
+                    ? 'var(--kirana-surface-accent-strong)'
+                    : 'var(--kirana-surface-soft)',
+                border: `1px solid ${
+                  splitRemainingPaise === 0
+                    ? 'var(--ion-color-success)'
+                    : 'var(--ion-color-warning)'
+                }`,
+                color: 'var(--ion-text-color)',
+              }}
             >
               <span>
                 {splitRemainingPaise >= 0 ? t('payment.splitRemaining') : t('payment.splitOver')}

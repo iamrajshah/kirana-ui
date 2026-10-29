@@ -210,7 +210,7 @@ describe('PaymentModal completion', () => {
   it('keeps an uncertain split payload available for an identical retry', async () => {
     const onSplitPayment = vi
       .fn()
-      .mockRejectedValueOnce(new Error('network response lost'))
+      .mockResolvedValueOnce('uncertain')
       .mockResolvedValueOnce(undefined);
     const tenders = [
       { payment_mode: 'CASH' as const, amount: 75 },
@@ -231,8 +231,72 @@ describe('PaymentModal completion', () => {
     const collect = screen.getByRole('button', { name: 'payment.collectPayment' });
     fireEvent.click(collect);
     await waitFor(() => expect(onSplitPayment).toHaveBeenCalledTimes(1));
+    expect(screen.getAllByLabelText('payment.tenderAmount')[0]).toHaveProperty('disabled', true);
     fireEvent.click(collect);
     await waitFor(() => expect(onSplitPayment).toHaveBeenCalledTimes(2));
     expect(onSplitPayment.mock.calls[1][0]).toEqual(onSplitPayment.mock.calls[0][0]);
+  });
+
+  it('unlocks a definitely rejected split so the cashier can correct and resubmit it', async () => {
+    const onSplitPayment = vi
+      .fn()
+      .mockResolvedValueOnce('rejected')
+      .mockResolvedValueOnce('completed');
+    const tenders = [
+      { payment_mode: 'CASH' as const, amount: 75 },
+      { payment_mode: 'UPI' as const, amount: 50 },
+    ];
+
+    render(
+      <PaymentModal
+        isOpen
+        onClose={vi.fn()}
+        onPayment={vi.fn()}
+        onSplitPayment={onSplitPayment}
+        initialSplitTenders={tenders}
+        invoiceAmount={125}
+      />
+    );
+
+    const collect = screen.getByRole('button', { name: 'payment.collectPayment' });
+    fireEvent.click(collect);
+    await waitFor(() =>
+      expect(screen.getAllByLabelText('payment.tenderAmount')[0]).toHaveProperty('disabled', false)
+    );
+
+    const amounts = screen.getAllByLabelText('payment.tenderAmount');
+    fireEvent.change(amounts[0], { target: { value: '80' } });
+    fireEvent.change(amounts[1], { target: { value: '45' } });
+    fireEvent.click(collect);
+
+    await waitFor(() => expect(onSplitPayment).toHaveBeenCalledTimes(2));
+    expect(onSplitPayment.mock.calls[1][0]).toEqual([
+      { payment_mode: 'CASH', amount: 80 },
+      { payment_mode: 'UPI', amount: 45 },
+    ]);
+  });
+
+  it('uses application theme tokens for split cards and status in light and dark themes', () => {
+    render(
+      <PaymentModal
+        isOpen
+        onClose={vi.fn()}
+        onPayment={vi.fn()}
+        onSplitPayment={vi.fn()}
+        initialSplitTenders={[
+          { payment_mode: 'CASH', amount: 75 },
+          { payment_mode: 'UPI', amount: 50 },
+        ]}
+        invoiceAmount={125}
+      />
+    );
+
+    expect(screen.getByTestId('split-tender-card-0').getAttribute('style')).toContain(
+      'var(--ion-card-background)'
+    );
+    expect(screen.getByRole('status').getAttribute('style')).toContain(
+      'var(--kirana-surface-accent-strong)'
+    );
+    expect(screen.getByRole('status').getAttribute('style')).toContain('var(--ion-text-color)');
   });
 });
