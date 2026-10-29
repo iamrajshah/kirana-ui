@@ -12,13 +12,16 @@ import {
   IonLabel,
   IonMenuButton,
   IonBackButton,
+  IonToast,
 } from '@ionic/react';
 import { logOutOutline, person, lockClosed, chevronDown } from 'ionicons/icons';
 import { useAppSelector, useAppDispatch } from '../core/hooks';
 import { selectCurrentUser, logout } from '@core/auth/authSlice';
+import { useLogoutMutation } from '@core/api/authApi';
 import { useHistory } from 'react-router';
 import { ROUTES } from '@core/constants';
 import { useTranslation } from 'react-i18next';
+import { apiErrorMessage } from '@core/services/notificationService';
 import './Navbar.css';
 
 interface NavbarProps {
@@ -28,15 +31,28 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ title, backHref }) => {
   const user = useAppSelector(selectCurrentUser);
+  const refreshToken = useAppSelector((state) => state.auth.refreshToken);
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const history = useHistory();
   const [showPopover, setShowPopover] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
+  const [logoutRequest, logoutState] = useLogoutMutation();
   const popoverRef = useRef<HTMLDivElement>(null);
+  const pendingAccountRoute = useRef<string | null>(null);
 
-  const handleLogout = () => {
-    dispatch(logout());
-    history.replace(ROUTES.LOGIN);
+  const handleLogout = async () => {
+    setLogoutError('');
+    try {
+      await logoutRequest({
+        scope: 'current',
+        ...(refreshToken ? { refresh_token: refreshToken } : {}),
+      }).unwrap();
+      dispatch(logout());
+      history.replace(ROUTES.LOGIN);
+    } catch (error) {
+      setLogoutError(apiErrorMessage(error, t('security.logoutFailed'), true));
+    }
   };
 
   const handleUserClick = (e: React.MouseEvent) => {
@@ -46,13 +62,20 @@ export const Navbar: React.FC<NavbarProps> = ({ title, backHref }) => {
   };
 
   const navigateToProfile = () => {
+    pendingAccountRoute.current = ROUTES.PROFILE;
     setShowPopover(false);
-    history.push(ROUTES.PROFILE);
   };
 
   const navigateToChangePassword = () => {
+    pendingAccountRoute.current = ROUTES.CHANGE_PASSWORD;
     setShowPopover(false);
-    history.push(ROUTES.CHANGE_PASSWORD);
+  };
+
+  const handlePopoverDismiss = () => {
+    setShowPopover(false);
+    const route = pendingAccountRoute.current;
+    pendingAccountRoute.current = null;
+    if (route) history.push(route);
   };
 
   return (
@@ -100,7 +123,7 @@ export const Navbar: React.FC<NavbarProps> = ({ title, backHref }) => {
         isOpen={showPopover}
         trigger={undefined}
         reference="event"
-        onDidDismiss={() => setShowPopover(false)}
+        onDidDismiss={handlePopoverDismiss}
       >
         <IonList>
           <IonItem button={true} detail={false} onClick={navigateToProfile}>
@@ -111,12 +134,24 @@ export const Navbar: React.FC<NavbarProps> = ({ title, backHref }) => {
             <IonIcon icon={lockClosed} slot="start" />
             <IonLabel>{t('profile.changePassword')}</IonLabel>
           </IonItem>
-          <IonItem button={true} detail={false} onClick={handleLogout}>
+          <IonItem
+            button={true}
+            detail={false}
+            disabled={logoutState.isLoading}
+            onClick={() => void handleLogout()}
+          >
             <IonIcon icon={logOutOutline} slot="start" />
             <IonLabel>{t('auth.logout')}</IonLabel>
           </IonItem>
         </IonList>
       </IonPopover>
+      <IonToast
+        isOpen={Boolean(logoutError)}
+        onDidDismiss={() => setLogoutError('')}
+        message={logoutError}
+        duration={3000}
+        color="danger"
+      />
     </IonHeader>
   );
 };

@@ -220,6 +220,7 @@ export const invoiceApi = apiSlice.injectEndpoints({
 export const {
   useGetInvoicesQuery,
   useGetInvoiceByIdQuery,
+  useLazyGetInvoiceByIdQuery,
   useGetFinalizedDocumentQuery,
   useQuoteInvoiceMutation,
   useGetHeldBillsQuery,

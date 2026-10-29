@@ -621,6 +621,9 @@
     "packagingLoose": "सैल",
     "addNewCategory": "नवीन श्रेणी जोडा",
     "sellingPriceLabel": "विक्री किंमत *",
+    "mrpPriceLabel": "एमआरपी",
+    "enterMrpPlaceholder": "कमाल किरकोळ किंमत प्रविष्ट करा",
+    "mrpBelowSellingPrice": "एमआरपी विक्री किंमतीपेक्षा कमी असू शकत नाही",
     "createProductTitle": "उत्पादन तयार करा",
     "createProductButton": "उत्पादन तयार करा",
     "basePriceCostPrice": "मूळ किंमत (खर्च किंमत)",
@@ -902,7 +905,8 @@
     "saveError": "पेमेंट नोंदवता आले नाही.",
     "adjustment": "समायोजन",
     "loadingInvoices": "चलने लोड होत आहेत...",
-    "generalPayment": "सामान्य पेमेंट",
+    "generalPayment": "सर्वात जुनी बिले आधी भरा",
+    "oldestFirstHint": "हे पेमेंट ग्राहकाच्या सर्वात जुन्या थकीत बिलांमध्ये आधी जमा होईल. उरलेली रक्कम खात्यात क्रेडिट राहील.",
     "amountAutoFilled": "निवडलेल्या चलनातून रक्कम भरली आहे.",
     "enterAmount": "रक्कम लिहा",
     "recordPayment": "पेमेंट रेकॉर्ड करा",
@@ -1445,7 +1449,17 @@
     "cash": "रोकड",
     "upi": "UPI",
     "card": "कार्ड",
-    "bankTransfer": "बँक ट्रान्सफर"
+    "bankTransfer": "बँक ट्रान्सफर",
+    "splitPayment": "विभाजित पेमेंट",
+    "splitHint": "हे बिल दोन किंवा अधिक पेमेंट प्रकारांत विभागा. सर्व पेमेंट यशस्वी झाल्यावरच बिल पूर्ण होईल.",
+    "splitRetryHint": "जतन केलेले पेमेंट पुन्हा प्रयत्नात आहे. दुहेरी किंवा बदललेले पेमेंट टाळण्यासाठी रक्कम लॉक आहे.",
+    "tenderNumber": "पेमेंट {{number}}",
+    "tenderAmount": "पेमेंट रक्कम",
+    "splitModesUnique": "प्रत्येक पेमेंटसाठी वेगळा प्रकार निवडा.",
+    "splitRemaining": "शिल्लक",
+    "splitOver": "जास्त",
+    "addTender": "आणखी एक पेमेंट प्रकार जोडा",
+    "removeTender": "काढा"
   },
   "taxFields": {
     "customerDetails": "GST आणि पत्ता तपशील (ऐच्छिक)",
@@ -1506,7 +1520,7 @@
     "loadFailed": "बिल सेटिंग्ज लोड झाल्या नाहीत"
   },
   "shifts": {
-    "title": "कॅश शिफ्ट", "eyebrow": "काउंटर नियंत्रण", "heading": "कॅश उघडा, मोजा आणि बंद करा", "description": "कॅश पेमेंट व नोंदवलेल्या हालचालींशी ड्रॉवर जुळवा.", "open": "उघडी", "closed": "बंद", "openShift": "शिफ्ट उघडा", "openingCash": "सुरुवातीची कॅश", "counter": "काउंटर नाव (ऐच्छिक)", "openedSuccess": "शिफ्ट उघडली", "liveSummary": "थेट सारांश", "cashSales": "कॅश विक्री", "cashIn": "कॅश जमा", "cashOut": "कॅश काढली", "expectedCash": "अपेक्षित कॅश", "cashMovement": "कॅश हालचाल नोंदवा", "movementType": "हालचाल प्रकार", "reason": "कारण", "saveMovement": "जतन करा", "adjustmentSaved": "कॅश हालचाल जतन झाली", "closeShift": "शिफ्ट बंद करा", "countHint": "ड्रॉवर मोजा. अपेक्षित कॅश {{amount}} आहे.", "countedCash": "मोजलेली कॅश", "closingNote": "बंद नोंद (ऐच्छिक)", "variance": "फरक", "closedSuccess": "शिफ्ट बंद झाली", "recent": "अलीकडील शिफ्ट", "failed": "शिफ्ट अपडेट झाली नाही"
+    "title": "कॅश शिफ्ट", "eyebrow": "काउंटर नियंत्रण", "heading": "कॅश उघडा, मोजा आणि बंद करा", "description": "कॅश पेमेंट व नोंदवलेल्या हालचालींशी ड्रॉवर जुळवा.", "open": "उघडी", "closed": "बंद", "openShift": "शिफ्ट उघडा", "openingCash": "सुरुवातीची कॅश", "counter": "काउंटर नाव (ऐच्छिक)", "openedSuccess": "शिफ्ट उघडली", "liveSummary": "थेट सारांश", "cashSales": "कॅश विक्री", "cashIn": "कॅश जमा", "cashOut": "कॅश काढली", "expectedCash": "अपेक्षित कॅश", "cashMovement": "कॅश हालचाल नोंदवा", "movementType": "हालचाल प्रकार", "reason": "कारण", "saveMovement": "जतन करा", "adjustmentSaved": "कॅश हालचाल जतन झाली", "closeShift": "शिफ्ट बंद करा", "countHint": "ड्रॉवर मोजा. अपेक्षित कॅश {{amount}} आहे.", "countedCash": "मोजलेली कॅश", "closingNote": "बंद नोंद (ऐच्छिक)", "closingNoteRequired": "कॅश फरकाचे कारण", "variance": "फरक", "varianceReasonRequired": "शिफ्ट बंद करण्यापूर्वी कॅश फरकाचे कारण लिहा.", "closedSuccess": "शिफ्ट बंद झाली", "recent": "अलीकडील शिफ्ट", "failed": "शिफ्ट अपडेट झाली नाही"
   },
   "onboarding": {
     "title": "सुरुवात", "eyebrow": "दुकान सेटअप", "heading": "पहिल्या बिलासाठी तयार व्हा", "description": "दुकान योग्य पद्धतीने सेट करण्यासाठी ही यादी पूर्ण करा.", "open": "उघडा", "steps": { "profile": { "title": "दुकान व बिल ओळख", "description": "दुकान, पावती, लोगो आणि GST तपशील तपासा." }, "products": { "title": "उत्पादने व स्टॉक", "description": "किंमत, बारकोड व सुरुवातीचा स्टॉक जोडा." }, "staff": { "title": "स्टाफ जोडा", "description": "फक्त आवश्यक लोकांना प्रवेश द्या." }, "shift": { "title": "कॅश काउंटर उघडा", "description": "सुरुवातीची कॅश नोंदवा." }, "sale": { "title": "सराव विक्री", "description": "ग्राहकांपूर्वी एक बिल तयार करून शेअर करा." } }, "helpTitle": "मदत हवी?", "helpDescription": "स्क्रीन आणि समस्येसह मदत विनंती पाठवा.", "contactSupport": "मदत घ्या"

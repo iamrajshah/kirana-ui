@@ -5,6 +5,7 @@ import { ReportsPage } from './ReportsPage';
 
 const inventoryPayload = vi.hoisted(() => ({ value: null as unknown }));
 const purchasePayload = vi.hoisted(() => ({ value: [] as unknown[] }));
+const purchaseSummary = vi.hoisted(() => ({ value: undefined as unknown }));
 const salesPayload = vi.hoisted(() => ({ value: undefined as unknown }));
 const reportRequests = vi.hoisted(
   () =>
@@ -28,6 +29,7 @@ const querySkips = vi.hoisted(() => ({ sales: [] as boolean[], inventory: [] as 
 const reportArgs = vi.hoisted(() => ({ sales: [] as unknown[] }));
 const commercialState = vi.hoisted(() => ({
   allowed: true,
+  multiFirmAllowed: false,
   access: null as null | { planCode: string },
 }));
 const firmState = vi.hoisted(() => ({
@@ -44,7 +46,8 @@ vi.mock('@core/auth/authSlice', () => ({
   selectCommercialAccess: () => commercialState.access,
 }));
 vi.mock('@core/commercial/commercialAccess', () => ({
-  canUseCommercialFeature: () => commercialState.allowed,
+  canUseCommercialFeature: (_roles: unknown, _access: unknown, feature: string) =>
+    feature === 'MULTI_FIRM' ? commercialState.multiFirmAllowed : commercialState.allowed,
 }));
 vi.mock('@core/api/firmApi', () => ({
   useGetFirmsQuery: (params: unknown, options: unknown) => {
@@ -84,7 +87,11 @@ vi.mock('@core/api/reportsApi', () => {
     useGetTopSellingQuery: emptyReport('topSelling'),
     useGetSupplierOutstandingQuery: emptyReport('supplierOutstanding'),
     useGetPurchaseRegisterQuery: () => ({
-      data: { data: purchasePayload.value },
+      data: {
+        data: purchasePayload.value,
+        summary: purchaseSummary.value,
+        pagination: { total: purchasePayload.value.length, page: 1, limit: 50, totalPages: 1 },
+      },
       isLoading: false,
       ...reportRequests.purchaseRegister,
     }),
@@ -153,6 +160,7 @@ const item = {
 beforeEach(() => {
   inventoryPayload.value = null;
   purchasePayload.value = [];
+  purchaseSummary.value = undefined;
   salesPayload.value = undefined;
   Object.values(reportRequests).forEach((request) => {
     request.isError = false;
@@ -162,6 +170,7 @@ beforeEach(() => {
   querySkips.inventory.length = 0;
   reportArgs.sales.length = 0;
   commercialState.allowed = true;
+  commercialState.multiFirmAllowed = false;
   commercialState.access = null;
   firmState.firms = [];
   firmState.calls.length = 0;
@@ -223,6 +232,7 @@ it('locks advanced reports before a direct UI selection can trigger their query'
 
 it('lets a demo shop select a seeded firm for firm-scoped reports', () => {
   commercialState.access = { planCode: 'DEMO' };
+  commercialState.multiFirmAllowed = true;
   firmState.firms = [
     { id: 'firm-1', legal_name: 'Demo Main Firm', is_default_sales: true },
     { id: 'firm-2', legal_name: 'Demo Second Firm', is_default_sales: false },
@@ -234,6 +244,19 @@ it('lets a demo shop select a seeded firm for firm-scoped reports', () => {
 
   fireEvent.click(screen.getByText('select firm two'));
   expect(reportArgs.sales.at(-1)).toEqual({ groupBy: 'day', firmId: 'firm-2', scope: 'FIRM' });
+});
+
+it('enables firm scope from the MULTI_FIRM entitlement instead of the plan name', () => {
+  commercialState.access = { planCode: 'PRO' };
+  commercialState.multiFirmAllowed = true;
+  firmState.firms = [
+    { id: 'firm-1', legal_name: 'Entitled Firm', is_default_sales: true },
+  ];
+
+  render(<ReportsPage />);
+
+  expect(firmState.calls.at(-1)?.options).toEqual({ skip: false });
+  expect(reportArgs.sales.at(-1)).toEqual({ groupBy: 'day', firmId: 'firm-1', scope: 'FIRM' });
 });
 
 it('uses a supplied summary for an inventory object response', () => {
@@ -275,6 +298,39 @@ it('opens the registered purchase detail route from the purchase register', asyn
       .closest('[data-router-link]')
       ?.getAttribute('data-router-link')
   ).toBe('/purchases/purchase-1');
+});
+
+it('renders the canonical purchase register summary fields returned by the API', () => {
+  purchasePayload.value = [
+    {
+      id: 'purchase-1',
+      invoice_number: 'P-100',
+      supplier_name: 'Local Supplier',
+      supplier_phone: '123',
+      invoice_date: '2026-10-12',
+      item_count: 2,
+      total_amount: 1250,
+      pending_amount: 700,
+      status: 'PARTIAL',
+    },
+  ];
+  purchaseSummary.value = {
+    total_purchases: 4,
+    total_amount: 1250,
+    total_paid: 550,
+    total_outstanding: 700,
+  };
+
+  render(<ReportsPage />);
+  fireEvent.click(screen.getByText('purchase register'));
+
+  expect(screen.getByText('reports.totalPurchasesCount').nextElementSibling?.textContent).toBe('4');
+  expect(screen.getByText('reports.totalAmountLabel').nextElementSibling?.textContent).toContain(
+    '1,250'
+  );
+  expect(screen.getByText('reports.pendingAmountLabel').nextElementSibling?.textContent).toContain(
+    '700'
+  );
 });
 
 it('keeps a failed report separate from an empty report and retries it', () => {

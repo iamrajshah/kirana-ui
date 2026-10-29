@@ -15,7 +15,7 @@ import { add, bookmark, card, cash, personAdd, remove, scan, trash } from 'ionic
 import { useHistory, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BarcodeScannerComponent, Loading, SearchBar } from '@components';
-import { PaymentModal } from '@components/PaymentModal';
+import { PaymentModal, type SplitPaymentSubmissionOutcome } from '@components/PaymentModal';
 import { Navbar } from '@components/Navbar';
 import {
   useCreateInvoiceMutation,
@@ -24,6 +24,7 @@ import {
   useGetFinalizedDocumentQuery,
   useGetHeldBillsQuery,
   useGetInvoiceByIdQuery,
+  useLazyGetInvoiceByIdQuery,
   useQuoteInvoiceMutation,
   useRenewHeldBillMutation,
   useUpdateInvoiceMutation,
@@ -31,7 +32,11 @@ import {
   type InvoiceQuotePayload,
 } from '@core/api/invoiceApi';
 import { useGetTenantSettingsQuery } from '@core/api/tenantSettingsApi';
-import { useCreatePaymentMutation } from '@core/api/paymentApi';
+import {
+  useCreatePaymentMutation,
+  useCreateSplitPaymentMutation,
+  type SplitPaymentTender,
+} from '@core/api/paymentApi';
 import { useGetCustomerByIdQuery, useGetCustomersQuery } from '@core/api/customerApi';
 import {
   useCreateProductFromBarcodeMutation,
@@ -43,7 +48,7 @@ import notificationService, { apiErrorMessage } from '@core/services/notificatio
 import { ROUTES } from '@core/constants';
 import { selectCurrentUser } from '@core/auth/authSlice';
 import { useAppSelector } from '@core/hooks';
-import type { Customer, HeldBill, PaymentMode } from '@core/types';
+import type { Customer, HeldBill, Invoice, PaymentMode } from '@core/types';
 import { formatCurrency, generateIdempotencyKey } from '@utils/helpers';
 import type { BillingCartItem } from './billing.logic';
 import { filterBillingCatalog, filterCustomers } from '@utils/localSearch';
@@ -76,6 +81,32 @@ const LONG_BILL_PREVIEW_ITEMS = 5;
 
 const isConflictError = (error: unknown) =>
   typeof error === 'object' && error !== null && 'status' in error && error.status === 409;
+
+const getApiStatus = (error: unknown): number | null => {
+  if (typeof error !== 'object' || error === null || !('status' in error)) return null;
+  return typeof error.status === 'number' ? error.status : null;
+};
+
+const isDefinitiveClientError = (error: unknown) => {
+  const status = getApiStatus(error);
+  return status !== null && status >= 400 && status < 500;
+};
+
+const isInvoiceSettled = (invoice: Invoice) => {
+  if (invoice.status === 'PAID') return true;
+  if (invoice.status === 'DRAFT' || invoice.status === 'CANCELLED') return false;
+  const total = Number(invoice.total_amount);
+  const paid = Number(invoice.paid_amount ?? 0);
+  const balance = Number(invoice.balance_amount ?? total - paid);
+  return (
+    Number.isFinite(total) &&
+    total > 0 &&
+    Number.isFinite(paid) &&
+    paid >= total &&
+    Number.isFinite(balance) &&
+    balance <= 0
+  );
+};
 
 export const BillingPage: React.FC = () => {
   const { t } = useTranslation();
@@ -113,6 +144,8 @@ export const BillingPage: React.FC = () => {
   const [finalizeInvoice, { isLoading: finalizing }] = useFinalizeInvoiceMutation();
   const [renewHeldBill] = useRenewHeldBillMutation();
   const [createPayment, { isLoading: paying }] = useCreatePaymentMutation();
+  const [createSplitPayment, { isLoading: splittingPayment }] = useCreateSplitPaymentMutation();
+  const [getInvoiceForSplitRecovery] = useLazyGetInvoiceByIdQuery();
   const {
     data: invoiceData,
     isLoading: invoiceLoading,
@@ -170,6 +203,9 @@ export const BillingPage: React.FC = () => {
   const [pendingCustomerId, setPendingCustomerId] = useState<string | null>(
     restoredPendingCheckout?.customerId ?? null
   );
+  const [pendingSplitTenders, setPendingSplitTenders] = useState<SplitPaymentTender[] | undefined>(
+    restoredPendingCheckout?.splitTenders
+  );
   const [completionInvoiceId, setCompletionInvoiceId] = useState<string | null>(() =>
     currentUser ? loadBillingCompletion(billingStorageOwner) : null
   );
@@ -217,6 +253,15 @@ export const BillingPage: React.FC = () => {
     [receiptDocument]
   );
   const receiptOutput = useReceiptOutput();
+  const resetReceiptOutput = receiptOutput.reset;
+
+  useEffect(() => {
+    if (location.pathname === ROUTES.BILLING || !completionInvoiceId) return;
+
+    clearBillingCompletion();
+    setCompletionInvoiceId(null);
+    resetReceiptOutput();
+  }, [completionInvoiceId, location.pathname, resetReceiptOutput]);
 
   const customerId = selectedCustomer?.id || '';
   const {
@@ -650,6 +695,7 @@ export const BillingPage: React.FC = () => {
     setPendingPayable(null);
     setPendingPreviousBalance(0);
     setPendingCustomerId(null);
+    setPendingSplitTenders(undefined);
     setActiveQuote(null);
     setActiveQuoteKey(null);
     setQuoteError(null);
@@ -790,6 +836,7 @@ export const BillingPage: React.FC = () => {
     setPendingPayable(payable);
     setPendingPreviousBalance(previousBalance);
     setPendingCustomerId(checkout.customerId);
+    setPendingSplitTenders(undefined);
   };
 
   const showCompletion = (invoiceId: string) => {
@@ -969,6 +1016,7 @@ export const BillingPage: React.FC = () => {
       setPendingPayable(null);
       setPendingPreviousBalance(0);
       setPendingCustomerId(null);
+      setPendingSplitTenders(undefined);
       clearPendingBillingCheckout();
       invoiceIdempotencyKey.current = generateIdempotencyKey();
       paymentIdempotencyKey.current = generateIdempotencyKey();
@@ -993,6 +1041,81 @@ export const BillingPage: React.FC = () => {
     } catch (error: unknown) {
       notificationService.error(apiErrorMessage(error, t('billing.paymentFailed'), true));
       throw error;
+    }
+  };
+
+  const handleModalSplitPayment = async (
+    tenders: SplitPaymentTender[]
+  ): Promise<SplitPaymentSubmissionOutcome> => {
+    if (!pendingInvoiceId) {
+      notificationService.error(t('billing.missingInvoice'));
+      return 'rejected';
+    }
+
+    const customer = pendingCustomerId || customerId || null;
+    // Persist the exact multi-tender payload before the request. If the response
+    // is lost, recovery can safely replay the same atomic operation and key.
+    persistPendingBillingCheckout(
+      {
+        invoiceId: pendingInvoiceId,
+        payable: pendingPayable ?? displayedTotals.total,
+        previousBalance: pendingPreviousBalance,
+        customerId: customer,
+        paymentIdempotencyKey: paymentIdempotencyKey.current,
+        splitTenders: tenders,
+      },
+      billingStorageOwner
+    );
+    setPendingSplitTenders(tenders);
+
+    try {
+      await createSplitPayment({
+        ...(customer ? { customer_id: customer } : {}),
+        invoice_id: pendingInvoiceId,
+        tenders,
+        idempotency_key: paymentIdempotencyKey.current,
+      }).unwrap();
+      completePayment(pendingInvoiceId);
+      return 'completed';
+    } catch (error: unknown) {
+      const paymentErrorMessage = apiErrorMessage(error, t('billing.paymentFailed'), true);
+      if (!isDefinitiveClientError(error)) {
+        // A network/timeout/5xx result may have committed without returning a
+        // response. Keep both the payload and idempotency key locked for an
+        // exact safe replay.
+        notificationService.error(paymentErrorMessage);
+        return 'uncertain';
+      }
+
+      try {
+        const refreshed = await getInvoiceForSplitRecovery(pendingInvoiceId, false).unwrap();
+        if (refreshed.data && isInvoiceSettled(refreshed.data)) {
+          completePayment(pendingInvoiceId);
+          return 'completed';
+        }
+      } catch (refreshError: unknown) {
+        if (!isDefinitiveClientError(refreshError)) {
+          notificationService.error(paymentErrorMessage);
+          return 'uncertain';
+        }
+        // A second definitive 4xx still proves there was no ambiguous server
+        // outcome. Reopen the form rather than trapping the cashier.
+      }
+
+      paymentIdempotencyKey.current = generateIdempotencyKey();
+      persistPendingBillingCheckout(
+        {
+          invoiceId: pendingInvoiceId,
+          payable: pendingPayable ?? displayedTotals.total,
+          previousBalance: pendingPreviousBalance,
+          customerId: customer,
+          paymentIdempotencyKey: paymentIdempotencyKey.current,
+        },
+        billingStorageOwner
+      );
+      setPendingSplitTenders(undefined);
+      notificationService.error(paymentErrorMessage);
+      return 'rejected';
     }
   };
 
@@ -1663,10 +1786,12 @@ export const BillingPage: React.FC = () => {
             isOpen={showPaymentModal}
             onClose={cancelPendingCheckout}
             onPayment={handleModalPayment}
+            onSplitPayment={handleModalSplitPayment}
+            initialSplitTenders={pendingSplitTenders}
             invoiceAmount={pendingPayable ?? displayedTotals.total}
             previousBalance={pendingPreviousBalance}
             paidAmount={0}
-            isLoading={paying}
+            isLoading={paying || splittingPayment}
             allowPartial={Boolean(pendingCustomerId || customerId)}
           />
         )}

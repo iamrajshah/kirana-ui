@@ -20,6 +20,7 @@ export interface BillingSearchVariant {
   size?: string | null;
   packaging?: Packaging | null;
   price: number;
+  mrp_price?: number;
   gst_percent?: number | null;
   sku: string;
   available_quantity: number;
@@ -45,6 +46,8 @@ interface CreateVariantRequest {
   size?: string | null;
   packaging?: Packaging | null;
   price: number;
+  selling_price?: number | null;
+  mrp_price?: number | null;
   gst_percent?: number | null;
   uqc_code?: UqcCode | null;
   unit_label?: string | null;
@@ -121,6 +124,7 @@ export const productApi = apiSlice.injectEndpoints({
         id: string;
         data: {
           selling_price?: number;
+          mrp_price?: number | null;
           price?: number;
           gst_percent?: number | null;
           uqc_code?: UqcCode | null;

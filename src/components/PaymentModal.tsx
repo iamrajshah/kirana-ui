@@ -16,12 +16,17 @@ import { close } from 'ionicons/icons';
 import { Input, Select, Button } from '@components';
 import { formatCurrency } from '@utils/helpers';
 import type { PaymentMode } from '@core/types';
+import type { SplitPaymentTender } from '@core/api/paymentApi';
 import { useTranslation } from 'react-i18next';
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPayment: (amount: number, mode: PaymentMode, reference?: string) => void | Promise<void>;
+  onSplitPayment?: (
+    tenders: SplitPaymentTender[]
+  ) => void | SplitPaymentSubmissionOutcome | Promise<void | SplitPaymentSubmissionOutcome>;
+  initialSplitTenders?: SplitPaymentTender[];
   invoiceAmount: number;
   previousBalance?: number;
   paidAmount?: number;
@@ -29,10 +34,14 @@ interface PaymentModalProps {
   allowPartial?: boolean;
 }
 
+export type SplitPaymentSubmissionOutcome = 'completed' | 'rejected' | 'uncertain';
+
 export const PaymentModal: React.FC<PaymentModalProps> = ({
   isOpen,
   onClose,
   onPayment,
+  onSplitPayment,
+  initialSplitTenders,
   invoiceAmount,
   previousBalance = 0,
   paidAmount = 0,
@@ -43,15 +52,82 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('CASH');
   const [amount, setAmount] = useState<string>('');
   const [reference, setReference] = useState('');
-  const [paymentType, setPaymentType] = useState<'full' | 'partial'>('full');
+  const [paymentType, setPaymentType] = useState<'full' | 'partial' | 'split'>(
+    initialSplitTenders?.length ? 'split' : 'full'
+  );
+  const [splitTenders, setSplitTenders] = useState<
+    Array<{
+      payment_mode: SplitPaymentTender['payment_mode'];
+      amount: string;
+      reference_note: string;
+    }>
+  >(
+    initialSplitTenders?.length
+      ? initialSplitTenders.map((tender) => ({
+          payment_mode: tender.payment_mode,
+          amount: String(tender.amount),
+          reference_note: tender.reference_note ?? '',
+        }))
+      : [
+          { payment_mode: 'CASH', amount: '', reference_note: '' },
+          { payment_mode: 'UPI', amount: '', reference_note: '' },
+        ]
+  );
+  const [splitLocked, setSplitLocked] = useState(Boolean(initialSplitTenders?.length));
 
   const balanceAmount = invoiceAmount - paidAmount;
   const previousOutstanding = Math.max(0, previousBalance);
   const customerAdvance = Math.max(0, -previousBalance);
   const totalCustomerDue = previousOutstanding + balanceAmount;
-  const effectivePaymentType = allowPartial ? paymentType : 'full';
+  const effectivePaymentType =
+    paymentType === 'split' ? 'split' : allowPartial ? paymentType : 'full';
+  const balancePaise = Math.round(balanceAmount * 100);
+  const splitTotalPaise = splitTenders.reduce(
+    (total, tender) => total + Math.round((parseFloat(tender.amount) || 0) * 100),
+    0
+  );
+  const splitRemainingPaise = balancePaise - splitTotalPaise;
+  const splitModesAreUnique =
+    new Set(splitTenders.map((tender) => tender.payment_mode)).size === splitTenders.length;
+  const splitIsValid =
+    splitTenders.length >= 2 &&
+    splitTenders.every((tender) => Math.round((parseFloat(tender.amount) || 0) * 100) > 0) &&
+    splitModesAreUnique &&
+    splitRemainingPaise === 0;
 
   const handleSubmit = async () => {
+    if (effectivePaymentType === 'split') {
+      if (!onSplitPayment || !splitIsValid) return;
+      const tenders = splitTenders.map((tender) => ({
+        payment_mode: tender.payment_mode,
+        amount: Math.round(parseFloat(tender.amount) * 100) / 100,
+        ...(tender.reference_note.trim() ? { reference_note: tender.reference_note.trim() } : {}),
+      }));
+      setSplitLocked(true);
+      try {
+        const outcome = await onSplitPayment(tenders);
+        if (outcome === 'uncertain') return;
+        if (outcome === 'rejected') {
+          // The API definitely rejected the request and BillingPage confirmed
+          // that the invoice is still unpaid. The cashier can now correct the
+          // tender mix; the next submission uses a fresh idempotency key.
+          setSplitLocked(false);
+          return;
+        }
+        setSplitTenders([
+          { payment_mode: 'CASH', amount: '', reference_note: '' },
+          { payment_mode: 'UPI', amount: '', reference_note: '' },
+        ]);
+        setSplitLocked(false);
+        setPaymentType('full');
+      } catch (error) {
+        // Keep the exact tender set locked so an uncertain network result can
+        // only be retried with the same idempotent payload.
+        console.error('Split payment error:', error);
+      }
+      return;
+    }
+
     const payAmount = effectivePaymentType === 'full' ? balanceAmount : parseFloat(amount) || 0;
 
     if (payAmount <= 0) {
@@ -76,12 +152,50 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     }
   };
 
-  const paymentModeOptions = [
-    { value: 'CASH' as PaymentMode, label: t('payment.cash') },
-    { value: 'UPI' as PaymentMode, label: t('payment.upi') },
-    { value: 'CARD' as PaymentMode, label: t('payment.card') },
-    { value: 'BANK' as PaymentMode, label: t('payment.bankTransfer') },
+  const paymentModeOptions: Array<{
+    value: SplitPaymentTender['payment_mode'];
+    label: string;
+  }> = [
+    { value: 'CASH', label: t('payment.cash') },
+    { value: 'UPI', label: t('payment.upi') },
+    { value: 'CARD', label: t('payment.card') },
+    { value: 'BANK', label: t('payment.bankTransfer') },
   ];
+
+  const updateSplitTender = (
+    index: number,
+    field: 'payment_mode' | 'amount' | 'reference_note',
+    value: string
+  ) => {
+    if (splitLocked) return;
+    setSplitTenders((current) =>
+      current.map((tender, tenderIndex) =>
+        tenderIndex === index
+          ? {
+              ...tender,
+              [field]:
+                field === 'payment_mode' ? (value as SplitPaymentTender['payment_mode']) : value,
+            }
+          : tender
+      )
+    );
+  };
+
+  const addSplitTender = () => {
+    if (splitLocked || splitTenders.length >= paymentModeOptions.length) return;
+    const usedModes = new Set(splitTenders.map((tender) => tender.payment_mode));
+    const nextMode = paymentModeOptions.find((option) => !usedModes.has(option.value))?.value;
+    if (!nextMode) return;
+    setSplitTenders((current) => [
+      ...current,
+      { payment_mode: nextMode, amount: '', reference_note: '' },
+    ]);
+  };
+
+  const removeSplitTender = (index: number) => {
+    if (splitLocked || splitTenders.length <= 2) return;
+    setSplitTenders((current) => current.filter((_, tenderIndex) => tenderIndex !== index));
+  };
 
   return (
     <IonModal isOpen={isOpen} backdropDismiss={false}>
@@ -149,20 +263,28 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         </div>
 
         {/* Payment Type Selector */}
-        {allowPartial && (
+        {(allowPartial || onSplitPayment) && (
           <div className="mb-4">
             <IonSegment
               key={paymentType}
               value={paymentType}
-              onIonChange={(e) => setPaymentType(e.detail.value as 'full' | 'partial')}
+              onIonChange={(e) => setPaymentType(e.detail.value as 'full' | 'partial' | 'split')}
               color="primary"
+              disabled={splitLocked || isLoading}
             >
-              <IonSegmentButton value="full">
+              <IonSegmentButton value="full" onClick={() => setPaymentType('full')}>
                 <IonLabel>{t('payment.fullPayment')}</IonLabel>
               </IonSegmentButton>
-              <IonSegmentButton value="partial">
-                <IonLabel>{t('payment.partialPayment')}</IonLabel>
-              </IonSegmentButton>
+              {allowPartial && (
+                <IonSegmentButton value="partial" onClick={() => setPaymentType('partial')}>
+                  <IonLabel>{t('payment.partialPayment')}</IonLabel>
+                </IonSegmentButton>
+              )}
+              {onSplitPayment && (
+                <IonSegmentButton value="split" onClick={() => setPaymentType('split')}>
+                  <IonLabel>{t('payment.splitPayment')}</IonLabel>
+                </IonSegmentButton>
+              )}
             </IonSegment>
           </div>
         )}
@@ -177,7 +299,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               {formatCurrency(balanceAmount)}
             </p>
           </div>
-        ) : (
+        ) : effectivePaymentType === 'partial' ? (
           <div className="mb-4">
             <Input
               label={t('payment.partialAmount')}
@@ -193,34 +315,141 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               </p>
             )}
           </div>
-        )}
+        ) : null}
 
         {/* Payment Mode */}
-        <div className="mb-4">
-          <Select
-            label={t('payment.paymentMode')}
-            value={paymentMode}
-            onChange={(val) => setPaymentMode(val as PaymentMode)}
-            options={paymentModeOptions}
-          />
-        </div>
-
-        {/* Reference Note */}
-        {(paymentMode === 'UPI' || paymentMode === 'CARD' || paymentMode === 'BANK') && (
+        {effectivePaymentType !== 'split' && (
           <div className="mb-4">
-            <Input
-              label={t('payment.referenceNumber')}
-              value={reference}
-              onChange={setReference}
-              placeholder={
-                paymentMode === 'UPI'
-                  ? t('payment.upiTransactionId')
-                  : paymentMode === 'CARD'
-                    ? t('payment.last4DigitsOrApproval')
-                    : t('payment.bankReferenceNumber')
-              }
+            <Select
+              label={t('payment.paymentMode')}
+              value={paymentMode}
+              onChange={(val) => setPaymentMode(val as PaymentMode)}
+              options={paymentModeOptions}
             />
           </div>
+        )}
+
+        {/* Reference Note */}
+        {effectivePaymentType !== 'split' &&
+          (paymentMode === 'UPI' || paymentMode === 'CARD' || paymentMode === 'BANK') && (
+            <div className="mb-4">
+              <Input
+                label={t('payment.referenceNumber')}
+                value={reference}
+                onChange={setReference}
+                placeholder={
+                  paymentMode === 'UPI'
+                    ? t('payment.upiTransactionId')
+                    : paymentMode === 'CARD'
+                      ? t('payment.last4DigitsOrApproval')
+                      : t('payment.bankReferenceNumber')
+                }
+              />
+            </div>
+          )}
+
+        {effectivePaymentType === 'split' && (
+          <section aria-label={t('payment.splitPayment')} className="mb-4 space-y-3">
+            <p
+              className="text-sm"
+              data-testid="split-payment-hint"
+              style={{ color: 'var(--ion-text-color-secondary)' }}
+            >
+              {splitLocked ? t('payment.splitRetryHint') : t('payment.splitHint')}
+            </p>
+            {splitTenders.map((tender, index) => {
+              const needsReference = tender.payment_mode !== 'CASH';
+              return (
+                <div
+                  key={`${index}-${tender.payment_mode}`}
+                  data-testid={`split-tender-card-${index}`}
+                  className="rounded-xl border p-3"
+                  style={{
+                    borderColor: 'var(--ion-border-color)',
+                    backgroundColor: 'var(--ion-card-background)',
+                    color: 'var(--ion-text-color)',
+                  }}
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <strong>{t('payment.tenderNumber', { number: index + 1 })}</strong>
+                    {splitTenders.length > 2 && !splitLocked && (
+                      <button
+                        type="button"
+                        onClick={() => removeSplitTender(index)}
+                        className="text-sm"
+                        style={{ color: '#eb445a' }}
+                      >
+                        {t('payment.removeTender')}
+                      </button>
+                    )}
+                  </div>
+                  <Select
+                    label={t('payment.paymentMode')}
+                    value={tender.payment_mode}
+                    onChange={(value) => updateSplitTender(index, 'payment_mode', value)}
+                    options={paymentModeOptions}
+                    disabled={splitLocked}
+                  />
+                  <Input
+                    label={t('payment.tenderAmount')}
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    value={tender.amount}
+                    onChange={(value) => updateSplitTender(index, 'amount', value)}
+                    placeholder="0.00"
+                    disabled={splitLocked}
+                    required
+                  />
+                  {needsReference && (
+                    <Input
+                      label={t('payment.referenceNumber')}
+                      value={tender.reference_note}
+                      onChange={(value) => updateSplitTender(index, 'reference_note', value)}
+                      placeholder={t('payment.referenceNumber')}
+                      disabled={splitLocked}
+                    />
+                  )}
+                </div>
+              );
+            })}
+            {!splitModesAreUnique && (
+              <p role="alert" className="text-sm" style={{ color: '#eb445a' }}>
+                {t('payment.splitModesUnique')}
+              </p>
+            )}
+            <div
+              role="status"
+              className="flex items-center justify-between rounded-lg p-3 font-semibold"
+              style={{
+                backgroundColor:
+                  splitRemainingPaise === 0
+                    ? 'var(--kirana-surface-accent-strong)'
+                    : 'var(--kirana-surface-soft)',
+                border: `1px solid ${
+                  splitRemainingPaise === 0
+                    ? 'var(--ion-color-success)'
+                    : 'var(--ion-color-warning)'
+                }`,
+                color: 'var(--ion-text-color)',
+              }}
+            >
+              <span>
+                {splitRemainingPaise >= 0 ? t('payment.splitRemaining') : t('payment.splitOver')}
+              </span>
+              <span>{formatCurrency(Math.abs(splitRemainingPaise) / 100)}</span>
+            </div>
+            {splitTenders.length < paymentModeOptions.length && !splitLocked && (
+              <button
+                type="button"
+                className="w-full rounded-lg border p-3 font-semibold"
+                style={{ borderColor: '#3880ff', color: '#3880ff' }}
+                onClick={addSplitTender}
+              >
+                {t('payment.addTender')}
+              </button>
+            )}
+          </section>
         )}
 
         {/* Action Buttons */}
@@ -234,7 +463,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             disabled={
               isLoading ||
               (effectivePaymentType === 'partial' && (!amount || parseFloat(amount) <= 0)) ||
-              (effectivePaymentType === 'partial' && parseFloat(amount) > balanceAmount)
+              (effectivePaymentType === 'partial' && parseFloat(amount) > balanceAmount) ||
+              (effectivePaymentType === 'split' && !splitIsValid)
             }
             loading={isLoading}
           >

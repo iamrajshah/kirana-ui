@@ -7,15 +7,40 @@ configured client ID alone must never expose the launch surface.
 ## Web release
 
 1. Keep `VITE_GOOGLE_ENTRY_ENABLED=false` while deploying the SaaS-capable
-   bundle manually to Netlify.
+   bundle until the Google OAuth client exists and the server verifier is ready.
 2. Set `VITE_API_BASE_URL` to the verified production `/api/v1` URL and run
    `npm run build`. The bundle verifier must pass.
 3. Verify `/privacy`, `/terms`, `/support`, and `/account-deletion` are public,
    readable, HTTPS routes and match the URLs configured on the server and in
    Google Play Console.
 4. Test password OWNER, MANAGER, and CASHIER sessions before enabling Google.
-5. Enable the UI flag only after server `/readiness` reports Google new entry
-   and demo provisioning ready.
+5. For paid invited owners, enable `VITE_GOOGLE_ENTRY_ENABLED=true` only after
+   `googleKnownIdentity.enabled` is true in server `/readiness`. Generic new
+   identities and private demos have separate server gates and may remain off.
+6. Before producing the release bundle, set `VITE_API_BASE_URL`,
+   `VITE_GOOGLE_WEB_CLIENT_ID`, and `VITE_GOOGLE_ENTRY_ENABLED=true` in the
+   deployment environment, then run:
+
+   ```bash
+   npm run release:google:check
+   npm run build
+   ```
+
+   The first command explicitly checks a planned Google release. Every normal
+   production build also probes the configured API automatically when the UI
+   flag is true; a password-only build with the flag false performs no network
+   request. Enabled builds fail if the public web client ID is absent,
+   malformed, not ready on the server, or not an exact allow-list match.
+
+The Google Cloud OAuth web client must allow the exact production UI origin,
+currently `https://kirana-pos.pages.dev`, and later the custom domain.
+Add the same client ID to server `GOOGLE_WEB_CLIENT_IDS`; never add a client
+secret to the UI. A paid invited owner requires server `GOOGLE_AUTH_ENABLED`
+and `COMMERCIAL_ACTIVATION_ENABLED`, but does not require generic
+`GOOGLE_NEW_ENTRY_ENABLED` or `DEMO_PROVISIONING_ENABLED`.
+The server returns only SHA-256 audience fingerprints, separated into web and
+Android lists. The release check compares the UI web client fingerprint only;
+an Android audience cannot accidentally make a web release pass.
 
 Netlify auto-publish stays disabled to conserve the allowance. A merged PR does
 not mean the UI is live.

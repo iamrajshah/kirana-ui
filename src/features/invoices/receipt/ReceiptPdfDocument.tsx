@@ -20,10 +20,12 @@ import { defaultReceiptLabels } from './receiptLabels';
 
 let fontsRegistered = false;
 
-const fontSource = (source: string) =>
-  import.meta.env.MODE === 'test' && source.startsWith('/node_modules/')
-    ? `${process.cwd()}${source}`
-    : source;
+const fontSource = (source: string) => {
+  if (import.meta.env.MODE !== 'test') return source;
+  if (source.startsWith('/@fs/')) return source.slice('/@fs'.length);
+  if (source.startsWith('/node_modules/')) return `${process.cwd()}${source}`;
+  return source;
+};
 
 const registerFonts = () => {
   if (fontsRegistered) return;

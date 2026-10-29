@@ -616,6 +616,9 @@
     "packagingLoose": "છૂટક",
     "addNewCategory": "નવી કેટેગરી ઉમેરો",
     "sellingPriceLabel": "વેચાણ કિંમત *",
+    "mrpPriceLabel": "એમઆરપી",
+    "enterMrpPlaceholder": "મહત્તમ છૂટક કિંમત દાખલ કરો",
+    "mrpBelowSellingPrice": "એમઆરપી વેચાણ કિંમત કરતાં ઓછી હોઈ શકતી નથી",
     "createProductTitle": "ઉત્પાદન બનાવો",
     "createProductButton": "ઉત્પાદન બનાવો",
     "basePriceCostPrice": "મૂળ કિમત (ખર્ચ કિમત)",
@@ -897,7 +900,8 @@
     "saveError": "ચુકવણી નોંધાઈ નથી.",
     "adjustment": "ગોઠવણ",
     "loadingInvoices": "ચલનો લોડ થઈ રહ્યા છે...",
-    "generalPayment": "સામાન્ય ચુકવણી",
+    "generalPayment": "સૌથી જૂના બિલ પહેલાં ચૂકવો",
+    "oldestFirstHint": "આ ચુકવણી ગ્રાહકના સૌથી જૂના બાકી બિલમાં પહેલાં લાગશે. વધારાની રકમ ખાતામાં ક્રેડિટ રહેશે.",
     "amountAutoFilled": "પસંદ કરેલા ચલનથી રકમ ભરાઈ છે.",
     "enterAmount": "રકમ લખો",
     "recordPayment": "ચુકવણી રેકોર્ડ કરો",
@@ -1440,7 +1444,17 @@
     "cash": "રોકડ",
     "upi": "UPI",
     "card": "કાર્ડ",
-    "bankTransfer": "બેંક ટ્રાન્સફર"
+    "bankTransfer": "બેંક ટ્રાન્સફર",
+    "splitPayment": "વિભાજિત ચુકવણી",
+    "splitHint": "આ બિલને બે અથવા વધુ ચુકવણી પદ્ધતિમાં વહેંચો. બધી ચુકવણી સફળ થયા પછી જ બિલ પૂર્ણ થશે.",
+    "splitRetryHint": "સાચવેલી ચુકવણી ફરી પ્રયાસમાં છે. ડુપ્લિકેટ અથવા બદલાયેલી ચુકવણી અટકાવવા રકમ લોક છે.",
+    "tenderNumber": "ચુકવણી {{number}}",
+    "tenderAmount": "ચુકવણી રકમ",
+    "splitModesUnique": "દરેક ચુકવણી માટે અલગ પદ્ધતિ પસંદ કરો.",
+    "splitRemaining": "બાકી",
+    "splitOver": "વધારે",
+    "addTender": "બીજી ચુકવણી પદ્ધતિ ઉમેરો",
+    "removeTender": "દૂર કરો"
   },
   "taxFields": {
     "customerDetails": "GST અને સરનામાની વિગતો (વૈકલ્પિક)",
@@ -1501,7 +1515,7 @@
     "loadFailed": "બિલ સેટિંગ્સ લોડ થઈ શકી નહીં"
   },
   "shifts": {
-    "title": "કેશ શિફ્ટ", "eyebrow": "કાઉન્ટર નિયંત્રણ", "heading": "કેશ ખોલો, ગણો અને બંધ કરો", "description": "કેશ ચુકવણી અને નોંધેલી હિલચાલ સાથે ડ્રોઅર મેળવો.", "open": "ખુલ્લી", "closed": "બંધ", "openShift": "શિફ્ટ ખોલો", "openingCash": "શરૂઆતની કેશ", "counter": "કાઉન્ટર નામ (વૈકલ્પિક)", "openedSuccess": "શિફ્ટ ખુલી", "liveSummary": "લાઇવ સારાંશ", "cashSales": "કેશ વેચાણ", "cashIn": "કેશ ઉમેર્યું", "cashOut": "કેશ કાઢ્યું", "expectedCash": "અપેક્ષિત કેશ", "cashMovement": "કેશ હિલચાલ નોંધો", "movementType": "હિલચાલ પ્રકાર", "reason": "કારણ", "saveMovement": "સાચવો", "adjustmentSaved": "કેશ હિલચાલ સાચવાઈ", "closeShift": "શિફ્ટ બંધ કરો", "countHint": "ડ્રોઅર ગણો. અપેક્ષિત કેશ {{amount}} છે.", "countedCash": "ગણેલી કેશ", "closingNote": "બંધ નોંધ (વૈકલ્પિક)", "variance": "તફાવત", "closedSuccess": "શિફ્ટ બંધ થઈ", "recent": "તાજેતરની શિફ્ટ", "failed": "શિફ્ટ અપડેટ થઈ નહીં"
+    "title": "કેશ શિફ્ટ", "eyebrow": "કાઉન્ટર નિયંત્રણ", "heading": "કેશ ખોલો, ગણો અને બંધ કરો", "description": "કેશ ચુકવણી અને નોંધેલી હિલચાલ સાથે ડ્રોઅર મેળવો.", "open": "ખુલ્લી", "closed": "બંધ", "openShift": "શિફ્ટ ખોલો", "openingCash": "શરૂઆતની કેશ", "counter": "કાઉન્ટર નામ (વૈકલ્પિક)", "openedSuccess": "શિફ્ટ ખુલી", "liveSummary": "લાઇવ સારાંશ", "cashSales": "કેશ વેચાણ", "cashIn": "કેશ ઉમેર્યું", "cashOut": "કેશ કાઢ્યું", "expectedCash": "અપેક્ષિત કેશ", "cashMovement": "કેશ હિલચાલ નોંધો", "movementType": "હિલચાલ પ્રકાર", "reason": "કારણ", "saveMovement": "સાચવો", "adjustmentSaved": "કેશ હિલચાલ સાચવાઈ", "closeShift": "શિફ્ટ બંધ કરો", "countHint": "ડ્રોઅર ગણો. અપેક્ષિત કેશ {{amount}} છે.", "countedCash": "ગણેલી કેશ", "closingNote": "બંધ નોંધ (વૈકલ્પિક)", "closingNoteRequired": "કેશ તફાવતનું કારણ", "variance": "તફાવત", "varianceReasonRequired": "શિફ્ટ બંધ કરતા પહેલાં કેશ તફાવતનું કારણ લખો.", "closedSuccess": "શિફ્ટ બંધ થઈ", "recent": "તાજેતરની શિફ્ટ", "failed": "શિફ્ટ અપડેટ થઈ નહીં"
   },
   "onboarding": {
     "title": "શરૂઆત", "eyebrow": "દુકાન સેટઅપ", "heading": "પહેલા બિલ માટે તૈયાર થાઓ", "description": "દુકાન યોગ્ય રીતે સેટ કરવા આ યાદી પૂર્ણ કરો.", "open": "ખોલો", "steps": { "profile": { "title": "દુકાન અને બિલ ઓળખ", "description": "દુકાન, રસીદ, લોગો અને GST વિગતો તપાસો." }, "products": { "title": "પ્રોડક્ટ અને સ્ટોક", "description": "ભાવ, બારકોડ અને શરૂઆતનો સ્ટોક ઉમેરો." }, "staff": { "title": "સ્ટાફ ઉમેરો", "description": "માત્ર જરૂરી લોકોને ઍક્સેસ આપો." }, "shift": { "title": "કેશ કાઉન્ટર ખોલો", "description": "શરૂઆતની કેશ નોંધો." }, "sale": { "title": "પ્રેક્ટિસ વેચાણ", "description": "ગ્રાહકો પહેલાં એક બિલ બનાવી શેર કરો." } }, "helpTitle": "મદદ જોઈએ?", "helpDescription": "સ્ક્રીન અને સમસ્યા સાથે સહાય વિનંતી મોકલો.", "contactSupport": "સહાય મેળવો"

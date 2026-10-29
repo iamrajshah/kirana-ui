@@ -621,6 +621,9 @@
     "packagingLoose": "Loose",
     "addNewCategory": "Add New Category",
     "sellingPriceLabel": "Selling Price *",
+    "mrpPriceLabel": "MRP",
+    "enterMrpPlaceholder": "Enter maximum retail price",
+    "mrpBelowSellingPrice": "MRP cannot be lower than the selling price",
     "createProductTitle": "Create Product",
     "createProductButton": "Create Product",
     "basePriceCostPrice": "Base Price (Cost Price)",
@@ -902,7 +905,8 @@
     "saveError": "Couldn't record the payment.",
     "adjustment": "Adjustment",
     "loadingInvoices": "Loading invoices...",
-    "generalPayment": "General payment",
+    "generalPayment": "Apply to oldest bills first",
+    "oldestFirstHint": "This payment will settle the customer's oldest outstanding bills first. Any excess remains as account credit.",
     "amountAutoFilled": "Amount filled from the selected invoice.",
     "enterAmount": "Enter amount",
     "recordPayment": "Record Payment",
@@ -1447,7 +1451,17 @@
     "cash": "Cash",
     "upi": "UPI",
     "card": "Card",
-    "bankTransfer": "Bank Transfer"
+    "bankTransfer": "Bank Transfer",
+    "splitPayment": "Split Payment",
+    "splitHint": "Divide this bill across two or more payment modes. The bill is saved only when every tender succeeds.",
+    "splitRetryHint": "Retrying the saved tender set. Amounts are locked to prevent a duplicate or mismatched payment.",
+    "tenderNumber": "Tender {{number}}",
+    "tenderAmount": "Tender Amount",
+    "splitModesUnique": "Choose a different payment mode for each tender.",
+    "splitRemaining": "Remaining",
+    "splitOver": "Over by",
+    "addTender": "Add another payment mode",
+    "removeTender": "Remove"
   },
   "taxFields": {
     "customerDetails": "GST & address details (optional)",
@@ -1516,7 +1530,7 @@
     "open": "Open", "closed": "Closed", "openShift": "Open shift", "openingCash": "Opening cash", "counter": "Counter name (optional)", "openedSuccess": "Shift opened",
     "liveSummary": "Live shift summary", "cashSales": "Cash sales", "cashIn": "Cash added", "cashOut": "Cash removed", "expectedCash": "Expected cash",
     "cashMovement": "Record cash movement", "movementType": "Movement type", "reason": "Reason", "saveMovement": "Save movement", "adjustmentSaved": "Cash movement saved",
-    "closeShift": "Close shift", "countHint": "Count the drawer. Expected cash is {{amount}}.", "countedCash": "Counted cash", "closingNote": "Closing note (optional)", "variance": "Difference", "closedSuccess": "Shift closed", "recent": "Recent shifts", "failed": "Couldn't update the shift"
+    "closeShift": "Close shift", "countHint": "Count the drawer. Expected cash is {{amount}}.", "countedCash": "Counted cash", "closingNote": "Closing note (optional)", "closingNoteRequired": "Reason for cash difference", "variance": "Difference", "varianceReasonRequired": "Explain the cash difference before closing the shift.", "closedSuccess": "Shift closed", "recent": "Recent shifts", "failed": "Couldn't update the shift"
   },
   "onboarding": {
     "title": "Getting started", "eyebrow": "Shop setup", "heading": "Be ready for the first bill", "description": "Use this practical checklist to set up the shop without guessing.", "open": "Open step",

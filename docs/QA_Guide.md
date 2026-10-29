@@ -130,8 +130,8 @@ The system has three user roles with different access levels:
 
 ### Prerequisites
 1. Access to the Kirana UI application (web/mobile URL)
-2. Test credentials for different roles (OWNER, MANAGER, CASHIER)
-3. A tenant ID for your test store
+2. A controlled QA tenant with active OWNER, MANAGER and CASHIER users
+3. The tested frontend/API release revisions
 
 ### Login Process
 1. Open the application
@@ -140,20 +140,27 @@ The system has three user roles with different access levels:
 4. Click **Login**
 5. Show/Hide password by clicking the eye icon
 
-### Test Credentials
-```
-OWNER Account:
-- Phone: 9876543210
-- Password: owner123
+### Test Identity Setup
 
-MANAGER Account:
-- Phone: 9876543211
-- Password: manager123
+The example credentials previously listed here were not provisioned fixtures and
+must not be treated as working accounts. QA credentials are environment-specific
+secrets, so passwords must never be stored in this guide, source control, test
+reports or screenshots.
 
-CASHIER Account:
-- Phone: 9876543212
-- Password: cashier123
-```
+Before a release run:
+
+1. Use a disposable or explicitly approved QA tenant; never run destructive
+   scenarios in a real shop.
+2. Verify the OWNER can sign in and has completed any mandatory password change.
+3. From **Staff**, create or confirm one active MANAGER and one active CASHIER.
+4. Store their credentials only in the approved password manager or secure CI
+   secret store.
+5. Record the tenant ID, non-secret user IDs, roles and exact UI/API revisions in
+   the test-run artifact.
+6. Perform one login smoke check for each role before starting the suite. If an
+   account is stale, repair or replace the fixture instead of changing expected
+   application behaviour.
+7. Revoke disposable users or rotate their passwords when the run is complete.
 
 ---
 
@@ -982,7 +989,8 @@ Payable Balance = Total Purchases (Credit) - Total Payments (Debit)
 ### Pre-Testing Setup
 - [ ] Application deployed and accessible
 - [ ] Test database with sample data
-- [ ] Test credentials for all three roles
+- [ ] Controlled OWNER, MANAGER and CASHIER identities verified for this release
+- [ ] Tenant ID plus UI/API revisions recorded without passwords or tokens
 - [ ] Browser compatibility checked (Chrome, Safari, Firefox)
 - [ ] Mobile responsiveness verified
 
