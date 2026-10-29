@@ -22,7 +22,31 @@ authPersistence.startListening({
 });
 authPersistence.startListening({
   actionCreator: logout,
-  effect: async () => clearTokens(),
+  effect: async (_action, api) => {
+    api.dispatch(apiSlice.util.resetApiState());
+    await clearTokens();
+  },
+});
+
+authPersistence.startListening({
+  actionCreator: setCredentials,
+  effect: (_action, api) => {
+    const previous = api.getOriginalState() as {
+      auth: { user: { id: string; tenant?: { id?: string } } | null };
+    };
+    const current = api.getState() as {
+      auth: { user: { id: string; tenant?: { id?: string } } | null };
+    };
+    const previousSession = previous.auth.user
+      ? `${previous.auth.user.id}:${previous.auth.user.tenant?.id ?? ''}`
+      : null;
+    const currentSession = current.auth.user
+      ? `${current.auth.user.id}:${current.auth.user.tenant?.id ?? ''}`
+      : null;
+    if (previousSession !== currentSession) {
+      api.dispatch(apiSlice.util.resetApiState());
+    }
+  },
 });
 
 export const store = configureStore({
