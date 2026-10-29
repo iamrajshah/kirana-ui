@@ -44,10 +44,11 @@ Maintainer: [Rajesh Shah (@iamrajshah)](https://github.com/iamrajshah)
 Offline billing queue, optional cashier shift cash, smart reorder, and WhatsApp
 list-to-cart are planned product work. They are not production-ready features yet.
 
-The demo UI is deployed manually to
-[kirana-ui.netlify.app](https://kirana-ui.netlify.app). Automatic Netlify builds
-are paused to conserve the demo allowance; merge does not mean the UI has been
-published. See the handbook for the release checklist and current baseline.
+The demo UI is deployed to
+[kirana-pos.pages.dev](https://kirana-pos.pages.dev) on Cloudflare Pages. A merge
+does not by itself prove that the stable site contains that revision; verify the
+release manifest after every production publish. See the handbook for the
+release checklist and current baseline.
 
 Read [`HANDBOOK.md`](HANDBOOK.md) for the product reasoning, implemented
 workflows, safety invariants, and working rules for humans and AI agents.

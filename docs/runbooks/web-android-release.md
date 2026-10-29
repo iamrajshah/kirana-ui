@@ -42,8 +42,9 @@ The server returns only SHA-256 audience fingerprints, separated into web and
 Android lists. The release check compares the UI web client fingerprint only;
 an Android audience cannot accidentally make a web release pass.
 
-Netlify auto-publish stays disabled to conserve the allowance. A merged PR does
-not mean the UI is live.
+The production web site is `https://kirana-pos.pages.dev` on Cloudflare Pages.
+A merged PR does not mean the stable site is live: publish the intended `dev`
+revision and verify its release manifest before announcing a release.
 
 ## Android project
 
@@ -71,6 +72,14 @@ Before a signed candidate:
 Generating the Android project is release preparation, not proof that
 Credential Manager or signing is complete. Those remain hard release gates until
 device/build evidence is attached.
+
+### Android evidence — 30 October 2026
+
+The production web bundle and Capacitor Android sync completed for revision
+`43d69a2`. Gradle verification, emulator workflow evidence, approved store
+artwork, and a signed AAB are not recorded as complete in this document. Update
+this section only from captured command/device evidence; a successful web release
+must never be reused as Android proof.
 
 ## iOS status
 
