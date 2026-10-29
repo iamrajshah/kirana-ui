@@ -1,6 +1,6 @@
 {
   "name": "kirana-ui",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Kirana POS SaaS - Mobile-first billing application",
   "private": true,
   "type": "module",
