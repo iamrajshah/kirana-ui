@@ -29,6 +29,7 @@ const querySkips = vi.hoisted(() => ({ sales: [] as boolean[], inventory: [] as 
 const reportArgs = vi.hoisted(() => ({ sales: [] as unknown[] }));
 const commercialState = vi.hoisted(() => ({
   allowed: true,
+  multiFirmAllowed: false,
   access: null as null | { planCode: string },
 }));
 const firmState = vi.hoisted(() => ({
@@ -45,7 +46,8 @@ vi.mock('@core/auth/authSlice', () => ({
   selectCommercialAccess: () => commercialState.access,
 }));
 vi.mock('@core/commercial/commercialAccess', () => ({
-  canUseCommercialFeature: () => commercialState.allowed,
+  canUseCommercialFeature: (_roles: unknown, _access: unknown, feature: string) =>
+    feature === 'MULTI_FIRM' ? commercialState.multiFirmAllowed : commercialState.allowed,
 }));
 vi.mock('@core/api/firmApi', () => ({
   useGetFirmsQuery: (params: unknown, options: unknown) => {
@@ -168,6 +170,7 @@ beforeEach(() => {
   querySkips.inventory.length = 0;
   reportArgs.sales.length = 0;
   commercialState.allowed = true;
+  commercialState.multiFirmAllowed = false;
   commercialState.access = null;
   firmState.firms = [];
   firmState.calls.length = 0;
@@ -229,6 +232,7 @@ it('locks advanced reports before a direct UI selection can trigger their query'
 
 it('lets a demo shop select a seeded firm for firm-scoped reports', () => {
   commercialState.access = { planCode: 'DEMO' };
+  commercialState.multiFirmAllowed = true;
   firmState.firms = [
     { id: 'firm-1', legal_name: 'Demo Main Firm', is_default_sales: true },
     { id: 'firm-2', legal_name: 'Demo Second Firm', is_default_sales: false },
@@ -240,6 +244,19 @@ it('lets a demo shop select a seeded firm for firm-scoped reports', () => {
 
   fireEvent.click(screen.getByText('select firm two'));
   expect(reportArgs.sales.at(-1)).toEqual({ groupBy: 'day', firmId: 'firm-2', scope: 'FIRM' });
+});
+
+it('enables firm scope from the MULTI_FIRM entitlement instead of the plan name', () => {
+  commercialState.access = { planCode: 'PRO' };
+  commercialState.multiFirmAllowed = true;
+  firmState.firms = [
+    { id: 'firm-1', legal_name: 'Entitled Firm', is_default_sales: true },
+  ];
+
+  render(<ReportsPage />);
+
+  expect(firmState.calls.at(-1)?.options).toEqual({ skip: false });
+  expect(reportArgs.sales.at(-1)).toEqual({ groupBy: 'day', firmId: 'firm-1', scope: 'FIRM' });
 });
 
 it('uses a supplied summary for an inventory object response', () => {

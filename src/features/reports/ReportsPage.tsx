@@ -92,8 +92,11 @@ export const ReportsPage: React.FC = () => {
     commercialAccess,
     'ADVANCED_REPORTS'
   );
-  const supportsFirmScope =
-    commercialAccess?.planCode === 'BUSINESS' || commercialAccess?.planCode === 'DEMO';
+  const supportsFirmScope = canUseCommercialFeature(
+    currentUser?.roles ?? [],
+    commercialAccess,
+    'MULTI_FIRM'
+  );
   const { data: firmsResponse } = useGetFirmsQuery(
     { active: true },
     { skip: !supportsFirmScope }
