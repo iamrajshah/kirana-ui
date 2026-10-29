@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && npm run verify:production-bundle",
+    "build": "tsc && vite build && node scripts/write-release-manifest.mjs && npm run verify:production-bundle",
     "verify:production-bundle": "node scripts/verify-production-bundle.mjs dist",
     "test": "vitest run",
     "preview": "vite preview",
