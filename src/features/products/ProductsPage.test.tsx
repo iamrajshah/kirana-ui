@@ -7,7 +7,9 @@ const state = vi.hoisted(() => ({
   data: { data: [{ id: 'product-1', name: 'Rice', category: { name: 'Staples' }, is_active: true, variants: [{ id: 'variant-1', sku: 'RICE-1', price: 50 }] }], meta: { total: 1 } } as unknown,
   isError: false,
   failAtSkip: null as number | null,
+  pendingAtSkip: null as number | null,
   refetch: vi.fn(),
+  infiniteComplete: vi.fn(),
   push: vi.fn(),
   query: vi.fn(),
   createProduct: vi.fn(),
@@ -20,8 +22,16 @@ vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('@core/api/productApi', () => ({
   useGetProductsQuery: (args: unknown) => {
     state.query(args);
-    const failed = state.isError || state.failAtSkip === (args as { skip: number }).skip;
-    return { ...state, currentData: failed ? undefined : state.data, isError: failed, isLoading: false, isFetching: false };
+    const skip = (args as { skip: number }).skip;
+    const failed = state.isError || state.failAtSkip === skip;
+    const pending = state.pendingAtSkip === skip;
+    return {
+      ...state,
+      currentData: failed || pending ? undefined : state.data,
+      isError: failed,
+      isLoading: false,
+      isFetching: pending,
+    };
   },
   useCreateProductMutation: () => [state.createProduct, { isLoading: false }],
   useCreateVariantMutation: () => [state.createVariant, { isLoading: false }],
@@ -42,7 +52,7 @@ vi.mock('@ionic/react', () => {
     IonFabButton: Container, IonModal: Container, IonButtons: Container, IonToast: Container,
     IonHeader: Container, IonToolbar: Container, IonTitle: Container,
     IonInfiniteScroll: ({ children, onIonInfinite, disabled }: PropsWithChildren<{ onIonInfinite?: (event: CustomEvent) => void; disabled?: boolean }>) => (
-      <button aria-label="load-more" disabled={disabled} onClick={() => onIonInfinite?.({ target: { complete: vi.fn() } } as unknown as CustomEvent)}>{children}</button>
+      <button aria-label="load-more" disabled={disabled} onClick={() => onIonInfinite?.({ target: { complete: state.infiniteComplete } } as unknown as CustomEvent)}>{children}</button>
     ),
     IonInfiniteScrollContent: Container, IonListHeader: Container,
     IonButton: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => <button onClick={onClick}>{children}</button>,
@@ -54,6 +64,9 @@ beforeEach(() => {
   state.data = { data: [{ id: 'product-1', name: 'Rice', category: { name: 'Staples' }, is_active: true, variants: [{ id: 'variant-1', sku: 'RICE-1', price: 50 }] }], meta: { total: 1 } };
   state.isError = false;
   state.failAtSkip = null;
+  state.pendingAtSkip = null;
+  state.infiniteComplete.mockReset();
+  state.infiniteComplete.mockResolvedValue(undefined);
   state.refetch.mockClear(); state.push.mockClear(); state.query.mockClear();
   state.createProduct.mockReset(); state.createVariant.mockReset();
   state.createProduct.mockReturnValue({ unwrap: () => Promise.resolve({ data: { id: 'product-2' } }) });
@@ -94,6 +107,20 @@ it('loads products in 50-row pages', async () => {
 
   fireEvent.click(screen.getByRole('button', { name: 'load-more' }));
   await waitFor(() => expect(state.query).toHaveBeenLastCalledWith({ skip: 50, take: 50 }));
+});
+
+it('keeps the Ionic indicator active until the page request settles', async () => {
+  state.data = { data: [{ id: 'product-1', name: 'Rice', category: { name: 'Staples' }, is_active: true, variants: [] }], meta: { total: 100 } };
+  state.pendingAtSkip = 50;
+  const { rerender } = render(<ProductsPage />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'load-more' }));
+  await waitFor(() => expect(state.query).toHaveBeenLastCalledWith({ skip: 50, take: 50 }));
+  expect(state.infiniteComplete).not.toHaveBeenCalled();
+
+  state.pendingAtSkip = null;
+  rerender(<ProductsPage />);
+  await waitFor(() => expect(state.infiniteComplete).toHaveBeenCalledOnce());
 });
 
 it('keeps loaded products visible and offers retry when a later page fails', async () => {

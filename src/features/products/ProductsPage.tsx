@@ -32,6 +32,7 @@ import { formatCurrency } from '@utils/helpers';
 import { ROUTES } from '@core/constants';
 import { filterProducts } from '@utils/localSearch';
 import { useDebouncedValue } from '@hooks/useDebouncedValue';
+import { useRequestSettledInfiniteScroll } from '@hooks/useRequestSettledInfiniteScroll';
 import './stock-workspace.css';
 
 const PAGE_SIZE = 50;
@@ -60,6 +61,12 @@ export const ProductsPage: React.FC = () => {
   const { data: categoriesData } = useGetCategoriesQuery();
   const [createProduct, { isLoading: creating }] = useCreateProductMutation();
   const [createVariant, { isLoading: creatingVariant }] = useCreateVariantMutation();
+  const beginLoadMore = useRequestSettledInfiniteScroll({
+    currentData: pageData,
+    isError,
+    isFetching,
+    requestKey: `${querySearch}:${skip}`,
+  });
 
   const PACKAGING_OPTIONS = [
     { value: 'POUCH', label: t('products.packagingPouch') },
@@ -139,13 +146,9 @@ export const ProductsPage: React.FC = () => {
     return Object.keys(groupedProducts).sort();
   }, [groupedProducts]);
 
-  const loadMore = async (e: CustomEvent) => {
-    if (hasMore && !isFetching) {
-      setSkip(prev => prev + PAGE_SIZE);
-    }
-    setTimeout(() => {
-      (e.target as HTMLIonInfiniteScrollElement).complete();
-    }, 100);
+  const loadMore = (event: CustomEvent) => {
+    if (!beginLoadMore(event, hasMore && !isFetching)) return;
+    setSkip((previous) => previous + PAGE_SIZE);
   };
   const categories = categoriesData?.data || [];
 

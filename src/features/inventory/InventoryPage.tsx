@@ -24,6 +24,7 @@ import { formatNumber } from '@utils/helpers';
 import type { Inventory } from '@core/types';
 import { filterInventory } from '@utils/localSearch';
 import { useDebouncedValue } from '@hooks/useDebouncedValue';
+import { useRequestSettledInfiniteScroll } from '@hooks/useRequestSettledInfiniteScroll';
 import '../products/stock-workspace.css';
 
 const PAGE_SIZE = 50;
@@ -48,6 +49,12 @@ export const InventoryPage: React.FC = () => {
     ...(querySearch ? { search: querySearch } : {}),
   });
   const [updateInventory, { isLoading: updating }] = useUpdateInventoryMutation();
+  const beginLoadMore = useRequestSettledInfiniteScroll({
+    currentData: pageData,
+    isError,
+    isFetching,
+    requestKey: `${querySearch}:${skip}`,
+  });
 
   useEffect(() => {
     if (debouncedSearch === querySearch) return;
@@ -89,12 +96,8 @@ export const InventoryPage: React.FC = () => {
   const hasMore = allInventory.length < totalInventory;
 
   const loadMore = (event: CustomEvent) => {
-    if (hasMore && !isFetching) {
-      setSkip((current) => current + PAGE_SIZE);
-    }
-    window.setTimeout(() => {
-      (event.target as HTMLIonInfiniteScrollElement).complete();
-    }, 100);
+    if (!beginLoadMore(event, hasMore && !isFetching)) return;
+    setSkip((current) => current + PAGE_SIZE);
   };
 
   // Group inventory by category
