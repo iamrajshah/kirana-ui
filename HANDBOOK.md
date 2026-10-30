@@ -22,14 +22,24 @@ workflow should remain understandable in English, Hindi, Marathi, and Gujarati.
 
 ### Current release snapshot — 30 October 2026
 
-Runtime revision `df2e4c5` is the 30 October demo release baseline. It combines the
-Modern Bazaar responsive shell, reliable navigation, fast billing, barcode
-labels, tenant backup/restore, provable sale closure, Android 14+ share
-compatibility and secure-session restart recovery. Web/package/Android version
-metadata is aligned at `1.0.1`. The public demo is served by Cloudflare Pages
-and talks to the Railway API/MySQL environment. The stable site's release
-manifest must match the intended runtime revision before a release is declared
-live; a later docs-only merge does not require another app deployment.
+Runtime revision `7dc81aa` is the deployed 30 October demo baseline. Cloudflare
+deployment `3fa90cc0-bee5-4556-83f8-8086f6c39419` combines the Modern Bazaar
+responsive shell, reliable navigation, fast billing, barcode labels, tenant
+backup/restore, provable sale closure, Android 14+ share compatibility,
+secure-session restart recovery, and invited-owner Google sign-in. Web/package/
+Android version metadata is aligned at `1.0.1`. The public demo is served by
+Cloudflare Pages and talks to the Railway API/MySQL environment. The stable
+site's release manifest must match the intended runtime revision before a
+release is declared live; a later docs-only merge does not require another app
+deployment.
+
+Google entry is deliberately narrow: an active owner whose Google email is
+already linked, or whose Platform Admin invitation is still valid, may sign in.
+Generic new-Google-user admission and shared demo provisioning remain disabled.
+The first verified invitation claim links the Google subject to the existing
+owner without removing password login or creating another tenant, user, or
+membership. Public password and Google failures do not trigger protected-token
+refresh or global logout behaviour.
 
 ### Platform-managed shop onboarding
 
