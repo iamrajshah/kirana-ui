@@ -319,6 +319,72 @@ describe('LoginPage', () => {
     expect(screen.queryByRole('button', { name: 'google-provider-success' })).toBeNull();
   });
 
+  it('surfaces a disabled unknown-entry response without creating or linking an account', async () => {
+    mocks.googleExchange.mockRejectedValueOnce({
+      status: 503,
+      data: { message: 'Google self-service entry is disabled.' },
+    });
+    render(<LoginPage />);
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'google-provider-success' }));
+
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Google self-service entry is disabled.'
+    );
+    expect(mocks.dispatch).not.toHaveBeenCalled();
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
+  it('retries Google exchange with the selected replacement device at the plan limit', async () => {
+    const oldDevice = {
+      id: 'google-device-old',
+      name: 'Old Google counter',
+      platform: 'WEB' as const,
+      lastSeenAt: '2026-10-01T00:00:00.000Z',
+    };
+    const auth = { access_token: 'access', refresh_token: 'refresh', user: { id: '1' } };
+    mocks.googleExchange
+      .mockRejectedValueOnce({
+        data: { code: 'DEVICE_LIMIT_REACHED', details: { limit: 2, devices: [oldDevice] } },
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        data: { outcome: 'AUTHENTICATED', auth },
+      });
+    render(<LoginPage />);
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: 'google-provider-success' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'replace-old-device' }));
+
+    await waitFor(() =>
+      expect(mocks.googleExchange).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          credential: 'google-credential',
+          source: 'web',
+          replaceDeviceId: 'google-device-old',
+        })
+      )
+    );
+    expect(mocks.replace).toHaveBeenCalledWith('/dashboard');
+  });
+
+  it('shows private provisioning without creating it automatically', async () => {
+    mocks.googleExchange.mockResolvedValueOnce({
+      success: true,
+      data: { outcome: 'PROVISIONING_REQUIRED', provisioningToken: 'provision-later' },
+    });
+    render(<LoginPage />);
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'google-provider-success' }));
+
+    expect(await screen.findByText('auth.privateDemoProvisioning')).toBeTruthy();
+    expect(screen.getByText('demo-provisioning-panel')).toBeTruthy();
+    expect(mocks.dispatch).not.toHaveBeenCalled();
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
   it('keeps the user on login when Google is cancelled or fails', async () => {
     render(<LoginPage />);
     fireEvent.click(screen.getByRole('button', { name: 'google-provider-cancel' }));
@@ -335,6 +401,13 @@ describe('LoginPage', () => {
         memberships: [
           { userId: '7', tenantId: '11', tenantName: 'Shop A', active: true, roles: ['OWNER'] },
           { userId: '8', tenantId: '12', tenantName: 'Shop B', active: true, roles: ['OWNER'] },
+          {
+            userId: '9',
+            tenantId: '13',
+            tenantName: 'Suspended Shop',
+            active: false,
+            roles: ['OWNER'],
+          },
         ],
       },
     });
@@ -351,6 +424,8 @@ describe('LoginPage', () => {
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(screen.getByRole('button', { name: 'google-provider-success' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Shop B' }));
+
+    expect(screen.queryByRole('button', { name: 'Suspended Shop' })).toBeNull();
 
     await waitFor(() =>
       expect(mocks.selectMembership).toHaveBeenCalledWith({
