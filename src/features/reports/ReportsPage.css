@@ -30,7 +30,7 @@
 }
 
 @media (min-width: 768px) {
-  .report-select-card {
+  .report-mobile-select-card {
     display: none;
   }
 
@@ -62,5 +62,10 @@
 
 @media print {
   .report-demo-marker { border-color: #000; color: #000; }
-  .report-output-actions, .report-choices, .report-select-card { display: none !important; }
+  .report-output-actions,
+  .report-choices,
+  .report-mobile-select-card,
+  .report-firm-select-card {
+    display: none !important;
+  }
 }
