@@ -19,8 +19,14 @@ vi.mock('@core/api/paymentApi', () => ({
   useCreatePaymentMutation: () => [createPayment, { isLoading: false }],
 }));
 const customersQuery = vi.hoisted(() => ({ data: { data: [] as Array<{ id: string; name: string; phone: string }> } }));
+const searchCustomers = vi.hoisted(() => vi.fn());
 
-vi.mock('@core/api/customerApi', () => ({ useGetCustomersQuery: () => customersQuery }));
+vi.mock('@core/api/customerApi', () => ({
+  useLazySearchCustomersQuery: () => [
+    searchCustomers,
+    { ...customersQuery, isLoading: false, isFetching: false },
+  ],
+}));
 vi.mock('@core/api/invoiceApi', () => ({
   useLazyGetPendingInvoicesByCustomerQuery: () => [vi.fn(), pendingInvoicesQuery],
 }));
@@ -123,6 +129,7 @@ beforeEach(() => {
   dismissPaymentModal.mockReset();
   dismissPaymentModal.mockResolvedValue();
   customersQuery.data = { data: [] };
+  searchCustomers.mockClear();
   pendingInvoicesQuery.data = undefined;
   pendingInvoicesQuery.isLoading = false;
 });
@@ -201,6 +208,20 @@ it('keeps manual collection tied to a selected customer', () => {
   expect(createPayment).not.toHaveBeenCalled();
 });
 
+it('searches customers lazily only after two debounced characters', async () => {
+  query.data = { data: [] };
+  render(<PaymentsPage />);
+  fireEvent.click(screen.getAllByRole('button', { name: 'payments.recordPayment' })[0]);
+
+  const customerSearch = screen.getByLabelText('payments.searchCustomers');
+  fireEvent.change(customerSearch, { target: { value: 'a' } });
+  expect(searchCustomers).not.toHaveBeenCalled();
+  expect(screen.getByText('payments.customerSearchMinimum')).toBeTruthy();
+
+  fireEvent.change(customerSearch, { target: { value: 'amit' } });
+  await waitFor(() => expect(searchCustomers).toHaveBeenCalledWith('amit', true));
+});
+
 it('keeps the Ionic modal mounted while its successful dismissal completes', async () => {
   query.data = { data: [] };
   customersQuery.data = {
@@ -218,6 +239,10 @@ it('keeps the Ionic modal mounted while its successful dismissal completes', asy
 
   expect(screen.getByTestId('payment-modal').getAttribute('data-open')).toBe('false');
   fireEvent.click(screen.getAllByRole('button', { name: 'payments.recordPayment' })[0]);
+  fireEvent.change(screen.getByLabelText('payments.searchCustomers'), {
+    target: { value: 'Amit' },
+  });
+  await waitFor(() => expect(screen.getByRole('option', { name: 'Amit Patel (9000000201)' })).toBeTruthy());
   fireEvent.change(screen.getByLabelText('billing.selectCustomer'), {
     target: { value: 'customer-1' },
   });
@@ -235,7 +260,7 @@ it('keeps the Ionic modal mounted while its successful dismissal completes', asy
   expect(screen.getByText('payments.paymentRecorded')).toBeTruthy();
 });
 
-it('explains that an unassigned collection settles oldest bills first', () => {
+it('explains that an unassigned collection settles oldest bills first', async () => {
   query.data = { data: [] };
   customersQuery.data = {
     data: [{ id: 'customer-1', name: 'Amit Patel', phone: '9000000201' }],
@@ -254,6 +279,10 @@ it('explains that an unassigned collection settles oldest bills first', () => {
 
   render(<PaymentsPage />);
   fireEvent.click(screen.getAllByRole('button', { name: 'payments.recordPayment' })[0]);
+  fireEvent.change(screen.getByLabelText('payments.searchCustomers'), {
+    target: { value: 'Amit' },
+  });
+  await waitFor(() => expect(screen.getByRole('option', { name: 'Amit Patel (9000000201)' })).toBeTruthy());
   fireEvent.change(screen.getByLabelText('billing.selectCustomer'), {
     target: { value: 'customer-1' },
   });

@@ -22,18 +22,24 @@ import {
 import { add, close } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import { useGetPaymentsQuery, useCreatePaymentMutation } from '@core/api/paymentApi';
-import { useGetCustomersQuery } from '@core/api/customerApi';
+import { useLazySearchCustomersQuery } from '@core/api/customerApi';
 import { useLazyGetPendingInvoicesByCustomerQuery } from '@core/api/invoiceApi';
 import { Input, Select, Button, EmptyState, SearchBar } from '@components';
 import { formatCurrency, generateIdempotencyKey } from '@utils/helpers';
 import { PAYMENT_MODES } from '@core/constants';
 import type { PaymentMode } from '@core/types';
+import { useDebouncedValue } from '@hooks/useDebouncedValue';
+import { filterCustomers } from '@utils/localSearch';
 import './PaymentsPage.css';
 
 export const PaymentsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { data, isLoading, isError, refetch } = useGetPaymentsQuery({});
-  const { data: customersData } = useGetCustomersQuery({ skip: 0, take: 1000 });
+  const [searchCustomers, {
+    data: customersData,
+    isLoading: customersLoading,
+    isFetching: customersFetching,
+  }] = useLazySearchCustomersQuery();
   const [createPayment, { isLoading: creating }] = useCreatePaymentMutation();
 
   const [showModal, setShowModal] = useState(false);
@@ -44,13 +50,25 @@ export const PaymentsPage: React.FC = () => {
   const [referenceNote, setReferenceNote] = useState('');
   const [paymentSearch, setPaymentSearch] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
+  const debouncedCustomerSearch = useDebouncedValue(customerSearch.trim(), 300);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const paymentModalRef = useRef<HTMLIonModalElement | null>(null);
+  const customerSearchReady = debouncedCustomerSearch.length >= 2;
 
   const [getPendingInvoices, { data: pendingInvoicesData, isLoading: loadingInvoices }] =
     useLazyGetPendingInvoicesByCustomerQuery();
+
+  React.useEffect(() => {
+    if (!showModal || !customerSearchReady) return;
+    void searchCustomers(debouncedCustomerSearch, true);
+  }, [
+    customerSearchReady,
+    debouncedCustomerSearch,
+    searchCustomers,
+    showModal,
+  ]);
 
   // Load pending invoices when customer is selected
   React.useEffect(() => {
@@ -132,14 +150,10 @@ export const PaymentsPage: React.FC = () => {
     ADJUSTMENT: t('payments.adjustment'),
   };
   const customers = useMemo(() => {
-    const term = customerSearch.trim().toLowerCase();
-    return (customersData?.data || [])
-      .filter(
-        (customer) =>
-          !term || customer.name.toLowerCase().includes(term) || customer.phone.includes(term)
-      )
+    if (!customerSearchReady) return [];
+    return filterCustomers(customersData?.data || [], customerSearch)
       .map((customer) => ({ value: customer.id, label: `${customer.name} (${customer.phone})` }));
-  }, [customersData?.data, customerSearch]);
+  }, [customerSearch, customerSearchReady, customersData?.data]);
 
   const filteredPayments = useMemo(() => {
     const term = paymentSearch.trim().toLowerCase();
@@ -313,6 +327,18 @@ export const PaymentsPage: React.FC = () => {
                   onChange={setCustomerSearch}
                   placeholder={t('payments.searchCustomers')}
                 />
+                {customerSearch.trim().length > 0 && !customerSearchReady && (
+                  <p className="form-note">{t('payments.customerSearchMinimum')}</p>
+                )}
+                {customerSearchReady && (customersLoading || customersFetching) && (
+                  <p className="form-note">{t('common.loading')}</p>
+                )}
+                {customerSearchReady &&
+                  !customersLoading &&
+                  !customersFetching &&
+                  customers.length === 0 && (
+                    <p className="form-note">{t('payments.noCustomersFound')}</p>
+                  )}
                 <Select
                   label={t('billing.selectCustomer')}
                   value={customerId}

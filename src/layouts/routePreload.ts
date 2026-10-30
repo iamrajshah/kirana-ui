@@ -1,3 +1,9 @@
+import {
+  getBrowserConnection,
+  isConstrainedConnection,
+  type NetworkConnectionInfo,
+} from '@core/network/connectionPolicy';
+
 export type RouteLoader = () => Promise<unknown>;
 
 export interface RoutePreloadScheduler {
@@ -16,8 +22,11 @@ const browserScheduler = (): RoutePreloadScheduler => ({
 
 export const scheduleRoutePreload = (
   loaders: RouteLoader[],
-  scheduler: RoutePreloadScheduler = browserScheduler()
+  scheduler: RoutePreloadScheduler = browserScheduler(),
+  connection: NetworkConnectionInfo | undefined = getBrowserConnection()
 ): (() => void) => {
+  if (loaders.length === 0 || isConstrainedConnection(connection)) return () => undefined;
+
   const warmRoutes = () => {
     void Promise.allSettled(loaders.map((loader) => loader()));
   };

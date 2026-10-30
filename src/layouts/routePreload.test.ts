@@ -25,4 +25,24 @@ describe('scheduleRoutePreload', () => {
     dispose();
     expect(cancelIdleCallback).toHaveBeenCalledWith(11);
   });
+
+  it.each([{ saveData: true }, { effectiveType: '2g' }])(
+    'skips route imports on constrained connection %j',
+    (connection) => {
+      const loader = vi.fn().mockResolvedValue(undefined);
+      const scheduler = {
+        requestIdleCallback: vi.fn(),
+        cancelIdleCallback: vi.fn(),
+        setTimeout: vi.fn(),
+        clearTimeout: vi.fn(),
+      };
+
+      const dispose = scheduleRoutePreload([loader], scheduler, connection);
+
+      expect(scheduler.requestIdleCallback).not.toHaveBeenCalled();
+      expect(scheduler.setTimeout).not.toHaveBeenCalled();
+      expect(loader).not.toHaveBeenCalled();
+      expect(dispose()).toBeUndefined();
+    }
+  );
 });

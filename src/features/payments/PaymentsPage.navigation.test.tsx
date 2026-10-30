@@ -16,6 +16,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { PaymentsPage } from './PaymentsPage';
 
 const createPayment = vi.hoisted(() => vi.fn());
+const searchCustomers = vi.hoisted(() => vi.fn());
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
@@ -25,9 +26,14 @@ vi.mock('@core/api/paymentApi', () => ({
   useCreatePaymentMutation: () => [createPayment, { isLoading: false }],
 }));
 vi.mock('@core/api/customerApi', () => ({
-  useGetCustomersQuery: () => ({
-    data: { data: [{ id: 'customer-1', name: 'Amit Patel', phone: '9000000201' }] },
-  }),
+  useLazySearchCustomersQuery: () => [
+    searchCustomers,
+    {
+      data: { data: [{ id: 'customer-1', name: 'Amit Patel', phone: '9000000201' }] },
+      isLoading: false,
+      isFetching: false,
+    },
+  ],
 }));
 vi.mock('@core/api/invoiceApi', () => ({
   useLazyGetPendingInvoicesByCustomerQuery: () => [vi.fn(), { data: { data: [] }, isLoading: false }],
@@ -84,6 +90,7 @@ setupIonicReact({ mode: 'md', animated: false });
 
 beforeEach(() => {
   createPayment.mockReset();
+  searchCustomers.mockReset();
   createPayment.mockReturnValue({ unwrap: () => Promise.resolve({ data: { id: 'payment-1' } }) });
   window.history.replaceState({}, '', '/payments');
 });
@@ -121,9 +128,17 @@ it('dismisses the real Ionic payment modal before Dashboard navigation', async (
   );
 
   fireEvent.click(screen.getAllByRole('button', { name: 'payments.recordPayment' })[0]);
+  fireEvent.change(await screen.findByLabelText('payments.searchCustomers'), {
+    target: { value: 'Amit' },
+  });
   const customerSelect = await screen.findByLabelText(
     'billing.selectCustomer',
     undefined,
+    { timeout: 5000 }
+  );
+  await screen.findByRole(
+    'option',
+    { name: 'Amit Patel (9000000201)' },
     { timeout: 5000 }
   );
   fireEvent.change(customerSelect, {

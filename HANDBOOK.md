@@ -177,6 +177,26 @@ remain usable. Cashiers continue to see their normal operational dashboard.
 - Unknown-barcode creation must remain tenant-scoped and permission-protected;
   never let a cashier bypass the server's product-creation permission.
 
+## List and preload performance rules
+
+- Product, customer, and inventory management screens read 50 rows at a time,
+  keep already-loaded rows available for immediate filtering, then use a 300 ms
+  server search to find matches outside the loaded window.
+- Offset-paginated API results require a deterministic unique ordering. A later
+  page failure must keep loaded rows visible and offer Retry; it must not pretend
+  the first page is the complete list.
+- Fast Billing deliberately keeps the compact active product catalogue in local
+  memory for instant name, SKU, and barcode lookup. Do not replace it with one
+  request per keystroke.
+- Customer selectors search lazily after two characters. Do not warm or download
+  the complete customer table at login.
+- Background catalogue and route warm-up is skipped for Save Data, 2G, and
+  slow-2G connections. Catalogue warm-up is also disabled when the user cannot
+  access Billing.
+- `npm run build` enforces gzip budgets for entry JavaScript, entry CSS, the
+  complete initial payload, and the largest lazy JavaScript chunk. A budget
+  failure requires investigation rather than raising the ceiling by default.
+
 ## Developer and AI-agent workflow
 
 1. Read this handbook plus `kirana-context/README.md` and `GLOSSARY.md` before

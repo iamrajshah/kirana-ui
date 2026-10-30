@@ -31,17 +31,32 @@ import { SearchBar, Loading, EmptyState, Input, Select, Button, AddCategoryModal
 import { formatCurrency } from '@utils/helpers';
 import { ROUTES } from '@core/constants';
 import { filterProducts } from '@utils/localSearch';
+import { useDebouncedValue } from '@hooks/useDebouncedValue';
 import './stock-workspace.css';
+
+const PAGE_SIZE = 50;
 
 export const ProductsPage: React.FC = () => {
   const { t } = useTranslation();
   const history = useHistory();
   const [present] = useIonActionSheet();
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search.trim(), 300);
+  const [querySearch, setQuerySearch] = useState('');
   const [skip, setSkip] = useState(0);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const take = 1000;
-  const { data, isLoading, isFetching, isError, refetch } = useGetProductsQuery({ skip, take });
+  const [totalProducts, setTotalProducts] = useState(0);
+  const {
+    currentData: pageData,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useGetProductsQuery({
+    skip,
+    take: PAGE_SIZE,
+    ...(querySearch ? { search: querySearch } : {}),
+  });
   const { data: categoriesData } = useGetCategoriesQuery();
   const [createProduct, { isLoading: creating }] = useCreateProductMutation();
   const [createVariant, { isLoading: creatingVariant }] = useCreateVariantMutation();
@@ -56,20 +71,29 @@ export const ProductsPage: React.FC = () => {
     { value: 'LOOSE', label: t('products.packagingLoose') },
   ];
 
-  // Accumulate products as they're fetched
   useEffect(() => {
-    if (data?.data) {
+    if (debouncedSearch === querySearch) return;
+    setSkip(0);
+    setAllProducts([]);
+    setTotalProducts(0);
+    setQuerySearch(debouncedSearch);
+  }, [debouncedSearch, querySearch]);
+
+  // Keep an accumulated page window so scrolling remains instant after each fetch.
+  useEffect(() => {
+    if (pageData?.data) {
+      setTotalProducts(pageData.meta.total);
       if (skip === 0) {
-        setAllProducts(data.data);
+        setAllProducts(pageData.data);
       } else {
         setAllProducts(prev => {
           const existingIds = new Set(prev.map((p) => p.id));
-          const newProducts = data.data.filter((p) => !existingIds.has(p.id));
+          const newProducts = pageData.data.filter((p) => !existingIds.has(p.id));
           return [...prev, ...newProducts];
         });
       }
     }
-  }, [data, skip]);
+  }, [pageData, skip]);
 
   const [showModal, setShowModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -90,9 +114,7 @@ export const ProductsPage: React.FC = () => {
   const [uqcCode, setUqcCode] = useState('');
   const [unitLabel, setUnitLabel] = useState('');
 
-  const total = data?.meta?.total || 0;
-  const currentBatchSize = data?.data?.length || 0;
-  const hasMore = allProducts.length < total && currentBatchSize === take;
+  const hasMore = allProducts.length < totalProducts;
 
   const visibleProducts = useMemo(
     () => filterProducts(allProducts, search),
@@ -119,7 +141,7 @@ export const ProductsPage: React.FC = () => {
 
   const loadMore = async (e: CustomEvent) => {
     if (hasMore && !isFetching) {
-      setSkip(prev => prev + take);
+      setSkip(prev => prev + PAGE_SIZE);
     }
     setTimeout(() => {
       (e.target as HTMLIonInfiniteScrollElement).complete();
@@ -186,6 +208,11 @@ export const ProductsPage: React.FC = () => {
       setShowSuccess(true);
       setShowModal(false);
       resetForm();
+      setSearch('');
+      setQuerySearch('');
+      setSkip(0);
+      setAllProducts([]);
+      setTotalProducts(0);
     } catch (error: unknown) {
       setErrorMessage(apiErrorMessage(error, t('products.failedToCreateProduct')));
       setShowError(true);
@@ -219,11 +246,16 @@ export const ProductsPage: React.FC = () => {
             </div>
           </div>
           <div className="stock-toolbar">
-            <SearchBar value={search} onChange={setSearch} placeholder={t('common.search')} />
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder={t('common.search')}
+              debounce={0}
+            />
           </div>
 
-          {isLoading && allProducts.length === 0 ? (
-            <Loading isOpen={isLoading} />
+          {(isLoading || isFetching) && allProducts.length === 0 ? (
+            <Loading isOpen={true} />
           ) : isError && allProducts.length === 0 ? (
             <div className="workspace-state" role="alert">
               <p>{t('products.loadError')}</p>
@@ -266,7 +298,19 @@ export const ProductsPage: React.FC = () => {
                 </section>
               ))}
               
-              <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
+              {isError && allProducts.length > 0 && (
+                <div className="workspace-state" role="alert">
+                  <p>{t('common.loadMoreError')}</p>
+                  <Button onClick={() => refetch()} variant="outline">
+                    {t('common.retry')}
+                  </Button>
+                </div>
+              )}
+              <IonInfiniteScroll
+                threshold="50%"
+                onIonInfinite={loadMore}
+                disabled={!hasMore || isError}
+              >
                 <IonInfiniteScrollContent loadingText={t('products.loadingMore')} />
               </IonInfiniteScroll>
             </>

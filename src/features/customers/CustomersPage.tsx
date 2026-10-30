@@ -39,6 +39,9 @@ import notificationService from '@core/services/notificationService';
 import './CustomersPage.css';
 import { validatePartyForm, type PartyFieldError } from '@utils/formValidation';
 import { filterCustomers } from '@utils/localSearch';
+import { useDebouncedValue } from '@hooks/useDebouncedValue';
+
+const PAGE_SIZE = 50;
 
 export const CustomersPage: React.FC = () => {
   const { t } = useTranslation();
@@ -49,31 +52,49 @@ export const CustomersPage: React.FC = () => {
   const canUpdateCustomer = hasPermission(userRoles, 'CUSTOMER_UPDATE');
 
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search.trim(), 300);
+  const [querySearch, setQuerySearch] = useState('');
   const [skip, setSkip] = useState(0);
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
-  const take = 1000;
+  const [totalCustomers, setTotalCustomers] = useState(0);
 
-  const { data, isLoading, isFetching, isError, refetch } = useGetCustomersQuery({
+  const {
+    currentData: pageData,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useGetCustomersQuery({
     skip,
-    take,
+    take: PAGE_SIZE,
+    ...(querySearch ? { search: querySearch } : {}),
   });
   const [createCustomer, { isLoading: creating }] = useCreateCustomerMutation();
   const [updateCustomer, { isLoading: updating }] = useUpdateCustomerMutation();
 
-  // Accumulate customers as they're fetched
   useEffect(() => {
-    if (data?.data) {
+    if (debouncedSearch === querySearch) return;
+    setSkip(0);
+    setAllCustomers([]);
+    setTotalCustomers(0);
+    setQuerySearch(debouncedSearch);
+  }, [debouncedSearch, querySearch]);
+
+  // Keep an accumulated page window so scrolling remains instant after each fetch.
+  useEffect(() => {
+    if (pageData?.data) {
+      setTotalCustomers(pageData.meta.total);
       if (skip === 0) {
-        setAllCustomers(data.data);
+        setAllCustomers(pageData.data);
       } else {
         setAllCustomers((prev) => {
           const existingIds = new Set(prev.map((c) => c.id));
-          const newCustomers = data.data.filter((c) => !existingIds.has(c.id));
+          const newCustomers = pageData.data.filter((c) => !existingIds.has(c.id));
           return [...prev, ...newCustomers];
         });
       }
     }
-  }, [data, skip]);
+  }, [pageData, skip]);
 
   const [showModal, setShowModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -140,6 +161,8 @@ export const CustomersPage: React.FC = () => {
 
       setShowModal(false);
       resetForm();
+      setAllCustomers([]);
+      setTotalCustomers(0);
       setSkip(0);
     } catch (error: unknown) {
       notificationService.handleApiError(error);
@@ -180,9 +203,7 @@ export const CustomersPage: React.FC = () => {
     setFormErrors({});
   };
 
-  const total = data?.meta?.total || 0;
-  const currentBatchSize = data?.data?.length || 0;
-  const hasMore = allCustomers.length < total && currentBatchSize === take;
+  const hasMore = allCustomers.length < totalCustomers;
   const visibleCustomers = useMemo(
     () => filterCustomers(allCustomers, search),
     [allCustomers, search]
@@ -190,7 +211,7 @@ export const CustomersPage: React.FC = () => {
 
   const loadMore = async (e: CustomEvent) => {
     if (hasMore && !isFetching) {
-      setSkip((prev) => prev + take);
+      setSkip((prev) => prev + PAGE_SIZE);
     }
     setTimeout(() => {
       (e.target as HTMLIonInfiniteScrollElement).complete();
@@ -216,10 +237,15 @@ export const CustomersPage: React.FC = () => {
               </div>
             )}
           </div>
-          <SearchBar value={search} onChange={setSearch} placeholder={t('common.search')} />
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder={t('common.search')}
+            debounce={0}
+          />
 
-          {isLoading && allCustomers.length === 0 ? (
-            <Loading isOpen={isLoading} />
+          {(isLoading || isFetching) && allCustomers.length === 0 ? (
+            <Loading isOpen={true} />
           ) : isError && allCustomers.length === 0 ? (
             <div className="workspace-state">
               <p>{t('customers.loadError')}</p>
@@ -299,7 +325,19 @@ export const CustomersPage: React.FC = () => {
                 ))}
               </IonList>
 
-              <IonInfiniteScroll threshold="50%" onIonInfinite={loadMore} disabled={!hasMore}>
+              {isError && allCustomers.length > 0 && (
+                <div className="workspace-state" role="alert">
+                  <p>{t('common.loadMoreError')}</p>
+                  <Button onClick={refetch} variant="outline">
+                    {t('common.retry')}
+                  </Button>
+                </div>
+              )}
+              <IonInfiniteScroll
+                threshold="50%"
+                onIonInfinite={loadMore}
+                disabled={!hasMore || isError}
+              >
                 <IonInfiniteScrollContent loadingText={t('customers.loadingMore')} />
               </IonInfiniteScroll>
             </>
