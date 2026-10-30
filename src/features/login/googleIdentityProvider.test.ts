@@ -73,4 +73,27 @@ describe('WebGoogleIdentityProvider', () => {
     expect(document.querySelector('script[data-kirana-google-identity]')).toBeNull();
     vi.useRealTimers();
   });
+
+  it('renders the explicit button without starting One Tap or reporting a cold-load cancellation', async () => {
+    const googleAccounts = accounts();
+    window.google = { accounts: googleAccounts };
+    const { WebGoogleIdentityProvider } = await import('./googleIdentityProvider');
+    const onCancel = vi.fn();
+    const target = document.createElement('div');
+    Object.defineProperty(target, 'clientWidth', { value: 278 });
+
+    new WebGoogleIdentityProvider('client-id').render(target, {
+      onCredential: vi.fn(),
+      onCancel,
+      onError: vi.fn(),
+    });
+
+    await vi.waitFor(() => expect(googleAccounts.id.renderButton).toHaveBeenCalledTimes(1));
+    expect(googleAccounts.id.renderButton).toHaveBeenCalledWith(
+      target,
+      expect.objectContaining({ width: 278 })
+    );
+    expect(googleAccounts.id.prompt).not.toHaveBeenCalled();
+    expect(onCancel).not.toHaveBeenCalled();
+  });
 });

@@ -42,7 +42,12 @@ export const LoginPage: React.FC = () => {
   const [linkGoogle] = useLinkGoogleMutation();
   const [selectMembership] = useSelectMembershipMutation();
   const { theme, toggleTheme } = useTheme();
-  const { data: productInformation } = useGetPublicProductQuery();
+  const {
+    data: productInformation,
+    isLoading: isProductInformationLoading,
+    isFetching: isProductInformationFetching,
+    refetch: refetchProductInformation,
+  } = useGetPublicProductQuery();
 
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -159,6 +164,10 @@ export const LoginPage: React.FC = () => {
       source: 'web' | 'android' = 'web',
       replaceDeviceId?: string
     ) => {
+      if (!productInformation) {
+        setError(t('auth.googleLegalUnavailable'));
+        return;
+      }
       if (!legalAccepted) {
         setError(t('auth.acceptLegalRequired'));
         return;
@@ -173,15 +182,13 @@ export const LoginPage: React.FC = () => {
           source,
           device: await getDeviceDescriptor(),
           replaceDeviceId,
-          consents: productInformation
-            ? [
-                {
-                  consentType: 'PRIVACY',
-                  documentVersion: productInformation.legal.privacyVersion,
-                },
-                { consentType: 'TERMS', documentVersion: productInformation.legal.termsVersion },
-              ]
-            : undefined,
+          consents: [
+            {
+              consentType: 'PRIVACY',
+              documentVersion: productInformation.legal.privacyVersion,
+            },
+            { consentType: 'TERMS', documentVersion: productInformation.legal.termsVersion },
+          ],
         }).unwrap();
         if (response.data.outcome === 'AUTHENTICATED' && response.data.auth) {
           finishAuthentication(response.data.auth);
@@ -346,6 +353,7 @@ export const LoginPage: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={legalAccepted}
+                  disabled={!productInformation}
                   onChange={(event) => setLegalAccepted(event.target.checked)}
                 />
                 <span>
@@ -353,11 +361,37 @@ export const LoginPage: React.FC = () => {
                   <a href={ROUTES.TERMS}>{t('auth.terms')}</a>
                 </span>
               </label>
-              <GoogleSignInButton
-                onCredential={handleGoogleCredential}
-                onCancel={handleGoogleCancel}
-                onError={handleGoogleError}
-              />
+              {productInformation ? (
+                <GoogleSignInButton
+                  onCredential={handleGoogleCredential}
+                  onCancel={handleGoogleCancel}
+                  onError={handleGoogleError}
+                />
+              ) : (
+                <div
+                  role={
+                    isProductInformationLoading || isProductInformationFetching
+                      ? 'status'
+                      : 'alert'
+                  }
+                  className="rounded border p-3 text-sm"
+                >
+                  <p>
+                    {isProductInformationLoading || isProductInformationFetching
+                      ? t('auth.googleLegalLoading')
+                      : t('auth.googleLegalUnavailable')}
+                  </p>
+                  {!isProductInformationLoading && !isProductInformationFetching && (
+                    <button
+                      type="button"
+                      className="mt-2 font-semibold"
+                      onClick={() => void refetchProductInformation()}
+                    >
+                      {t('common.retry')}
+                    </button>
+                  )}
+                </div>
+              )}
               {isGoogleLoading && <p role="status">{t('auth.googleLoading')}</p>}
               {identityOutcome && (
                 <p role="status" className="mt-3 text-sm">

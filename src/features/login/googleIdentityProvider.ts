@@ -110,10 +110,6 @@ export class WebGoogleIdentityProvider implements IdentityCredentialProvider {
           size: 'large',
           width: target.clientWidth || 320,
         });
-        accounts.id.prompt((notification) => {
-          if (notification.isDismissedMoment() || notification.isSkippedMoment())
-            callbacks.onCancel();
-        });
       })
       .catch((error: unknown) => {
         if (active) {

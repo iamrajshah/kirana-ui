@@ -12,6 +12,18 @@ const mocks = vi.hoisted(() => ({
   linkGoogle: vi.fn(),
   dispatch: vi.fn(),
   replace: vi.fn(),
+  productInformation: {
+    legal: { privacyVersion: 'privacy-v1', termsVersion: 'terms-v1' },
+    support: { email: 'support@kirana.app' },
+  } as
+    | {
+        legal: { privacyVersion: string; termsVersion: string };
+        support: { email: string };
+      }
+    | undefined,
+  productInformationLoading: false,
+  productInformationFetching: false,
+  refetchProductInformation: vi.fn(),
 }));
 
 vi.mock('react-i18next', () => ({
@@ -41,10 +53,10 @@ vi.mock('@core/api/authApi', () => ({
 }));
 vi.mock('@core/api/lifecycleApi', () => ({
   useGetPublicProductQuery: () => ({
-    data: {
-      legal: { privacyVersion: 'privacy-v1', termsVersion: 'terms-v1' },
-      support: { email: 'support@kirana.app' },
-    },
+    data: mocks.productInformation,
+    isLoading: mocks.productInformationLoading,
+    isFetching: mocks.productInformationFetching,
+    refetch: mocks.refetchProductInformation,
   }),
 }));
 vi.mock('@core/auth/deviceIdentity', () => ({
@@ -77,9 +89,13 @@ vi.mock('./GoogleSignInButton', () => ({
     onError: (message: string) => void;
   }) => (
     <div>
-      <button onClick={() => onCredential('google-credential')}>google-provider-success</button>
-      <button onClick={onCancel}>google-provider-cancel</button>
-      <button onClick={() => onError('provider failed')}>google-provider-failure</button>
+      <button type="button" onClick={() => onCredential('google-credential')}>
+        google-provider-success
+      </button>
+      <button type="button" onClick={onCancel}>google-provider-cancel</button>
+      <button type="button" onClick={() => onError('provider failed')}>
+        google-provider-failure
+      </button>
     </div>
   ),
 }));
@@ -138,7 +154,8 @@ vi.mock('@ionic/react', () => {
   return {
     IonPage: Container,
     IonContent: Container,
-    IonToast: () => null,
+    IonToast: ({ isOpen, message }: { isOpen: boolean; message: string }) =>
+      isOpen ? <div role="alert">{message}</div> : null,
     IonSelect: Container,
     IonSelectOption: Container,
     IonIcon: () => null,
@@ -149,10 +166,22 @@ vi.mock('ionicons/icons', () => ({ language: 'language', contrast: 'contrast' })
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.productInformation = {
+    legal: { privacyVersion: 'privacy-v1', termsVersion: 'terms-v1' },
+    support: { email: 'support@kirana.app' },
+  };
+  mocks.productInformationLoading = false;
+  mocks.productInformationFetching = false;
 });
 afterEach(cleanup);
 
 describe('LoginPage', () => {
+  it('does not show a Google cancellation message before the user interacts', () => {
+    render(<LoginPage />);
+
+    expect(screen.queryByText('auth.googleCancelled')).toBeNull();
+  });
+
   it('explains what happens when a shop owner uses a temporary password', () => {
     render(<LoginPage />);
 
@@ -255,6 +284,39 @@ describe('LoginPage', () => {
     );
     expect(mocks.dispatch).toHaveBeenCalledWith({ type: 'auth/setCredentials', payload: auth });
     expect(mocks.replace).toHaveBeenCalledWith('/dashboard');
+  });
+
+  it('requires Terms and Privacy acceptance before exchanging a Google credential', async () => {
+    render(<LoginPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'google-provider-success' }));
+
+    expect((await screen.findByRole('alert')).textContent).toContain('auth.acceptLegalRequired');
+    expect(mocks.googleExchange).not.toHaveBeenCalled();
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
+  it('does not expose Google exchange until legal document versions finish loading', () => {
+    mocks.productInformation = undefined;
+    mocks.productInformationLoading = true;
+
+    render(<LoginPage />);
+
+    expect(screen.getByRole('status').textContent).toContain('auth.googleLegalLoading');
+    expect(screen.getByRole('checkbox').hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByRole('button', { name: 'google-provider-success' })).toBeNull();
+    expect(mocks.googleExchange).not.toHaveBeenCalled();
+  });
+
+  it('shows a retry action when legal document versions are unavailable', () => {
+    mocks.productInformation = undefined;
+
+    render(<LoginPage />);
+
+    expect(screen.getByRole('alert').textContent).toContain('auth.googleLegalUnavailable');
+    fireEvent.click(screen.getByRole('button', { name: 'common.retry' }));
+    expect(mocks.refetchProductInformation).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'google-provider-success' })).toBeNull();
   });
 
   it('keeps the user on login when Google is cancelled or fails', async () => {
