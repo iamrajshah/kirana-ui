@@ -3,6 +3,8 @@ import { configureStore } from '@reduxjs/toolkit';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import authReducer, { logout, setCredentials } from '@core/auth/authSlice';
 import { STORAGE_KEYS } from '@core/constants';
+import { notificationService } from '@core/services/notificationService';
+import { authApi } from './authApi';
 import { apiSlice } from './apiSlice';
 
 const probeApi = apiSlice.injectEndpoints({
@@ -100,6 +102,7 @@ describe('API refresh coordination', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -128,6 +131,71 @@ describe('API refresh coordination', () => {
     });
     expect(calls.filter((url) => url.includes('/auth/session-context'))).toHaveLength(1);
     expect(calls.filter((url) => url.includes('/subscription/access'))).toHaveLength(1);
+  });
+
+  it('leaves public authentication 401 responses to the login surface', async () => {
+    vi.mocked(fetch).mockImplementation(async () =>
+      response({ message: 'Invalid Google credential' }, 401)
+    );
+    const notify = vi.spyOn(notificationService, 'error');
+    const store = createStore();
+    const device = { installationId: 'install-1', platform: 'WEB' as const, name: 'Web · Test' };
+
+    await expect(
+      store
+        .dispatch(
+          authApi.endpoints.login.initiate({
+            email: 'owner@example.com',
+            password: 'wrong',
+            device,
+          })
+        )
+        .unwrap()
+    ).rejects.toMatchObject({ status: 401 });
+    await expect(
+      store
+        .dispatch(
+          authApi.endpoints.googleExchange.initiate({
+            credential: 'invalid',
+            source: 'web',
+            device,
+          })
+        )
+        .unwrap()
+    ).rejects.toMatchObject({ status: 401 });
+    await expect(
+      store
+        .dispatch(
+          authApi.endpoints.selectMembership.initiate({
+            credential: 'invalid',
+            source: 'web',
+            userId: '1',
+            device,
+          })
+        )
+        .unwrap()
+    ).rejects.toMatchObject({ status: 401 });
+
+    let calls = vi
+      .mocked(fetch)
+      .mock.calls.map(([input]) => (input instanceof Request ? input.url : String(input)));
+    expect(calls.filter((url) => url.includes('/auth/refresh-token'))).toHaveLength(0);
+    expect(store.getState().auth.user?.id).toBe('1');
+    expect(store.getState().auth.accessToken).toBe('expired-access');
+    expect(notify).not.toHaveBeenCalled();
+
+    await expect(
+      store
+        .dispatch(
+          authApi.endpoints.refreshToken.initiate({ refresh_token: 'invalid-refresh', device })
+        )
+        .unwrap()
+    ).rejects.toMatchObject({ status: 401 });
+    calls = vi
+      .mocked(fetch)
+      .mock.calls.map(([input]) => (input instanceof Request ? input.url : String(input)));
+    expect(calls.filter((url) => url.includes('/auth/refresh-token'))).toHaveLength(1);
+    expect(notify).not.toHaveBeenCalled();
   });
 
   it('invalidates tenant caches when a token refresh discovers a new access version', async () => {

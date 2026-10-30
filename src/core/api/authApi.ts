@@ -39,12 +39,13 @@ export const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     login: builder.mutation<
       AuthResponse,
-      ({ email?: string; phone?: string; password: string } & SessionDeviceRequest)
+      { email?: string; phone?: string; password: string } & SessionDeviceRequest
     >({
       query: (credentials) => ({
         url: '/auth/login',
         method: 'POST',
         body: credentials,
+        skipReauth: true,
       }),
     }),
     googleExchange: builder.mutation<
@@ -58,7 +59,12 @@ export const authApi = apiSlice.injectEndpoints({
         consents?: Array<{ consentType: 'PRIVACY' | 'TERMS'; documentVersion: string }>;
       }
     >({
-      query: (body) => ({ url: '/auth/google/exchange', method: 'POST', body }),
+      query: (body) => ({
+        url: '/auth/google/exchange',
+        method: 'POST',
+        body,
+        skipReauth: true,
+      }),
     }),
     linkGoogle: builder.mutation<
       { success: boolean; data: { auth: AuthResponse['data'] } },
@@ -80,6 +86,7 @@ export const authApi = apiSlice.injectEndpoints({
         url: '/auth/google/exchange',
         method: 'POST',
         body: { ...body, requestedUserId: userId },
+        skipReauth: true,
       }),
     }),
     refreshToken: builder.mutation<
@@ -90,6 +97,7 @@ export const authApi = apiSlice.injectEndpoints({
         url: '/auth/refresh-token',
         method: 'POST',
         body,
+        skipReauth: true,
       }),
     }),
     logout: builder.mutation<
