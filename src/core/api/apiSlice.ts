@@ -21,6 +21,8 @@ export type ApiRequestArgs =
   | string
   | (FetchArgs & {
       suppressErrorToast?: boolean;
+      /** Public authentication entry points must surface their own 401 without refreshing. */
+      skipReauth?: boolean;
     });
 
 const baseQuery = fetchBaseQuery({
@@ -286,10 +288,13 @@ const baseQueryWithReauth: BaseQueryFn<ApiRequestArgs, unknown, FetchBaseQueryEr
 ) => {
   const requestsSilentInitialFailure = typeof args === 'object' && args.suppressErrorToast === true;
   const suppressErrorToast = requestsSilentInitialFailure && api.forced !== true;
-  const hasRequestPolicy = typeof args === 'object' && 'suppressErrorToast' in args;
+  const skipReauth = typeof args === 'object' && args.skipReauth === true;
+  const hasRequestPolicy =
+    typeof args === 'object' && ('suppressErrorToast' in args || 'skipReauth' in args);
   const requestArgs = hasRequestPolicy ? { ...args } : args;
   if (hasRequestPolicy && typeof requestArgs === 'object') {
     delete requestArgs.suppressErrorToast;
+    delete requestArgs.skipReauth;
   }
   let result = await baseQuery(requestArgs, api, extraOptions);
 
@@ -319,11 +324,11 @@ const baseQueryWithReauth: BaseQueryFn<ApiRequestArgs, unknown, FetchBaseQueryEr
       }
     }
     // Handle different error types
-    if (result.error.status === 401) {
+    if (result.error.status === 401 && !skipReauth) {
       if (await refreshSession(api, extraOptions)) {
         result = await baseQuery(requestArgs, api, extraOptions);
       }
-    } else if (!suppressErrorToast) {
+    } else if (!suppressErrorToast && !(skipReauth && result.error.status === 401)) {
       notifyApiError(result.error);
     }
   }
@@ -333,7 +338,7 @@ const baseQueryWithReauth: BaseQueryFn<ApiRequestArgs, unknown, FetchBaseQueryEr
 
 export const apiSlice = createApi({
   baseQuery: baseQueryWithReauth,
-    tagTypes: [
+  tagTypes: [
     'User',
     'Customer',
     'Product',
