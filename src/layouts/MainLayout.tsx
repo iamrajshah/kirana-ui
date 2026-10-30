@@ -163,6 +163,7 @@ export const MainLayout: React.FC = () => {
   );
   const primaryItems = navigation.filter((item) => item.primary);
   const selectedTab = getPrimaryTabForPath(location.pathname);
+  const canAccessBilling = navigation.some((item) => item.href === ROUTES.BILLING);
 
   useEffect(() => {
     const allowedPaths = new Set(navigation.map((item) => item.href));
@@ -186,7 +187,7 @@ export const MainLayout: React.FC = () => {
 
   return (
     <>
-      <BackgroundDataWarmup />
+      <BackgroundDataWarmup enabled={canAccessBilling} />
       <SessionLifecycleSync />
       <IonSplitPane
         contentId="main-content"

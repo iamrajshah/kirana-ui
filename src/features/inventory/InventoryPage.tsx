@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { apiErrorMessage } from '@core/services/notificationService';
 import { Navbar } from '@components/Navbar';
 import {
@@ -13,6 +13,8 @@ import {
   IonHeader,
   IonToolbar,
   IonTitle,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
 } from '@ionic/react';
 import { create, close } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
@@ -21,13 +23,56 @@ import { SearchBar, Loading, EmptyState, Input, Button } from '@components';
 import { formatNumber } from '@utils/helpers';
 import type { Inventory } from '@core/types';
 import { filterInventory } from '@utils/localSearch';
+import { useDebouncedValue } from '@hooks/useDebouncedValue';
 import '../products/stock-workspace.css';
+
+const PAGE_SIZE = 50;
 
 export const InventoryPage: React.FC = () => {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
-  const { data, isLoading, isError, refetch } = useGetInventoryQuery({});
+  const debouncedSearch = useDebouncedValue(search.trim(), 300);
+  const [querySearch, setQuerySearch] = useState('');
+  const [skip, setSkip] = useState(0);
+  const [allInventory, setAllInventory] = useState<Inventory[]>([]);
+  const [totalInventory, setTotalInventory] = useState(0);
+  const {
+    currentData: pageData,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useGetInventoryQuery({
+    skip,
+    take: PAGE_SIZE,
+    ...(querySearch ? { search: querySearch } : {}),
+  });
   const [updateInventory, { isLoading: updating }] = useUpdateInventoryMutation();
+
+  useEffect(() => {
+    if (debouncedSearch === querySearch) return;
+    setSkip(0);
+    setAllInventory([]);
+    setTotalInventory(0);
+    setQuerySearch(debouncedSearch);
+  }, [debouncedSearch, querySearch]);
+
+  useEffect(() => {
+    if (!pageData?.data) return;
+    setTotalInventory(pageData.meta.total);
+    if (skip === 0) {
+      setAllInventory(pageData.data);
+      return;
+    }
+
+    setAllInventory((current) => {
+      const existingVariantIds = new Set(current.map((item) => item.variant_id));
+      return [
+        ...current,
+        ...pageData.data.filter((item) => !existingVariantIds.has(item.variant_id)),
+      ];
+    });
+  }, [pageData, skip]);
 
   const [showModal, setShowModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Inventory | null>(null);
@@ -37,11 +82,20 @@ export const InventoryPage: React.FC = () => {
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const inventory = useMemo(() => data?.data ?? [], [data?.data]);
   const visibleInventory = useMemo(
-    () => filterInventory(inventory, search),
-    [inventory, search]
+    () => filterInventory(allInventory, search),
+    [allInventory, search]
   );
+  const hasMore = allInventory.length < totalInventory;
+
+  const loadMore = (event: CustomEvent) => {
+    if (hasMore && !isFetching) {
+      setSkip((current) => current + PAGE_SIZE);
+    }
+    window.setTimeout(() => {
+      (event.target as HTMLIonInfiniteScrollElement).complete();
+    }, 100);
+  };
 
   // Group inventory by category
   const groupedInventory = useMemo(() => {
@@ -91,6 +145,12 @@ export const InventoryPage: React.FC = () => {
         low_stock_threshold: lowStockThreshold ? parseInt(lowStockThreshold) : undefined,
       }).unwrap();
 
+      // Quantity is part of the server sort order. Restart from page zero so an
+      // edited row cannot leave the accumulated offset window out of order.
+      setAllInventory([]);
+      setTotalInventory(0);
+      setSkip(0);
+
       setShowSuccess(true);
       setShowModal(false);
       setSelectedItem(null);
@@ -110,12 +170,17 @@ export const InventoryPage: React.FC = () => {
             <h1>{t('inventory.title')}</h1>
           </div>
           <div className="stock-toolbar">
-            <SearchBar value={search} onChange={setSearch} placeholder={t('common.search')} />
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder={t('common.search')}
+              debounce={0}
+            />
           </div>
 
-          {isLoading && inventory.length === 0 ? (
-            <Loading isOpen={isLoading} />
-          ) : isError && inventory.length === 0 ? (
+          {(isLoading || isFetching) && allInventory.length === 0 ? (
+            <Loading isOpen={true} />
+          ) : isError && allInventory.length === 0 ? (
             <div className="workspace-state" role="alert">
               <p>{t('inventory.loadError')}</p>
               <Button onClick={() => refetch()}>{t('common.retry')}</Button>
@@ -123,57 +188,74 @@ export const InventoryPage: React.FC = () => {
           ) : visibleInventory.length === 0 ? (
             <EmptyState message={t('inventory.noInventoryItems')} />
           ) : (
-            <div>
-              {categoryNames.map((categoryName) => (
-                <section key={categoryName} className="stock-category">
-                  <h2 className="stock-category-heading">
-                    {categoryName}
-                    <IonBadge color="primary">{groupedInventory[categoryName].length}</IonBadge>
-                  </h2>
-                  <div className="stock-card-grid">
-                    {groupedInventory[categoryName].map((item) => (
-                      <article key={item.variant_id} className="workspace-record stock-card">
-                        <div className="stock-card-top">
-                          <div>
-                            <h2>{item.variant?.product?.name}</h2>
-                            <p>
-                              {t('products.sku')}: {item.variant?.sku}
-                            </p>
+            <>
+              <div>
+                {categoryNames.map((categoryName) => (
+                  <section key={categoryName} className="stock-category">
+                    <h2 className="stock-category-heading">
+                      {categoryName}
+                      <IonBadge color="primary">{groupedInventory[categoryName].length}</IonBadge>
+                    </h2>
+                    <div className="stock-card-grid">
+                      {groupedInventory[categoryName].map((item) => (
+                        <article key={item.variant_id} className="workspace-record stock-card">
+                          <div className="stock-card-top">
+                            <div>
+                              <h2>{item.variant?.product?.name}</h2>
+                              <p>
+                                {t('products.sku')}: {item.variant?.sku}
+                              </p>
+                            </div>
+                            <div>
+                              <p>{t('inventory.onHand')}</p>
+                              <IonBadge
+                                color={item.is_low_stock ? 'danger' : 'success'}
+                                className="text-lg"
+                              >
+                                {formatNumber(item.quantity)}
+                              </IonBadge>
+                            </div>
                           </div>
-                          <div>
-                            <p>{t('inventory.onHand')}</p>
-                            <IonBadge
-                              color={item.is_low_stock ? 'danger' : 'success'}
-                              className="text-lg"
+                          <div className="stock-card-bottom">
+                            <div>
+                              <p>
+                                {t('inventory.lowStockThreshold')}: {item.low_stock_threshold}
+                              </p>
+                              {item.is_low_stock && (
+                                <p className="stock-warning">{t('inventory.lowStockWarning')}</p>
+                              )}
+                            </div>
+                            <IonButton
+                              onClick={() => handleEditClick(item)}
+                              fill="outline"
+                              aria-label={t('common.edit')}
                             >
-                              {formatNumber(item.quantity)}
-                            </IonBadge>
+                              <IonIcon slot="start" icon={create} />
+                              {t('common.edit')}
+                            </IonButton>
                           </div>
-                        </div>
-                        <div className="stock-card-bottom">
-                          <div>
-                            <p>
-                              {t('inventory.lowStockThreshold')}: {item.low_stock_threshold}
-                            </p>
-                            {item.is_low_stock && (
-                              <p className="stock-warning">{t('inventory.lowStockWarning')}</p>
-                            )}
-                          </div>
-                          <IonButton
-                            onClick={() => handleEditClick(item)}
-                            fill="outline"
-                            aria-label={t('common.edit')}
-                          >
-                            <IonIcon slot="start" icon={create} />
-                            {t('common.edit')}
-                          </IonButton>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+              {isError && allInventory.length > 0 && (
+                <div className="workspace-state" role="alert">
+                  <p>{t('common.loadMoreError')}</p>
+                  <Button onClick={() => refetch()} variant="outline">
+                    {t('common.retry')}
+                  </Button>
+                </div>
+              )}
+              <IonInfiniteScroll
+                threshold="50%"
+                onIonInfinite={loadMore}
+                disabled={!hasMore || isError}
+              >
+                <IonInfiniteScrollContent loadingText={t('inventory.loadingMore')} />
+              </IonInfiniteScroll>
+            </>
           )}
         </div>
 

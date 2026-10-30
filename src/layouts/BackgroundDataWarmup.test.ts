@@ -24,4 +24,24 @@ describe('scheduleBackgroundDataWarmup', () => {
     cancel();
     expect(cancelIdleCallback).toHaveBeenCalledWith(42);
   });
+
+  it.each([{ saveData: true }, { effectiveType: 'slow-2g' }, { effectiveType: '2g' }])(
+    'does not schedule catalog work on constrained connection %j',
+    (connection) => {
+      const task = vi.fn();
+      const browserWindow = {
+        requestIdleCallback: vi.fn(),
+        cancelIdleCallback: vi.fn(),
+        setTimeout: vi.fn(),
+        clearTimeout: vi.fn(),
+      } as unknown as Window;
+
+      const cancel = scheduleBackgroundDataWarmup(task, browserWindow, connection);
+
+      expect(browserWindow.requestIdleCallback).not.toHaveBeenCalled();
+      expect(browserWindow.setTimeout).not.toHaveBeenCalled();
+      expect(task).not.toHaveBeenCalled();
+      expect(cancel()).toBeUndefined();
+    }
+  );
 });

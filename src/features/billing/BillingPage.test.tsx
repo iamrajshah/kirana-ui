@@ -36,6 +36,8 @@ const mocks = vi.hoisted(() => ({
   settingsMode: 'SIMPLE_RECEIPT' as 'SIMPLE_RECEIPT' | 'GST_TAX_INVOICE',
   settingsLoading: false,
   customerDetail: null as Record<string, unknown> | null,
+  searchCustomers: vi.fn(),
+  customerSearchData: { data: [] as Array<Record<string, unknown>> },
   pathname: '/billing',
 }));
 
@@ -94,7 +96,21 @@ vi.mock('./HeldBillsPanel', () => ({
 
 vi.mock('@components', () => ({
   Loading: () => null,
-  SearchBar: () => null,
+  SearchBar: ({
+    value,
+    onChange,
+    placeholder,
+  }: {
+    value: string;
+    onChange: (value: string) => void;
+    placeholder: string;
+  }) => (
+    <input
+      aria-label={placeholder}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  ),
   BarcodeScannerComponent: ({ onScan }: { onScan: (barcode: string) => void }) => (
     <button onClick={() => onScan('8901234567890')}>camera scan</button>
   ),
@@ -187,7 +203,10 @@ vi.mock('@core/api/paymentApi', () => ({
 }));
 
 vi.mock('@core/api/customerApi', () => ({
-  useGetCustomersQuery: () => ({ data: { data: [] }, isLoading: false, isFetching: false }),
+  useLazySearchCustomersQuery: () => [
+    mocks.searchCustomers,
+    { data: mocks.customerSearchData, isLoading: false, isFetching: false },
+  ],
   useGetCustomerByIdQuery: (id: string, options: unknown) => {
     mocks.getCustomerById(id, options);
     const invoiceCustomer = mocks.invoice.customer as Record<string, unknown> | null | undefined;
@@ -268,6 +287,7 @@ beforeEach(() => {
   mocks.settingsMode = 'SIMPLE_RECEIPT';
   mocks.settingsLoading = false;
   mocks.customerDetail = null;
+  mocks.customerSearchData = { data: [] };
   mocks.invoice = {
     id: 'edit-1',
     customer: null,
@@ -338,6 +358,19 @@ beforeEach(() => {
 });
 
 afterEach(cleanup);
+
+it('waits for two debounced characters before searching customers', async () => {
+  render(<BillingPage />);
+  fireEvent.click(await screen.findByRole('button', { name: 'billing.attachCustomer' }));
+  const searchInput = screen.getByRole('textbox', { name: 'billing.searchCustomerPlaceholder' });
+
+  fireEvent.change(searchInput, { target: { value: 'a' } });
+  expect(mocks.searchCustomers).not.toHaveBeenCalled();
+  expect(screen.getByText('billing.customerSearchMinimum')).toBeTruthy();
+
+  fireEvent.change(searchInput, { target: { value: 'asha' } });
+  await waitFor(() => expect(mocks.searchCustomers).toHaveBeenCalledWith('asha', true));
+});
 
 describe('BillingPage', () => {
   it('keeps long bills compact until the cashier chooses to review every item', async () => {

@@ -1,11 +1,12 @@
 import React, { type PropsWithChildren } from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ProductsPage } from './ProductsPage';
 
 const state = vi.hoisted(() => ({
   data: { data: [{ id: 'product-1', name: 'Rice', category: { name: 'Staples' }, is_active: true, variants: [{ id: 'variant-1', sku: 'RICE-1', price: 50 }] }], meta: { total: 1 } } as unknown,
   isError: false,
+  failAtSkip: null as number | null,
   refetch: vi.fn(),
   push: vi.fn(),
   query: vi.fn(),
@@ -17,7 +18,11 @@ vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => k
 vi.mock('react-router', () => ({ useHistory: () => ({ push: state.push }) }));
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('@core/api/productApi', () => ({
-  useGetProductsQuery: (args: unknown) => { state.query(args); return { ...state, isLoading: false, isFetching: false }; },
+  useGetProductsQuery: (args: unknown) => {
+    state.query(args);
+    const failed = state.isError || state.failAtSkip === (args as { skip: number }).skip;
+    return { ...state, currentData: failed ? undefined : state.data, isError: failed, isLoading: false, isFetching: false };
+  },
   useCreateProductMutation: () => [state.createProduct, { isLoading: false }],
   useCreateVariantMutation: () => [state.createVariant, { isLoading: false }],
 }));
@@ -36,7 +41,10 @@ vi.mock('@ionic/react', () => {
     IonLabel: Container, IonBadge: Container, IonIcon: Container, IonFab: Container,
     IonFabButton: Container, IonModal: Container, IonButtons: Container, IonToast: Container,
     IonHeader: Container, IonToolbar: Container, IonTitle: Container,
-    IonInfiniteScroll: Container, IonInfiniteScrollContent: Container, IonListHeader: Container,
+    IonInfiniteScroll: ({ children, onIonInfinite, disabled }: PropsWithChildren<{ onIonInfinite?: (event: CustomEvent) => void; disabled?: boolean }>) => (
+      <button aria-label="load-more" disabled={disabled} onClick={() => onIonInfinite?.({ target: { complete: vi.fn() } } as unknown as CustomEvent)}>{children}</button>
+    ),
+    IonInfiniteScrollContent: Container, IonListHeader: Container,
     IonButton: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => <button onClick={onClick}>{children}</button>,
     useIonActionSheet: () => [vi.fn()],
   };
@@ -45,12 +53,16 @@ vi.mock('@ionic/react', () => {
 beforeEach(() => {
   state.data = { data: [{ id: 'product-1', name: 'Rice', category: { name: 'Staples' }, is_active: true, variants: [{ id: 'variant-1', sku: 'RICE-1', price: 50 }] }], meta: { total: 1 } };
   state.isError = false;
+  state.failAtSkip = null;
   state.refetch.mockClear(); state.push.mockClear(); state.query.mockClear();
   state.createProduct.mockReset(); state.createVariant.mockReset();
   state.createProduct.mockReturnValue({ unwrap: () => Promise.resolve({ data: { id: 'product-2' } }) });
   state.createVariant.mockReturnValue({ unwrap: () => Promise.resolve({ data: { id: 'variant-2' } }) });
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 it('shows product actions and filters the fetched index without another search request', () => {
   render(<ProductsPage />);
@@ -61,7 +73,39 @@ it('shows product actions and filters the fetched index without another search r
   fireEvent.change(screen.getByRole('textbox', { name: 'search' }), { target: { value: 'rice' } });
   expect(screen.getByText('Rice')).toBeTruthy();
   expect(state.query.mock.calls.every(([args]) => !('search' in (args as object)))).toBe(true);
-  expect(state.query).toHaveBeenLastCalledWith({ skip: 0, take: 1000 });
+  expect(state.query).toHaveBeenLastCalledWith({ skip: 0, take: 50 });
+});
+
+it('debounces remote search while preserving the immediate local result', () => {
+  vi.useFakeTimers();
+  render(<ProductsPage />);
+
+  fireEvent.change(screen.getByRole('textbox', { name: 'search' }), { target: { value: 'rice' } });
+  expect(screen.getByText('Rice')).toBeTruthy();
+  expect(state.query).toHaveBeenLastCalledWith({ skip: 0, take: 50 });
+
+  act(() => vi.advanceTimersByTime(300));
+  expect(state.query).toHaveBeenLastCalledWith({ skip: 0, take: 50, search: 'rice' });
+});
+
+it('loads products in 50-row pages', async () => {
+  state.data = { data: [{ id: 'product-1', name: 'Rice', category: { name: 'Staples' }, is_active: true, variants: [] }], meta: { total: 100 } };
+  render(<ProductsPage />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'load-more' }));
+  await waitFor(() => expect(state.query).toHaveBeenLastCalledWith({ skip: 50, take: 50 }));
+});
+
+it('keeps loaded products visible and offers retry when a later page fails', async () => {
+  state.data = { data: [{ id: 'product-1', name: 'Rice', category: { name: 'Staples' }, is_active: true, variants: [] }], meta: { total: 100 } };
+  state.failAtSkip = 50;
+  render(<ProductsPage />);
+
+  fireEvent.click(screen.getByRole('button', { name: 'load-more' }));
+  expect(await screen.findByText('common.loadMoreError')).toBeTruthy();
+  expect(screen.getByText('Rice')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'common.retry' }));
+  expect(state.refetch).toHaveBeenCalledTimes(1);
 });
 
 it('offers retry rather than an empty catalog on request failure', () => {

@@ -37,7 +37,7 @@ import {
   useCreateSplitPaymentMutation,
   type SplitPaymentTender,
 } from '@core/api/paymentApi';
-import { useGetCustomerByIdQuery, useGetCustomersQuery } from '@core/api/customerApi';
+import { useGetCustomerByIdQuery, useLazySearchCustomersQuery } from '@core/api/customerApi';
 import {
   useCreateProductFromBarcodeMutation,
   useGetBillingCatalogQuery,
@@ -50,6 +50,7 @@ import { selectCurrentUser } from '@core/auth/authSlice';
 import { useAppSelector } from '@core/hooks';
 import type { Customer, HeldBill, Invoice, PaymentMode } from '@core/types';
 import { formatCurrency, generateIdempotencyKey } from '@utils/helpers';
+import { useDebouncedValue } from '@hooks/useDebouncedValue';
 import type { BillingCartItem } from './billing.logic';
 import { filterBillingCatalog, filterCustomers } from '@utils/localSearch';
 import {
@@ -132,11 +133,11 @@ export const BillingPage: React.FC = () => {
   const [scanBarcode, { isFetching: barcodeLoading }] = useLazyScanBarcodeQuery();
   const [createProductFromBarcode, { isLoading: creatingBarcodeProduct }] =
     useCreateProductFromBarcodeMutation();
-  const {
+  const [searchCustomers, {
     data: customersData,
     isLoading: customersLoading,
     isFetching: customersFetching,
-  } = useGetCustomersQuery({ skip: 0, take: 1000 });
+  }] = useLazySearchCustomersQuery();
   const [createInvoice, { isLoading: creating }] = useCreateInvoiceMutation();
   const [quoteInvoice, { isLoading: quoting }] = useQuoteInvoiceMutation();
   const [cancelInvoice, { isLoading: cancelling }] = useCancelInvoiceMutation();
@@ -160,6 +161,7 @@ export const BillingPage: React.FC = () => {
   const [showBarcodeTools, setShowBarcodeTools] = useState(false);
   const [unknownBarcode, setUnknownBarcode] = useState<string | null>(null);
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
+  const debouncedCustomerSearchTerm = useDebouncedValue(customerSearchTerm.trim(), 300);
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
   const [cartItems, setCartItems] = useState<BillingCartItem[]>([]);
   const [showAllCartItems, setShowAllCartItems] = useState(false);
@@ -287,12 +289,25 @@ export const BillingPage: React.FC = () => {
       ),
     [billingCatalogData?.data]
   );
+  const customerSearchReady = debouncedCustomerSearchTerm.length >= 2;
+  useEffect(() => {
+    if (!showCustomerSearch || !customerSearchReady) return;
+    void searchCustomers(debouncedCustomerSearchTerm, true);
+  }, [
+    customerSearchReady,
+    debouncedCustomerSearchTerm,
+    searchCustomers,
+    showCustomerSearch,
+  ]);
   const matchingCustomers = useMemo(
-    () => filterCustomers(customersData?.data ?? [], customerSearchTerm).slice(0, 20),
-    [customerSearchTerm, customersData?.data]
+    () =>
+      customerSearchReady
+        ? filterCustomers(customersData?.data ?? [], customerSearchTerm).slice(0, 20)
+        : [],
+    [customerSearchReady, customerSearchTerm, customersData?.data]
   );
   const searchLoading = billingCatalogLoading || billingCatalogFetching;
-  const customerIndexLoading = customersLoading || customersFetching;
+  const customerIndexLoading = customerSearchReady && (customersLoading || customersFetching);
   const totals = useMemo(
     () => calculateBillingTotals(cartItems, billDiscount, 'amount', 0),
     [billDiscount, cartItems]
@@ -1251,11 +1266,22 @@ export const BillingPage: React.FC = () => {
                     value={customerSearchTerm}
                     onChange={setCustomerSearchTerm}
                     placeholder={t('billing.searchCustomerPlaceholder')}
+                    debounce={0}
                   />
                   {customerIndexLoading && (
                     <p className="p-2 text-sm text-gray-500">{t('common.loading')}</p>
                   )}
-                  {customerSearchTerm && (
+                  {customerSearchTerm.trim().length > 0 && !customerSearchReady && (
+                    <p className="p-2 text-sm text-gray-500">
+                      {t('billing.customerSearchMinimum')}
+                    </p>
+                  )}
+                  {customerSearchReady && !customerIndexLoading && matchingCustomers.length === 0 && (
+                    <p className="p-2 text-sm text-gray-500">
+                      {t('billing.noCustomersFound')}
+                    </p>
+                  )}
+                  {customerSearchReady && (
                     <IonList className="max-h-52 overflow-auto">
                       {matchingCustomers.map((customer) => (
                         <IonItem
