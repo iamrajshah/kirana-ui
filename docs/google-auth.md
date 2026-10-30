@@ -19,3 +19,23 @@ audience fingerprints. Android fingerprints are evaluated separately and
 cannot satisfy the web check. Enabled production builds run the same probe
 automatically; disabled password-only builds remain offline-capable. Checks
 report blocker codes without printing the client ID or any credential.
+
+## Verified production state — 30 October 2026
+
+Cloudflare Pages release `7dc81aa` enables the Google entry surface at
+`https://kirana-pos.pages.dev`. The matching Railway readiness contract enables
+known identities while generic new-user entry, shared demo provisioning, and
+automatic commercial activation remain disabled.
+
+The first live invitation was verified end to end against Jayesh Trading: the
+approved Google email linked to the existing active OWNER, the invitation was
+consumed once, the password hash remained present, and no duplicate identity,
+user, membership, or tenant was created. The web release also verifies that
+public password/Google failures stay outside protected-session refresh and
+logout handling, cold loading does not report a false Google cancellation, and
+the rendered Google button follows phone/tablet width changes.
+
+This web proof is not a Play Store release. Before publishing Android, register
+the Play App Signing SHA fingerprint as an Android OAuth client, produce a
+signed AAB, and repeat Google sign-in, relaunch, device replacement, logout, and
+network recovery on physical phone and tablet hardware.

@@ -38,8 +38,10 @@ Maintainer: [Rajesh Shah (@iamrajshah)](https://github.com/iamrajshah)
   first, and the login page explains this handoff.
 - Ionic/Capacitor foundations for web and Android/iOS packaging.
 - Production Android project identity (`com.iamrajshah.kiranapos`) and a
-  fail-closed Google-entry UI flag. Google remains hidden until server,
-  OAuth, legal, signing, and device gates are complete.
+  fail-closed Google-entry UI flag. Web Google entry is live for linked owners
+  and valid Platform Admin invitations; unknown Google identities and shared
+  demo provisioning remain closed. Android release signing and real-device
+  evidence are still separate release gates.
 - Android 14+ share compatibility, secure-session restoration after activity or
   process recreation, and aligned web/package/Android `1.0.1` version metadata.
 
