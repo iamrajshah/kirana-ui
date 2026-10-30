@@ -46,6 +46,7 @@ export const authApi = apiSlice.injectEndpoints({
         method: 'POST',
         body: credentials,
         skipReauth: true,
+        suppressErrorToast: true,
       }),
     }),
     googleExchange: builder.mutation<
@@ -64,6 +65,7 @@ export const authApi = apiSlice.injectEndpoints({
         method: 'POST',
         body,
         skipReauth: true,
+        suppressErrorToast: true,
       }),
     }),
     linkGoogle: builder.mutation<
@@ -87,6 +89,7 @@ export const authApi = apiSlice.injectEndpoints({
         method: 'POST',
         body: { ...body, requestedUserId: userId },
         skipReauth: true,
+        suppressErrorToast: true,
       }),
     }),
     refreshToken: builder.mutation<
@@ -98,6 +101,7 @@ export const authApi = apiSlice.injectEndpoints({
         method: 'POST',
         body,
         skipReauth: true,
+        suppressErrorToast: true,
       }),
     }),
     logout: builder.mutation<

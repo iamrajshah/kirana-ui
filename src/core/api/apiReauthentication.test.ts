@@ -198,6 +198,70 @@ describe('API refresh coordination', () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
+  it('leaves non-401 public authentication failures to the login surface', async () => {
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = input instanceof Request ? input.url : String(input);
+      if (url.includes('/auth/login')) {
+        return response({ message: 'Device limit reached' }, 409);
+      }
+      if (url.includes('/auth/google/exchange')) {
+        return response({ message: 'Google sign-in is temporarily unavailable' }, 503);
+      }
+      return response({ message: 'unexpected request' }, 500);
+    });
+    const notify = vi.spyOn(notificationService, 'error');
+    const store = createStore();
+    const device = { installationId: 'install-1', platform: 'WEB' as const, name: 'Web · Test' };
+
+    await expect(
+      store
+        .dispatch(
+          authApi.endpoints.login.initiate({
+            email: 'owner@example.com',
+            password: 'wrong',
+            device,
+          })
+        )
+        .unwrap()
+    ).rejects.toMatchObject({ status: 409 });
+    await expect(
+      store
+        .dispatch(
+          authApi.endpoints.googleExchange.initiate({
+            credential: 'invalid',
+            source: 'web',
+            device,
+          })
+        )
+        .unwrap()
+    ).rejects.toMatchObject({ status: 503 });
+
+    const calls = vi
+      .mocked(fetch)
+      .mock.calls.map(([input]) => (input instanceof Request ? input.url : String(input)));
+    expect(calls.filter((url) => url.includes('/auth/refresh-token'))).toHaveLength(0);
+    expect(store.getState().auth.user?.id).toBe('1');
+    expect(store.getState().auth.accessToken).toBe('expired-access');
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it('still reports non-401 failures from protected endpoints globally', async () => {
+    vi.mocked(fetch).mockImplementation(async () =>
+      response({ message: 'Service temporarily unavailable' }, 503)
+    );
+    const notify = vi.spyOn(notificationService, 'error');
+    const store = createStore();
+
+    await expect(
+      store
+        .dispatch(probeApi.endpoints.protectedProbe.initiate(10, { forceRefetch: true }))
+        .unwrap()
+    ).rejects.toMatchObject({ status: 503 });
+
+    expect(notify).toHaveBeenCalledOnce();
+    expect(notify).toHaveBeenCalledWith('Service temporarily unavailable');
+  });
+
   it('invalidates tenant caches when a token refresh discovers a new access version', async () => {
     let dashboardCalls = 0;
     vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
