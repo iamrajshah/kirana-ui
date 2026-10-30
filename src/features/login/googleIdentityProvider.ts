@@ -156,7 +156,17 @@ export class AndroidCredentialProvider implements IdentityCredentialProvider {
             ? callbacks.onCredential({ credential, source: 'android' })
             : callbacks.onCancel()
         )
-        .catch(() => callbacks.onError('Google sign-in unavailable'));
+        .catch((error: unknown) => {
+          const code =
+            error && typeof error === 'object' && 'code' in error
+              ? (error as { code?: unknown }).code
+              : undefined;
+          if (code === 'GOOGLE_SIGN_IN_CANCELLED') {
+            callbacks.onCancel();
+            return;
+          }
+          callbacks.onError('Google sign-in unavailable');
+        });
     });
     target.replaceChildren(button);
     return () => button.remove();

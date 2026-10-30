@@ -12,6 +12,7 @@ import androidx.credentials.CredentialManagerCallback;
 import androidx.credentials.CustomCredential;
 import androidx.credentials.GetCredentialRequest;
 import androidx.credentials.GetCredentialResponse;
+import androidx.credentials.exceptions.GetCredentialCancellationException;
 import androidx.credentials.exceptions.GetCredentialException;
 
 import com.getcapacitor.JSObject;
@@ -83,10 +84,20 @@ public class KiranaNativeAuthPlugin extends Plugin {
 
                 @Override
                 public void onError(GetCredentialException error) {
-                    call.reject("Google sign-in was cancelled or unavailable", "GOOGLE_SIGN_IN_FAILED", error);
+                    if (error instanceof GetCredentialCancellationException) {
+                        call.reject("Google sign-in was cancelled", googleCredentialErrorCode(error), error);
+                        return;
+                    }
+                    call.reject("Google sign-in unavailable", googleCredentialErrorCode(error), error);
                 }
             }
         );
+    }
+
+    static String googleCredentialErrorCode(GetCredentialException error) {
+        return error instanceof GetCredentialCancellationException
+            ? "GOOGLE_SIGN_IN_CANCELLED"
+            : "GOOGLE_SIGN_IN_FAILED";
     }
 
     @PluginMethod

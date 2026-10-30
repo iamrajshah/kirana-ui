@@ -146,3 +146,64 @@ describe('WebGoogleIdentityProvider', () => {
     expect(disconnect).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('AndroidCredentialProvider', () => {
+  it('returns a native credential with the Android source', async () => {
+    const { AndroidCredentialProvider } = await import('./googleIdentityProvider');
+    const target = document.createElement('div');
+    const onCredential = vi.fn();
+    new AndroidCredentialProvider(() => Promise.resolve('android-id-token')).render(target, {
+      onCredential,
+      onCancel: vi.fn(),
+      onError: vi.fn(),
+    });
+
+    target.querySelector('button')?.click();
+
+    await vi.waitFor(() =>
+      expect(onCredential).toHaveBeenCalledWith({
+        credential: 'android-id-token',
+        source: 'android',
+      })
+    );
+  });
+
+  it('treats an explicit native cancellation as cancellation', async () => {
+    const { AndroidCredentialProvider } = await import('./googleIdentityProvider');
+    const target = document.createElement('div');
+    const onCancel = vi.fn();
+    const onError = vi.fn();
+    new AndroidCredentialProvider(() =>
+      Promise.reject({ code: 'GOOGLE_SIGN_IN_CANCELLED' })
+    ).render(target, {
+      onCredential: vi.fn(),
+      onCancel,
+      onError,
+    });
+
+    target.querySelector('button')?.click();
+
+    await vi.waitFor(() => expect(onCancel).toHaveBeenCalledTimes(1));
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it('keeps missing credentials and provider errors as failures', async () => {
+    const { AndroidCredentialProvider } = await import('./googleIdentityProvider');
+    const target = document.createElement('div');
+    const onCancel = vi.fn();
+    const onError = vi.fn();
+    new AndroidCredentialProvider(() => Promise.reject({ code: 'GOOGLE_SIGN_IN_FAILED' })).render(
+      target,
+      {
+        onCredential: vi.fn(),
+        onCancel,
+        onError,
+      }
+    );
+
+    target.querySelector('button')?.click();
+
+    await vi.waitFor(() => expect(onError).toHaveBeenCalledWith('Google sign-in unavailable'));
+    expect(onCancel).not.toHaveBeenCalled();
+  });
+});
