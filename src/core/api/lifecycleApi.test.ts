@@ -5,6 +5,7 @@ import authReducer from '@core/auth/authSlice';
 import { STORAGE_KEYS } from '@core/constants';
 import { apiSlice } from './apiSlice';
 import { lifecycleApi } from './lifecycleApi';
+import { notificationService, type ToastMessage } from '../services/notificationService';
 
 const tenantProbeApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -143,5 +144,76 @@ describe('account membership selection', () => {
 
     expect(store.getState().auth.user?.tenant?.id).toBe('tenant-b');
     expect(tenantProbeApi.endpoints.tenantProbe.select()(store.getState()).data).toBeUndefined();
+  });
+});
+
+describe('public product recovery', () => {
+  beforeEach(() => {
+    const NativeRequest = Request;
+    vi.stubGlobal(
+      'Request',
+      class extends NativeRequest {
+        constructor(input: RequestInfo | URL, init?: RequestInit) {
+          super(input, init ? { ...init, signal: undefined } : init);
+        }
+      }
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('lets the login screen recover inline without also showing a global error toast', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ success: false, message: 'Server unavailable' }), {
+            status: 500,
+            headers: { 'content-type': 'application/json' },
+          })
+      )
+    );
+    const store = createStore();
+    const notifications: ToastMessage[] = [];
+    const unsubscribe = notificationService.subscribe((message) => notifications.push(message));
+
+    await store.dispatch(
+      lifecycleApi.endpoints.getPublicProduct.initiate(
+        { suppressErrorToast: true },
+        { subscribe: false }
+      )
+    );
+
+    expect(notifications).toEqual([]);
+    unsubscribe();
+    store.dispatch(apiSlice.util.resetApiState());
+  });
+
+  it('keeps the global error toast for public product consumers without inline recovery', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ success: false, message: 'Server unavailable' }), {
+            status: 500,
+            headers: { 'content-type': 'application/json' },
+          })
+      )
+    );
+    const store = createStore();
+    const notifications: ToastMessage[] = [];
+    const unsubscribe = notificationService.subscribe((message) => notifications.push(message));
+
+    await store.dispatch(lifecycleApi.endpoints.getPublicProduct.initiate());
+
+    expect(notifications).toHaveLength(1);
+    expect(notifications[0]).toMatchObject({
+      type: 'error',
+      message: 'Server error. Please try again later.',
+    });
+    unsubscribe();
+    store.dispatch(apiSlice.util.resetApiState());
   });
 });

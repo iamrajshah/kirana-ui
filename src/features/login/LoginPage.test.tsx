@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
   productInformationLoading: false,
   productInformationFetching: false,
   refetchProductInformation: vi.fn(),
+  getPublicProductQuery: vi.fn(),
 }));
 
 vi.mock('react-i18next', () => ({
@@ -52,12 +53,15 @@ vi.mock('@core/api/authApi', () => ({
   ],
 }));
 vi.mock('@core/api/lifecycleApi', () => ({
-  useGetPublicProductQuery: () => ({
-    data: mocks.productInformation,
-    isLoading: mocks.productInformationLoading,
-    isFetching: mocks.productInformationFetching,
-    refetch: mocks.refetchProductInformation,
-  }),
+  useGetPublicProductQuery: (options: unknown) => {
+    mocks.getPublicProductQuery(options);
+    return {
+      data: mocks.productInformation,
+      isLoading: mocks.productInformationLoading,
+      isFetching: mocks.productInformationFetching,
+      refetch: mocks.refetchProductInformation,
+    };
+  },
 }));
 vi.mock('@core/auth/deviceIdentity', () => ({
   getDeviceDescriptor: () =>
@@ -313,6 +317,7 @@ describe('LoginPage', () => {
 
     render(<LoginPage />);
 
+    expect(mocks.getPublicProductQuery).toHaveBeenCalledWith({ suppressErrorToast: true });
     expect(screen.getByRole('alert').textContent).toContain('auth.googleLegalUnavailable');
     fireEvent.click(screen.getByRole('button', { name: 'common.retry' }));
     expect(mocks.refetchProductInformation).toHaveBeenCalledTimes(1);

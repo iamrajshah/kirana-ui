@@ -60,8 +60,14 @@ export interface AccountSummary {
 
 export const lifecycleApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getPublicProduct: builder.query<PublicProductInformation, void>({
-      query: () => '/public/product',
+    getPublicProduct: builder.query<
+      PublicProductInformation,
+      { suppressErrorToast?: boolean } | void
+    >({
+      query: (options) => ({
+        url: '/public/product',
+        suppressErrorToast: options ? options.suppressErrorToast : undefined,
+      }),
       transformResponse: (response: { data: PublicProductInformation }) => response.data,
     }),
     getAccountSummary: builder.query<AccountSummary, void>({

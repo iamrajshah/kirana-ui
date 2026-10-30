@@ -47,7 +47,7 @@ export const LoginPage: React.FC = () => {
     isLoading: isProductInformationLoading,
     isFetching: isProductInformationFetching,
     refetch: refetchProductInformation,
-  } = useGetPublicProductQuery();
+  } = useGetPublicProductQuery({ suppressErrorToast: true });
 
   const [emailOrPhone, setEmailOrPhone] = useState('');
   const [password, setPassword] = useState('');
