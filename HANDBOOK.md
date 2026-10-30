@@ -185,6 +185,9 @@ remain usable. Cashiers continue to see their normal operational dashboard.
 - Offset-paginated API results require a deterministic unique ordering. A later
   page failure must keep loaded rows visible and offer Retry; it must not pretend
   the first page is the complete list.
+- Infinite-scroll loading indicators complete only after the requested page
+  succeeds or fails. Do not replace request settlement with a fixed timer; slow
+  mobile networks must continue to show honest progress.
 - Fast Billing deliberately keeps the compact active product catalogue in local
   memory for instant name, SKU, and barcode lookup. Do not replace it with one
   request per keystroke.

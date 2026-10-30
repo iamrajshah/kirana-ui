@@ -40,6 +40,7 @@ import './CustomersPage.css';
 import { validatePartyForm, type PartyFieldError } from '@utils/formValidation';
 import { filterCustomers } from '@utils/localSearch';
 import { useDebouncedValue } from '@hooks/useDebouncedValue';
+import { useRequestSettledInfiniteScroll } from '@hooks/useRequestSettledInfiniteScroll';
 
 const PAGE_SIZE = 50;
 
@@ -71,6 +72,12 @@ export const CustomersPage: React.FC = () => {
   });
   const [createCustomer, { isLoading: creating }] = useCreateCustomerMutation();
   const [updateCustomer, { isLoading: updating }] = useUpdateCustomerMutation();
+  const beginLoadMore = useRequestSettledInfiniteScroll({
+    currentData: pageData,
+    isError,
+    isFetching,
+    requestKey: `${querySearch}:${skip}`,
+  });
 
   useEffect(() => {
     if (debouncedSearch === querySearch) return;
@@ -209,13 +216,9 @@ export const CustomersPage: React.FC = () => {
     [allCustomers, search]
   );
 
-  const loadMore = async (e: CustomEvent) => {
-    if (hasMore && !isFetching) {
-      setSkip((prev) => prev + PAGE_SIZE);
-    }
-    setTimeout(() => {
-      (e.target as HTMLIonInfiniteScrollElement).complete();
-    }, 100);
+  const loadMore = (event: CustomEvent) => {
+    if (!beginLoadMore(event, hasMore && !isFetching)) return;
+    setSkip((previous) => previous + PAGE_SIZE);
   };
 
   return (
