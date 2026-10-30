@@ -994,7 +994,7 @@ export const ReportsPage: React.FC = () => {
             </div>
           </div>
           {/* Report Selector Dropdown */}
-          <IonCard className="mb-4 report-select-card">
+          <IonCard className="mb-4 report-mobile-select-card">
             <IonCardContent>
               <IonItem lines="none">
                 <IonIcon icon={statsChartOutline} slot="start" className="text-xl" />
@@ -1026,7 +1026,7 @@ export const ReportsPage: React.FC = () => {
           </IonCard>
 
           {supportsFirmScope && firmScopedReports.has(selectedReport) && (
-            <IonCard className="mb-4 report-select-card">
+            <IonCard className="mb-4 report-firm-select-card">
               <IonCardContent>
                 <IonItem lines="none">
                   <IonLabel>{t('reports.accountingFirm')}</IonLabel>

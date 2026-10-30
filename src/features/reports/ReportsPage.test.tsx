@@ -102,10 +102,13 @@ vi.mock('@core/api/reportsApi', () => {
 });
 vi.mock('@ionic/react', () => {
   const Container = ({ children }: PropsWithChildren) => <div>{children}</div>;
+  const Card = ({ children, className }: PropsWithChildren<{ className?: string }>) => (
+    <div className={className}>{children}</div>
+  );
   return {
     IonPage: Container,
     IonContent: Container,
-    IonCard: Container,
+    IonCard: Card,
     IonCardHeader: Container,
     IonCardTitle: Container,
     IonCardContent: Container,
@@ -244,6 +247,21 @@ it('lets a demo shop select a seeded firm for firm-scoped reports', () => {
 
   fireEvent.click(screen.getByText('select firm two'));
   expect(reportArgs.sales.at(-1)).toEqual({ groupBy: 'day', firmId: 'firm-2', scope: 'FIRM' });
+});
+
+it('keeps the accounting-firm control independent from the mobile-only report chooser', () => {
+  commercialState.multiFirmAllowed = true;
+  firmState.firms = [
+    { id: 'firm-1', legal_name: 'Main Firm', is_default_sales: true },
+    { id: 'firm-2', legal_name: 'Second Firm', is_default_sales: false },
+  ];
+
+  render(<ReportsPage />);
+
+  expect(screen.getByText('inventory report').closest('.report-mobile-select-card')).toBeTruthy();
+  const firmControl = screen.getByText('select firm two').closest('.report-firm-select-card');
+  expect(firmControl).toBeTruthy();
+  expect(firmControl?.classList.contains('report-mobile-select-card')).toBe(false);
 });
 
 it('enables firm scope from the MULTI_FIRM entitlement instead of the plan name', () => {
