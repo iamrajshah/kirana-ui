@@ -162,6 +162,8 @@
     "accountDeletion": "खाता हटाना",
     "acceptLegal": "मैं सहमत हूँ",
     "acceptLegalRequired": "Google साइन-इन से पहले गोपनीयता नीति और शर्तें स्वीकार करें।",
+    "googleLegalLoading": "सुरक्षित Google साइन-इन तैयार हो रहा है...",
+    "googleLegalUnavailable": "नवीनतम गोपनीयता नीति और शर्तें लोड नहीं हो सकीं, इसलिए Google साइन-इन अभी उपलब्ध नहीं है।",
     "demoPreparing": "आपकी निजी डेमो दुकान तैयार हो रही है",
     "demoStatus": "स्थिति: {{status}}",
     "demoCompleted": "पूरा: {{stage}}",

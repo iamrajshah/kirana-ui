@@ -17,6 +17,7 @@ describe('WebGoogleIdentityProvider', () => {
       .querySelectorAll('script[data-kirana-google-identity]')
       .forEach((node) => node.remove());
     delete window.google;
+    vi.unstubAllGlobals();
     vi.resetModules();
   });
 
@@ -72,5 +73,76 @@ describe('WebGoogleIdentityProvider', () => {
     expect(onError).toHaveBeenCalledWith('Google sign-in unavailable');
     expect(document.querySelector('script[data-kirana-google-identity]')).toBeNull();
     vi.useRealTimers();
+  });
+
+  it('renders the explicit button without starting One Tap or reporting a cold-load cancellation', async () => {
+    const googleAccounts = accounts();
+    window.google = { accounts: googleAccounts };
+    const { WebGoogleIdentityProvider } = await import('./googleIdentityProvider');
+    const onCancel = vi.fn();
+    const target = document.createElement('div');
+    Object.defineProperty(target, 'clientWidth', { value: 278 });
+
+    new WebGoogleIdentityProvider('client-id').render(target, {
+      onCredential: vi.fn(),
+      onCancel,
+      onError: vi.fn(),
+    });
+
+    await vi.waitFor(() => expect(googleAccounts.id.renderButton).toHaveBeenCalledTimes(1));
+    expect(googleAccounts.id.renderButton).toHaveBeenCalledWith(
+      target,
+      expect.objectContaining({ width: 278 })
+    );
+    expect(googleAccounts.id.prompt).not.toHaveBeenCalled();
+    expect(onCancel).not.toHaveBeenCalled();
+  });
+
+  it('rerenders the Google button at the current width after an orientation resize', async () => {
+    const googleAccounts = accounts();
+    window.google = { accounts: googleAccounts };
+    let resize: (() => void) | null = null;
+    const observe = vi.fn();
+    const disconnect = vi.fn();
+    class ResizeObserverMock {
+      constructor(callback: ResizeObserverCallback) {
+        resize = () => callback([], this as unknown as ResizeObserver);
+      }
+      observe = observe;
+      unobserve = vi.fn();
+      disconnect = disconnect;
+    }
+    vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+    const { WebGoogleIdentityProvider } = await import('./googleIdentityProvider');
+    const target = document.createElement('div');
+    let width = 400;
+    Object.defineProperty(target, 'clientWidth', { get: () => width });
+
+    const cleanupProvider = new WebGoogleIdentityProvider('client-id').render(target, {
+      onCredential: vi.fn(),
+      onCancel: vi.fn(),
+      onError: vi.fn(),
+    });
+    await vi.waitFor(() =>
+      expect(googleAccounts.id.renderButton).toHaveBeenLastCalledWith(
+        target,
+        expect.objectContaining({ width: 400 })
+      )
+    );
+
+    width = 278;
+    resize?.();
+
+    await vi.waitFor(() =>
+      expect(googleAccounts.id.renderButton).toHaveBeenLastCalledWith(
+        target,
+        expect.objectContaining({ width: 278 })
+      )
+    );
+    expect(googleAccounts.id.renderButton).toHaveBeenCalledTimes(2);
+    expect(observe).toHaveBeenCalledWith(target);
+
+    cleanupProvider();
+    expect(disconnect).toHaveBeenCalledTimes(1);
   });
 });

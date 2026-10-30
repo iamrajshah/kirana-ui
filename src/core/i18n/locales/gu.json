@@ -162,6 +162,8 @@
     "accountDeletion": "એકાઉન્ટ કાઢી નાખવું",
     "acceptLegal": "હું સંમત છું",
     "acceptLegalRequired": "Google સાઇન-ઇન પહેલાં ગોપનીયતા નીતિ અને શરતો સ્વીકારો.",
+    "googleLegalLoading": "સુરક્ષિત Google સાઇન-ઇન તૈયાર થઈ રહ્યું છે...",
+    "googleLegalUnavailable": "નવીનતમ ગોપનીયતા નીતિ અને શરતો લોડ થઈ શક્યાં નથી, તેથી Google સાઇન-ઇન હાલ ઉપલબ્ધ નથી.",
     "demoPreparing": "તમારી ખાનગી ડેમો દુકાન તૈયાર થઈ રહી છે",
     "demoStatus": "સ્થિતિ: {{status}}",
     "demoCompleted": "પૂર્ણ: {{stage}}",

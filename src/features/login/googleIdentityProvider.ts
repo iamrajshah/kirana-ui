@@ -94,6 +94,8 @@ export class WebGoogleIdentityProvider implements IdentityCredentialProvider {
 
   render(target: HTMLElement, callbacks: Parameters<IdentityCredentialProvider['render']>[1]) {
     let active = true;
+    let resizeObserver: ResizeObserver | null = null;
+    let fallbackResize: (() => void) | null = null;
     void loadGoogleIdentityServices()
       .then((accounts) => {
         if (!active) return;
@@ -104,16 +106,28 @@ export class WebGoogleIdentityProvider implements IdentityCredentialProvider {
               ? callbacks.onCredential({ credential, source: 'web' })
               : callbacks.onError('Google did not return a credential'),
         });
-        accounts.id.renderButton(target, {
-          type: 'standard',
-          theme: 'outline',
-          size: 'large',
-          width: target.clientWidth || 320,
-        });
-        accounts.id.prompt((notification) => {
-          if (notification.isDismissedMoment() || notification.isSkippedMoment())
-            callbacks.onCancel();
-        });
+        let renderedWidth = 0;
+        const renderButton = () => {
+          if (!active) return;
+          const width = target.clientWidth || 320;
+          if (width === renderedWidth) return;
+          renderedWidth = width;
+          target.replaceChildren();
+          accounts.id.renderButton(target, {
+            type: 'standard',
+            theme: 'outline',
+            size: 'large',
+            width,
+          });
+        };
+        renderButton();
+        if (typeof ResizeObserver === 'function') {
+          resizeObserver = new ResizeObserver(renderButton);
+          resizeObserver.observe(target);
+        } else {
+          fallbackResize = renderButton;
+          window.addEventListener('resize', fallbackResize);
+        }
       })
       .catch((error: unknown) => {
         if (active) {
@@ -122,6 +136,8 @@ export class WebGoogleIdentityProvider implements IdentityCredentialProvider {
       });
     return () => {
       active = false;
+      resizeObserver?.disconnect();
+      if (fallbackResize) window.removeEventListener('resize', fallbackResize);
       window.google?.accounts.id.cancel();
     };
   }

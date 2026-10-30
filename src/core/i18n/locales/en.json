@@ -162,6 +162,8 @@
     "accountDeletion": "Account deletion",
     "acceptLegal": "I agree to the",
     "acceptLegalRequired": "Accept the Privacy Policy and Terms before Google sign-in.",
+    "googleLegalLoading": "Preparing secure Google sign-in...",
+    "googleLegalUnavailable": "Google sign-in is temporarily unavailable because the latest Privacy Policy and Terms could not be loaded.",
     "demoPreparing": "Preparing your private demo shop",
     "demoStatus": "Status: {{status}}",
     "demoCompleted": "Completed: {{stage}}",

@@ -12,6 +12,19 @@ const mocks = vi.hoisted(() => ({
   linkGoogle: vi.fn(),
   dispatch: vi.fn(),
   replace: vi.fn(),
+  productInformation: {
+    legal: { privacyVersion: 'privacy-v1', termsVersion: 'terms-v1' },
+    support: { email: 'support@kirana.app' },
+  } as
+    | {
+        legal: { privacyVersion: string; termsVersion: string };
+        support: { email: string };
+      }
+    | undefined,
+  productInformationLoading: false,
+  productInformationFetching: false,
+  refetchProductInformation: vi.fn(),
+  getPublicProductQuery: vi.fn(),
 }));
 
 vi.mock('react-i18next', () => ({
@@ -40,12 +53,15 @@ vi.mock('@core/api/authApi', () => ({
   ],
 }));
 vi.mock('@core/api/lifecycleApi', () => ({
-  useGetPublicProductQuery: () => ({
-    data: {
-      legal: { privacyVersion: 'privacy-v1', termsVersion: 'terms-v1' },
-      support: { email: 'support@kirana.app' },
-    },
-  }),
+  useGetPublicProductQuery: (options: unknown) => {
+    mocks.getPublicProductQuery(options);
+    return {
+      data: mocks.productInformation,
+      isLoading: mocks.productInformationLoading,
+      isFetching: mocks.productInformationFetching,
+      refetch: mocks.refetchProductInformation,
+    };
+  },
 }));
 vi.mock('@core/auth/deviceIdentity', () => ({
   getDeviceDescriptor: () =>
@@ -77,9 +93,13 @@ vi.mock('./GoogleSignInButton', () => ({
     onError: (message: string) => void;
   }) => (
     <div>
-      <button onClick={() => onCredential('google-credential')}>google-provider-success</button>
-      <button onClick={onCancel}>google-provider-cancel</button>
-      <button onClick={() => onError('provider failed')}>google-provider-failure</button>
+      <button type="button" onClick={() => onCredential('google-credential')}>
+        google-provider-success
+      </button>
+      <button type="button" onClick={onCancel}>google-provider-cancel</button>
+      <button type="button" onClick={() => onError('provider failed')}>
+        google-provider-failure
+      </button>
     </div>
   ),
 }));
@@ -138,7 +158,8 @@ vi.mock('@ionic/react', () => {
   return {
     IonPage: Container,
     IonContent: Container,
-    IonToast: () => null,
+    IonToast: ({ isOpen, message }: { isOpen: boolean; message: string }) =>
+      isOpen ? <div role="alert">{message}</div> : null,
     IonSelect: Container,
     IonSelectOption: Container,
     IonIcon: () => null,
@@ -149,10 +170,22 @@ vi.mock('ionicons/icons', () => ({ language: 'language', contrast: 'contrast' })
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.productInformation = {
+    legal: { privacyVersion: 'privacy-v1', termsVersion: 'terms-v1' },
+    support: { email: 'support@kirana.app' },
+  };
+  mocks.productInformationLoading = false;
+  mocks.productInformationFetching = false;
 });
 afterEach(cleanup);
 
 describe('LoginPage', () => {
+  it('does not show a Google cancellation message before the user interacts', () => {
+    render(<LoginPage />);
+
+    expect(screen.queryByText('auth.googleCancelled')).toBeNull();
+  });
+
   it('explains what happens when a shop owner uses a temporary password', () => {
     render(<LoginPage />);
 
@@ -257,6 +290,106 @@ describe('LoginPage', () => {
     expect(mocks.replace).toHaveBeenCalledWith('/dashboard');
   });
 
+  it('requires Terms and Privacy acceptance before exchanging a Google credential', async () => {
+    render(<LoginPage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'google-provider-success' }));
+
+    expect((await screen.findByRole('alert')).textContent).toContain('auth.acceptLegalRequired');
+    expect(mocks.googleExchange).not.toHaveBeenCalled();
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
+  it('does not expose Google exchange until legal document versions finish loading', () => {
+    mocks.productInformation = undefined;
+    mocks.productInformationLoading = true;
+
+    render(<LoginPage />);
+
+    expect(screen.getByRole('status').textContent).toContain('auth.googleLegalLoading');
+    expect(screen.getByRole('checkbox').hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByRole('button', { name: 'google-provider-success' })).toBeNull();
+    expect(mocks.googleExchange).not.toHaveBeenCalled();
+  });
+
+  it('shows a retry action when legal document versions are unavailable', () => {
+    mocks.productInformation = undefined;
+
+    render(<LoginPage />);
+
+    expect(mocks.getPublicProductQuery).toHaveBeenCalledWith({ suppressErrorToast: true });
+    expect(screen.getByRole('alert').textContent).toContain('auth.googleLegalUnavailable');
+    fireEvent.click(screen.getByRole('button', { name: 'common.retry' }));
+    expect(mocks.refetchProductInformation).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'google-provider-success' })).toBeNull();
+  });
+
+  it('surfaces a disabled unknown-entry response without creating or linking an account', async () => {
+    mocks.googleExchange.mockRejectedValueOnce({
+      status: 503,
+      data: { message: 'Google self-service entry is disabled.' },
+    });
+    render(<LoginPage />);
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'google-provider-success' }));
+
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Google self-service entry is disabled.'
+    );
+    expect(mocks.dispatch).not.toHaveBeenCalled();
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
+  it('retries Google exchange with the selected replacement device at the plan limit', async () => {
+    const oldDevice = {
+      id: 'google-device-old',
+      name: 'Old Google counter',
+      platform: 'WEB' as const,
+      lastSeenAt: '2026-10-01T00:00:00.000Z',
+    };
+    const auth = { access_token: 'access', refresh_token: 'refresh', user: { id: '1' } };
+    mocks.googleExchange
+      .mockRejectedValueOnce({
+        data: { code: 'DEVICE_LIMIT_REACHED', details: { limit: 2, devices: [oldDevice] } },
+      })
+      .mockResolvedValueOnce({
+        success: true,
+        data: { outcome: 'AUTHENTICATED', auth },
+      });
+    render(<LoginPage />);
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: 'google-provider-success' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'replace-old-device' }));
+
+    await waitFor(() =>
+      expect(mocks.googleExchange).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          credential: 'google-credential',
+          source: 'web',
+          replaceDeviceId: 'google-device-old',
+        })
+      )
+    );
+    expect(mocks.replace).toHaveBeenCalledWith('/dashboard');
+  });
+
+  it('shows private provisioning without creating it automatically', async () => {
+    mocks.googleExchange.mockResolvedValueOnce({
+      success: true,
+      data: { outcome: 'PROVISIONING_REQUIRED', provisioningToken: 'provision-later' },
+    });
+    render(<LoginPage />);
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'google-provider-success' }));
+
+    expect(await screen.findByText('auth.privateDemoProvisioning')).toBeTruthy();
+    expect(screen.getByText('demo-provisioning-panel')).toBeTruthy();
+    expect(mocks.dispatch).not.toHaveBeenCalled();
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
   it('keeps the user on login when Google is cancelled or fails', async () => {
     render(<LoginPage />);
     fireEvent.click(screen.getByRole('button', { name: 'google-provider-cancel' }));
@@ -273,6 +406,13 @@ describe('LoginPage', () => {
         memberships: [
           { userId: '7', tenantId: '11', tenantName: 'Shop A', active: true, roles: ['OWNER'] },
           { userId: '8', tenantId: '12', tenantName: 'Shop B', active: true, roles: ['OWNER'] },
+          {
+            userId: '9',
+            tenantId: '13',
+            tenantName: 'Suspended Shop',
+            active: false,
+            roles: ['OWNER'],
+          },
         ],
       },
     });
@@ -289,6 +429,8 @@ describe('LoginPage', () => {
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(screen.getByRole('button', { name: 'google-provider-success' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Shop B' }));
+
+    expect(screen.queryByRole('button', { name: 'Suspended Shop' })).toBeNull();
 
     await waitFor(() =>
       expect(mocks.selectMembership).toHaveBeenCalledWith({
