@@ -897,7 +897,7 @@ describe('BillingPage', () => {
       expect(mocks.finalizeInvoice).not.toHaveBeenCalled();
     });
 
-    it('keeps the finalized invoice as a completion state until New Sale', async () => {
+    it('returns to a fresh billing workspace immediately after payment', async () => {
       mocks.createPayment.mockResolvedValueOnce({ data: { id: 'payment-1' } });
       mocks.document = {
         kind: 'FINALIZED_DOCUMENT',
@@ -942,13 +942,9 @@ describe('BillingPage', () => {
       await screen.findByText('Rice');
       fireEvent.click(screen.getByRole('button', { name: 'billing.payCash' }));
 
-      expect(await screen.findByText('billing.completion.title')).toBeTruthy();
-      expect(
-        JSON.parse(localStorage.getItem('kirana_billing_completion_invoice') || '{}')
-      ).toMatchObject({ invoiceId: 'edit-1', userId: '7', tenantId: '1' });
-      expect(screen.queryByText('Rice')).toBeNull();
-
-      fireEvent.click(screen.getByRole('button', { name: 'billing.completion.newSale' }));
+      await waitFor(() =>
+        expect(mocks.notifySuccess).toHaveBeenCalledWith('billing.paymentRecordedSuccessfully')
+      );
       expect(localStorage.getItem('kirana_billing_completion_invoice')).toBeNull();
       expect(screen.queryByText('billing.completion.title')).toBeNull();
       expect(mocks.historyReplace).toHaveBeenLastCalledWith('/billing');
@@ -987,7 +983,7 @@ describe('BillingPage', () => {
       expect(mocks.createPayment).not.toHaveBeenCalled();
     });
 
-    it('does not replace the active billing route while presenting payment completion', async () => {
+    it('clears a recovered checkout and returns to fresh billing after payment', async () => {
       mocks.search = '';
       localStorage.setItem(
         'kirana_billing_pending_checkout',
@@ -1006,9 +1002,10 @@ describe('BillingPage', () => {
       render(<BillingPage />);
       fireEvent.click(screen.getByRole('button', { name: 'retry payment' }));
 
-      expect(await screen.findByText('billing.completion.title')).toBeTruthy();
-      expect(mocks.historyReplace).not.toHaveBeenCalled();
-      expect(screen.queryByLabelText('payment-recovery')).toBeNull();
+      await waitFor(() => expect(screen.queryByLabelText('payment-recovery')).toBeNull());
+      expect(screen.queryByText('billing.completion.title')).toBeNull();
+      expect(mocks.historyReplace).toHaveBeenLastCalledWith('/billing');
+      expect(localStorage.getItem('kirana_billing_pending_checkout')).toBeNull();
     });
 
     it('recovers a saved split checkout through one atomic API request', async () => {
