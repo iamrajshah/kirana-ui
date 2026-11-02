@@ -196,12 +196,28 @@
     "startDemo": "મફત ડેમો શરૂ કરો",
     "mostPopular": "સૌથી લોકપ્રિય",
     "bestFor": "યોગ્ય છે",
-    "planAudience": { "smallShop": "વ્યવસ્થિત થતી નાની દુકાન", "busyShop": "નિયંત્રણ ઇચ્છતી વ્યસ્ત દુકાન", "multiFirmShop": "ઘણી કાનૂની ફર્મ ચલાવતી દુકાન" },
+    "planAudience": {
+      "smallShop": "વ્યવસ્થિત થતી નાની દુકાન",
+      "busyShop": "નિયંત્રણ ઇચ્છતી વ્યસ્ત દુકાન",
+      "multiFirmShop": "ઘણી કાનૂની ફર્મ ચલાવતી દુકાન"
+    },
     "allDevices": "મોબાઇલ + વેબ/ડેસ્કટોપ",
     "gstExclusive": "+ GST",
     "staffCount": "{{count}} સ્ટાફ",
     "firmCount": "{{count}} ફર્મ",
-    "features": { "fastBilling": "ઝડપી બિલિંગ અને ચુકવણી", "khata": "ગ્રાહક ખાતું અને બાકી", "inventoryPurchases": "ઉત્પાદનો, સ્ટોક, ખરીદી અને સપ્લાયર", "essentialReports": "જરૂરી વેચાણ અને સ્ટોક રિપોર્ટ", "backupExport": "દુકાન બેકઅપ અને એક્સપોર્ટ", "advancedReports": "અદ્યતન બિઝનેસ રિપોર્ટ", "importExcel": "Excel ઇમ્પોર્ટ અને એક્સપોર્ટ", "customBarcode": "કસ્ટમ બારકોડ લેબલ અને પ્રિન્ટ", "multiFirm": "એક દુકાનમાં 3 કાનૂની ફર્મ સુધી", "staffRoles": "સ્ટાફ માટે ભૂમિકા આધારિત ઍક્સેસ", "firmAccounting": "ફર્મ મુજબ ખરીદી અને સપ્લાયર રેકોર્ડ" },
+    "features": {
+      "fastBilling": "ઝડપી બિલિંગ અને ચુકવણી",
+      "khata": "ગ્રાહક ખાતું અને બાકી",
+      "inventoryPurchases": "ઉત્પાદનો, સ્ટોક, ખરીદી અને સપ્લાયર",
+      "essentialReports": "જરૂરી વેચાણ અને સ્ટોક રિપોર્ટ",
+      "backupExport": "દુકાન બેકઅપ અને એક્સપોર્ટ",
+      "advancedReports": "અદ્યતન બિઝનેસ રિપોર્ટ",
+      "importExcel": "Excel ઇમ્પોર્ટ અને એક્સપોર્ટ",
+      "customBarcode": "કસ્ટમ બારકોડ લેબલ અને પ્રિન્ટ",
+      "multiFirm": "એક દુકાનમાં 3 કાનૂની ફર્મ સુધી",
+      "staffRoles": "સ્ટાફ માટે ભૂમિકા આધારિત ઍક્સેસ",
+      "firmAccounting": "ફર્મ મુજબ ખરીદી અને સપ્લાયર રેકોર્ડ"
+    },
     "addOnsTitle": "જરૂર પડે ત્યારે જ વધારો",
     "addOnsDescription": "Basic થી Pro અપગ્રેડ કરો; ઘણી ફર્મ માટે Business જરૂરી છે.",
     "availableOn": "{{plans}} પર ઉપલબ્ધ",
@@ -521,6 +537,11 @@
     "noCustomers": "હજી ગ્રાહકો નથી.",
     "noCustomersSearch": "આ શોધમાં ગ્રાહક મળ્યો નથી.",
     "loadingMore": "વધુ ગ્રાહકો લોડ થઈ રહ્યા છે...",
+    "sortLabel": "ક્રમ",
+    "sortOutstanding": "સૌથી વધુ બાકી",
+    "sortNameAsc": "નામ A–Z",
+    "sortNameDesc": "નામ Z–A",
+    "sortNewest": "નવો ગ્રાહક",
     "debitCreditGiven": "ડેબિટ (ઉધાર આપેલ)",
     "creditPaymentsReceived": "ક્રેડિટ (ચુકવણી પ્રાપ્ત)",
     "addCustomer": "ગ્રાહક ઉમેરો",
@@ -1427,7 +1448,9 @@
     "paymentRequiresCustomer": "પછીની ચુકવણી નોંધતા પહેલાં ગ્રાહક પસંદ કરો.",
     "notIssued": "જારી થયું નથી",
     "draftHint": "આ ડ્રાફ્ટ હજુ ગ્રાહક દસ્તાવેજ નથી. વેચાણ પૂર્ણ કરવા તેને ખોલો.",
-    "whatsAppReceipt": "WhatsApp રસીદ", "whatsAppReminder": "WhatsApp ચુકવણી યાદ", "whatsAppInvalidPhone": "પહેલાં ગ્રાહકનો સાચો ભારતીય મોબાઇલ નંબર ઉમેરો."
+    "whatsAppReceipt": "WhatsApp રસીદ",
+    "whatsAppReminder": "WhatsApp ચુકવણી યાદ",
+    "whatsAppInvalidPhone": "પહેલાં ગ્રાહકનો સાચો ભારતીય મોબાઇલ નંબર ઉમેરો."
   },
   "about": {
     "title": "વિશે",
@@ -1490,7 +1513,11 @@
     "paperWidth": "ડિફૉલ્ટ થર્મલ પેપર",
     "paper": { "MM58": "58 મિમી (નાનું)", "MM80": "80 મિમી (ભલામણ કરેલ)" },
     "footer": "રસીદ ફૂટર (વૈકલ્પિક)",
-    "branding": "રસીદ બ્રાન્ડિંગ", "brandingHint": "આગામી રસીદની શૈલી પસંદ કરો. જૂની રસીદ બદલાશે નહીં.", "brandColor": "બ્રાન્ડ રંગ (#RRGGBB)", "logoUrl": "HTTPS લોગો URL (વૈકલ્પિક)", "templates": { "CLASSIC": "ક્લાસિક", "MODERN": "મોડર્ન", "COMPACT": "કોમ્પેક્ટ" },
+    "branding": "રસીદ બ્રાન્ડિંગ",
+    "brandingHint": "આગામી રસીદની શૈલી પસંદ કરો. જૂની રસીદ બદલાશે નહીં.",
+    "brandColor": "બ્રાન્ડ રંગ (#RRGGBB)",
+    "logoUrl": "HTTPS લોગો URL (વૈકલ્પિક)",
+    "templates": { "CLASSIC": "ક્લાસિક", "MODERN": "મોડર્ન", "COMPACT": "કોમ્પેક્ટ" },
     "gstDetails": "GST ઇન્વૉઇસ પ્રોફાઇલ",
     "gstDetailsHint": "GST ઇન્વૉઇસ સક્રિય કરતા પહેલાં આ કાનૂની વિગતો જરૂરી છે.",
     "supplierName": "દુકાનનું કાનૂની નામ",
@@ -1523,10 +1550,59 @@
     "loadFailed": "બિલ સેટિંગ્સ લોડ થઈ શકી નહીં"
   },
   "shifts": {
-    "title": "કેશ શિફ્ટ", "eyebrow": "કાઉન્ટર નિયંત્રણ", "heading": "કેશ ખોલો, ગણો અને બંધ કરો", "description": "કેશ ચુકવણી અને નોંધેલી હિલચાલ સાથે ડ્રોઅર મેળવો.", "open": "ખુલ્લી", "closed": "બંધ", "openShift": "શિફ્ટ ખોલો", "openingCash": "શરૂઆતની કેશ", "counter": "કાઉન્ટર નામ (વૈકલ્પિક)", "openedSuccess": "શિફ્ટ ખુલી", "liveSummary": "લાઇવ સારાંશ", "cashSales": "કેશ વેચાણ", "cashIn": "કેશ ઉમેર્યું", "cashOut": "કેશ કાઢ્યું", "expectedCash": "અપેક્ષિત કેશ", "cashMovement": "કેશ હિલચાલ નોંધો", "movementType": "હિલચાલ પ્રકાર", "reason": "કારણ", "saveMovement": "સાચવો", "adjustmentSaved": "કેશ હિલચાલ સાચવાઈ", "closeShift": "શિફ્ટ બંધ કરો", "countHint": "ડ્રોઅર ગણો. અપેક્ષિત કેશ {{amount}} છે.", "countedCash": "ગણેલી કેશ", "closingNote": "બંધ નોંધ (વૈકલ્પિક)", "closingNoteRequired": "કેશ તફાવતનું કારણ", "variance": "તફાવત", "varianceReasonRequired": "શિફ્ટ બંધ કરતા પહેલાં કેશ તફાવતનું કારણ લખો.", "closedSuccess": "શિફ્ટ બંધ થઈ", "recent": "તાજેતરની શિફ્ટ", "failed": "શિફ્ટ અપડેટ થઈ નહીં"
+    "title": "કેશ શિફ્ટ",
+    "eyebrow": "કાઉન્ટર નિયંત્રણ",
+    "heading": "કેશ ખોલો, ગણો અને બંધ કરો",
+    "description": "કેશ ચુકવણી અને નોંધેલી હિલચાલ સાથે ડ્રોઅર મેળવો.",
+    "open": "ખુલ્લી",
+    "closed": "બંધ",
+    "openShift": "શિફ્ટ ખોલો",
+    "openingCash": "શરૂઆતની કેશ",
+    "counter": "કાઉન્ટર નામ (વૈકલ્પિક)",
+    "openedSuccess": "શિફ્ટ ખુલી",
+    "liveSummary": "લાઇવ સારાંશ",
+    "cashSales": "કેશ વેચાણ",
+    "cashIn": "કેશ ઉમેર્યું",
+    "cashOut": "કેશ કાઢ્યું",
+    "expectedCash": "અપેક્ષિત કેશ",
+    "cashMovement": "કેશ હિલચાલ નોંધો",
+    "movementType": "હિલચાલ પ્રકાર",
+    "reason": "કારણ",
+    "saveMovement": "સાચવો",
+    "adjustmentSaved": "કેશ હિલચાલ સાચવાઈ",
+    "closeShift": "શિફ્ટ બંધ કરો",
+    "countHint": "ડ્રોઅર ગણો. અપેક્ષિત કેશ {{amount}} છે.",
+    "countedCash": "ગણેલી કેશ",
+    "closingNote": "બંધ નોંધ (વૈકલ્પિક)",
+    "closingNoteRequired": "કેશ તફાવતનું કારણ",
+    "variance": "તફાવત",
+    "varianceReasonRequired": "શિફ્ટ બંધ કરતા પહેલાં કેશ તફાવતનું કારણ લખો.",
+    "closedSuccess": "શિફ્ટ બંધ થઈ",
+    "recent": "તાજેતરની શિફ્ટ",
+    "failed": "શિફ્ટ અપડેટ થઈ નહીં"
   },
   "onboarding": {
-    "title": "શરૂઆત", "eyebrow": "દુકાન સેટઅપ", "heading": "પહેલા બિલ માટે તૈયાર થાઓ", "description": "દુકાન યોગ્ય રીતે સેટ કરવા આ યાદી પૂર્ણ કરો.", "open": "ખોલો", "steps": { "profile": { "title": "દુકાન અને બિલ ઓળખ", "description": "દુકાન, રસીદ, લોગો અને GST વિગતો તપાસો." }, "products": { "title": "પ્રોડક્ટ અને સ્ટોક", "description": "ભાવ, બારકોડ અને શરૂઆતનો સ્ટોક ઉમેરો." }, "staff": { "title": "સ્ટાફ ઉમેરો", "description": "માત્ર જરૂરી લોકોને ઍક્સેસ આપો." }, "shift": { "title": "કેશ કાઉન્ટર ખોલો", "description": "શરૂઆતની કેશ નોંધો." }, "sale": { "title": "પ્રેક્ટિસ વેચાણ", "description": "ગ્રાહકો પહેલાં એક બિલ બનાવી શેર કરો." } }, "helpTitle": "મદદ જોઈએ?", "helpDescription": "સ્ક્રીન અને સમસ્યા સાથે સહાય વિનંતી મોકલો.", "contactSupport": "સહાય મેળવો"
+    "title": "શરૂઆત",
+    "eyebrow": "દુકાન સેટઅપ",
+    "heading": "પહેલા બિલ માટે તૈયાર થાઓ",
+    "description": "દુકાન યોગ્ય રીતે સેટ કરવા આ યાદી પૂર્ણ કરો.",
+    "open": "ખોલો",
+    "steps": {
+      "profile": {
+        "title": "દુકાન અને બિલ ઓળખ",
+        "description": "દુકાન, રસીદ, લોગો અને GST વિગતો તપાસો."
+      },
+      "products": {
+        "title": "પ્રોડક્ટ અને સ્ટોક",
+        "description": "ભાવ, બારકોડ અને શરૂઆતનો સ્ટોક ઉમેરો."
+      },
+      "staff": { "title": "સ્ટાફ ઉમેરો", "description": "માત્ર જરૂરી લોકોને ઍક્સેસ આપો." },
+      "shift": { "title": "કેશ કાઉન્ટર ખોલો", "description": "શરૂઆતની કેશ નોંધો." },
+      "sale": { "title": "પ્રેક્ટિસ વેચાણ", "description": "ગ્રાહકો પહેલાં એક બિલ બનાવી શેર કરો." }
+    },
+    "helpTitle": "મદદ જોઈએ?",
+    "helpDescription": "સ્ક્રીન અને સમસ્યા સાથે સહાય વિનંતી મોકલો.",
+    "contactSupport": "સહાય મેળવો"
   },
   "foundation": {
     "login": {

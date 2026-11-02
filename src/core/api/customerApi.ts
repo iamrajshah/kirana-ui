@@ -20,6 +20,8 @@ export type UpdateCustomerRequest = {
   email?: string;
 } & Partial<CustomerTaxFields>;
 
+export type CustomerSort = 'OUTSTANDING_DESC' | 'NAME_ASC' | 'NAME_DESC' | 'NEWEST';
+
 export interface LedgerEntry {
   id: string;
   entry_type: 'OPENING_BALANCE' | 'INVOICE' | 'PAYMENT' | 'CREDIT_NOTE' | 'ADJUSTMENT';
@@ -45,7 +47,13 @@ export const customerApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getCustomers: builder.query<
       PaginatedApiResponse<Customer>,
-      { skip?: number; take?: number; search?: string; suppressErrorToast?: boolean }
+      {
+        skip?: number;
+        take?: number;
+        search?: string;
+        sort?: CustomerSort;
+        suppressErrorToast?: boolean;
+      }
     >({
       query: ({ suppressErrorToast, ...params } = {}) => ({
         url: '/customers',

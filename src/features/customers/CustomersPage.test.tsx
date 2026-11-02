@@ -4,7 +4,20 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { CustomersPage } from './CustomersPage';
 
 const query = vi.hoisted(() => ({
-  data: { data: [{ id: 'customer-1', name: 'Asha Stores', phone: '9876543210', email: '', credit_balance: 120, is_active: true, created_at: '2026-10-12' }], meta: { total: 1 } } as unknown,
+  data: {
+    data: [
+      {
+        id: 'customer-1',
+        name: 'Asha Stores',
+        phone: '9876543210',
+        email: '',
+        credit_balance: 120,
+        is_active: true,
+        created_at: '2026-10-12',
+      },
+    ],
+    meta: { total: 1 },
+  } as unknown,
   isError: false,
   failAtSkip: null as number | null,
   refetch: vi.fn(),
@@ -19,38 +32,94 @@ vi.mock('@core/api/customerApi', () => ({
   useGetCustomersQuery: (args: unknown) => {
     query.args(args);
     const failed = query.isError || query.failAtSkip === (args as { skip: number }).skip;
-    return { ...query, currentData: failed ? undefined : query.data, isError: failed, isLoading: false, isFetching: false };
+    return {
+      ...query,
+      currentData: failed ? undefined : query.data,
+      isError: failed,
+      isLoading: false,
+      isFetching: false,
+    };
   },
   useCreateCustomerMutation: () => [vi.fn(), { isLoading: false }],
   useUpdateCustomerMutation: () => [vi.fn(), { isLoading: false }],
 }));
-vi.mock('@core/services/notificationService', () => ({ default: { success: vi.fn(), handleApiError: vi.fn() } }));
+vi.mock('@core/services/notificationService', () => ({
+  default: { success: vi.fn(), handleApiError: vi.fn() },
+}));
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('@components', () => ({
-  SearchBar: ({ onChange }: { onChange: (value: string) => void }) => <input aria-label="search" onChange={(event) => onChange(event.target.value)} />,
+  SearchBar: ({ onChange }: { onChange: (value: string) => void }) => (
+    <input aria-label="search" onChange={(event) => onChange(event.target.value)} />
+  ),
   Input: ({ label }: { label: string }) => <input aria-label={label} />,
-  Button: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => <button onClick={onClick}>{children}</button>,
-  EmptyState: ({ message, action }: { message: string; action?: React.ReactNode }) => <div>{message}{action}</div>,
+  Button: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
+    <button onClick={onClick}>{children}</button>
+  ),
+  EmptyState: ({ message, action }: { message: string; action?: React.ReactNode }) => (
+    <div>
+      {message}
+      {action}
+    </div>
+  ),
   Loading: () => <div>loading</div>,
 }));
 vi.mock('@ionic/react', () => {
   const Container = ({ children }: PropsWithChildren) => <div>{children}</div>;
   return {
-    IonPage: Container, IonContent: Container, IonList: Container, IonLabel: Container,
-    IonItem: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => <div onClick={onClick}>{children}</div>,
-    IonButton: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => <button onClick={onClick}>{children}</button>,
-    IonIcon: Container, IonFab: Container, IonFabButton: Container, IonModal: Container,
-    IonButtons: Container, IonToast: Container, IonHeader: Container, IonToolbar: Container,
-    IonTitle: Container, IonItemSliding: Container, IonItemOptions: Container, IonItemOption: Container,
-    IonInfiniteScroll: ({ children, onIonInfinite, disabled }: PropsWithChildren<{ onIonInfinite?: (event: CustomEvent) => void; disabled?: boolean }>) => (
-      <button aria-label="load-more" disabled={disabled} onClick={() => onIonInfinite?.({ target: { complete: vi.fn() } } as unknown as CustomEvent)}>{children}</button>
+    IonPage: Container,
+    IonContent: Container,
+    IonList: Container,
+    IonLabel: Container,
+    IonItem: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
+      <div onClick={onClick}>{children}</div>
+    ),
+    IonButton: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
+      <button onClick={onClick}>{children}</button>
+    ),
+    IonIcon: Container,
+    IonFab: Container,
+    IonFabButton: Container,
+    IonModal: Container,
+    IonButtons: Container,
+    IonToast: Container,
+    IonHeader: Container,
+    IonToolbar: Container,
+    IonTitle: Container,
+    IonItemSliding: Container,
+    IonItemOptions: Container,
+    IonItemOption: Container,
+    IonInfiniteScroll: ({
+      children,
+      onIonInfinite,
+      disabled,
+    }: PropsWithChildren<{ onIonInfinite?: (event: CustomEvent) => void; disabled?: boolean }>) => (
+      <button
+        aria-label="load-more"
+        disabled={disabled}
+        onClick={() => onIonInfinite?.({ target: { complete: vi.fn() } } as unknown as CustomEvent)}
+      >
+        {children}
+      </button>
     ),
     IonInfiniteScrollContent: Container,
   };
 });
 
 beforeEach(() => {
-  query.data = { data: [{ id: 'customer-1', name: 'Asha Stores', phone: '9876543210', email: '', credit_balance: 120, is_active: true, created_at: '2026-10-12' }], meta: { total: 1 } };
+  query.data = {
+    data: [
+      {
+        id: 'customer-1',
+        name: 'Asha Stores',
+        phone: '9876543210',
+        email: '',
+        credit_balance: 120,
+        is_active: true,
+        created_at: '2026-10-12',
+      },
+    ],
+    meta: { total: 1 },
+  };
   query.isError = false;
   query.failAtSkip = null;
   query.refetch.mockClear();
@@ -75,22 +144,75 @@ it('filters customers locally before sending the debounced search to the API', (
   });
   expect(screen.getByText('Asha Stores')).toBeTruthy();
   expect(query.args.mock.calls.every(([args]) => !('search' in (args as object)))).toBe(true);
-  expect(query.args).toHaveBeenLastCalledWith({ skip: 0, take: 50 });
+  expect(query.args).toHaveBeenLastCalledWith({
+    skip: 0,
+    take: 50,
+    sort: 'OUTSTANDING_DESC',
+  });
 
   act(() => vi.advanceTimersByTime(300));
-  expect(query.args).toHaveBeenLastCalledWith({ skip: 0, take: 50, search: 'asha' });
+  expect(query.args).toHaveBeenLastCalledWith({
+    skip: 0,
+    take: 50,
+    search: 'asha',
+    sort: 'OUTSTANDING_DESC',
+  });
 });
 
 it('loads customers in 50-row pages', async () => {
-  query.data = { data: [{ id: 'customer-1', name: 'Asha Stores', phone: '9876543210', email: '', credit_balance: 120, is_active: true, created_at: '2026-10-12' }], meta: { total: 100 } };
+  query.data = {
+    data: [
+      {
+        id: 'customer-1',
+        name: 'Asha Stores',
+        phone: '9876543210',
+        email: '',
+        credit_balance: 120,
+        is_active: true,
+        created_at: '2026-10-12',
+      },
+    ],
+    meta: { total: 100 },
+  };
   render(<CustomersPage />);
 
   fireEvent.click(screen.getByRole('button', { name: 'load-more' }));
-  await waitFor(() => expect(query.args).toHaveBeenLastCalledWith({ skip: 50, take: 50 }));
+  await waitFor(() =>
+    expect(query.args).toHaveBeenLastCalledWith({
+      skip: 50,
+      take: 50,
+      sort: 'OUTSTANDING_DESC',
+    })
+  );
+});
+
+it('requests a fresh first page when customer sorting changes', async () => {
+  render(<CustomersPage />);
+
+  fireEvent.change(screen.getByLabelText('customers.sortLabel'), {
+    target: { value: 'NAME_ASC' },
+  });
+
+  await waitFor(() =>
+    expect(query.args).toHaveBeenLastCalledWith({ skip: 0, take: 50, sort: 'NAME_ASC' })
+  );
 });
 
 it('keeps loaded customers visible and offers retry when a later page fails', async () => {
-  query.data = { data: [{ id: 'customer-1', name: 'Asha Stores', phone: '9876543210', email: '', credit_balance: 120, is_active: true, created_at: '2026-10-12' }], meta: { total: 100 } };
+  query.data = {
+    data: [
+      {
+        id: 'customer-1',
+        name: 'Asha Stores',
+        phone: '9876543210',
+        email: '',
+        credit_balance: 120,
+        is_active: true,
+        created_at: '2026-10-12',
+      },
+    ],
+    meta: { total: 100 },
+  };
   query.failAtSkip = 50;
   render(<CustomersPage />);
 

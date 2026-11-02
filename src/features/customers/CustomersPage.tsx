@@ -28,6 +28,7 @@ import {
   useGetCustomersQuery,
   useCreateCustomerMutation,
   useUpdateCustomerMutation,
+  type CustomerSort,
 } from '@core/api/customerApi';
 import { SearchBar, Input, Button, EmptyState, Loading } from '@components';
 import { Navbar } from '@components/Navbar';
@@ -56,6 +57,7 @@ export const CustomersPage: React.FC = () => {
   const debouncedSearch = useDebouncedValue(search.trim(), 300);
   const [querySearch, setQuerySearch] = useState('');
   const [skip, setSkip] = useState(0);
+  const [sort, setSort] = useState<CustomerSort>('OUTSTANDING_DESC');
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
   const [totalCustomers, setTotalCustomers] = useState(0);
 
@@ -68,6 +70,7 @@ export const CustomersPage: React.FC = () => {
   } = useGetCustomersQuery({
     skip,
     take: PAGE_SIZE,
+    sort,
     ...(querySearch ? { search: querySearch } : {}),
   });
   const [createCustomer, { isLoading: creating }] = useCreateCustomerMutation();
@@ -76,7 +79,7 @@ export const CustomersPage: React.FC = () => {
     currentData: pageData,
     isError,
     isFetching,
-    requestKey: `${querySearch}:${skip}`,
+    requestKey: `${querySearch}:${sort}:${skip}`,
   });
 
   useEffect(() => {
@@ -246,6 +249,24 @@ export const CustomersPage: React.FC = () => {
             placeholder={t('common.search')}
             debounce={0}
           />
+          <div className="customers-sort-control">
+            <label htmlFor="customer-sort">{t('customers.sortLabel')}</label>
+            <select
+              id="customer-sort"
+              value={sort}
+              onChange={(event) => {
+                setSort(event.target.value as CustomerSort);
+                setSkip(0);
+                setAllCustomers([]);
+                setTotalCustomers(0);
+              }}
+            >
+              <option value="OUTSTANDING_DESC">{t('customers.sortOutstanding')}</option>
+              <option value="NAME_ASC">{t('customers.sortNameAsc')}</option>
+              <option value="NAME_DESC">{t('customers.sortNameDesc')}</option>
+              <option value="NEWEST">{t('customers.sortNewest')}</option>
+            </select>
+          </div>
 
           {(isLoading || isFetching) && allCustomers.length === 0 ? (
             <Loading isOpen={true} />
@@ -431,13 +452,38 @@ export const CustomersPage: React.FC = () => {
               >
                 <summary>{t('taxFields.customerDetails')}</summary>
                 <p>{t('taxFields.customerDetailsHint')}</p>
-                <Input label={t('taxFields.gstin')} value={gstin} onChange={(value) => setGstin(value.toUpperCase())} maxLength={15} />
-                <Input label={t('taxFields.addressLine1')} value={addressLine1} onChange={setAddressLine1} />
-                <Input label={t('taxFields.addressLine2')} value={addressLine2} onChange={setAddressLine2} />
+                <Input
+                  label={t('taxFields.gstin')}
+                  value={gstin}
+                  onChange={(value) => setGstin(value.toUpperCase())}
+                  maxLength={15}
+                />
+                <Input
+                  label={t('taxFields.addressLine1')}
+                  value={addressLine1}
+                  onChange={setAddressLine1}
+                />
+                <Input
+                  label={t('taxFields.addressLine2')}
+                  value={addressLine2}
+                  onChange={setAddressLine2}
+                />
                 <Input label={t('taxFields.city')} value={city} onChange={setCity} />
                 <Input label={t('taxFields.state')} value={stateName} onChange={setStateName} />
-                <Input label={t('taxFields.stateCode')} value={stateCode} onChange={setStateCode} maxLength={2} inputMode="numeric" />
-                <Input label={t('taxFields.postalCode')} value={postalCode} onChange={setPostalCode} maxLength={6} inputMode="numeric" />
+                <Input
+                  label={t('taxFields.stateCode')}
+                  value={stateCode}
+                  onChange={setStateCode}
+                  maxLength={2}
+                  inputMode="numeric"
+                />
+                <Input
+                  label={t('taxFields.postalCode')}
+                  value={postalCode}
+                  onChange={setPostalCode}
+                  maxLength={6}
+                  inputMode="numeric"
+                />
               </details>
               <Button
                 onClick={handleCreateCustomer}
