@@ -463,6 +463,21 @@
     "quoteUnavailable": "નવો બિલ હિસાબ થઈ શક્યો નથી. કર વિગતો ચકાસીને ફરી પ્રયાસ કરો.",
     "quoteChangedReview": "બિલની વિગતો બદલાઈ છે. ચુકવણી લેતા પહેલાં નવી રકમ તપાસો.",
     "placeOfSupplyCode": "પુરવઠા સ્થળ કોડ",
+    "whatsapp": {
+      "open": "WhatsApp યાદી પેસ્ટ કરો",
+      "title": "WhatsApp યાદીમાંથી બિલ",
+      "description": "ગ્રાહકનો સંદેશ પેસ્ટ કરો. બિલમાં ઉમેરતા પહેલાં દરેક મેળ તપાસો.",
+      "listLabel": "ગ્રાહકની ખરીદી યાદી",
+      "placeholder": "2 x ટાટા મીઠું\nજેમિની તેલ 1L\nખાંડ",
+      "review": "મેળ તપાસો",
+      "reviewResults": "તૈયાર ખરીદી યાદી",
+      "quantity": "જથ્થો",
+      "product": "મેળ ખાતું ઉત્પાદન",
+      "unresolved": "ઉત્પાદન પસંદ કરો",
+      "resolvedSummary": "{{total}} માંથી {{resolved}} લાઇનો તૈયાર છે",
+      "addToBill": "તપાસેલી વસ્તુઓ બિલમાં ઉમેરો",
+      "addedSummary": "બિલમાં {{added}} એકમ ઉમેર્યાં; સ્ટોકને કારણે {{skipped}} છોડ્યાં"
+    },
     "completion": {
       "saved": "વેચાણ સુરક્ષિત રીતે સાચવાયું",
       "title": "વેચાણ પૂર્ણ થયું",

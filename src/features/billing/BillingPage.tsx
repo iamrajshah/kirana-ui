@@ -11,7 +11,17 @@ import {
   IonModal,
   IonPage,
 } from '@ionic/react';
-import { add, bookmark, card, cash, personAdd, remove, scan, trash } from 'ionicons/icons';
+import {
+  add,
+  bookmark,
+  card,
+  cash,
+  logoWhatsapp,
+  personAdd,
+  remove,
+  scan,
+  trash,
+} from 'ionicons/icons';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BarcodeScannerComponent, Loading, SearchBar } from '@components';
@@ -66,6 +76,7 @@ import {
 } from './billing.logic';
 import { HeldBillsPanel } from './HeldBillsPanel';
 import { SaleCompletionSheet } from './SaleCompletionSheet';
+import { WhatsAppPastePanel } from './WhatsAppPastePanel';
 import {
   UnknownBarcodeResolution,
   type UnknownBarcodeProductInput,
@@ -133,11 +144,10 @@ export const BillingPage: React.FC = () => {
   const [scanBarcode, { isFetching: barcodeLoading }] = useLazyScanBarcodeQuery();
   const [createProductFromBarcode, { isLoading: creatingBarcodeProduct }] =
     useCreateProductFromBarcodeMutation();
-  const [searchCustomers, {
-    data: customersData,
-    isLoading: customersLoading,
-    isFetching: customersFetching,
-  }] = useLazySearchCustomersQuery();
+  const [
+    searchCustomers,
+    { data: customersData, isLoading: customersLoading, isFetching: customersFetching },
+  ] = useLazySearchCustomersQuery();
   const [createInvoice, { isLoading: creating }] = useCreateInvoiceMutation();
   const [quoteInvoice, { isLoading: quoting }] = useQuoteInvoiceMutation();
   const [cancelInvoice, { isLoading: cancelling }] = useCancelInvoiceMutation();
@@ -216,6 +226,7 @@ export const BillingPage: React.FC = () => {
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [placeOfSupplyCode, setPlaceOfSupplyCode] = useState('');
   const [showHeldBills, setShowHeldBills] = useState(Boolean(focusedHeldBillId));
+  const [showWhatsAppPaste, setShowWhatsAppPaste] = useState(false);
   const [counterLabel, setCounterLabel] = useState<string | null>(() => {
     try {
       const stored = localStorage.getItem(COUNTER_LABEL_STORAGE_KEY)?.trim();
@@ -293,12 +304,7 @@ export const BillingPage: React.FC = () => {
   useEffect(() => {
     if (!showCustomerSearch || !customerSearchReady) return;
     void searchCustomers(debouncedCustomerSearchTerm, true);
-  }, [
-    customerSearchReady,
-    debouncedCustomerSearchTerm,
-    searchCustomers,
-    showCustomerSearch,
-  ]);
+  }, [customerSearchReady, debouncedCustomerSearchTerm, searchCustomers, showCustomerSearch]);
   const matchingCustomers = useMemo(
     () =>
       customerSearchReady
@@ -547,6 +553,24 @@ export const BillingPage: React.FC = () => {
     replaceCartItems(result.cart);
     if (result.outcome === 'added' || result.outcome === 'incremented') setSearchTerm('');
     return result.outcome;
+  };
+
+  const addWhatsAppItems = (items: Array<{ variant: BillingSearchVariant; quantity: number }>) => {
+    let added = 0;
+    let skipped = 0;
+    for (const item of items) {
+      for (let count = 0; count < item.quantity; count += 1) {
+        const outcome = addToCart(item.variant);
+        if (outcome === 'added' || outcome === 'incremented') {
+          added += 1;
+        } else {
+          skipped += item.quantity - count;
+          break;
+        }
+      }
+    }
+    setShowWhatsAppPaste(false);
+    notificationService.success(t('billing.whatsapp.addedSummary', { added, skipped }));
   };
 
   const processBarcodeQueue = async () => {
@@ -1202,14 +1226,24 @@ export const BillingPage: React.FC = () => {
               <h1 className="text-xl font-black text-gray-900 sm:text-2xl">
                 {editInvoiceId ? t('billing.editDraftInvoice') : t('billing.fastBilling')}
               </h1>
-              <button
-                ref={heldBillsTriggerRef}
-                type="button"
-                className="min-h-touch rounded-xl border border-sky-200 bg-white px-3 text-sm font-bold text-sky-700 shadow-sm"
-                onClick={() => setShowHeldBills(true)}
-              >
-                {t('billing.heldBills.title')} ({heldBillsData?.data?.length || 0})
-              </button>
+              <div className="flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  className="min-h-touch rounded-xl border border-emerald-200 bg-white px-3 text-sm font-bold text-emerald-700 shadow-sm"
+                  onClick={() => setShowWhatsAppPaste(true)}
+                >
+                  <IonIcon icon={logoWhatsapp} className="mr-1 align-middle" />
+                  {t('billing.whatsapp.open')}
+                </button>
+                <button
+                  ref={heldBillsTriggerRef}
+                  type="button"
+                  className="min-h-touch rounded-xl border border-sky-200 bg-white px-3 text-sm font-bold text-sky-700 shadow-sm"
+                  onClick={() => setShowHeldBills(true)}
+                >
+                  {t('billing.heldBills.title')} ({heldBillsData?.data?.length || 0})
+                </button>
+              </div>
             </div>
 
             {heldConflict && (
@@ -1276,11 +1310,11 @@ export const BillingPage: React.FC = () => {
                       {t('billing.customerSearchMinimum')}
                     </p>
                   )}
-                  {customerSearchReady && !customerIndexLoading && matchingCustomers.length === 0 && (
-                    <p className="p-2 text-sm text-gray-500">
-                      {t('billing.noCustomersFound')}
-                    </p>
-                  )}
+                  {customerSearchReady &&
+                    !customerIndexLoading &&
+                    matchingCustomers.length === 0 && (
+                      <p className="p-2 text-sm text-gray-500">{t('billing.noCustomersFound')}</p>
+                    )}
                   {customerSearchReady && (
                     <IonList className="max-h-52 overflow-auto">
                       {matchingCustomers.map((customer) => (
@@ -1821,6 +1855,14 @@ export const BillingPage: React.FC = () => {
             allowPartial={Boolean(pendingCustomerId || customerId)}
           />
         )}
+
+        <IonModal isOpen={showWhatsAppPaste} onDidDismiss={() => setShowWhatsAppPaste(false)}>
+          <WhatsAppPastePanel
+            catalog={billingCatalogData?.data ?? []}
+            onCancel={() => setShowWhatsAppPaste(false)}
+            onConfirm={addWhatsAppItems}
+          />
+        </IonModal>
 
         <IonModal
           isOpen={showCounterDialog}

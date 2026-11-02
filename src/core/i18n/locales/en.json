@@ -468,6 +468,21 @@
     "quoteUnavailable": "Could not calculate the latest bill. Check the tax details and try again.",
     "quoteChangedReview": "Bill details changed. Review the updated amount before taking payment.",
     "placeOfSupplyCode": "Place of supply code",
+    "whatsapp": {
+      "open": "Paste WhatsApp list",
+      "title": "WhatsApp list to bill",
+      "description": "Paste the customer's message. Review every match before adding it to the bill.",
+      "listLabel": "Customer shopping list",
+      "placeholder": "2 x Tata Salt\nGemini oil 1L\nSugar",
+      "review": "Review matches",
+      "reviewResults": "Compiled shopping list",
+      "quantity": "Quantity",
+      "product": "Matched product",
+      "unresolved": "Select a product",
+      "resolvedSummary": "{{resolved}} of {{total}} lines are ready",
+      "addToBill": "Add reviewed items to bill",
+      "addedSummary": "{{added}} units added to the bill; {{skipped}} skipped due to stock"
+    },
     "completion": {
       "saved": "Sale saved safely",
       "title": "Sale complete",
