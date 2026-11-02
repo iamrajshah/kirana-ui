@@ -249,6 +249,7 @@ vi.mock('ionicons/icons', () => ({
   trash: 'trash',
   barcodeOutline: 'barcodeOutline',
   close: 'close',
+  logoWhatsapp: 'logoWhatsapp',
 }));
 
 vi.mock('@ionic/react', () => {
