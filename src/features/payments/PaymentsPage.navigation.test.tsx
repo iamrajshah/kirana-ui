@@ -22,7 +22,12 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
 }));
 vi.mock('@core/api/paymentApi', () => ({
-  useGetPaymentsQuery: () => ({ data: { data: [] }, isLoading: false, isError: false, refetch: vi.fn() }),
+  useGetPaymentsQuery: () => ({
+    data: { data: [] },
+    isLoading: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
   useCreatePaymentMutation: () => [createPayment, { isLoading: false }],
 }));
 vi.mock('@core/api/customerApi', () => ({
@@ -36,7 +41,10 @@ vi.mock('@core/api/customerApi', () => ({
   ],
 }));
 vi.mock('@core/api/invoiceApi', () => ({
-  useLazyGetPendingInvoicesByCustomerQuery: () => [vi.fn(), { data: { data: [] }, isLoading: false }],
+  useLazyGetPendingInvoicesByCustomerQuery: () => [
+    vi.fn(),
+    { data: { data: [] }, isLoading: false },
+  ],
 }));
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('@components', () => ({
@@ -67,11 +75,7 @@ vi.mock('@components', () => ({
     onChange?: (value: string) => void;
     options?: Array<{ value: string; label: string }>;
   }) => (
-    <select
-      aria-label={label}
-      value={value}
-      onChange={(event) => onChange?.(event.target.value)}
-    >
+    <select aria-label={label} value={value} onChange={(event) => onChange?.(event.target.value)}>
       <option value="" />
       {options.map((option) => (
         <option key={option.value} value={option.value}>
@@ -131,19 +135,13 @@ it('dismisses the real Ionic payment modal before Dashboard navigation', async (
   fireEvent.change(await screen.findByLabelText('payments.searchCustomers'), {
     target: { value: 'Amit' },
   });
-  const customerSelect = await screen.findByLabelText(
-    'billing.selectCustomer',
-    undefined,
-    { timeout: 5000 }
-  );
-  await screen.findByRole(
+  const customerOption = await screen.findByRole(
     'option',
-    { name: 'Amit Patel (9000000201)' },
+    { name: 'Amit Patel 9000000201' },
     { timeout: 5000 }
   );
-  fireEvent.change(customerSelect, {
-    target: { value: 'customer-1' },
-  });
+  expect(screen.queryByLabelText('billing.selectCustomer')).toBeNull();
+  fireEvent.click(customerOption);
   fireEvent.change(screen.getByLabelText('common.amount'), { target: { value: '100' } });
   fireEvent.click(screen.getByRole('button', { name: 'common.save' }));
 

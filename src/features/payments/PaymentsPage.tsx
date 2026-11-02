@@ -27,7 +27,7 @@ import { useLazyGetPendingInvoicesByCustomerQuery } from '@core/api/invoiceApi';
 import { Input, Select, Button, EmptyState, SearchBar } from '@components';
 import { formatCurrency, generateIdempotencyKey } from '@utils/helpers';
 import { PAYMENT_MODES } from '@core/constants';
-import type { PaymentMode } from '@core/types';
+import type { Customer, PaymentMode } from '@core/types';
 import { useDebouncedValue } from '@hooks/useDebouncedValue';
 import { filterCustomers } from '@utils/localSearch';
 import './PaymentsPage.css';
@@ -35,15 +35,15 @@ import './PaymentsPage.css';
 export const PaymentsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { data, isLoading, isError, refetch } = useGetPaymentsQuery({});
-  const [searchCustomers, {
-    data: customersData,
-    isLoading: customersLoading,
-    isFetching: customersFetching,
-  }] = useLazySearchCustomersQuery();
+  const [
+    searchCustomers,
+    { data: customersData, isLoading: customersLoading, isFetching: customersFetching },
+  ] = useLazySearchCustomersQuery();
   const [createPayment, { isLoading: creating }] = useCreatePaymentMutation();
 
   const [showModal, setShowModal] = useState(false);
   const [customerId, setCustomerId] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [invoiceId, setInvoiceId] = useState('');
   const [amount, setAmount] = useState('');
   const [paymentMode, setPaymentMode] = useState('CASH');
@@ -63,12 +63,7 @@ export const PaymentsPage: React.FC = () => {
   React.useEffect(() => {
     if (!showModal || !customerSearchReady) return;
     void searchCustomers(debouncedCustomerSearch, true);
-  }, [
-    customerSearchReady,
-    debouncedCustomerSearch,
-    searchCustomers,
-    showModal,
-  ]);
+  }, [customerSearchReady, debouncedCustomerSearch, searchCustomers, showModal]);
 
   // Load pending invoices when customer is selected
   React.useEffect(() => {
@@ -133,6 +128,7 @@ export const PaymentsPage: React.FC = () => {
 
   const resetForm = () => {
     setCustomerId('');
+    setSelectedCustomer(null);
     setInvoiceId('');
     setAmount('');
     setPaymentMode('CASH');
@@ -149,10 +145,9 @@ export const PaymentsPage: React.FC = () => {
     BANK: t('payments.bankTransfer'),
     ADJUSTMENT: t('payments.adjustment'),
   };
-  const customers = useMemo(() => {
+  const matchingCustomers = useMemo(() => {
     if (!customerSearchReady) return [];
-    return filterCustomers(customersData?.data || [], customerSearch)
-      .map((customer) => ({ value: customer.id, label: `${customer.name} (${customer.phone})` }));
+    return filterCustomers(customersData?.data || [], customerSearch).slice(0, 20);
   }, [customerSearch, customerSearchReady, customersData?.data]);
 
   const filteredPayments = useMemo(() => {
@@ -305,106 +300,148 @@ export const PaymentsPage: React.FC = () => {
             resetForm();
           }}
         >
-            <IonPage>
-              <IonHeader>
-                <IonToolbar>
-                  <IonTitle>{t('payments.recordPayment')}</IonTitle>
-                  <IonButtons slot="end">
-                    <IonButton
-                      onClick={() => {
-                        setShowModal(false);
-                      }}
-                    >
-                      <IonIcon icon={close} />
-                    </IonButton>
-                  </IonButtons>
-                </IonToolbar>
-              </IonHeader>
-              <IonContent className="ion-padding">
-                <Input
-                  label={t('payments.searchCustomers')}
-                  value={customerSearch}
-                  onChange={setCustomerSearch}
-                  placeholder={t('payments.searchCustomers')}
-                />
-                {customerSearch.trim().length > 0 && !customerSearchReady && (
-                  <p className="form-note">{t('payments.customerSearchMinimum')}</p>
-                )}
-                {customerSearchReady && (customersLoading || customersFetching) && (
-                  <p className="form-note">{t('common.loading')}</p>
-                )}
-                {customerSearchReady &&
-                  !customersLoading &&
-                  !customersFetching &&
-                  customers.length === 0 && (
-                    <p className="form-note">{t('payments.noCustomersFound')}</p>
+          <IonPage>
+            <IonHeader>
+              <IonToolbar>
+                <IonTitle>{t('payments.recordPayment')}</IonTitle>
+                <IonButtons slot="end">
+                  <IonButton
+                    onClick={() => {
+                      setShowModal(false);
+                    }}
+                  >
+                    <IonIcon icon={close} />
+                  </IonButton>
+                </IonButtons>
+              </IonToolbar>
+            </IonHeader>
+            <IonContent className="ion-padding">
+              {selectedCustomer ? (
+                <div className="payment-customer-selected">
+                  <div>
+                    <strong>{selectedCustomer.name}</strong>
+                    <span>{selectedCustomer.phone}</span>
+                  </div>
+                  <IonButton
+                    fill="clear"
+                    size="small"
+                    onClick={() => {
+                      setSelectedCustomer(null);
+                      setCustomerId('');
+                      setCustomerSearch('');
+                    }}
+                  >
+                    {t('billing.changeCustomer')}
+                  </IonButton>
+                </div>
+              ) : (
+                <>
+                  <Input
+                    label={t('payments.searchCustomers')}
+                    value={customerSearch}
+                    onChange={setCustomerSearch}
+                    placeholder={t('payments.searchCustomers')}
+                  />
+                  {customerSearch.trim().length > 0 && !customerSearchReady && (
+                    <p className="form-note">{t('payments.customerSearchMinimum')}</p>
                   )}
-                <Select
-                  label={t('billing.selectCustomer')}
-                  value={customerId}
-                  onChange={setCustomerId}
-                  options={customers}
-                  placeholder={t('billing.selectCustomer')}
-                  required
-                />
-                {customerId && loadingInvoices && (
-                  <div className="text-center py-2 text-sm">{t('payments.loadingInvoices')}</div>
+                  {customerSearchReady && (customersLoading || customersFetching) && (
+                    <p className="form-note">{t('common.loading')}</p>
+                  )}
+                  {customerSearchReady &&
+                    !customersLoading &&
+                    !customersFetching &&
+                    matchingCustomers.length === 0 && (
+                      <p className="form-note">{t('payments.noCustomersFound')}</p>
+                    )}
+                  {customerSearchReady && matchingCustomers.length > 0 && (
+                    <div
+                      className="payment-customer-results"
+                      role="listbox"
+                      aria-label={t('payments.searchCustomers')}
+                    >
+                      {matchingCustomers.map((customer) => (
+                        <button
+                          key={customer.id}
+                          type="button"
+                          role="option"
+                          aria-selected="false"
+                          onClick={() => {
+                            setSelectedCustomer(customer);
+                            setCustomerId(customer.id);
+                            setCustomerSearch('');
+                          }}
+                        >
+                          <strong>{customer.name}</strong>
+                          <span>{customer.phone}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+              {customerId && loadingInvoices && (
+                <div className="text-center py-2 text-sm">{t('payments.loadingInvoices')}</div>
+              )}
+              {customerId &&
+                !loadingInvoices &&
+                pendingInvoicesData?.data &&
+                pendingInvoicesData.data.length === 0 && (
+                  <p className="form-note">{t('foundation.payments.noPendingInvoices')}</p>
                 )}
-                {customerId && pendingInvoicesData?.data && pendingInvoicesData.data.length > 0 && (
-                  <>
-                    <Select
-                      label={t('payments.selectInvoice')}
-                      value={invoiceId}
-                      onChange={setInvoiceId}
-                      options={[
-                        { value: '', label: t('payments.generalPayment') },
-                        ...pendingInvoicesData.data.map((inv) => ({
-                          value: inv.id,
-                          label: `${inv.invoice_number} - ${formatCurrency((inv.total_amount || 0) - (inv.paid_amount || 0))} (${inv.status})`,
-                        })),
-                      ]}
-                      placeholder={t('common.placeholders.selectInvoice')}
-                    />
-                    {!invoiceId && <p className="form-note">{t('payments.oldestFirstHint')}</p>}
-                  </>
-                )}
-                <Input
-                  label={t('common.amount')}
-                  value={amount}
-                  onChange={setAmount}
-                  type="number"
-                  required
-                  placeholder={
-                    invoiceId ? t('payments.amountAutoFilled') : t('payments.enterAmount')
-                  }
-                />
-                <Select
-                  label={t('payments.paymentMode')}
-                  value={paymentMode}
-                  onChange={setPaymentMode}
-                  options={PAYMENT_MODES.map((m) => ({
-                    value: m.value,
-                    label: paymentModeLabels[m.value] || m.label,
-                  }))}
-                  required
-                />
-                <Input
-                  label={t('payments.referenceNote')}
-                  value={referenceNote}
-                  onChange={setReferenceNote}
-                />
-                <Button
-                  onClick={() => {
-                    handleCreatePayment();
-                  }}
-                  loading={creating}
-                  fullWidth
-                  size="large"
-                >
-                  {t('common.save')}
-                </Button>
-              </IonContent>
-            </IonPage>
+              {customerId && pendingInvoicesData?.data && pendingInvoicesData.data.length > 0 && (
+                <>
+                  <Select
+                    label={t('payments.selectInvoice')}
+                    value={invoiceId}
+                    onChange={setInvoiceId}
+                    options={[
+                      { value: '', label: t('payments.generalPayment') },
+                      ...pendingInvoicesData.data.map((inv) => ({
+                        value: inv.id,
+                        label: `${inv.invoice_number} - ${formatCurrency((inv.total_amount || 0) - (inv.paid_amount || 0))} (${inv.status})`,
+                      })),
+                    ]}
+                    placeholder={t('common.placeholders.selectInvoice')}
+                  />
+                  {!invoiceId && <p className="form-note">{t('payments.oldestFirstHint')}</p>}
+                </>
+              )}
+              <Input
+                label={t('common.amount')}
+                value={amount}
+                onChange={setAmount}
+                type="number"
+                required
+                placeholder={invoiceId ? t('payments.amountAutoFilled') : t('payments.enterAmount')}
+              />
+              <Select
+                label={t('payments.paymentMode')}
+                value={paymentMode}
+                onChange={setPaymentMode}
+                options={PAYMENT_MODES.map((m) => ({
+                  value: m.value,
+                  label: paymentModeLabels[m.value] || m.label,
+                }))}
+                required
+              />
+              <Input
+                label={t('payments.referenceNote')}
+                value={referenceNote}
+                onChange={setReferenceNote}
+              />
+              <Button
+                onClick={() => {
+                  handleCreatePayment();
+                }}
+                loading={creating}
+                fullWidth
+                size="large"
+              >
+                {t('common.save')}
+              </Button>
+            </IonContent>
+          </IonPage>
         </IonModal>
 
         <IonToast

@@ -18,7 +18,9 @@ vi.mock('@core/api/paymentApi', () => ({
   useGetPaymentsQuery: () => ({ ...query, isLoading: false }),
   useCreatePaymentMutation: () => [createPayment, { isLoading: false }],
 }));
-const customersQuery = vi.hoisted(() => ({ data: { data: [] as Array<{ id: string; name: string; phone: string }> } }));
+const customersQuery = vi.hoisted(() => ({
+  data: { data: [] as Array<{ id: string; name: string; phone: string }> },
+}));
 const searchCustomers = vi.hoisted(() => vi.fn());
 
 vi.mock('@core/api/customerApi', () => ({
@@ -61,11 +63,7 @@ vi.mock('@components', () => ({
     onChange?: (value: string) => void;
     options?: Array<{ value: string; label: string }>;
   }) => (
-    <select
-      aria-label={label}
-      value={value}
-      onChange={(event) => onChange?.(event.target.value)}
-    >
+    <select aria-label={label} value={value} onChange={(event) => onChange?.(event.target.value)}>
       {options.map((option) => (
         <option key={option.value} value={option.value}>
           {option.label}
@@ -202,7 +200,8 @@ it('keeps manual collection tied to a selected customer', () => {
   query.data = { data: [] };
   render(<PaymentsPage />);
   fireEvent.click(screen.getAllByRole('button', { name: 'payments.recordPayment' })[0]);
-  expect(screen.getByLabelText('billing.selectCustomer')).toBeTruthy();
+  expect(screen.getByLabelText('payments.searchCustomers')).toBeTruthy();
+  expect(screen.queryByLabelText('billing.selectCustomer')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'common.save' }));
   expect(screen.getByText('payments.selectCustomerError')).toBeTruthy();
   expect(createPayment).not.toHaveBeenCalled();
@@ -242,10 +241,10 @@ it('keeps the Ionic modal mounted while its successful dismissal completes', asy
   fireEvent.change(screen.getByLabelText('payments.searchCustomers'), {
     target: { value: 'Amit' },
   });
-  await waitFor(() => expect(screen.getByRole('option', { name: 'Amit Patel (9000000201)' })).toBeTruthy());
-  fireEvent.change(screen.getByLabelText('billing.selectCustomer'), {
-    target: { value: 'customer-1' },
-  });
+  const customerOption = await screen.findByRole('option', { name: 'Amit Patel 9000000201' });
+  fireEvent.click(customerOption);
+  expect(screen.queryByLabelText('billing.selectCustomer')).toBeNull();
+  expect(screen.getByText('billing.changeCustomer')).toBeTruthy();
   fireEvent.change(screen.getByLabelText('common.amount'), { target: { value: '100' } });
   fireEvent.click(screen.getByRole('button', { name: 'common.save' }));
 
@@ -282,10 +281,7 @@ it('explains that an unassigned collection settles oldest bills first', async ()
   fireEvent.change(screen.getByLabelText('payments.searchCustomers'), {
     target: { value: 'Amit' },
   });
-  await waitFor(() => expect(screen.getByRole('option', { name: 'Amit Patel (9000000201)' })).toBeTruthy());
-  fireEvent.change(screen.getByLabelText('billing.selectCustomer'), {
-    target: { value: 'customer-1' },
-  });
+  fireEvent.click(await screen.findByRole('option', { name: 'Amit Patel 9000000201' }));
 
   expect(screen.getByText('payments.oldestFirstHint')).toBeTruthy();
   expect(screen.getByRole('option', { name: 'payments.generalPayment' })).toBeTruthy();
