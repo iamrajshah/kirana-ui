@@ -23,3 +23,54 @@ body.dark .purchase-pending-notice {
 body.dark .purchase-pending-notice strong {
   color: var(--ion-color-danger);
 }
+
+.purchase-unit-editor {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--ion-color-step-200, #d9e3df);
+  border-radius: 10px;
+  background: var(--ion-color-step-50, #f7faf9);
+}
+
+.purchase-unit-editor label {
+  display: grid;
+  gap: 6px;
+  color: var(--ion-color-step-700, #33413b);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.purchase-unit-editor select,
+.purchase-unit-editor input {
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid var(--ion-color-step-300, #c4d1cc);
+  border-radius: 8px;
+  background: var(--ion-background-color, #fff);
+  color: var(--ion-text-color, #16221d);
+}
+
+.purchase-unit-conversion {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(140px, 1fr);
+  gap: 10px;
+}
+
+.purchase-unit-preview {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--ion-color-primary-shade);
+  font-weight: 600;
+}
+
+@media (max-width: 520px) {
+  .purchase-unit-conversion {
+    grid-template-columns: 1fr;
+  }
+
+  .purchase-unit-preview {
+    grid-column: auto;
+  }
+}

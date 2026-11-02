@@ -850,7 +850,16 @@
     "supplierDefaultFirm": "સપ્લાયરની ડિફૉલ્ટ પેઢીમાંથી પસંદ કરેલ",
     "filterByFirm": "પેઢી પ્રમાણે ખરીદી ફિલ્ટર કરો",
     "allFirms": "બધી પેઢીઓ",
-    "firmLabel": "પેઢી"
+    "firmLabel": "પેઢી",
+    "enteredAs": "ખરીદીનું એકમ",
+    "individualUnits": "અલગ વેચાણ એકમો",
+    "boxOrPack": "બોક્સ / પેક",
+    "packLabel": "પેકનું નામ",
+    "unitsPerPack": "એક પેકમાં વેચાણ એકમો",
+    "pricePerPack": "પ્રતિ બોક્સ / પેક કિંમત",
+    "stockConversionPreview": "{{count}} {{label}} × {{factor}} = સ્ટોકમાં {{units}} વેચાણ એકમો",
+    "normalizedStockQuantity": "સ્ટોકમાં {{quantity}} વેચાણ એકમો (પ્રતિ પેક {{factor}})",
+    "invalidPackConversion": "પેકનું નામ અને પ્રતિ પેક ઓછામાં ઓછા 2 વેચાણ એકમો દાખલ કરો"
   },
   "firms": {
     "title": "વ્યવસાયિક પેઢીઓ",

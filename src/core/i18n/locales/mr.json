@@ -855,7 +855,16 @@
     "supplierDefaultFirm": "पुरवठादाराच्या डीफॉल्ट फर्ममधून निवडले",
     "filterByFirm": "फर्मनुसार खरेदी फिल्टर करा",
     "allFirms": "सर्व फर्म",
-    "firmLabel": "फर्म"
+    "firmLabel": "फर्म",
+    "enteredAs": "खरेदीचे एकक",
+    "individualUnits": "स्वतंत्र विक्री एकके",
+    "boxOrPack": "बॉक्स / पॅक",
+    "packLabel": "पॅकचे नाव",
+    "unitsPerPack": "एका पॅकमधील विक्री एकके",
+    "pricePerPack": "प्रति बॉक्स / पॅक किंमत",
+    "stockConversionPreview": "{{count}} {{label}} × {{factor}} = स्टॉकमध्ये {{units}} विक्री एकके",
+    "normalizedStockQuantity": "स्टॉकमध्ये {{quantity}} विक्री एकके (प्रति पॅक {{factor}})",
+    "invalidPackConversion": "पॅकचे नाव आणि प्रति पॅक किमान 2 विक्री एकके भरा"
   },
   "firms": {
     "title": "व्यवसाय फर्म",
