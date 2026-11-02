@@ -46,7 +46,8 @@ import {
 } from '@core/api/productApi';
 import notificationService, { apiErrorMessage } from '@core/services/notificationService';
 import { ROUTES } from '@core/constants';
-import { selectCurrentUser } from '@core/auth/authSlice';
+import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice';
+import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
 import { useAppSelector } from '@core/hooks';
 import type { Customer, HeldBill, Invoice, PaymentMode } from '@core/types';
 import { formatCurrency, generateIdempotencyKey } from '@utils/helpers';
@@ -114,6 +115,12 @@ export const BillingPage: React.FC = () => {
   const location = useLocation();
   const history = useHistory();
   const currentUser = useAppSelector(selectCurrentUser);
+  const commercialAccess = useAppSelector(selectCommercialAccess);
+  const canViewMarginPreview = canUseCommercialFeature(
+    currentUser?.roles ?? [],
+    commercialAccess,
+    'LIVE_MARGIN_PREVIEW'
+  );
   const billingStorageOwner = {
     userId: currentUser?.id || '',
     tenantId: currentUser?.tenant?.id || null,
@@ -133,11 +140,10 @@ export const BillingPage: React.FC = () => {
   const [scanBarcode, { isFetching: barcodeLoading }] = useLazyScanBarcodeQuery();
   const [createProductFromBarcode, { isLoading: creatingBarcodeProduct }] =
     useCreateProductFromBarcodeMutation();
-  const [searchCustomers, {
-    data: customersData,
-    isLoading: customersLoading,
-    isFetching: customersFetching,
-  }] = useLazySearchCustomersQuery();
+  const [
+    searchCustomers,
+    { data: customersData, isLoading: customersLoading, isFetching: customersFetching },
+  ] = useLazySearchCustomersQuery();
   const [createInvoice, { isLoading: creating }] = useCreateInvoiceMutation();
   const [quoteInvoice, { isLoading: quoting }] = useQuoteInvoiceMutation();
   const [cancelInvoice, { isLoading: cancelling }] = useCancelInvoiceMutation();
@@ -293,12 +299,7 @@ export const BillingPage: React.FC = () => {
   useEffect(() => {
     if (!showCustomerSearch || !customerSearchReady) return;
     void searchCustomers(debouncedCustomerSearchTerm, true);
-  }, [
-    customerSearchReady,
-    debouncedCustomerSearchTerm,
-    searchCustomers,
-    showCustomerSearch,
-  ]);
+  }, [customerSearchReady, debouncedCustomerSearchTerm, searchCustomers, showCustomerSearch]);
   const matchingCustomers = useMemo(
     () =>
       customerSearchReady
@@ -336,6 +337,7 @@ export const BillingPage: React.FC = () => {
           total: Number(activeQuote.total_amount),
         }
       : { ...totals, gstAmount: 0 };
+  const marginPreview = activeQuoteKey === quoteKey ? activeQuote?.margin_preview : undefined;
   const hasCurrentCustomerBalance = selectedCustomerData?.data?.id?.toString() === customerId;
   const previousCustomerBalance = customerId
     ? Number(
@@ -498,7 +500,7 @@ export const BillingPage: React.FC = () => {
     setActiveQuote(null);
     setActiveQuoteKey(null);
     setQuoteError(null);
-    if (!isGstMode || !cartItems.length || completionInvoiceId) return;
+    if ((!isGstMode && !canViewMarginPreview) || !cartItems.length || completionInvoiceId) return;
 
     let cancelled = false;
     let request: ReturnType<typeof quoteInvoice> | null = null;
@@ -521,6 +523,7 @@ export const BillingPage: React.FC = () => {
     };
   }, [
     cartItems.length,
+    canViewMarginPreview,
     completionInvoiceId,
     isGstMode,
     quoteInvoice,
@@ -1276,11 +1279,11 @@ export const BillingPage: React.FC = () => {
                       {t('billing.customerSearchMinimum')}
                     </p>
                   )}
-                  {customerSearchReady && !customerIndexLoading && matchingCustomers.length === 0 && (
-                    <p className="p-2 text-sm text-gray-500">
-                      {t('billing.noCustomersFound')}
-                    </p>
-                  )}
+                  {customerSearchReady &&
+                    !customerIndexLoading &&
+                    matchingCustomers.length === 0 && (
+                      <p className="p-2 text-sm text-gray-500">{t('billing.noCustomersFound')}</p>
+                    )}
                   {customerSearchReady && (
                     <IonList className="max-h-52 overflow-auto">
                       {matchingCustomers.map((customer) => (
@@ -1652,6 +1655,47 @@ export const BillingPage: React.FC = () => {
                         >
                           {quoteError}
                         </p>
+                      )}
+                      {marginPreview && (
+                        <div
+                          className="rounded-xl border border-emerald-200 bg-emerald-50 p-3"
+                          aria-label={t('billing.marginPreview.title')}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">
+                                {t('billing.marginPreview.title')}
+                              </p>
+                              <p className="text-xs text-emerald-700">
+                                {t('billing.marginPreview.privateHint')}
+                              </p>
+                            </div>
+                            {marginPreview.available ? (
+                              <strong
+                                className={`text-xl ${Number(marginPreview.estimatedProfit) < 0 ? 'text-red-700' : 'text-emerald-800'}`}
+                              >
+                                {formatCurrency(Number(marginPreview.estimatedProfit))}
+                              </strong>
+                            ) : null}
+                          </div>
+                          {marginPreview.available ? (
+                            <p className="mt-2 text-xs text-emerald-800">
+                              {t('billing.marginPreview.detail', {
+                                cost: formatCurrency(Number(marginPreview.estimatedCost)),
+                                margin: marginPreview.marginPercent.toFixed(1),
+                              })}
+                            </p>
+                          ) : (
+                            <p className="mt-2 text-xs text-amber-800">
+                              {t('billing.marginPreview.missingCost', {
+                                count:
+                                  'missingCostItems' in marginPreview
+                                    ? marginPreview.missingCostItems
+                                    : 0,
+                              })}
+                            </p>
+                          )}
+                        </div>
                       )}
                       <div className="border-t border-gray-200 pt-3">
                         {customerId && (

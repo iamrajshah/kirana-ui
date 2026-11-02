@@ -26,6 +26,12 @@ const mocks = vi.hoisted(() => ({
     roles: string[];
     tenant: { id: string };
   },
+  commercialAccess: {
+    planCode: 'PRO',
+    state: 'ACTIVE',
+    entitlements: ['LIVE_MARGIN_PREVIEW'],
+    featureRoles: { LIVE_MARGIN_PREVIEW: ['OWNER'] },
+  },
   search: '?edit=edit-1',
   invoice: {} as Record<string, unknown>,
   document: null as Record<string, unknown> | null,
@@ -76,9 +82,20 @@ vi.mock('react-i18next', () => ({
 
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('@core/hooks', () => ({
-  useAppSelector: () => mocks.user,
+  useAppSelector: (selector: (state: unknown) => unknown) =>
+    selector({
+      auth: {
+        user: mocks.user,
+        sessionContext: { commercialAccess: mocks.commercialAccess },
+      },
+    }),
 }));
-vi.mock('@core/auth/authSlice', () => ({ selectCurrentUser: vi.fn() }));
+vi.mock('@core/auth/authSlice', () => ({
+  selectCurrentUser: (state: { auth: { user: unknown } }) => state.auth.user,
+  selectCommercialAccess: (state: {
+    auth: { sessionContext?: { commercialAccess?: unknown } };
+  }) => state.auth.sessionContext?.commercialAccess ?? null,
+}));
 vi.mock('./HeldBillsPanel', () => ({
   HeldBillsPanel: ({
     focusBillId,
@@ -373,6 +390,38 @@ it('waits for two debounced characters before searching customers', async () => 
 });
 
 describe('BillingPage', () => {
+  it('shows only a bill-level private margin estimate returned by the server', async () => {
+    mocks.user = { ...mocks.user, roles: ['OWNER'] };
+    mocks.quoteInvoice.mockResolvedValue({
+      data: {
+        fingerprint: 'a'.repeat(64),
+        document_mode: 'SIMPLE_RECEIPT',
+        settings_version: 1,
+        subtotal_amount: '100.00',
+        item_discount_amount: '0.00',
+        bill_discount_amount: '0.00',
+        discount_amount: '0.00',
+        taxable_amount: '100.00',
+        cgst_amount: '0.00',
+        sgst_amount: '0.00',
+        igst_amount: '0.00',
+        gst_amount: '0.00',
+        total_amount: '100.00',
+        lines: [],
+        margin_preview: {
+          available: true,
+          revenue: '100.00',
+          estimatedCost: '75.00',
+          estimatedProfit: '25.00',
+          marginPercent: 25,
+        },
+      },
+    });
+    render(<BillingPage />);
+    expect(await screen.findByText('billing.marginPreview.title')).toBeTruthy();
+    expect(screen.getByText('₹25')).toBeTruthy();
+    expect(screen.queryByText('₹75.00')).toBeNull();
+  });
   it('keeps long bills compact until the cashier chooses to review every item', async () => {
     mocks.invoice = {
       ...mocks.invoice,

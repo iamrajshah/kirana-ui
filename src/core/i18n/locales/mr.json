@@ -196,12 +196,28 @@
     "startDemo": "मोफत डेमो सुरू करा",
     "mostPopular": "सर्वाधिक लोकप्रिय",
     "bestFor": "योग्य आहे",
-    "planAudience": { "smallShop": "व्यवस्थित होणारे छोटे दुकान", "busyShop": "नियंत्रण हवे असलेले व्यस्त दुकान", "multiFirmShop": "अनेक कायदेशीर फर्म चालवणारे दुकान" },
+    "planAudience": {
+      "smallShop": "व्यवस्थित होणारे छोटे दुकान",
+      "busyShop": "नियंत्रण हवे असलेले व्यस्त दुकान",
+      "multiFirmShop": "अनेक कायदेशीर फर्म चालवणारे दुकान"
+    },
     "allDevices": "मोबाइल + वेब/डेस्कटॉप",
     "gstExclusive": "+ GST",
     "staffCount": "{{count}} कर्मचारी",
     "firmCount": "{{count}} फर्म",
-    "features": { "fastBilling": "जलद बिलिंग आणि पेमेंट", "khata": "ग्राहक खाते आणि बाकी", "inventoryPurchases": "उत्पादने, स्टॉक, खरेदी आणि पुरवठादार", "essentialReports": "आवश्यक विक्री आणि स्टॉक अहवाल", "backupExport": "दुकान बॅकअप आणि एक्सपोर्ट", "advancedReports": "प्रगत व्यवसाय अहवाल", "importExcel": "Excel इम्पोर्ट आणि एक्सपोर्ट", "customBarcode": "कस्टम बारकोड लेबल आणि प्रिंट", "multiFirm": "एका दुकानात 3 कायदेशीर फर्मपर्यंत", "staffRoles": "कर्मचाऱ्यांसाठी भूमिकेनुसार प्रवेश", "firmAccounting": "फर्मनुसार खरेदी आणि पुरवठादार नोंदी" },
+    "features": {
+      "fastBilling": "जलद बिलिंग आणि पेमेंट",
+      "khata": "ग्राहक खाते आणि बाकी",
+      "inventoryPurchases": "उत्पादने, स्टॉक, खरेदी आणि पुरवठादार",
+      "essentialReports": "आवश्यक विक्री आणि स्टॉक अहवाल",
+      "backupExport": "दुकान बॅकअप आणि एक्सपोर्ट",
+      "advancedReports": "प्रगत व्यवसाय अहवाल",
+      "importExcel": "Excel इम्पोर्ट आणि एक्सपोर्ट",
+      "customBarcode": "कस्टम बारकोड लेबल आणि प्रिंट",
+      "multiFirm": "एका दुकानात 3 कायदेशीर फर्मपर्यंत",
+      "staffRoles": "कर्मचाऱ्यांसाठी भूमिकेनुसार प्रवेश",
+      "firmAccounting": "फर्मनुसार खरेदी आणि पुरवठादार नोंदी"
+    },
     "addOnsTitle": "गरजेनुसारच वाढवा",
     "addOnsDescription": "Basic वरून Pro करा; अनेक फर्मसाठी Business आवश्यक आहे.",
     "availableOn": "{{plans}} वर उपलब्ध",
@@ -466,6 +482,12 @@
     "checkoutCancelled": "न भरलेले बिल रद्द केले",
     "failedToCancelCheckout": "न भरलेले बिल रद्द करता आले नाही",
     "quoteUnavailable": "नवीन बिलाचा हिशोब करता आला नाही. कर तपशील तपासून पुन्हा प्रयत्न करा.",
+    "marginPreview": {
+      "title": "अंदाजित नफा",
+      "privateHint": "फक्त अधिकृत कर्मचाऱ्यांसाठी खाजगी अंदाज; ग्राहकाच्या बिलावर कधीही छापला जाणार नाही.",
+      "detail": "अंदाजित खर्च {{cost}} · मार्जिन {{margin}}%",
+      "missingCost": "हा अंदाज काढण्यासाठी {{count}} वस्तूंची खरेदी किंमत जोडा."
+    },
     "quoteChangedReview": "बिलाचे तपशील बदलले आहेत. पेमेंट घेण्यापूर्वी नवीन रक्कम तपासा.",
     "placeOfSupplyCode": "पुरवठा ठिकाण कोड",
     "completion": {
@@ -1432,7 +1454,9 @@
     "paymentRequiresCustomer": "नंतरचे पेमेंट नोंदवण्यापूर्वी ग्राहक निवडा.",
     "notIssued": "जारी केलेले नाही",
     "draftHint": "हा मसुदा अजून ग्राहक दस्तऐवज नाही. विक्री पूर्ण करण्यासाठी तो उघडा.",
-    "whatsAppReceipt": "WhatsApp पावती", "whatsAppReminder": "WhatsApp पेमेंट स्मरण", "whatsAppInvalidPhone": "आधी ग्राहकाचा योग्य भारतीय मोबाइल क्रमांक जोडा."
+    "whatsAppReceipt": "WhatsApp पावती",
+    "whatsAppReminder": "WhatsApp पेमेंट स्मरण",
+    "whatsAppInvalidPhone": "आधी ग्राहकाचा योग्य भारतीय मोबाइल क्रमांक जोडा."
   },
   "about": {
     "title": "माहिती",
@@ -1495,7 +1519,11 @@
     "paperWidth": "डीफॉल्ट थर्मल पेपर",
     "paper": { "MM58": "58 मिमी (लहान)", "MM80": "80 मिमी (शिफारस केलेले)" },
     "footer": "पावती फूटर (ऐच्छिक)",
-    "branding": "पावती ब्रँडिंग", "brandingHint": "पुढील पावत्यांची शैली निवडा. जुन्या पावत्या बदलणार नाहीत.", "brandColor": "ब्रँड रंग (#RRGGBB)", "logoUrl": "HTTPS लोगो URL (ऐच्छिक)", "templates": { "CLASSIC": "क्लासिक", "MODERN": "मॉडर्न", "COMPACT": "कॉम्पॅक्ट" },
+    "branding": "पावती ब्रँडिंग",
+    "brandingHint": "पुढील पावत्यांची शैली निवडा. जुन्या पावत्या बदलणार नाहीत.",
+    "brandColor": "ब्रँड रंग (#RRGGBB)",
+    "logoUrl": "HTTPS लोगो URL (ऐच्छिक)",
+    "templates": { "CLASSIC": "क्लासिक", "MODERN": "मॉडर्न", "COMPACT": "कॉम्पॅक्ट" },
     "gstDetails": "GST चलन प्रोफाइल",
     "gstDetailsHint": "GST चलन सक्रिय करण्यापूर्वी हे कायदेशीर तपशील आवश्यक आहेत.",
     "supplierName": "दुकानाचे कायदेशीर नाव",
@@ -1528,10 +1556,59 @@
     "loadFailed": "बिल सेटिंग्ज लोड झाल्या नाहीत"
   },
   "shifts": {
-    "title": "कॅश शिफ्ट", "eyebrow": "काउंटर नियंत्रण", "heading": "कॅश उघडा, मोजा आणि बंद करा", "description": "कॅश पेमेंट व नोंदवलेल्या हालचालींशी ड्रॉवर जुळवा.", "open": "उघडी", "closed": "बंद", "openShift": "शिफ्ट उघडा", "openingCash": "सुरुवातीची कॅश", "counter": "काउंटर नाव (ऐच्छिक)", "openedSuccess": "शिफ्ट उघडली", "liveSummary": "थेट सारांश", "cashSales": "कॅश विक्री", "cashIn": "कॅश जमा", "cashOut": "कॅश काढली", "expectedCash": "अपेक्षित कॅश", "cashMovement": "कॅश हालचाल नोंदवा", "movementType": "हालचाल प्रकार", "reason": "कारण", "saveMovement": "जतन करा", "adjustmentSaved": "कॅश हालचाल जतन झाली", "closeShift": "शिफ्ट बंद करा", "countHint": "ड्रॉवर मोजा. अपेक्षित कॅश {{amount}} आहे.", "countedCash": "मोजलेली कॅश", "closingNote": "बंद नोंद (ऐच्छिक)", "closingNoteRequired": "कॅश फरकाचे कारण", "variance": "फरक", "varianceReasonRequired": "शिफ्ट बंद करण्यापूर्वी कॅश फरकाचे कारण लिहा.", "closedSuccess": "शिफ्ट बंद झाली", "recent": "अलीकडील शिफ्ट", "failed": "शिफ्ट अपडेट झाली नाही"
+    "title": "कॅश शिफ्ट",
+    "eyebrow": "काउंटर नियंत्रण",
+    "heading": "कॅश उघडा, मोजा आणि बंद करा",
+    "description": "कॅश पेमेंट व नोंदवलेल्या हालचालींशी ड्रॉवर जुळवा.",
+    "open": "उघडी",
+    "closed": "बंद",
+    "openShift": "शिफ्ट उघडा",
+    "openingCash": "सुरुवातीची कॅश",
+    "counter": "काउंटर नाव (ऐच्छिक)",
+    "openedSuccess": "शिफ्ट उघडली",
+    "liveSummary": "थेट सारांश",
+    "cashSales": "कॅश विक्री",
+    "cashIn": "कॅश जमा",
+    "cashOut": "कॅश काढली",
+    "expectedCash": "अपेक्षित कॅश",
+    "cashMovement": "कॅश हालचाल नोंदवा",
+    "movementType": "हालचाल प्रकार",
+    "reason": "कारण",
+    "saveMovement": "जतन करा",
+    "adjustmentSaved": "कॅश हालचाल जतन झाली",
+    "closeShift": "शिफ्ट बंद करा",
+    "countHint": "ड्रॉवर मोजा. अपेक्षित कॅश {{amount}} आहे.",
+    "countedCash": "मोजलेली कॅश",
+    "closingNote": "बंद नोंद (ऐच्छिक)",
+    "closingNoteRequired": "कॅश फरकाचे कारण",
+    "variance": "फरक",
+    "varianceReasonRequired": "शिफ्ट बंद करण्यापूर्वी कॅश फरकाचे कारण लिहा.",
+    "closedSuccess": "शिफ्ट बंद झाली",
+    "recent": "अलीकडील शिफ्ट",
+    "failed": "शिफ्ट अपडेट झाली नाही"
   },
   "onboarding": {
-    "title": "सुरुवात", "eyebrow": "दुकान सेटअप", "heading": "पहिल्या बिलासाठी तयार व्हा", "description": "दुकान योग्य पद्धतीने सेट करण्यासाठी ही यादी पूर्ण करा.", "open": "उघडा", "steps": { "profile": { "title": "दुकान व बिल ओळख", "description": "दुकान, पावती, लोगो आणि GST तपशील तपासा." }, "products": { "title": "उत्पादने व स्टॉक", "description": "किंमत, बारकोड व सुरुवातीचा स्टॉक जोडा." }, "staff": { "title": "स्टाफ जोडा", "description": "फक्त आवश्यक लोकांना प्रवेश द्या." }, "shift": { "title": "कॅश काउंटर उघडा", "description": "सुरुवातीची कॅश नोंदवा." }, "sale": { "title": "सराव विक्री", "description": "ग्राहकांपूर्वी एक बिल तयार करून शेअर करा." } }, "helpTitle": "मदत हवी?", "helpDescription": "स्क्रीन आणि समस्येसह मदत विनंती पाठवा.", "contactSupport": "मदत घ्या"
+    "title": "सुरुवात",
+    "eyebrow": "दुकान सेटअप",
+    "heading": "पहिल्या बिलासाठी तयार व्हा",
+    "description": "दुकान योग्य पद्धतीने सेट करण्यासाठी ही यादी पूर्ण करा.",
+    "open": "उघडा",
+    "steps": {
+      "profile": {
+        "title": "दुकान व बिल ओळख",
+        "description": "दुकान, पावती, लोगो आणि GST तपशील तपासा."
+      },
+      "products": {
+        "title": "उत्पादने व स्टॉक",
+        "description": "किंमत, बारकोड व सुरुवातीचा स्टॉक जोडा."
+      },
+      "staff": { "title": "स्टाफ जोडा", "description": "फक्त आवश्यक लोकांना प्रवेश द्या." },
+      "shift": { "title": "कॅश काउंटर उघडा", "description": "सुरुवातीची कॅश नोंदवा." },
+      "sale": { "title": "सराव विक्री", "description": "ग्राहकांपूर्वी एक बिल तयार करून शेअर करा." }
+    },
+    "helpTitle": "मदत हवी?",
+    "helpDescription": "स्क्रीन आणि समस्येसह मदत विनंती पाठवा.",
+    "contactSupport": "मदत घ्या"
   },
   "foundation": {
     "login": {
