@@ -186,6 +186,20 @@ remain usable. Cashiers continue to see their normal operational dashboard.
 - Keep idempotency keys on invoice and payment creation paths.
 - Unknown-barcode creation must remain tenant-scoped and permission-protected;
   never let a cashier bypass the server's product-creation permission.
+- Whole-bill margin preview is read-only decision support. Render it only when
+  the server resolves `BILL_MARGIN_PREVIEW` for the signed-in role, and never
+  print or share it on a customer document.
+- Feature-role access comes from the active plan version. UI visibility must
+  follow server access; it must never become an independent authorization rule.
+
+## Purchase and customer-list rules
+
+- Purchase entry may describe packs/boxes and units per pack, but submitted and
+  displayed inventory effects must use the server-computed base-unit quantity.
+- Make the conversion visible before save (for example, `2 boxes × 20 = 40
+  pouches`) so a shopkeeper can catch an entry mistake.
+- Customer sorting is server-backed and stable across pages. Do not sort only
+  the currently loaded rows and present that as the complete result.
 
 ## List and preload performance rules
 
