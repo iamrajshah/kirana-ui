@@ -93,10 +93,14 @@ const PurchaseDetailPage: React.FC = () => {
 
         {purchase.firm && (
           <IonCard>
-            <IonCardHeader><IonCardTitle>{t('purchases.purchaseFirm')}</IonCardTitle></IonCardHeader>
+            <IonCardHeader>
+              <IonCardTitle>{t('purchases.purchaseFirm')}</IonCardTitle>
+            </IonCardHeader>
             <IonCardContent>
               <strong>{purchase.firm.display_name}</strong>
-              <p>{purchase.firm.legal_name} · {purchase.firm.code}</p>
+              <p>
+                {purchase.firm.legal_name} · {purchase.firm.code}
+              </p>
             </IonCardContent>
           </IonCard>
         )}
@@ -144,11 +148,29 @@ const PurchaseDetailPage: React.FC = () => {
                           {item.size && `${t('products.size')}: ${item.size}`}
                         </p>
                       )}
-                      <p className="font-medium">
-                        {t('purchases.quantity')}: {item.quantity} ×{' '}
-                        {formatCurrency(item.purchase_price)} ={' '}
-                        {formatCurrency(item.quantity * item.purchase_price)}
-                      </p>
+                      {item.units_per_purchase_unit && item.purchase_unit_quantity ? (
+                        <>
+                          <p className="font-medium">
+                            {item.purchase_unit_quantity} {item.purchase_unit_label} ×{' '}
+                            {formatCurrency(item.purchase_unit_price || 0)} ={' '}
+                            {formatCurrency(
+                              item.purchase_unit_quantity * (item.purchase_unit_price || 0)
+                            )}
+                          </p>
+                          <p className="text-gray-600">
+                            {t('purchases.normalizedStockQuantity', {
+                              quantity: item.quantity,
+                              factor: item.units_per_purchase_unit,
+                            })}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="font-medium">
+                          {t('purchases.quantity')}: {item.quantity} ×{' '}
+                          {formatCurrency(item.purchase_price)} ={' '}
+                          {formatCurrency(item.quantity * item.purchase_price)}
+                        </p>
+                      )}
                     </IonLabel>
                   </IonItem>
                 ))

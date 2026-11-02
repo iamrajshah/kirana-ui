@@ -6,6 +6,8 @@ export interface PurchaseItem {
   variant_id: number;
   quantity: number;
   unit_price: number;
+  units_per_purchase_unit?: number;
+  purchase_unit_label?: string;
 }
 
 export interface Purchase {
@@ -33,6 +35,10 @@ export interface Purchase {
     variant_id: string;
     quantity: number;
     purchase_price: number;
+    purchase_unit_label?: string | null;
+    purchase_unit_quantity?: number | null;
+    units_per_purchase_unit?: number | null;
+    purchase_unit_price?: number | null;
     product_name?: string;
     sku?: string;
     brand?: string;

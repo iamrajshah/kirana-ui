@@ -876,7 +876,16 @@
     "supplierDefaultFirm": "Preselected from this supplier's default firm",
     "filterByFirm": "Filter purchases by firm",
     "allFirms": "All firms",
-    "firmLabel": "Firm"
+    "firmLabel": "Firm",
+    "enteredAs": "Purchase entered as",
+    "individualUnits": "Individual sale units",
+    "boxOrPack": "Box / pack",
+    "packLabel": "Pack name",
+    "unitsPerPack": "Sale units in one pack",
+    "pricePerPack": "Price per box / pack",
+    "stockConversionPreview": "{{count}} {{label}} × {{factor}} = {{units}} sale units added to stock",
+    "normalizedStockQuantity": "{{quantity}} sale units added to stock ({{factor}} per pack)",
+    "invalidPackConversion": "Enter a pack name and at least 2 sale units per pack"
   },
   "firms": {
     "title": "Business firms",

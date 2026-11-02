@@ -1,7 +1,9 @@
 import React, { type PropsWithChildren } from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import CreatePurchasePage from './CreatePurchasePage';
+
+afterEach(cleanup);
 
 vi.mock('react-router', () => ({ useHistory: () => ({ push: vi.fn() }) }));
 vi.mock('react-i18next', () => ({
@@ -36,11 +38,17 @@ vi.mock('@components', () => ({
     <button onClick={() => onChange('sa')}>search test product</button>
   ),
   Input: () => null,
-  Button: ({ children, onClick, disabled }: PropsWithChildren<{
+  Button: ({
+    children,
+    onClick,
+    disabled,
+  }: PropsWithChildren<{
     onClick?: () => void;
     disabled?: boolean;
   }>) => (
-    <button onClick={onClick} disabled={disabled}>{children}</button>
+    <button onClick={onClick} disabled={disabled}>
+      {children}
+    </button>
   ),
   EmptyState: () => null,
 }));
@@ -69,7 +77,9 @@ vi.mock('@ionic/react', () => {
       <button onClick={onClick}>{children}</button>
     ),
     IonItem: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
-      <div role="button" tabIndex={0} onClick={onClick}>{children}</div>
+      <div role="button" tabIndex={0} onClick={onClick}>
+        {children}
+      </div>
     ),
   };
 });
@@ -91,5 +101,24 @@ describe('CreatePurchasePage pending amount', () => {
     expect(notice.classList.contains('purchase-pending-notice')).toBe(true);
     expect(notice.textContent).toContain('purchases.pendingAmount');
     expect(notice.querySelector('ion-text[color="danger"]')).toBeNull();
+  });
+
+  it('previews a box-to-stock conversion before the purchase is submitted', () => {
+    render(<CreatePurchasePage />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'search test product' }));
+    fireEvent.click(screen.getByRole('button', { name: /Salt/ }));
+    fireEvent.change(screen.getByRole('combobox', { name: /Salt purchases.enteredAs/ }), {
+      target: { value: 'PACK' },
+    });
+    fireEvent.change(screen.getByRole('spinbutton', { name: /Salt purchases.unitsPerPack/ }), {
+      target: { value: '12' },
+    });
+
+    expect(screen.getByText(/purchases.stockConversionPreview/)).toBeTruthy();
+    expect(
+      (screen.getByRole('spinbutton', { name: /Salt purchases.unitsPerPack/ }) as HTMLInputElement)
+        .value
+    ).toBe('12');
   });
 });

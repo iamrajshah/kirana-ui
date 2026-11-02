@@ -44,6 +44,9 @@ interface CartItem {
   sku: string;
   quantity: number;
   unit_price: number;
+  purchase_mode: 'UNIT' | 'PACK';
+  purchase_unit_label: string;
+  units_per_purchase_unit: number;
 }
 
 const CreatePurchasePage: React.FC = () => {
@@ -108,6 +111,9 @@ const CreatePurchasePage: React.FC = () => {
           unit_price: variant.price || 0,
           product_name: variant.product_name || 'Unknown Product',
           sku: variant.sku || '',
+          purchase_mode: 'UNIT',
+          purchase_unit_label: 'Box',
+          units_per_purchase_unit: 20,
         },
       ]);
     }
@@ -124,6 +130,15 @@ const CreatePurchasePage: React.FC = () => {
 
   const updatePrice = (variantId: string, unit_price: number) => {
     setCart(cart.map((item) => (item.variant_id === variantId ? { ...item, unit_price } : item)));
+  };
+
+  const updatePurchaseUnit = (
+    variantId: string,
+    changes: Partial<
+      Pick<CartItem, 'purchase_mode' | 'purchase_unit_label' | 'units_per_purchase_unit'>
+    >
+  ) => {
+    setCart(cart.map((item) => (item.variant_id === variantId ? { ...item, ...changes } : item)));
   };
 
   const removeFromCart = (variantId: string) => {
@@ -163,11 +178,28 @@ const CreatePurchasePage: React.FC = () => {
       return;
     }
 
+    if (
+      cart.some(
+        (item) =>
+          item.purchase_mode === 'PACK' &&
+          (!item.purchase_unit_label.trim() || item.units_per_purchase_unit < 2)
+      )
+    ) {
+      notificationService.warning(t('purchases.invalidPackConversion'));
+      return;
+    }
+
     try {
       const items = cart.map((item) => ({
         variant_id: parseInt(item.variant_id),
         quantity: item.quantity,
         unit_price: item.unit_price,
+        ...(item.purchase_mode === 'PACK'
+          ? {
+              units_per_purchase_unit: item.units_per_purchase_unit,
+              purchase_unit_label: item.purchase_unit_label.trim(),
+            }
+          : {}),
       }));
 
       await createPurchase({
@@ -201,7 +233,17 @@ const CreatePurchasePage: React.FC = () => {
   };
 
   // Check if form is valid
-  const isFormValid = selectedSupplierId && selectedFirmId && invoiceNumber.trim() && cart.length > 0;
+  const hasValidPurchaseUnits = cart.every(
+    (item) =>
+      item.purchase_mode === 'UNIT' ||
+      (item.purchase_unit_label.trim() && item.units_per_purchase_unit >= 2)
+  );
+  const isFormValid =
+    selectedSupplierId &&
+    selectedFirmId &&
+    invoiceNumber.trim() &&
+    cart.length > 0 &&
+    hasValidPurchaseUnits;
 
   const subtotal = calculateSubtotal();
   const pending = calculatePending();
@@ -250,9 +292,13 @@ const CreatePurchasePage: React.FC = () => {
                   </IonSelectOption>
                 ))}
               </IonSelect>
-              {selectedSupplierId && suppliers.find((supplier) => supplier.id === selectedSupplierId)?.default_purchase_firm && (
-                <IonText color="medium"><small>{t('purchases.supplierDefaultFirm')}</small></IonText>
-              )}
+              {selectedSupplierId &&
+                suppliers.find((supplier) => supplier.id === selectedSupplierId)
+                  ?.default_purchase_firm && (
+                  <IonText color="medium">
+                    <small>{t('purchases.supplierDefaultFirm')}</small>
+                  </IonText>
+                )}
             </div>
 
             <Input
@@ -319,6 +365,67 @@ const CreatePurchasePage: React.FC = () => {
                       <h3>{item.product_name}</h3>
                       <p>{item.sku}</p>
 
+                      <div className="purchase-unit-editor">
+                        <label>
+                          {t('purchases.enteredAs')}
+                          <select
+                            aria-label={`${item.product_name} ${t('purchases.enteredAs')}`}
+                            value={item.purchase_mode}
+                            onChange={(event) =>
+                              updatePurchaseUnit(item.variant_id, {
+                                purchase_mode: event.target.value as 'UNIT' | 'PACK',
+                              })
+                            }
+                          >
+                            <option value="UNIT">{t('purchases.individualUnits')}</option>
+                            <option value="PACK">{t('purchases.boxOrPack')}</option>
+                          </select>
+                        </label>
+                        {item.purchase_mode === 'PACK' && (
+                          <div className="purchase-unit-conversion">
+                            <label>
+                              {t('purchases.packLabel')}
+                              <input
+                                aria-label={`${item.product_name} ${t('purchases.packLabel')}`}
+                                value={item.purchase_unit_label}
+                                maxLength={30}
+                                onChange={(event) =>
+                                  updatePurchaseUnit(item.variant_id, {
+                                    purchase_unit_label: event.target.value,
+                                  })
+                                }
+                              />
+                            </label>
+                            <label>
+                              {t('purchases.unitsPerPack')}
+                              <input
+                                aria-label={`${item.product_name} ${t('purchases.unitsPerPack')}`}
+                                type="number"
+                                min="2"
+                                max="10000"
+                                value={item.units_per_purchase_unit}
+                                onChange={(event) =>
+                                  updatePurchaseUnit(item.variant_id, {
+                                    units_per_purchase_unit: Math.max(
+                                      2,
+                                      Math.min(10_000, Number(event.target.value) || 2)
+                                    ),
+                                  })
+                                }
+                              />
+                            </label>
+                            <p className="purchase-unit-preview">
+                              {t('purchases.stockConversionPreview', {
+                                count: item.quantity,
+                                label: item.purchase_unit_label || t('purchases.boxOrPack'),
+                                factor: item.units_per_purchase_unit,
+                                units: item.quantity * item.units_per_purchase_unit,
+                              })}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
                       <div
                         style={{
                           display: 'flex',
@@ -361,6 +468,11 @@ const CreatePurchasePage: React.FC = () => {
                               borderRadius: '4px',
                             }}
                             placeholder={t('purchases.unitPrice')}
+                            aria-label={
+                              item.purchase_mode === 'PACK'
+                                ? `${item.product_name} ${t('purchases.pricePerPack')}`
+                                : `${item.product_name} ${t('purchases.unitPrice')}`
+                            }
                           />
                         </div>
                       </div>
