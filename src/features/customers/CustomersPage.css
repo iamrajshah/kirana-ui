@@ -39,6 +39,44 @@
   display: none;
 }
 
+.customers-sort-control {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.customers-sort-control label {
+  color: var(--ion-color-medium);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.customers-sort-control select {
+  min-height: 44px;
+  max-width: min(100%, 18rem);
+  padding: 0 36px 0 12px;
+  border: 1px solid var(--ion-border-color, #d9e0e7);
+  border-radius: 10px;
+  background: var(--ion-card-background);
+  color: var(--ion-text-color);
+  font: inherit;
+}
+
+@media (max-width: 480px) {
+  .customers-sort-control {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .customers-sort-control select {
+    max-width: none;
+    width: 100%;
+  }
+}
+
 @media (min-width: 768px) {
   .customers-desktop-action {
     display: flex;
