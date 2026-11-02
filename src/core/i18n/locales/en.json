@@ -482,6 +482,12 @@
     "checkoutCancelled": "Unpaid checkout cancelled",
     "failedToCancelCheckout": "Could not cancel the unpaid checkout",
     "quoteUnavailable": "Could not calculate the latest bill. Check the tax details and try again.",
+    "marginPreview": {
+      "title": "Estimated profit",
+      "privateHint": "Private estimate for authorized staff only; never printed on the customer bill.",
+      "detail": "Estimated cost {{cost}} · margin {{margin}}%",
+      "missingCost": "Add a purchase cost for {{count}} item(s) to calculate this estimate."
+    },
     "quoteChangedReview": "Bill details changed. Review the updated amount before taking payment.",
     "placeOfSupplyCode": "Place of supply code",
     "whatsapp": {

@@ -23,6 +23,20 @@ describe('commercial client helpers', () => {
     expect(canUseCommercialFeature(['CASHIER'], summary, 'CUSTOM_BARCODE')).toBe(false);
   });
 
+  it('uses the server-provided role matrix without a POS redeployment', () => {
+    expect(
+      canUseCommercialFeature(
+        ['MANAGER'],
+        {
+          ...summary,
+          entitlements: ['LIVE_MARGIN_PREVIEW'],
+          featureRoles: { LIVE_MARGIN_PREVIEW: ['OWNER', 'MANAGER'] },
+        },
+        'LIVE_MARGIN_PREVIEW'
+      )
+    ).toBe(true);
+  });
+
   it.each([
     ['COMMERCIAL_ENTITLEMENT_MISSING', 'Upgrade'],
     ['COMMERCIAL_READ_ONLY', 'renew'],
@@ -48,8 +62,6 @@ describe('commercial client helpers', () => {
         action: 'UNKNOWN',
       })
     ).toBe(false);
-    expect(
-      isCommercialDenial({ code: 'COMMERCIAL_READ_ONLY', action: 'RENEW' })
-    ).toBe(false);
+    expect(isCommercialDenial({ code: 'COMMERCIAL_READ_ONLY', action: 'RENEW' })).toBe(false);
   });
 });

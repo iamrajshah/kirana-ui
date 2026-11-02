@@ -16,6 +16,15 @@ export interface InvoiceQuote {
   gst_amount: string;
   total_amount: string;
   mrp_savings_amount?: string | null;
+  margin_preview?:
+    | { available: false; missingCostItems: number }
+    | {
+        available: true;
+        revenue: string;
+        estimatedCost: string;
+        estimatedProfit: string;
+        marginPercent: number;
+      };
   lines: Array<{
     variant_id: string;
     quantity: number;

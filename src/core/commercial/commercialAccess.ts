@@ -27,6 +27,7 @@ const FEATURE_ROLES: Partial<Record<CommercialFeatureCode, readonly string[]>> =
   EXPORT_EXCEL: ['OWNER', 'MANAGER'],
   BACKUP_RESTORE: ['OWNER'],
   MULTI_FIRM: ['OWNER'],
+  LIVE_MARGIN_PREVIEW: ['OWNER'],
 };
 
 export const canUseCommercialFeature = (
@@ -37,7 +38,7 @@ export const canUseCommercialFeature = (
   if (!access) return true;
   if (access.planCode === 'LEGACY_COMPAT') return true;
   if (['SUSPENDED', 'CANCELLED', 'EXPIRED', 'PROVISIONING'].includes(access.state)) return false;
-  const allowedRoles = FEATURE_ROLES[feature];
+  const allowedRoles = access.featureRoles?.[feature] ?? FEATURE_ROLES[feature];
   return (
     (!allowedRoles || allowedRoles.some((role) => roles.includes(role))) &&
     access.entitlements.includes(feature)

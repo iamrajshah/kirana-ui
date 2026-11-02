@@ -19,7 +19,8 @@ export type CommercialFeatureCode =
   | 'CUSTOM_BARCODE'
   | 'BACKUP_RESTORE'
   | 'MULTI_FIRM'
-  | 'BUSINESS_DOCUMENTS';
+  | 'BUSINESS_DOCUMENTS'
+  | 'LIVE_MARGIN_PREVIEW';
 export type CommercialDenialCode =
   | 'COMMERCIAL_SUSPENDED'
   | 'COMMERCIAL_READ_ONLY'
@@ -36,6 +37,7 @@ export interface CommercialAccessSummary {
   state: CommercialState;
   accessStateVersion: string;
   entitlements: readonly CommercialFeatureCode[];
+  featureRoles?: Partial<Record<CommercialFeatureCode, readonly string[]>>;
   limits: { staff: number | null; firms: number | null };
   demoExpiresAt: string | null;
   endsAt: string | null;
