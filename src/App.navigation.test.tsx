@@ -1,5 +1,5 @@
 import React, { lazy, useEffect, useState } from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   IonApp,
   IonBackButton,
@@ -18,11 +18,16 @@ import {
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Route, Switch, useHistory } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mainLayoutPaths } from '@core/navigation/protectedRoutes';
 import { RoutePageSuspense } from '@layouts/RoutePageSuspense';
 
 setupIonicReact({ mode: 'md' });
+
+afterEach(() => {
+  cleanup();
+  document.body.classList.remove('backdrop-no-scroll');
+});
 
 describe('main application navigation', () => {
   it.each([1, 2, 3, 4, 5])(
