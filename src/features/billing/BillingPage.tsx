@@ -61,7 +61,6 @@ import {
   clearPendingBillingCheckout,
   loadBillingCompletion,
   loadPendingBillingCheckout,
-  persistBillingCompletion,
   persistPendingBillingCheckout,
 } from './billing.logic';
 import { HeldBillsPanel } from './HeldBillsPanel';
@@ -133,11 +132,10 @@ export const BillingPage: React.FC = () => {
   const [scanBarcode, { isFetching: barcodeLoading }] = useLazyScanBarcodeQuery();
   const [createProductFromBarcode, { isLoading: creatingBarcodeProduct }] =
     useCreateProductFromBarcodeMutation();
-  const [searchCustomers, {
-    data: customersData,
-    isLoading: customersLoading,
-    isFetching: customersFetching,
-  }] = useLazySearchCustomersQuery();
+  const [
+    searchCustomers,
+    { data: customersData, isLoading: customersLoading, isFetching: customersFetching },
+  ] = useLazySearchCustomersQuery();
   const [createInvoice, { isLoading: creating }] = useCreateInvoiceMutation();
   const [quoteInvoice, { isLoading: quoting }] = useQuoteInvoiceMutation();
   const [cancelInvoice, { isLoading: cancelling }] = useCancelInvoiceMutation();
@@ -293,12 +291,7 @@ export const BillingPage: React.FC = () => {
   useEffect(() => {
     if (!showCustomerSearch || !customerSearchReady) return;
     void searchCustomers(debouncedCustomerSearchTerm, true);
-  }, [
-    customerSearchReady,
-    debouncedCustomerSearchTerm,
-    searchCustomers,
-    showCustomerSearch,
-  ]);
+  }, [customerSearchReady, debouncedCustomerSearchTerm, searchCustomers, showCustomerSearch]);
   const matchingCustomers = useMemo(
     () =>
       customerSearchReady
@@ -854,20 +847,19 @@ export const BillingPage: React.FC = () => {
     setPendingSplitTenders(undefined);
   };
 
-  const showCompletion = (invoiceId: string) => {
+  const finishSaleAndStartNext = () => {
     clearPendingBillingCheckout();
-    persistBillingCompletion(invoiceId, billingStorageOwner);
-    setCompletionInvoiceId(invoiceId);
+    clearBillingCompletion();
+    setCompletionInvoiceId(null);
     setShowPaymentModal(false);
+    receiptOutput.reset();
     resetForm();
-    if (editInvoiceId || focusedHeldBillId || location.search) {
-      history.replace(ROUTES.BILLING);
-    }
+    history.replace(ROUTES.BILLING);
   };
 
-  const completePayment = (invoiceId: string) => {
+  const completePayment = () => {
     notificationService.success(t('billing.paymentRecordedSuccessfully'));
-    showCompletion(invoiceId);
+    finishSaleAndStartNext();
   };
 
   const validateBillReady = () => {
@@ -980,7 +972,7 @@ export const BillingPage: React.FC = () => {
       if (quickMode) {
         try {
           await recordPayment(invoiceId, payable, quickMode);
-          completePayment(invoiceId);
+          completePayment();
           return;
         } catch (paymentError) {
           setShowPaymentModal(true);
@@ -1006,9 +998,9 @@ export const BillingPage: React.FC = () => {
     try {
       const quote = await fetchCheckoutQuote();
       if (!quote) return;
-      const invoiceId = await createFinalInvoice(quote);
+      await createFinalInvoice(quote);
       notificationService.success(t('billing.creditBillCreated'));
-      showCompletion(invoiceId);
+      finishSaleAndStartNext();
     } catch (error: unknown) {
       if (isConflictError(error)) setHeldConflict(true);
       notificationService.error(apiErrorMessage(error, t('billing.failedToCreateInvoice'), true));
@@ -1052,7 +1044,7 @@ export const BillingPage: React.FC = () => {
     }
     try {
       await recordPayment(pendingInvoiceId, amount, mode, reference);
-      completePayment(pendingInvoiceId);
+      completePayment();
     } catch (error: unknown) {
       notificationService.error(apiErrorMessage(error, t('billing.paymentFailed'), true));
       throw error;
@@ -1090,7 +1082,7 @@ export const BillingPage: React.FC = () => {
         tenders,
         idempotency_key: paymentIdempotencyKey.current,
       }).unwrap();
-      completePayment(pendingInvoiceId);
+      completePayment();
       return 'completed';
     } catch (error: unknown) {
       const paymentErrorMessage = apiErrorMessage(error, t('billing.paymentFailed'), true);
@@ -1105,7 +1097,7 @@ export const BillingPage: React.FC = () => {
       try {
         const refreshed = await getInvoiceForSplitRecovery(pendingInvoiceId, false).unwrap();
         if (refreshed.data && isInvoiceSettled(refreshed.data)) {
-          completePayment(pendingInvoiceId);
+          completePayment();
           return 'completed';
         }
       } catch (refreshError: unknown) {
@@ -1276,11 +1268,11 @@ export const BillingPage: React.FC = () => {
                       {t('billing.customerSearchMinimum')}
                     </p>
                   )}
-                  {customerSearchReady && !customerIndexLoading && matchingCustomers.length === 0 && (
-                    <p className="p-2 text-sm text-gray-500">
-                      {t('billing.noCustomersFound')}
-                    </p>
-                  )}
+                  {customerSearchReady &&
+                    !customerIndexLoading &&
+                    matchingCustomers.length === 0 && (
+                      <p className="p-2 text-sm text-gray-500">{t('billing.noCustomersFound')}</p>
+                    )}
                   {customerSearchReady && (
                     <IonList className="max-h-52 overflow-auto">
                       {matchingCustomers.map((customer) => (
