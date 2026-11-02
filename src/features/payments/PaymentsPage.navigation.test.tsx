@@ -1,5 +1,5 @@
 import React, { type PropsWithChildren } from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   IonApp,
   IonLabel,
@@ -99,7 +99,16 @@ beforeEach(() => {
   window.history.replaceState({}, '', '/payments');
 });
 
-afterEach(cleanup);
+afterEach(async () => {
+  const overlays = Array.from(document.querySelectorAll('ion-modal, ion-toast')) as Array<
+    HTMLElement & { dismiss?: () => Promise<boolean> }
+  >;
+  await act(async () => {
+    await Promise.all(overlays.map((overlay) => overlay.dismiss?.()));
+  });
+  cleanup();
+  document.body.classList.remove('backdrop-no-scroll');
+});
 
 it('dismisses the real Ionic payment modal before Dashboard navigation', async () => {
   render(
