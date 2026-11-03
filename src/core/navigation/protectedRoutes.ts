@@ -46,6 +46,7 @@ const mainLayoutRouteIds = [
   'products',
   'inventory',
   'invoices',
+  'storefront-orders',
   'payments',
   'reports',
   'users',

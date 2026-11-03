@@ -116,6 +116,7 @@ const CreatePurchasePage = lazy(() => import('@features/purchases/CreatePurchase
 const PurchaseDetailPage = lazy(() => import('@features/purchases/PurchaseDetailPage'));
 const ShiftsPage = lazy(() => import('@features/shifts/ShiftsPage'));
 const GettingStartedPage = lazy(() => import('@features/onboarding/GettingStartedPage'));
+const StorefrontOrdersPage = lazy(() => import('@features/storefront-orders/StorefrontOrdersPage'));
 
 const priorityRoutePreloaders: readonly { href: string; load: RouteLoader }[] = [
   { href: ROUTES.BILLING, load: loadBillingPage },
@@ -134,6 +135,7 @@ const mainPageComponents: Record<string, React.ComponentType> = {
   [ROUTES.PURCHASES]: PurchasesPage,
   [ROUTES.INVENTORY]: InventoryPage,
   [ROUTES.INVOICES]: InvoicesPage,
+  [ROUTES.STOREFRONT_ORDERS]: StorefrontOrdersPage,
   [ROUTES.REPORTS]: ReportsPage,
   [ROUTES.USERS]: UsersPage,
   [ROUTES.CATEGORIES]: CategoriesPage,

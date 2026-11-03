@@ -646,6 +646,9 @@
     "enterGSTPercentage": "Enter GST percentage",
     "enterSKUCode": "Enter SKU code",
     "productNameLabel": "Product Name *",
+    "imageUrlLabel": "Product image URL",
+    "imageUrlPlaceholder": "Paste a secure image link",
+    "imagePreview": "Product image preview",
     "categoryLabel": "Category",
     "brandLabel": "Brand",
     "sizeLabel": "Size",
@@ -1797,6 +1800,31 @@
     },
     "product": {
       "units": "units"
+    }
+  },
+  "storefrontOrders": {
+    "title": "Online orders",
+    "subtitle": "Review customer requests before they become bills",
+    "empty": "No online orders yet",
+    "customer": "Customer",
+    "item": "Item",
+    "address": "Delivery address",
+    "note": "Customer note",
+    "fulfillment": { "PICKUP": "Shop pickup", "DELIVERY": "Home delivery" },
+    "status": {
+      "PLACED": "New",
+      "ACCEPTED": "Accepted",
+      "PREPARING": "Preparing",
+      "READY": "Ready",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
+    "actions": {
+      "ACCEPTED": "Accept order",
+      "PREPARING": "Start preparing",
+      "READY": "Mark ready",
+      "COMPLETED": "Complete",
+      "CANCELLED": "Reject / cancel"
     }
   }
 }

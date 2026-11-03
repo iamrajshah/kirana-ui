@@ -72,6 +72,7 @@ export const ProductDetailPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
 
   const [editName, setEditName] = useState('');
+  const [editImageUrl, setEditImageUrl] = useState('');
   const [editCategoryId, setEditCategoryId] = useState<number | null>(null);
   const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
   const [editSellingPrice, setEditSellingPrice] = useState('');
@@ -93,6 +94,7 @@ export const ProductDetailPage: React.FC = () => {
   const handleEditClick = () => {
     if (data?.data) {
       setEditName(data.data.name);
+      setEditImageUrl(data.data.image_url || '');
       setEditCategoryId(
         typeof data.data.category_id === 'string'
           ? parseInt(data.data.category_id)
@@ -169,6 +171,7 @@ export const ProductDetailPage: React.FC = () => {
         id,
         data: {
           name: editName,
+          image_url: editImageUrl.trim() || null,
           category_id: editCategoryId,
           hsn_code: editHsnCode.trim() || null,
         },
@@ -557,6 +560,21 @@ export const ProductDetailPage: React.FC = () => {
                   onChange={setEditName}
                   placeholder={t('products.enterProductName')}
                 />
+
+                <Input
+                  label={t('products.imageUrlLabel')}
+                  value={editImageUrl}
+                  onChange={setEditImageUrl}
+                  placeholder={t('products.imageUrlPlaceholder')}
+                  inputMode="text"
+                />
+                {editImageUrl && (
+                  <img
+                    src={editImageUrl}
+                    alt={editName || t('products.imagePreview')}
+                    style={{ width: 120, height: 120, objectFit: 'contain', borderRadius: 12 }}
+                  />
+                )}
 
                 <Select
                   label={t('products.category')}

@@ -646,6 +646,9 @@
     "enterGSTPercentage": "जीएसटी टक्केवारी प्रविष्ट करा",
     "enterSKUCode": "एसकेयू कोड प्रविष्ट करा",
     "productNameLabel": "उत्पादनाचे नाव *",
+    "imageUrlLabel": "उत्पादन इमेज URL",
+    "imageUrlPlaceholder": "सुरक्षित इमेज लिंक पेस्ट करा",
+    "imagePreview": "उत्पादन इमेज पूर्वदृश्य",
     "categoryLabel": "श्रेणी",
     "brandLabel": "ब्रँड",
     "sizeLabel": "आकार",
@@ -1788,6 +1791,31 @@
     },
     "product": {
       "units": "एकके"
+    }
+  },
+  "storefrontOrders": {
+    "title": "ऑनलाइन ऑर्डर",
+    "subtitle": "बिल बनवण्यापूर्वी ग्राहक विनंती तपासा",
+    "empty": "अजून ऑनलाइन ऑर्डर नाही",
+    "customer": "ग्राहक",
+    "item": "वस्तू",
+    "address": "डिलिव्हरी पत्ता",
+    "note": "ग्राहक सूचना",
+    "fulfillment": { "PICKUP": "दुकानातून घ्या", "DELIVERY": "घरपोच डिलिव्हरी" },
+    "status": {
+      "PLACED": "नवीन",
+      "ACCEPTED": "स्वीकारले",
+      "PREPARING": "तयार होत आहे",
+      "READY": "तयार",
+      "COMPLETED": "पूर्ण",
+      "CANCELLED": "रद्द"
+    },
+    "actions": {
+      "ACCEPTED": "ऑर्डर स्वीकारा",
+      "PREPARING": "तयारी सुरू करा",
+      "READY": "तयार म्हणून चिन्हांकित करा",
+      "COMPLETED": "पूर्ण करा",
+      "CANCELLED": "रद्द करा"
     }
   }
 }

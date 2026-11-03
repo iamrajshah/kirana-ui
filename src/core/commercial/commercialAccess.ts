@@ -28,6 +28,7 @@ const FEATURE_ROLES: Partial<Record<CommercialFeatureCode, readonly string[]>> =
   BACKUP_RESTORE: ['OWNER'],
   MULTI_FIRM: ['OWNER'],
   LIVE_MARGIN_PREVIEW: ['OWNER'],
+  CUSTOMER_STOREFRONT: ['OWNER', 'MANAGER'],
 };
 
 export const canUseCommercialFeature = (
