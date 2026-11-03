@@ -65,12 +65,38 @@ body.dark .purchase-pending-notice strong {
   font-weight: 600;
 }
 
+.purchase-unit-cost-preview {
+  grid-column: 1 / -1;
+  margin: -4px 0 0;
+  color: var(--ion-color-step-650, #40524a);
+  font-size: 0.82rem;
+}
+
+.purchase-quantity-label {
+  color: var(--ion-color-step-700, #33413b);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.purchase-price-field {
+  display: grid;
+  gap: 6px;
+  color: var(--ion-color-step-700, #33413b);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 @media (max-width: 520px) {
   .purchase-unit-conversion {
     grid-template-columns: 1fr;
   }
 
   .purchase-unit-preview {
+    grid-column: auto;
+  }
+
+  .purchase-unit-cost-preview {
     grid-column: auto;
   }
 }

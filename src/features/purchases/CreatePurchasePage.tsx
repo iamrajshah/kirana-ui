@@ -49,6 +49,8 @@ interface CartItem {
   units_per_purchase_unit: number;
 }
 
+const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+
 const CreatePurchasePage: React.FC = () => {
   const { t } = useTranslation();
   const history = useHistory();
@@ -108,7 +110,7 @@ const CreatePurchasePage: React.FC = () => {
         {
           variant_id: variant.id,
           quantity: 1,
-          unit_price: variant.price || 0,
+          unit_price: variant.purchase_price ?? variant.price ?? 0,
           product_name: variant.product_name || 'Unknown Product',
           sku: variant.sku || '',
           purchase_mode: 'UNIT',
@@ -132,13 +134,47 @@ const CreatePurchasePage: React.FC = () => {
     setCart(cart.map((item) => (item.variant_id === variantId ? { ...item, unit_price } : item)));
   };
 
-  const updatePurchaseUnit = (
-    variantId: string,
-    changes: Partial<
-      Pick<CartItem, 'purchase_mode' | 'purchase_unit_label' | 'units_per_purchase_unit'>
-    >
-  ) => {
-    setCart(cart.map((item) => (item.variant_id === variantId ? { ...item, ...changes } : item)));
+  const updatePurchaseUnitLabel = (variantId: string, purchaseUnitLabel: string) => {
+    setCart(
+      cart.map((item) =>
+        item.variant_id === variantId ? { ...item, purchase_unit_label: purchaseUnitLabel } : item
+      )
+    );
+  };
+
+  const updatePurchaseMode = (variantId: string, purchaseMode: CartItem['purchase_mode']) => {
+    setCart(
+      cart.map((item) => {
+        if (item.variant_id !== variantId || item.purchase_mode === purchaseMode) return item;
+        const conversion = Math.max(2, item.units_per_purchase_unit);
+        return {
+          ...item,
+          purchase_mode: purchaseMode,
+          unit_price: roundMoney(
+            purchaseMode === 'PACK' ? item.unit_price * conversion : item.unit_price / conversion
+          ),
+        };
+      })
+    );
+  };
+
+  const updateUnitsPerPurchaseUnit = (variantId: string, nextConversion: number) => {
+    const conversion = Math.max(2, Math.min(10_000, nextConversion || 2));
+    setCart(
+      cart.map((item) => {
+        if (item.variant_id !== variantId) return item;
+        const unitCost =
+          item.purchase_mode === 'PACK'
+            ? item.unit_price / item.units_per_purchase_unit
+            : item.unit_price;
+        return {
+          ...item,
+          units_per_purchase_unit: conversion,
+          unit_price:
+            item.purchase_mode === 'PACK' ? roundMoney(unitCost * conversion) : item.unit_price,
+        };
+      })
+    );
   };
 
   const removeFromCart = (variantId: string) => {
@@ -372,9 +408,10 @@ const CreatePurchasePage: React.FC = () => {
                             aria-label={`${item.product_name} ${t('purchases.enteredAs')}`}
                             value={item.purchase_mode}
                             onChange={(event) =>
-                              updatePurchaseUnit(item.variant_id, {
-                                purchase_mode: event.target.value as 'UNIT' | 'PACK',
-                              })
+                              updatePurchaseMode(
+                                item.variant_id,
+                                event.target.value as 'UNIT' | 'PACK'
+                              )
                             }
                           >
                             <option value="UNIT">{t('purchases.individualUnits')}</option>
@@ -390,9 +427,7 @@ const CreatePurchasePage: React.FC = () => {
                                 value={item.purchase_unit_label}
                                 maxLength={30}
                                 onChange={(event) =>
-                                  updatePurchaseUnit(item.variant_id, {
-                                    purchase_unit_label: event.target.value,
-                                  })
+                                  updatePurchaseUnitLabel(item.variant_id, event.target.value)
                                 }
                               />
                             </label>
@@ -405,12 +440,10 @@ const CreatePurchasePage: React.FC = () => {
                                 max="10000"
                                 value={item.units_per_purchase_unit}
                                 onChange={(event) =>
-                                  updatePurchaseUnit(item.variant_id, {
-                                    units_per_purchase_unit: Math.max(
-                                      2,
-                                      Math.min(10_000, Number(event.target.value) || 2)
-                                    ),
-                                  })
+                                  updateUnitsPerPurchaseUnit(
+                                    item.variant_id,
+                                    Number(event.target.value)
+                                  )
                                 }
                               />
                             </label>
@@ -420,6 +453,15 @@ const CreatePurchasePage: React.FC = () => {
                                 label: item.purchase_unit_label || t('purchases.boxOrPack'),
                                 factor: item.units_per_purchase_unit,
                                 units: item.quantity * item.units_per_purchase_unit,
+                              })}
+                            </p>
+                            <p className="purchase-unit-cost-preview">
+                              {t('purchases.packCostPreview', {
+                                packPrice: formatCurrency(item.unit_price),
+                                label: item.purchase_unit_label || t('purchases.boxOrPack'),
+                                unitPrice: formatCurrency(
+                                  item.unit_price / item.units_per_purchase_unit
+                                ),
                               })}
                             </p>
                           </div>
@@ -435,6 +477,11 @@ const CreatePurchasePage: React.FC = () => {
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="purchase-quantity-label">
+                            {item.purchase_mode === 'PACK'
+                              ? t('purchases.packQuantity')
+                              : t('purchases.unitQuantity')}
+                          </span>
                           <IonButton
                             size="small"
                             fill="clear"
@@ -454,7 +501,12 @@ const CreatePurchasePage: React.FC = () => {
                           </IonButton>
                         </div>
 
-                        <div style={{ flex: 1 }}>
+                        <label className="purchase-price-field" style={{ flex: 1 }}>
+                          <span>
+                            {item.purchase_mode === 'PACK'
+                              ? t('purchases.pricePerPack')
+                              : t('purchases.unitPrice')}
+                          </span>
                           <input
                             type="number"
                             value={item.unit_price}
@@ -474,11 +526,11 @@ const CreatePurchasePage: React.FC = () => {
                                 : `${item.product_name} ${t('purchases.unitPrice')}`
                             }
                           />
-                        </div>
+                        </label>
                       </div>
 
                       <p style={{ marginTop: '8px', color: 'var(--ion-color-primary)' }}>
-                        {t('common.total')} {formatCurrency(item.quantity * item.unit_price)}
+                        {t('purchases.lineTotal')} {formatCurrency(item.quantity * item.unit_price)}
                       </p>
                     </IonLabel>
 

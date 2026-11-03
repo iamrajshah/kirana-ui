@@ -24,7 +24,15 @@ vi.mock('../../core/api/productApi', () => ({
     vi.fn(),
     {
       data: {
-        data: [{ id: '1', product_name: 'Salt', sku: 'SALT-1', price: 50 }],
+        data: [
+          {
+            id: '1',
+            product_name: 'Salt',
+            sku: 'SALT-1',
+            price: 50,
+            purchase_price: 40,
+          },
+        ],
       },
       isLoading: false,
     },
@@ -111,6 +119,13 @@ describe('CreatePurchasePage pending amount', () => {
     fireEvent.change(screen.getByRole('combobox', { name: /Salt purchases.enteredAs/ }), {
       target: { value: 'PACK' },
     });
+
+    expect(
+      (screen.getByRole('spinbutton', { name: /Salt purchases.pricePerPack/ }) as HTMLInputElement)
+        .value
+    ).toBe('800');
+    expect(screen.getByText(/purchases.packCostPreview/)).toBeTruthy();
+
     fireEvent.change(screen.getByRole('spinbutton', { name: /Salt purchases.unitsPerPack/ }), {
       target: { value: '12' },
     });
@@ -120,5 +135,9 @@ describe('CreatePurchasePage pending amount', () => {
       (screen.getByRole('spinbutton', { name: /Salt purchases.unitsPerPack/ }) as HTMLInputElement)
         .value
     ).toBe('12');
+    expect(
+      (screen.getByRole('spinbutton', { name: /Salt purchases.pricePerPack/ }) as HTMLInputElement)
+        .value
+    ).toBe('480');
   });
 });

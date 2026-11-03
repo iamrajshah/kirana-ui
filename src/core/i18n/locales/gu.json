@@ -920,6 +920,10 @@
     "unitsPerPack": "એક પેકમાં વેચાણ એકમો",
     "pricePerPack": "પ્રતિ બોક્સ / પેક કિંમત",
     "stockConversionPreview": "{{count}} {{label}} × {{factor}} = સ્ટોકમાં {{units}} વેચાણ એકમો",
+    "packCostPreview": "{{packPrice}} પ્રતિ {{label}} · {{unitPrice}} પ્રતિ વેચાણ એકમ",
+    "packQuantity": "બોક્સ / પેક",
+    "unitQuantity": "વેચાણ એકમો",
+    "lineTotal": "લાઇન કુલ",
     "normalizedStockQuantity": "સ્ટોકમાં {{quantity}} વેચાણ એકમો (પ્રતિ પેક {{factor}})",
     "invalidPackConversion": "પેકનું નામ અને પ્રતિ પેક ઓછામાં ઓછા 2 વેચાણ એકમો દાખલ કરો"
   },
