@@ -1812,6 +1812,14 @@
     "note": "Customer note",
     "ordersTab": "Orders",
     "offersTab": "Offers",
+    "share": {
+      "title": "Customer shop link",
+      "help": "Copy or share this tenant-specific link so customers can browse offers and place orders.",
+      "message": "Shop online from our Kirana store.",
+      "copy": "Copy link",
+      "copied": "Link copied",
+      "share": "Share with customers"
+    },
     "offerEditor": {
       "title": "Publish a shop offer",
       "help": "Create a banner for your customer storefront. Owners and managers can publish or pause it anytime.",
