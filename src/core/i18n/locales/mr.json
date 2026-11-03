@@ -925,6 +925,10 @@
     "unitsPerPack": "एका पॅकमधील विक्री एकके",
     "pricePerPack": "प्रति बॉक्स / पॅक किंमत",
     "stockConversionPreview": "{{count}} {{label}} × {{factor}} = स्टॉकमध्ये {{units}} विक्री एकके",
+    "packCostPreview": "{{packPrice}} प्रति {{label}} · {{unitPrice}} प्रति विक्री एकक",
+    "packQuantity": "बॉक्स / पॅक",
+    "unitQuantity": "विक्री एकके",
+    "lineTotal": "ओळीची एकूण रक्कम",
     "normalizedStockQuantity": "स्टॉकमध्ये {{quantity}} विक्री एकके (प्रति पॅक {{factor}})",
     "invalidPackConversion": "पॅकचे नाव आणि प्रति पॅक किमान 2 विक्री एकके भरा"
   },

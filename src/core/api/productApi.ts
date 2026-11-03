@@ -21,6 +21,7 @@ export interface BillingSearchVariant {
   size?: string | null;
   packaging?: Packaging | null;
   price: number;
+  purchase_price?: number;
   mrp_price?: number;
   gst_percent?: number | null;
   sku: string;

@@ -925,6 +925,10 @@
     "unitsPerPack": "Sale units in one pack",
     "pricePerPack": "Price per box / pack",
     "stockConversionPreview": "{{count}} {{label}} × {{factor}} = {{units}} sale units added to stock",
+    "packCostPreview": "{{packPrice}} per {{label}} · {{unitPrice}} per sale unit",
+    "packQuantity": "Boxes / packs",
+    "unitQuantity": "Sale units",
+    "lineTotal": "Line total",
     "normalizedStockQuantity": "{{quantity}} sale units added to stock ({{factor}} per pack)",
     "invalidPackConversion": "Enter a pack name and at least 2 sale units per pack"
   },
