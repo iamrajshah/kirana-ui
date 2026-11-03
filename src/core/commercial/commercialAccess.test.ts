@@ -38,6 +38,56 @@ describe('commercial client helpers', () => {
     ).toBe(true);
   });
 
+  it('keeps legacy entitlement compatibility without bypassing lifecycle or role policy', () => {
+    const legacy = {
+      ...summary,
+      planCode: 'LEGACY_COMPAT' as const,
+      planLabel: 'Kirana',
+      entitlements: [] as const,
+    };
+
+    expect(canUseCommercialFeature(['OWNER'], legacy, 'CUSTOM_BARCODE')).toBe(true);
+    expect(canUseCommercialFeature(['CASHIER'], legacy, 'CUSTOM_BARCODE')).toBe(false);
+    expect(
+      canUseCommercialFeature(
+        ['OWNER'],
+        { ...legacy, featureRoles: { CUSTOM_BARCODE: [] } },
+        'CUSTOM_BARCODE'
+      )
+    ).toBe(false);
+    expect(
+      canUseCommercialFeature(
+        ['OWNER'],
+        { ...legacy, state: 'READ_ONLY' },
+        'CUSTOM_BARCODE'
+      )
+    ).toBe(false);
+  });
+
+  it('honors legacy dependency role restrictions while bypassing dependency entitlements', () => {
+    const legacy = {
+      ...summary,
+      planCode: 'LEGACY_COMPAT' as const,
+      planLabel: 'Kirana',
+      entitlements: [] as const,
+      featureRoles: {
+        EXPIRY_TRACKING: ['OWNER'],
+        INVENTORY: [] as readonly string[],
+      },
+    };
+
+    expect(canUseCommercialFeature(['OWNER'], legacy, 'EXPIRY_TRACKING')).toBe(false);
+    expect(commercialFeatureDependencyFailure(['OWNER'], legacy, 'EXPIRY_TRACKING')).toBe(
+      'INVENTORY'
+    );
+
+    const enabled = {
+      ...legacy,
+      featureRoles: { EXPIRY_TRACKING: ['OWNER'], INVENTORY: ['OWNER'] },
+    };
+    expect(canUseCommercialFeature(['OWNER'], enabled, 'EXPIRY_TRACKING')).toBe(true);
+  });
+
   it('keeps GST/CA reports owner-only by fallback while honoring runtime role policy', () => {
     const gstSummary = {
       ...summary,
