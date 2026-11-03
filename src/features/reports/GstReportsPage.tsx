@@ -53,7 +53,13 @@ const GstReportsPage: React.FC = () => {
     setFirmId(firms.find((firm) => firm.is_default_sales)?.id ?? firms[0].id);
   }, [firmId, firms]);
 
-  const params = { from, to, firmId };
+  // The server resolves the tenant's default firm without MULTI_FIRM access.
+  // Only an explicit alternate/historical firm requires the firm selector contract.
+  const params = {
+    from,
+    to,
+    ...(!selectedFirm?.is_default_sales ? { firmId } : {}),
+  };
   const skip = !from || !to || from > to || !firmId;
   const summary = useGetGstSummaryQuery(params, { skip });
   const sales = useGetGstSalesRegisterQuery(params, { skip: skip || view !== 'SALES' });
@@ -373,61 +379,136 @@ const GstReportsPage: React.FC = () => {
           ) : view === 'PURCHASES' ? (
             renderPurchaseRegister(purchases.data?.data.rows ?? [])
           ) : view === 'HSN' ? (
-            <section className="gst-register-section">
-              <div className="gst-section-heading">
-                <span>{t('gstReports.records', { count: hsn.data?.data.rows.length ?? 0 })}</span>
-                {downloadButton('hsn-summary')}
-              </div>
-              <div className="gst-register-grid">
-                {(hsn.data?.data.rows ?? []).map((row) => (
-                  <article
-                    key={`${row.hsnCode}-${row.gstRate}`}
-                    className="workspace-record gst-register-card"
-                  >
-                    <div>
-                      <strong>{row.hsnCode}</strong>
-                      <span>
-                        {t('gstReports.gstRateLabel', {
-                          value: formatNumber(row.gstRate),
-                        })}
-                      </span>
-                    </div>
-                    <dl>
-                      <div>
-                        <dt>{t('gstReports.saleQuantity')}</dt>
-                        <dd>{formatNumber(row.saleQuantity)}</dd>
-                      </div>
-                      <div>
-                        <dt>{t('gstReports.saleTaxableValue')}</dt>
-                        <dd>{formatCurrency(row.saleTaxableValue)}</dd>
-                      </div>
-                      <div>
-                        <dt>{t('gstReports.outputTax')}</dt>
-                        <dd>{formatCurrency(row.outputTax)}</dd>
-                      </div>
-                      <div>
-                        <dt>{t('gstReports.purchaseQuantity')}</dt>
-                        <dd>{formatNumber(row.purchaseQuantity)}</dd>
-                      </div>
-                      <div>
-                        <dt>{t('gstReports.purchaseTaxableValue')}</dt>
-                        <dd>{formatCurrency(row.purchaseTaxableValue)}</dd>
-                      </div>
-                      <div>
-                        <dt>{t('gstReports.inputTax')}</dt>
-                        <dd>{formatCurrency(row.inputTax)}</dd>
-                      </div>
-                      {typeof row.ineligibleInputTax === 'number' && (
+            <>
+              <section className="gst-register-section">
+                <div className="gst-section-heading">
+                  <div>
+                    <strong>{t('gstReports.outwardHsnTable')}</strong>
+                    <p>{t('gstReports.outwardHsnHint')}</p>
+                    <span>
+                      {t('gstReports.records', { count: hsn.data?.data.rows.length ?? 0 })}
+                    </span>
+                  </div>
+                  {downloadButton('hsn-summary')}
+                </div>
+                {(hsn.data?.data.rows.length ?? 0) === 0 ? (
+                  <div className="workspace-state">{t('gstReports.noRecords')}</div>
+                ) : (
+                  <div className="gst-register-grid">
+                    {(hsn.data?.data.rows ?? []).map((row) => (
+                      <article
+                        key={`${row.supplyCategory}-${row.hsnCode}-${row.uqcCode}-${row.gstRate}`}
+                        className="workspace-record gst-register-card"
+                      >
                         <div>
-                          <dt>{t('gstReports.ineligibleInputTax')}</dt>
-                          <dd>{formatCurrency(row.ineligibleInputTax)}</dd>
+                          <strong>{row.hsnCode}</strong>
+                          <span>{t(`gstReports.supplyCategory.${row.supplyCategory}`)}</span>
                         </div>
-                      )}
-                    </dl>
-                  </article>
-                ))}
-              </div>
-            </section>
+                        <small>
+                          {t('gstReports.uqcCode')}: {row.uqcCode} ·{' '}
+                          {t('gstReports.gstRateLabel', {
+                            value: formatNumber(row.gstRate),
+                          })}
+                        </small>
+                        <dl>
+                          <div>
+                            <dt>{t('gstReports.quantity')}</dt>
+                            <dd>{formatNumber(row.totalQuantity)}</dd>
+                          </div>
+                          <div>
+                            <dt>{t('gstReports.taxableValue')}</dt>
+                            <dd>{formatCurrency(row.taxableValue)}</dd>
+                          </div>
+                          <div>
+                            <dt>{t('gstReports.cgst')}</dt>
+                            <dd>{formatCurrency(row.cgst)}</dd>
+                          </div>
+                          <div>
+                            <dt>{t('gstReports.sgst')}</dt>
+                            <dd>{formatCurrency(row.sgst)}</dd>
+                          </div>
+                          <div>
+                            <dt>{t('gstReports.igst')}</dt>
+                            <dd>{formatCurrency(row.igst)}</dd>
+                          </div>
+                          <div>
+                            <dt>{t('gstReports.totalTax')}</dt>
+                            <dd>{formatCurrency(row.totalTax)}</dd>
+                          </div>
+                        </dl>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </section>
+              <section className="gst-register-section">
+                <div className="gst-section-heading">
+                  <div>
+                    <strong>{t('gstReports.inwardHsnAnalysis')}</strong>
+                    <p>{t('gstReports.inwardHsnHint')}</p>
+                    <span>
+                      {t('gstReports.records', {
+                        count: hsn.data?.data.purchaseAnalysis?.length ?? 0,
+                      })}
+                    </span>
+                  </div>
+                </div>
+                {(hsn.data?.data.purchaseAnalysis?.length ?? 0) === 0 ? (
+                  <div className="workspace-state">{t('gstReports.noRecords')}</div>
+                ) : (
+                  <div className="gst-register-grid">
+                    {(hsn.data?.data.purchaseAnalysis ?? []).map((row) => (
+                      <article
+                        key={`${row.hsnCode}-${row.uqcCode}-${row.gstRate}`}
+                        className="workspace-record gst-register-card"
+                      >
+                        <div>
+                          <strong>{row.hsnCode}</strong>
+                          <span>
+                            {t('gstReports.gstRateLabel', {
+                              value: formatNumber(row.gstRate),
+                            })}
+                          </span>
+                        </div>
+                        <small>
+                          {t('gstReports.uqcCode')}: {row.uqcCode}
+                        </small>
+                        <dl>
+                          <div>
+                            <dt>{t('gstReports.quantity')}</dt>
+                            <dd>{formatNumber(row.totalQuantity)}</dd>
+                          </div>
+                          <div>
+                            <dt>{t('gstReports.taxableValue')}</dt>
+                            <dd>{formatCurrency(row.taxableValue)}</dd>
+                          </div>
+                          <div>
+                            <dt>{t('gstReports.cgst')}</dt>
+                            <dd>{formatCurrency(row.inputCgst)}</dd>
+                          </div>
+                          <div>
+                            <dt>{t('gstReports.sgst')}</dt>
+                            <dd>{formatCurrency(row.inputSgst)}</dd>
+                          </div>
+                          <div>
+                            <dt>{t('gstReports.igst')}</dt>
+                            <dd>{formatCurrency(row.inputIgst)}</dd>
+                          </div>
+                          <div>
+                            <dt>{t('gstReports.eligibleInputTax')}</dt>
+                            <dd>{formatCurrency(row.eligibleInputTax)}</dd>
+                          </div>
+                          <div>
+                            <dt>{t('gstReports.ineligibleInputTax')}</dt>
+                            <dd>{formatCurrency(row.ineligibleInputTax)}</dd>
+                          </div>
+                        </dl>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </>
           ) : null}
 
           {activeWarnings.length > 0 && (

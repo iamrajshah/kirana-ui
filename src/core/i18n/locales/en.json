@@ -2052,7 +2052,14 @@
     "paymentExceedsTotal": "Payment cannot exceed the reviewed purchase total.",
     "confirming": "Creating purchase…",
     "confirmPurchase": "Confirm and create purchase",
-    "noMutationBeforeConfirm": "Inventory and supplier balances change only after this confirmation."
+    "noMutationBeforeConfirm": "Inventory and supplier balances change only after this confirmation.",
+    "recovering": "Restoring your unfinished bill review…",
+    "recoveryFailed": "This saved bill review could not be restored. Discard it to upload the bill again.",
+    "recoveredHeading": "Unfinished bill review restored",
+    "recoveredReview": "Your reviewed edits were kept. Check every field again before confirming.",
+    "confirmRetryHeading": "Confirmation result needs verification",
+    "confirmRetryHint": "The earlier confirmation may have reached the server. Review the restored bill and confirm again safely; an already-created purchase will not be duplicated.",
+    "discardRecovery": "Discard saved review"
   },
   "gstReports": {
     "title": "GST & CA reports",
@@ -2103,6 +2110,17 @@
     "taxRate": "Tax rate",
     "gstRateLabel": "{{value}}% GST",
     "totalTax": "Total tax",
+    "outwardHsnTable": "Outward HSN / Table 12 preparation",
+    "outwardHsnHint": "B2B and B2C outward supplies grouped by HSN, UQC and GST rate.",
+    "inwardHsnAnalysis": "Inward purchase analysis",
+    "inwardHsnHint": "Input-tax analysis is shown separately and is not included in outward Table 12 quantities.",
+    "uqcCode": "UQC",
+    "eligibleInputTax": "Eligible input tax",
+    "supplyCategory": {
+      "B2B": "B2B registered supply",
+      "B2C": "B2C consumer supply",
+      "UNCLASSIFIED": "Unclassified supply"
+    },
     "disclaimerTitle": "Preparation report",
     "disclaimer": "These reports help prepare records for your CA. They do not file GST returns and should be verified before submission."
   },

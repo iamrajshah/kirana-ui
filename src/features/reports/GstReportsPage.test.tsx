@@ -27,26 +27,26 @@ vi.mock('@core/api/firmApi', () => ({
   useGetFirmsQuery: (params?: unknown) => {
     state.firmsQuery(params);
     return {
-    data: {
       data: {
-        firms: [
-          {
-            id: '3',
-            code: 'JT',
-            display_name: 'Jitendra Trading',
-            is_active: true,
-            is_default_sales: true,
-          },
-          {
-            id: '4',
-            code: 'JAY',
-            display_name: 'Jayesh Trading',
-            is_active: false,
-            is_default_sales: false,
-          },
-        ],
+        data: {
+          firms: [
+            {
+              id: '3',
+              code: 'JT',
+              display_name: 'Jitendra Trading',
+              is_active: true,
+              is_default_sales: true,
+            },
+            {
+              id: '4',
+              code: 'JAY',
+              display_name: 'Jayesh Trading',
+              is_active: false,
+              is_default_sales: false,
+            },
+          ],
+        },
       },
-    },
     };
   },
 }));
@@ -164,14 +164,29 @@ beforeEach(() => {
       ...base,
       rows: [
         {
+          supplyCategory: 'B2B',
           hsnCode: '1512',
+          uqcCode: 'LTR',
           gstRate: 5,
-          saleQuantity: 2,
-          saleTaxableValue: 100,
-          outputTax: 5,
-          purchaseQuantity: 1,
-          purchaseTaxableValue: 40,
-          inputTax: 2,
+          totalQuantity: 2,
+          taxableValue: 100,
+          cgst: 2.5,
+          sgst: 2.5,
+          igst: 0,
+          totalTax: 5,
+        },
+      ],
+      purchaseAnalysis: [
+        {
+          hsnCode: '1512',
+          uqcCode: 'LTR',
+          gstRate: 5,
+          totalQuantity: 1,
+          taxableValue: 40,
+          inputCgst: 1,
+          inputSgst: 1,
+          inputIgst: 0,
+          eligibleInputTax: 2,
           ineligibleInputTax: 0.5,
         },
       ],
@@ -211,7 +226,7 @@ describe('GST / CA report route', () => {
     expect(document.body.textContent).not.toMatch(/NaN|undefined/);
     await waitFor(() =>
       expect(state.summary).toHaveBeenLastCalledWith(
-        expect.objectContaining({ firmId: '3' }),
+        expect.not.objectContaining({ firmId: expect.anything() }),
         expect.anything()
       )
     );
@@ -235,7 +250,11 @@ describe('GST / CA report route', () => {
     expect(await screen.findByText('SUP-1')).toBeTruthy();
     expect(screen.getByText('gstReports.taxSnapshotIncomplete')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'gstReports.tabs.HSN' }));
-    expect(await screen.findByText('1512')).toBeTruthy();
+    expect((await screen.findAllByText('1512')).length).toBe(2);
+    expect(screen.getByText('gstReports.supplyCategory.B2B')).toBeTruthy();
+    expect(screen.getByText('gstReports.outwardHsnTable')).toBeTruthy();
+    expect(screen.getByText('gstReports.inwardHsnAnalysis')).toBeTruthy();
+    expect(screen.getByText('gstReports.eligibleInputTax')).toBeTruthy();
     expect(screen.getByText('gstReports.ineligibleInputTax')).toBeTruthy();
   });
 
@@ -246,7 +265,7 @@ describe('GST / CA report route', () => {
     await waitFor(() =>
       expect(state.download).toHaveBeenCalledWith({
         report: 'summary',
-        params: expect.objectContaining({ firmId: '3' }),
+        params: expect.not.objectContaining({ firmId: expect.anything() }),
       })
     );
     expect(state.webDownload).toHaveBeenCalledWith(

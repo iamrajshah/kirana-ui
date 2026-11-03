@@ -136,7 +136,13 @@ Test server denial, not only hidden navigation.
 5. Tick the review acknowledgement and Confirm once. Verify exactly one purchase,
    correct stock/batches, supplier balance, dashboard and reports. Retry/reload
    must not duplicate the purchase.
-6. Disable `PURCHASE_BILL_IMPORT` or its role policy. The Purchases action and
+6. Before confirmation, edit a mapped line, refresh the browser and reopen the
+   copied `?draftId=` URL. The same tenant/user session must restore the edit but
+   reset review and mismatch acknowledgements. Simulate a lost confirmation
+   response, refresh, then confirm the recovered `CONFIRMED` draft again. Verify
+   the original purchase opens and no second purchase or stock mutation occurs.
+   Another tenant or user must never receive that browser-session recovery data.
+7. Disable `PURCHASE_BILL_IMPORT` or its role policy. The Purchases action and
    direct `/purchases/import-bill` route/API must be denied.
 
 ### GST & CA reports
@@ -145,9 +151,15 @@ Test server denial, not only hidden navigation.
    to purchases. Verify CGST/SGST versus IGST components and estimated net
    liability; do not accept negative or stale totals after a payment/write.
 2. Switch between legal firms. Confirm a firm is always explicit and no other
-   tenant's or unselected firm's rows appear.
-3. Open Sales register, Purchase register and HSN summary, then download each
-   CSV. Verify authentication, headers, date range, row totals and UTF-8 content.
+   tenant's or unselected firm's rows appear. For a one-firm DEMO tenant, the
+   selected default firm must load without an explicit `firmId` or `MULTI_FIRM`;
+   selecting an alternate/inactive historical firm must send its ID and enforce
+   multi-firm access. The downloaded filename must still name the displayed firm.
+3. Open Sales register, Purchase register and HSN summary. Verify outward HSN
+   rows are split B2B/B2C and grouped by HSN + UQC + rate with separate
+   CGST/SGST/IGST, while inward purchase/input-tax analysis appears in its own
+   section and never changes outward Table 12 quantities. Download each CSV and
+   verify authentication, headers, date range, row totals and UTF-8 content.
    On Android the native share sheet must receive a meaningful `.csv` file; on
    web/tablet it must download without navigating away from the report.
 4. Confirm the disclaimer states these are CA-preparation estimates, not filing,

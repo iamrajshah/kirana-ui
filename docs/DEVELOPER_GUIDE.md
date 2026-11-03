@@ -60,6 +60,11 @@ actionable messages and retain the user's entered data.
   infer remaining stock or expiry risk.
 - Purchase-bill extraction is non-mutating. Only the acknowledged confirm call
   may create a purchase or increase inventory, and retries must remain idempotent.
+- Purchase-import recovery uses a tenant/user-scoped `sessionStorage` record plus
+  the `draftId` query parameter. Hydrate through `getPurchaseImportDraft`, retain
+  safe reviewed edits, reset all acknowledgements, and retry the same confirm
+  endpoint after an uncertain response. Never clear recovery on a network error
+  or key it globally across tenants.
 - Browser image OCR is lazy and local. Keep `tesseract.js`, worker/core and
   language data out of the initial POS chunk; do not replace it with paid OCR or
   Railway CPU work without an explicit architecture decision.

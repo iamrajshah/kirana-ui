@@ -26,6 +26,7 @@ import {
   type PurchaseImportLine,
   useConfirmPurchaseImportMutation,
   useExtractPurchaseBillMutation,
+  useGetPurchaseImportDraftQuery,
 } from '@core/api/purchaseImportApi';
 import { useGetSuppliersQuery } from '@core/api/supplierApi';
 import { useGetFirmsQuery } from '@core/api/firmApi';
@@ -46,11 +47,83 @@ const ACCEPTED_FILE_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png
 
 type EditableDraft = PurchaseImportDraft & { items: PurchaseImportLine[] };
 
+interface PurchaseImportRecoveryState {
+  version: 1;
+  draft: EditableDraft;
+  selectedSupplierId: string;
+  selectedFirmId: string;
+  firmWasOverridden: boolean;
+  pricesIncludeTax: boolean;
+  paymentAmount: string;
+  paymentMode: 'CASH' | 'UPI' | 'CARD' | 'BANK';
+}
+
+const PURCHASE_IMPORT_RECOVERY_PREFIX = 'kirana.purchase-import-draft';
+
+const normalizeDraft = (draft: PurchaseImportDraft): EditableDraft => ({
+  ...draft,
+  warnings: draft.warnings ?? [],
+  items: draft.items.map((item) => ({
+    ...item,
+    purchaseMode: item.purchaseMode ?? 'UNIT',
+    purchaseUnitLabel: item.purchaseUnitLabel ?? 'Box',
+    unitsPerPurchaseUnit: item.unitsPerPurchaseUnit ?? 20,
+  })),
+});
+
+const readRecoveryState = (key: string | null): PurchaseImportRecoveryState | null => {
+  if (!key) return null;
+  try {
+    const stored = sessionStorage.getItem(key);
+    if (!stored) return null;
+    const parsed = JSON.parse(stored) as PurchaseImportRecoveryState;
+    return parsed.version === 1 &&
+      typeof parsed.draft?.draftId === 'string' &&
+      Array.isArray(parsed.draft.items)
+      ? parsed
+      : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeRecoveryState = (key: string | null, state: PurchaseImportRecoveryState) => {
+  if (!key) return;
+  try {
+    sessionStorage.setItem(key, JSON.stringify(state));
+  } catch {
+    // URL + server draft recovery remains available when browser storage is unavailable.
+  }
+};
+
+const removeRecoveryState = (key: string | null) => {
+  if (!key) return;
+  try {
+    sessionStorage.removeItem(key);
+  } catch {
+    // Browser storage may be unavailable; route recovery is still cleared below.
+  }
+};
+
+const draftIdFromLocation = () => {
+  if (typeof window === 'undefined') return '';
+  return new URLSearchParams(window.location.search).get('draftId')?.trim() ?? '';
+};
+
 const PurchaseBillImportPage: React.FC = () => {
   const { t } = useTranslation();
   const history = useHistory();
   const currentUser = useAppSelector(selectCurrentUser);
   const commercialAccess = useAppSelector(selectCommercialAccess);
+  const recoveryStorageKey = useMemo(() => {
+    if (!currentUser?.id || !currentUser.tenant?.id) return null;
+    return `${PURCHASE_IMPORT_RECOVERY_PREFIX}:${currentUser.tenant.id}:${currentUser.id}`;
+  }, [currentUser?.id, currentUser?.tenant?.id]);
+  const initialRecovery = useMemo(
+    () => readRecoveryState(recoveryStorageKey),
+    [recoveryStorageKey]
+  );
+  const initialRecoveryDraftId = draftIdFromLocation() || initialRecovery?.draft.draftId || '';
   const canTrackExpiry = canUseCommercialFeature(
     currentUser?.roles ?? [],
     commercialAccess,
@@ -62,6 +135,17 @@ const PurchaseBillImportPage: React.FC = () => {
   const manualLineSequence = useRef(0);
   const [extractBill, { isLoading: isExtracting }] = useExtractPurchaseBillMutation();
   const [confirmImport, { isLoading: isConfirming }] = useConfirmPurchaseImportMutation();
+  const [recoveryDraftId, setRecoveryDraftId] = useState(initialRecoveryDraftId);
+  const [shouldHydrateRecovery, setShouldHydrateRecovery] = useState(
+    Boolean(initialRecoveryDraftId)
+  );
+  const {
+    data: recoveryResponse,
+    isFetching: isRecovering,
+    isError: recoveryFailed,
+  } = useGetPurchaseImportDraftQuery(recoveryDraftId, {
+    skip: !shouldHydrateRecovery || !recoveryDraftId,
+  });
   const [searchVariants, { data: variantResults, isFetching: isSearching }] =
     useLazySearchVariantsQuery();
   const { data: suppliersResponse } = useGetSuppliersQuery({ limit: 100, isActive: true });
@@ -81,6 +165,7 @@ const PurchaseBillImportPage: React.FC = () => {
   const [error, setError] = useState('');
   const [confirmedReview, setConfirmedReview] = useState(false);
   const [ocrProgress, setOcrProgress] = useState<PurchaseBillOcrProgress | null>(null);
+  const [recoveryNotice, setRecoveryNotice] = useState<'RECOVERED' | 'CONFIRMED' | null>(null);
 
   const calculated = useMemo(() => {
     return calculatePurchaseImportTotals(draft?.items ?? [], pricesIncludeTax);
@@ -99,6 +184,81 @@ const PurchaseBillImportPage: React.FC = () => {
       reconcilePurchaseFirmId(supplier, firms, currentFirmId, firmWasOverridden)
     );
   }, [firmWasOverridden, firms, selectedSupplierId, suppliers]);
+
+  useEffect(() => {
+    if (!shouldHydrateRecovery || !recoveryResponse?.data) return;
+    const serverDraft = recoveryResponse.data;
+    const saved = initialRecovery?.draft.draftId === serverDraft.draftId ? initialRecovery : null;
+    const recoveredDraft = normalizeDraft(saved?.draft ?? serverDraft);
+    setDraft({
+      ...recoveredDraft,
+      status: serverDraft.status,
+      warnings: Array.from(
+        new Set([...(serverDraft.warnings ?? []), ...(recoveredDraft.warnings ?? [])])
+      ),
+    });
+    setSelectedSupplierId(saved?.selectedSupplierId || recoveredDraft.supplier?.id || '');
+    setSelectedFirmId(saved?.selectedFirmId ?? '');
+    setFirmWasOverridden(saved?.firmWasOverridden ?? false);
+    setPricesIncludeTax(saved?.pricesIncludeTax ?? true);
+    setPaymentAmount(saved?.paymentAmount ?? '0');
+    setPaymentMode(saved?.paymentMode ?? 'CASH');
+    setConfirmedReview(false);
+    setConfirmedMismatch(false);
+    setError('');
+    setRecoveryNotice(serverDraft.status === 'CONFIRMED' ? 'CONFIRMED' : 'RECOVERED');
+    setShouldHydrateRecovery(false);
+  }, [initialRecovery, recoveryResponse?.data, shouldHydrateRecovery]);
+
+  useEffect(() => {
+    if (!shouldHydrateRecovery || !recoveryFailed) return;
+    setError(t('purchaseImport.recoveryFailed'));
+    setShouldHydrateRecovery(false);
+  }, [recoveryFailed, shouldHydrateRecovery, t]);
+
+  useEffect(() => {
+    if (!draft || !recoveryStorageKey) return;
+    const recoveryState: PurchaseImportRecoveryState = {
+      version: 1,
+      draft,
+      selectedSupplierId,
+      selectedFirmId,
+      firmWasOverridden,
+      pricesIncludeTax,
+      paymentAmount,
+      paymentMode,
+    };
+    writeRecoveryState(recoveryStorageKey, recoveryState);
+  }, [
+    draft,
+    firmWasOverridden,
+    paymentAmount,
+    paymentMode,
+    pricesIncludeTax,
+    recoveryStorageKey,
+    selectedFirmId,
+    selectedSupplierId,
+  ]);
+
+  useEffect(() => {
+    if (!draft?.draftId) return;
+    const search = new URLSearchParams(window.location.search);
+    if (search.get('draftId') === draft.draftId) return;
+    search.set('draftId', draft.draftId);
+    history.replace(`${ROUTES.PURCHASE_IMPORT}?${search.toString()}`);
+  }, [draft?.draftId, history]);
+
+  const clearRecovery = () => {
+    removeRecoveryState(recoveryStorageKey);
+    setDraft(null);
+    setRecoveryDraftId('');
+    setShouldHydrateRecovery(false);
+    setRecoveryNotice(null);
+    setError('');
+    setConfirmedReview(false);
+    setConfirmedMismatch(false);
+    history.replace(ROUTES.PURCHASE_IMPORT);
+  };
 
   const updateDraft = (patch: Partial<EditableDraft>) => {
     setDraft((current) => (current ? { ...current, ...patch } : current));
@@ -218,16 +378,14 @@ const PurchaseBillImportPage: React.FC = () => {
           : {}),
       }).unwrap();
       const extracted = response.data;
-      setDraft({
+      const editableDraft = normalizeDraft({
         ...extracted,
         warnings: localWarning ? [localWarning, ...extracted.warnings] : extracted.warnings,
-        items: extracted.items.map((item) => ({
-          ...item,
-          purchaseMode: item.purchaseMode ?? 'UNIT',
-          purchaseUnitLabel: item.purchaseUnitLabel ?? 'Box',
-          unitsPerPurchaseUnit: item.unitsPerPurchaseUnit ?? 20,
-        })),
       });
+      setDraft(editableDraft);
+      setRecoveryDraftId(extracted.draftId);
+      setShouldHydrateRecovery(false);
+      setRecoveryNotice(null);
       setSelectedSupplierId(extracted.supplier?.id ?? '');
       const extractedSupplier = suppliers.find((item) => item.id === extracted.supplier?.id);
       setSelectedFirmId(
@@ -323,8 +481,10 @@ const PurchaseBillImportPage: React.FC = () => {
         prices_include_tax: pricesIncludeTax,
         acknowledge_total_mismatch: confirmedMismatch,
       }).unwrap();
+      removeRecoveryState(recoveryStorageKey);
       history.replace(`/purchases/${response.data.purchase.id}`);
     } catch (cause) {
+      setRecoveryNotice('CONFIRMED');
       setError(apiErrorMessage(cause, t('purchaseImport.confirmFailed'), true));
     }
   };
@@ -341,7 +501,7 @@ const PurchaseBillImportPage: React.FC = () => {
             </div>
           </header>
 
-          {!draft && (
+          {!draft && !isRecovering && (
             <section className="workspace-record purchase-import-upload">
               <IonIcon icon={cloudUploadOutline} />
               <h2>{t('purchaseImport.uploadHeading')}</h2>
@@ -399,14 +559,47 @@ const PurchaseBillImportPage: React.FC = () => {
             </section>
           )}
 
+          {isRecovering && (
+            <section className="workspace-record purchase-import-progress" role="status">
+              <IonSpinner />
+              <p>{t('purchaseImport.recovering')}</p>
+            </section>
+          )}
+
           {error && (
             <div className="workspace-state purchase-import-error" role="alert">
-              {error}
+              <span>{error}</span>
+              {!draft && recoveryDraftId && (
+                <IonButton size="small" fill="outline" onClick={clearRecovery}>
+                  {t('purchaseImport.discardRecovery')}
+                </IonButton>
+              )}
             </div>
           )}
 
           {draft && (
             <>
+              {recoveryNotice && (
+                <section className="purchase-import-warnings" role="status">
+                  <strong>
+                    {t(
+                      recoveryNotice === 'CONFIRMED'
+                        ? 'purchaseImport.confirmRetryHeading'
+                        : 'purchaseImport.recoveredHeading'
+                    )}
+                  </strong>
+                  <p>
+                    {t(
+                      recoveryNotice === 'CONFIRMED'
+                        ? 'purchaseImport.confirmRetryHint'
+                        : 'purchaseImport.recoveredReview'
+                    )}
+                  </p>
+                  <IonButton size="small" fill="outline" onClick={clearRecovery}>
+                    {t('purchaseImport.discardRecovery')}
+                  </IonButton>
+                </section>
+              )}
               <section className="workspace-record purchase-import-review-heading">
                 <div>
                   <h2>{t('purchaseImport.reviewHeading')}</h2>

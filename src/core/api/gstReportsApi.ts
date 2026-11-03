@@ -3,7 +3,7 @@ import type { ApiResponse } from '../types';
 export interface GstReportParams {
   from: string;
   to: string;
-  firmId: string;
+  firmId?: string;
 }
 
 export interface GstFirm {
@@ -72,16 +72,36 @@ export interface GstRegisterData<Row> {
   rows: Row[];
 }
 
-export interface GstHsnRow {
+export interface GstHsnOutwardRow {
+  supplyCategory: 'B2B' | 'B2C' | 'UNCLASSIFIED';
   hsnCode: string;
+  uqcCode: string;
   gstRate: number;
-  saleQuantity: number;
-  saleTaxableValue: number;
-  outputTax: number;
-  purchaseQuantity: number;
-  purchaseTaxableValue: number;
-  inputTax: number;
-  ineligibleInputTax?: number;
+  totalQuantity: number;
+  taxableValue: number;
+  cgst: number;
+  sgst: number;
+  igst: number;
+  totalTax: number;
+}
+
+export interface GstHsnPurchaseAnalysisRow {
+  hsnCode: string;
+  uqcCode: string;
+  gstRate: number;
+  totalQuantity: number;
+  taxableValue: number;
+  inputCgst: number;
+  inputSgst: number;
+  inputIgst: number;
+  eligibleInputTax: number;
+  ineligibleInputTax: number;
+}
+
+export interface GstHsnSummaryData extends GstRegisterData<GstHsnOutwardRow> {
+  report: 'GST_HSN_SUMMARY';
+  purchaseAnalysis: GstHsnPurchaseAnalysisRow[];
+  caReady?: boolean;
 }
 
 export type GstDownloadReport = 'summary' | 'sales-register' | 'purchase-register' | 'hsn-summary';
@@ -106,7 +126,7 @@ export const gstReportsApi = apiSlice.injectEndpoints({
       query: (params) => ({ url: '/reports/gst/purchase-register', params }),
       providesTags: ['Report'],
     }),
-    getGstHsnSummary: builder.query<ApiResponse<GstRegisterData<GstHsnRow>>, GstReportParams>({
+    getGstHsnSummary: builder.query<ApiResponse<GstHsnSummaryData>, GstReportParams>({
       query: (params) => ({ url: '/reports/gst/hsn-summary', params }),
       providesTags: ['Report'],
     }),
@@ -137,6 +157,6 @@ export const gstReportExportUrl = (report: GstDownloadReport, params: GstReportP
     to: params.to,
     format: 'csv',
   });
-  query.set('firmId', params.firmId);
+  if (params.firmId) query.set('firmId', params.firmId);
   return `/reports/gst/${report}?${query.toString()}`;
 };

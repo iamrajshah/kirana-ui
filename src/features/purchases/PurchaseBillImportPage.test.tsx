@@ -6,8 +6,11 @@ import PurchaseBillImportPage from './PurchaseBillImportPage';
 const state = vi.hoisted(() => ({
   extract: vi.fn(),
   confirm: vi.fn(),
+  getDraft: vi.fn(),
   replace: vi.fn(),
   expiryAccess: true,
+  recoveryData: null as Record<string, unknown> | null,
+  recoveryError: false,
 }));
 
 vi.mock('react-router-dom', () => ({
@@ -23,7 +26,9 @@ vi.mock('@core/auth/authSlice', () => ({
 }));
 vi.mock('@core/hooks', () => ({
   useAppSelector: (selector: string) =>
-    selector === 'current-user-selector' ? { roles: ['OWNER'] } : { status: 'ACTIVE' },
+    selector === 'current-user-selector'
+      ? { id: 'user-1', roles: ['OWNER'], tenant: { id: 'tenant-1' } }
+      : { status: 'ACTIVE' },
 }));
 vi.mock('@core/commercial/commercialAccess', () => ({
   canUseCommercialFeature: () => state.expiryAccess,
@@ -31,6 +36,14 @@ vi.mock('@core/commercial/commercialAccess', () => ({
 vi.mock('@core/api/purchaseImportApi', () => ({
   useExtractPurchaseBillMutation: () => [state.extract, { isLoading: false }],
   useConfirmPurchaseImportMutation: () => [state.confirm, { isLoading: false }],
+  useGetPurchaseImportDraftQuery: (draftId: string, options: { skip: boolean }) => {
+    state.getDraft(draftId, options);
+    return {
+      data: state.recoveryData ? { data: state.recoveryData } : undefined,
+      isFetching: false,
+      isError: state.recoveryError,
+    };
+  },
 }));
 vi.mock('@core/api/supplierApi', () => ({
   useGetSuppliersQuery: () => ({
@@ -67,10 +80,15 @@ vi.mock('@core/api/productApi', () => ({
     vi.fn(),
     {
       data: {
-        data: [{
-          id: '42', product_name: 'Sugar 1 kg', sku: 'SUGAR-1KG',
-          gst_percent: 5, hsn_code: '1701',
-        }],
+        data: [
+          {
+            id: '42',
+            product_name: 'Sugar 1 kg',
+            sku: 'SUGAR-1KG',
+            gst_percent: 5,
+            hsn_code: '1701',
+          },
+        ],
       },
       isFetching: false,
     },
@@ -119,8 +137,13 @@ afterEach(() => {
   cleanup();
   state.extract.mockReset();
   state.confirm.mockReset();
+  state.getDraft.mockReset();
   state.replace.mockReset();
   state.expiryAccess = true;
+  state.recoveryData = null;
+  state.recoveryError = false;
+  sessionStorage.clear();
+  window.history.replaceState({}, '', '/purchases/import-bill');
 });
 
 it('keeps an extracted bill read-only until the user explicitly confirms the review', async () => {
@@ -392,4 +415,126 @@ it('recovers from zero, spurious and missed OCR lines with explicit add and remo
       ],
     })
   );
+});
+
+it('restores tenant-scoped reviewed edits after refresh and safely retries a lost confirmation', async () => {
+  const recoveryKey = 'kirana.purchase-import-draft:tenant-1:user-1';
+  const storedDraft = {
+    draftId: 'draft-retry',
+    status: 'READY',
+    supplier: { id: '7', name: 'Gemini Oils' },
+    invoiceNumber: 'GEM-48',
+    invoiceDate: '2026-11-04',
+    subtotal: 125,
+    taxAmount: 0,
+    totalAmount: 125,
+    warnings: [],
+    items: [
+      {
+        lineId: 'line-1',
+        variantId: '19',
+        productName: 'Gemini Oil 1 L',
+        quantity: 1,
+        unitPrice: 125,
+        gstRate: 0,
+        purchaseMode: 'UNIT',
+        purchaseUnitLabel: 'Box',
+        unitsPerPurchaseUnit: 20,
+      },
+    ],
+  };
+  sessionStorage.setItem(
+    recoveryKey,
+    JSON.stringify({
+      version: 1,
+      draft: storedDraft,
+      selectedSupplierId: '7',
+      selectedFirmId: '3',
+      firmWasOverridden: false,
+      pricesIncludeTax: true,
+      paymentAmount: '0',
+      paymentMode: 'CASH',
+    })
+  );
+  window.history.replaceState({}, '', '/purchases/import-bill?draftId=draft-retry');
+  state.recoveryData = {
+    ...storedDraft,
+    status: 'CONFIRMED',
+    subtotal: 100,
+    totalAmount: 100,
+    items: [{ ...storedDraft.items[0], unitPrice: 100 }],
+  };
+  state.confirm.mockReturnValue({
+    unwrap: () =>
+      Promise.resolve({
+        data: { draftId: 'draft-retry', status: 'CONFIRMED', purchase: { id: '92' } },
+      }),
+  });
+
+  render(<PurchaseBillImportPage />);
+
+  expect(await screen.findByText('purchaseImport.confirmRetryHeading')).toBeTruthy();
+  expect(state.getDraft).toHaveBeenCalledWith('draft-retry', { skip: false });
+  expect((screen.getByLabelText('purchases.unitPrice') as HTMLInputElement).value).toBe('125');
+  const review = screen.getByLabelText('purchaseImport.confirmReview') as HTMLInputElement;
+  expect(review.checked).toBe(false);
+
+  fireEvent.click(review);
+  fireEvent.click(screen.getByRole('button', { name: 'purchaseImport.confirmPurchase' }));
+
+  await waitFor(() => expect(state.confirm).toHaveBeenCalledTimes(1));
+  expect(state.confirm).toHaveBeenCalledWith(
+    expect.objectContaining({
+      draftId: 'draft-retry',
+      items: [expect.objectContaining({ variant_id: 19, unit_price: 125 })],
+    })
+  );
+  await waitFor(() => expect(state.replace).toHaveBeenCalledWith('/purchases/92'));
+  expect(sessionStorage.getItem(recoveryKey)).toBeNull();
+});
+
+it('keeps the recovery draft after an uncertain confirmation failure', async () => {
+  state.extract.mockReturnValue({
+    unwrap: () =>
+      Promise.resolve({
+        data: {
+          draftId: 'draft-uncertain',
+          status: 'READY',
+          supplier: { id: '7', name: 'Gemini Oils' },
+          invoiceNumber: 'GEM-49',
+          invoiceDate: '2026-11-04',
+          subtotal: 100,
+          taxAmount: 0,
+          totalAmount: 100,
+          warnings: [],
+          items: [
+            {
+              lineId: 'line-1',
+              variantId: '19',
+              productName: 'Gemini Oil 1 L',
+              quantity: 1,
+              unitPrice: 100,
+              gstRate: 0,
+            },
+          ],
+        },
+      }),
+  });
+  state.confirm.mockReturnValue({ unwrap: () => Promise.reject(new Error('connection lost')) });
+
+  const { container } = render(<PurchaseBillImportPage />);
+  const invoice = new File(['supplier invoice'], 'invoice.pdf', { type: 'application/pdf' });
+  fireEvent.change(container.querySelectorAll<HTMLInputElement>('input[type="file"]')[1], {
+    target: { files: [invoice] },
+  });
+  expect(await screen.findByText('Gemini Oil 1 L')).toBeTruthy();
+  fireEvent.click(screen.getByLabelText('purchaseImport.confirmReview'));
+  fireEvent.click(screen.getByRole('button', { name: 'purchaseImport.confirmPurchase' }));
+
+  expect(await screen.findByText('purchaseImport.confirmRetryHeading')).toBeTruthy();
+  await waitFor(() => {
+    const saved = sessionStorage.getItem('kirana.purchase-import-draft:tenant-1:user-1');
+    expect(saved).not.toBeNull();
+    expect(JSON.parse(saved ?? '{}').draft.draftId).toBe('draft-uncertain');
+  });
 });

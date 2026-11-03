@@ -91,14 +91,30 @@ describe('GST report API contract', () => {
                   ...base,
                   rows: [
                     {
+                      supplyCategory: 'B2B',
                       hsnCode: '1512',
+                      uqcCode: 'LTR',
                       gstRate: 5,
-                      saleQuantity: 2,
-                      saleTaxableValue: 100,
-                      outputTax: 5,
-                      purchaseQuantity: 1,
-                      purchaseTaxableValue: 40,
-                      inputTax: 2,
+                      totalQuantity: 2,
+                      taxableValue: 100,
+                      cgst: 2.5,
+                      sgst: 2.5,
+                      igst: 0,
+                      totalTax: 5,
+                    },
+                  ],
+                  purchaseAnalysis: [
+                    {
+                      hsnCode: '1512',
+                      uqcCode: 'LTR',
+                      gstRate: 5,
+                      totalQuantity: 1,
+                      taxableValue: 40,
+                      inputCgst: 1,
+                      inputSgst: 1,
+                      inputIgst: 0,
+                      eligibleInputTax: 2,
+                      ineligibleInputTax: 0,
                     },
                   ],
                 };
@@ -136,7 +152,8 @@ describe('GST report API contract', () => {
     expect(summary.data.estimatedNetLiability.total).toBe(10.8);
     expect(sales.data.rows[0].customerName).toBe('Walk-in customer');
     expect(purchases.data.rows[0].inputCgst).toBe(3.6);
-    expect(hsn.data.rows[0].outputTax).toBe(5);
+    expect(hsn.data.rows[0]).toMatchObject({ supplyCategory: 'B2B', totalTax: 5 });
+    expect(hsn.data.purchaseAnalysis[0].eligibleInputTax).toBe(2);
     store.dispatch(apiSlice.util.resetApiState());
   });
 

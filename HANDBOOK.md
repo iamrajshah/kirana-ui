@@ -232,17 +232,32 @@ remain usable. Cashiers continue to see their normal operational dashboard.
   line GST/HSN and supplier-derived place of supply visible before confirmation.
   Missing supplier jurisdiction stays visibly incomplete; the UI never invents
   CGST/SGST/IGST classification.
+- An unfinished review is kept only in the current browser tab's session storage,
+  scoped by tenant and signed-in user, while its draft ID is retained in the URL.
+  Refreshing or navigating back restores reviewed edits from that session and
+  verifies the draft with the API. Review and mismatch acknowledgements are
+  deliberately reset. If a confirmation response is lost, the restored draft can
+  be confirmed again through the server's idempotent endpoint without creating a
+  second purchase. Recovery is cleared automatically only after confirmed success
+  (or when the user explicitly discards it).
 
 ### GST preparation for the CA
 
 - `GST_CA_REPORTS` adds a protected GST & CA workspace with OWNER as the default
   role policy; Platform Admin may widen its runtime role policy without a deploy.
   It prepares one selected legal firm at a time and shows outward tax,
-  inward tax credit, estimated net liability, sales register, purchase register
-  and HSN summary.
+  inward tax credit, estimated net liability, sales register and purchase register.
+  Its HSN workspace prepares outward Table 12 rows split into B2B/B2C and grouped
+  by HSN, UQC and GST rate, with CGST/SGST/IGST shown separately. Inward HSN/input
+  tax analysis is displayed in a separate section and never mixed into outward
+  quantities.
 - It also requires Essential Reports and Billing. Runtime plan customization
   therefore cannot expose a GST workspace without the records it depends on.
-- Sales, purchase and HSN registers download as authenticated CSV files for
+- A selected default firm is sent implicitly, allowing a one-firm demo/shop to
+  prepare GST records without buying `MULTI_FIRM`. Choosing an alternate or
+  inactive historical firm sends its explicit ID and remains subject to the
+  multi-firm access policy. The displayed firm identity still names every CSV.
+- Sales, purchase and outward HSN/Table 12 registers download as authenticated CSV files for
   review with the shop's accountant. Browser/tablet builds download the CSV;
   Android writes it to an app-cache file, opens the native share sheet, then
   removes the temporary file. These are preparation aids, not GST filing, legal

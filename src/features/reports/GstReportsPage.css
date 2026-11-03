@@ -130,6 +130,10 @@
   justify-content: space-between;
   gap: 0.7rem;
 }
+.gst-section-heading p {
+  margin: 0.25rem 0;
+  color: var(--ion-text-color-secondary);
+}
 .gst-register-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -146,7 +150,8 @@
   gap: 0.8rem;
 }
 .gst-register-card > div span,
-.gst-register-card > div small {
+.gst-register-card > div small,
+.gst-register-card > small {
   color: var(--ion-text-color-secondary);
 }
 .gst-row-warning {

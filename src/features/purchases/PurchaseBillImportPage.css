@@ -31,6 +31,11 @@
   margin-top: 0.5rem;
 }
 .purchase-import-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   border-color: var(--ion-color-danger);
   color: var(--ion-color-danger);
 }
@@ -59,6 +64,9 @@
 .purchase-import-warnings ul {
   margin: 0.5rem 0 0;
   padding-inline-start: 1.3rem;
+}
+.purchase-import-warnings p {
+  margin: 0.5rem 0;
 }
 .purchase-import-metadata,
 .purchase-import-line__fields,
