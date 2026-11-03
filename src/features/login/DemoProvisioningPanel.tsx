@@ -41,10 +41,7 @@ const request = async (
     // transport detail out of the customer UI and classify by HTTP status.
   }
   if (!response.ok || !body?.data) {
-    throw new ProvisioningRequestError(
-      body?.message || '',
-      response.status
-    );
+    throw new ProvisioningRequestError(body?.message || '', response.status);
   }
   return body.data;
 };
@@ -80,53 +77,61 @@ export const DemoProvisioningPanel: React.FC<{
     tRef.current = t;
   }, [onReady, t]);
 
-  const provision = useCallback(async () => {
-    if (activeRun.current) return;
-    const currentGeneration = ++generation.current;
-    const controller = new AbortController();
-    activeRun.current = { generation: currentGeneration, controller };
-    const isCurrent = () =>
-      activeRun.current?.generation === currentGeneration && !controller.signal.aborted;
+  const provision = useCallback(
+    async (resumeExisting = false) => {
+      if (activeRun.current) return;
+      const currentGeneration = ++generation.current;
+      const controller = new AbortController();
+      activeRun.current = { generation: currentGeneration, controller };
+      const isCurrent = () =>
+        activeRun.current?.generation === currentGeneration && !controller.signal.aborted;
 
-    setError('');
-    try {
-      let current = await request(token, '/demo/provision', 'POST', controller.signal);
-      if (!isCurrent()) return;
-      setStatus(current);
-
-      while (current.state === 'PROVISIONING') {
-        // Provisioning is a bounded stage machine, not a tight polling loop.
-        // A small pause also leaves room for the previous transaction to finish
-        // and avoids bursting authenticated resume requests at the API edge.
-        await waitForResume(controller.signal);
-        current = await request(token, '/demo/provision/resume', 'POST', controller.signal);
+      setError('');
+      try {
+        let current = await request(
+          token,
+          resumeExisting ? '/demo/provision/resume' : '/demo/provision',
+          'POST',
+          controller.signal
+        );
         if (!isCurrent()) return;
         setStatus(current);
-      }
 
-      if (current.state === 'READY' && isCurrent()) await onReadyRef.current();
-      if (
-        (current.state === 'RETRYABLE_FAILURE' || current.state === 'TERMINAL_FAILURE') &&
-        isCurrent()
-      ) {
-        setError(current.error?.message || 'Demo setup needs support');
+        while (current.state === 'PROVISIONING') {
+          // Provisioning is a bounded stage machine, not a tight polling loop.
+          // A small pause also leaves room for the previous transaction to finish
+          // and avoids bursting authenticated resume requests at the API edge.
+          await waitForResume(controller.signal);
+          current = await request(token, '/demo/provision/resume', 'POST', controller.signal);
+          if (!isCurrent()) return;
+          setStatus(current);
+        }
+
+        if (current.state === 'READY' && isCurrent()) await onReadyRef.current();
+        if (
+          (current.state === 'RETRYABLE_FAILURE' || current.state === 'TERMINAL_FAILURE') &&
+          isCurrent()
+        ) {
+          setError(current.error?.message || 'Demo setup needs support');
+        }
+      } catch (reason) {
+        if (isCurrent()) {
+          setError(
+            reason instanceof ProvisioningRequestError
+              ? reason.status === 429
+                ? tRef.current('auth.demoRateLimited')
+                : reason.message || tRef.current('auth.demoRequestFailed')
+              : reason instanceof Error
+                ? reason.message
+                : tRef.current('auth.demoRequestFailed')
+          );
+        }
+      } finally {
+        if (activeRun.current?.generation === currentGeneration) activeRun.current = null;
       }
-    } catch (reason) {
-      if (isCurrent()) {
-        setError(
-          reason instanceof ProvisioningRequestError
-            ? reason.status === 429
-              ? tRef.current('auth.demoRateLimited')
-              : reason.message || tRef.current('auth.demoRequestFailed')
-            : reason instanceof Error
-              ? reason.message
-              : tRef.current('auth.demoRequestFailed')
-        );
-      }
-    } finally {
-      if (activeRun.current?.generation === currentGeneration) activeRun.current = null;
-    }
-  }, [token]);
+    },
+    [token]
+  );
 
   useEffect(() => {
     setStatus({ state: 'STARTING' });
@@ -156,7 +161,11 @@ export const DemoProvisioningPanel: React.FC<{
       )}
       {error && <p className="mt-2 text-sm text-[var(--ion-color-danger)]">{error}</p>}
       {error && status.state !== 'TERMINAL_FAILURE' && (
-        <Button type="button" onClick={() => void provision()} fullWidth>
+        <Button
+          type="button"
+          onClick={() => void provision(status.state === 'RETRYABLE_FAILURE')}
+          fullWidth
+        >
           {t('auth.demoRetry')}
         </Button>
       )}

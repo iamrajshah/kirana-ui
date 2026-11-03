@@ -6,6 +6,7 @@ import { useAppSelector } from '@core/hooks';
 import { selectCurrentUser, selectCommercialAccess } from '@core/auth/authSlice';
 import { ROUTES } from '@core/constants';
 import { useGetCommercialAccessQuery } from '@core/api/subscriptionApi';
+import { ProvisioningRecoveryPage } from './ProvisioningRecoveryPage';
 
 const RESTRICTED_STATES = ['READ_ONLY', 'SUSPENDED', 'CANCELLED', 'EXPIRED', 'PROVISIONING'];
 
@@ -22,6 +23,9 @@ export const RestrictedPage: React.FC = () => {
   const owner = user?.roles.includes('OWNER');
   if (access && !RESTRICTED_STATES.includes(access.state)) {
     return <Redirect to={ROUTES.DASHBOARD} />;
+  }
+  if (access?.state === 'PROVISIONING') {
+    return <ProvisioningRecoveryPage />;
   }
   return (
     <IonPage>

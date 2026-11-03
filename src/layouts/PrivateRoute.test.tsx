@@ -152,6 +152,24 @@ describe('PrivateRoute', () => {
     expect(screen.getByText('renewal')).toBeTruthy();
   });
 
+  it('keeps a provisioning owner on setup recovery instead of account actions', () => {
+    useLocation.mockReturnValue({ pathname: ROUTES.ACCOUNT_RENEWAL });
+    useAppSelector
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce({ roles: ['OWNER'] })
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce({ state: 'PROVISIONING' });
+
+    render(
+      <PrivateRoute>
+        <div>renewal</div>
+      </PrivateRoute>
+    );
+
+    expect(screen.getByTestId('redirect').textContent).toBe(ROUTES.RESTRICTED);
+    expect(screen.queryByText('renewal')).toBeNull();
+  });
+
   it('lets a restricted owner download a safe account export', () => {
     useLocation.mockReturnValue({ pathname: ROUTES.ACCOUNT_EXPORT });
     useAppSelector

@@ -44,16 +44,19 @@ export const PrivateRoute: React.FC<PrivateRouteProps> = ({
   );
   if (restricted) {
     const isOwner = user?.roles.includes('OWNER');
-    const allowed = isOwner
-      ? (
-          [
-            ROUTES.ACCOUNT,
-            ROUTES.ACCOUNT_RENEWAL,
-            ROUTES.ACCOUNT_EXPORT,
-            ROUTES.RESTRICTED,
-          ] as string[]
-        ).includes(location.pathname)
-      : location.pathname === ROUTES.RESTRICTED;
+    const allowed =
+      commercialAccess?.state === 'PROVISIONING'
+        ? location.pathname === ROUTES.RESTRICTED
+        : isOwner
+          ? (
+              [
+                ROUTES.ACCOUNT,
+                ROUTES.ACCOUNT_RENEWAL,
+                ROUTES.ACCOUNT_EXPORT,
+                ROUTES.RESTRICTED,
+              ] as string[]
+            ).includes(location.pathname)
+          : location.pathname === ROUTES.RESTRICTED;
     if (!allowed) return <Redirect to={ROUTES.RESTRICTED} />;
   }
 

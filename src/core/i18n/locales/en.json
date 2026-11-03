@@ -301,6 +301,16 @@
     "export": "Download shop data",
     "logoutHelp": "You can still sign out safely from the menu."
   },
+  "provisioningRecovery": {
+    "eyebrow": "Shop setup",
+    "title": "Finish setting up your shop",
+    "description": "Your seven-day demo was only partly prepared. Continue with the same Google account and setup will resume from the last completed step.",
+    "stepOne": "1. Return to the secure sign-in screen.",
+    "stepTwo": "2. Choose the same Google account you used before.",
+    "stepThree": "3. Wait for setup to finish before entering the shop.",
+    "continue": "Continue shop setup",
+    "safe": "Your completed setup work and shop data are safe."
+  },
   "accountExport": {
     "title": "Shop data export",
     "heading": "Download your complete shop backup",

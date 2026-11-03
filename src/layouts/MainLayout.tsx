@@ -28,6 +28,7 @@ import { BackgroundDataWarmup } from './BackgroundDataWarmup';
 import '@components/Workspace/workspace.css';
 import { useGetCommercialAccessQuery } from '@core/api/subscriptionApi';
 import { SessionLifecycleSync } from './SessionLifecycleSync';
+import { ProvisioningRecoveryPage } from '@features/account/ProvisioningRecoveryPage';
 
 const DashboardPage = lazy(() =>
   import('@features/dashboard/DashboardPage').then((module) => ({ default: module.DashboardPage }))
@@ -159,6 +160,7 @@ export const MainLayout: React.FC = () => {
   const user = useAppSelector(selectCurrentUser);
   const commercialAccess = useAppSelector(selectCommercialAccess);
   useGetCommercialAccessQuery();
+  const isProvisioning = commercialAccess?.state === 'PROVISIONING';
   const navigation = useMemo(
     () => getNavigationItems(user?.roles ?? [], commercialAccess),
     [user?.roles, commercialAccess]
@@ -168,13 +170,15 @@ export const MainLayout: React.FC = () => {
   const canAccessBilling = navigation.some((item) => item.href === ROUTES.BILLING);
 
   useEffect(() => {
+    if (isProvisioning) return;
+
     const allowedPaths = new Set(navigation.map((item) => item.href));
     const preloaders = priorityRoutePreloaders
       .filter(({ href }) => allowedPaths.has(href))
       .map(({ load }) => load);
 
     return scheduleRoutePreload(preloaders);
-  }, [navigation]);
+  }, [isProvisioning, navigation]);
   const renderPage = (
     Component: React.ComponentType,
     permission?: TabPermission,
@@ -186,6 +190,10 @@ export const MainLayout: React.FC = () => {
       </RoutePageSuspense>
     </PrivateRoute>
   );
+
+  if (isProvisioning) {
+    return <ProvisioningRecoveryPage />;
+  }
 
   return (
     <>
@@ -241,7 +249,11 @@ export const MainLayout: React.FC = () => {
                 );
               })}
               <Route exact path={ROUTES.ABOUT} render={() => renderPage(AboutPage)} />
-              <Route exact path={ROUTES.GETTING_STARTED} render={() => renderPage(GettingStartedPage)} />
+              <Route
+                exact
+                path={ROUTES.GETTING_STARTED}
+                render={() => renderPage(GettingStartedPage)}
+              />
             </IonRouterOutlet>
 
             <IonTabBar slot="bottom" className="workspace-bottom-tabs" selectedTab={selectedTab}>

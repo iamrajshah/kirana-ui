@@ -91,6 +91,8 @@ describe('DemoProvisioningPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'auth.demoRetry' }));
     await waitFor(() => expect(onReady).toHaveBeenCalledTimes(1));
     expect(fetch).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(fetch).mock.calls[0]?.[0]).toContain('/demo/provision');
+    expect(vi.mocked(fetch).mock.calls[1]?.[0]).toContain('/demo/provision/resume');
   });
 
   it('shows terminal failure without offering a retry', async () => {
