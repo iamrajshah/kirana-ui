@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   IonButton,
   IonCard,
@@ -8,6 +8,12 @@ import {
   IonPage,
   IonRefresher,
   IonRefresherContent,
+  IonSegment,
+  IonSegmentButton,
+  IonLabel,
+  IonInput,
+  IonTextarea,
+  IonToggle,
 } from '@ionic/react';
 import { Navbar } from '@components/Navbar';
 import { EmptyState, Loading } from '@components';
@@ -17,7 +23,12 @@ import {
   useGetIncomingStorefrontOrdersQuery,
   useUpdateStorefrontOrderStatusMutation,
   type StorefrontOrderStatus,
+  useCreateStorefrontOfferMutation,
+  useDeleteStorefrontOfferMutation,
+  useGetStorefrontOffersQuery,
+  useUpdateStorefrontOfferMutation,
 } from '@core/api/storefrontOrderApi';
+import { useGetProductsQuery } from '@core/api/productApi';
 
 const nextActions: Partial<Record<StorefrontOrderStatus, StorefrontOrderStatus[]>> = {
   PLACED: ['ACCEPTED', 'CANCELLED'],
@@ -28,9 +39,41 @@ const nextActions: Partial<Record<StorefrontOrderStatus, StorefrontOrderStatus[]
 
 const StorefrontOrdersPage: React.FC = () => {
   const { t } = useTranslation();
+  const [section, setSection] = useState<'orders' | 'offers'>('orders');
   const { data, isLoading, refetch } = useGetIncomingStorefrontOrdersQuery();
+  const {
+    data: offerData,
+    isLoading: offersLoading,
+    refetch: refetchOffers,
+  } = useGetStorefrontOffersQuery();
+  const { data: productData } = useGetProductsQuery({ take: 100 });
   const [updateStatus, { isLoading: updating }] = useUpdateStorefrontOrderStatusMutation();
+  const [createOffer, { isLoading: creatingOffer }] = useCreateStorefrontOfferMutation();
+  const [updateOffer] = useUpdateStorefrontOfferMutation();
+  const [deleteOffer] = useDeleteStorefrontOfferMutation();
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [badgeText, setBadgeText] = useState('TODAY’S OFFER');
+  const [productId, setProductId] = useState('');
+  const [publishNow, setPublishNow] = useState(true);
   const orders = data?.data ?? [];
+  const offers = offerData?.data ?? [];
+  const products = productData?.data ?? [];
+
+  const submitOffer = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await createOffer({
+      title: title.trim(),
+      description: description.trim() || null,
+      badge_text: badgeText.trim() || null,
+      product_id: productId || null,
+      is_active: publishNow,
+    }).unwrap();
+    setTitle('');
+    setDescription('');
+    setProductId('');
+  };
+
   return (
     <IonPage>
       <Navbar title={t('storefrontOrders.title')} />
@@ -38,7 +81,8 @@ const StorefrontOrdersPage: React.FC = () => {
         <IonRefresher
           slot="fixed"
           onIonRefresh={async (event) => {
-            await refetch();
+            if (section === 'offers') await refetchOffers();
+            else await refetch();
             event.detail.complete();
           }}
         >
@@ -51,7 +95,134 @@ const StorefrontOrdersPage: React.FC = () => {
               <p>{t('storefrontOrders.subtitle')}</p>
             </div>
           </div>
-          {isLoading ? (
+          <IonSegment
+            value={section}
+            onIonChange={(event) => setSection(event.detail.value as 'orders' | 'offers')}
+            style={{ marginBottom: 18 }}
+          >
+            <IonSegmentButton value="orders">
+              <IonLabel>{t('storefrontOrders.ordersTab')}</IonLabel>
+            </IonSegmentButton>
+            <IonSegmentButton value="offers">
+              <IonLabel>{t('storefrontOrders.offersTab')}</IonLabel>
+            </IonSegmentButton>
+          </IonSegment>
+          {section === 'offers' ? (
+            <>
+              <IonCard>
+                <IonCardContent>
+                  <form onSubmit={(event) => void submitOffer(event)} className="space-y-4">
+                    <div>
+                      <h2>{t('storefrontOrders.offerEditor.title')}</h2>
+                      <p>{t('storefrontOrders.offerEditor.help')}</p>
+                    </div>
+                    <IonInput
+                      label={t('storefrontOrders.offerEditor.name')}
+                      labelPlacement="stacked"
+                      fill="outline"
+                      value={title}
+                      maxlength={120}
+                      required
+                      onIonInput={(event) => setTitle(String(event.detail.value ?? ''))}
+                    />
+                    <IonTextarea
+                      label={t('storefrontOrders.offerEditor.description')}
+                      labelPlacement="stacked"
+                      fill="outline"
+                      value={description}
+                      maxlength={300}
+                      onIonInput={(event) => setDescription(String(event.detail.value ?? ''))}
+                    />
+                    <IonInput
+                      label={t('storefrontOrders.offerEditor.badge')}
+                      labelPlacement="stacked"
+                      fill="outline"
+                      value={badgeText}
+                      maxlength={40}
+                      onIonInput={(event) => setBadgeText(String(event.detail.value ?? ''))}
+                    />
+                    <label style={{ display: 'grid', gap: 6 }}>
+                      <strong>{t('storefrontOrders.offerEditor.product')}</strong>
+                      <select
+                        value={productId}
+                        onChange={(event) => setProductId(event.target.value)}
+                        style={{ minHeight: 48, padding: '0 12px', borderRadius: 10 }}
+                      >
+                        <option value="">{t('storefrontOrders.offerEditor.noProduct')}</option>
+                        {products.map((product) => (
+                          <option key={product.id} value={product.id}>
+                            {product.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <IonToggle
+                      checked={publishNow}
+                      onIonChange={(event) => setPublishNow(event.detail.checked)}
+                    >
+                      {t('storefrontOrders.offerEditor.publishNow')}
+                    </IonToggle>
+                    <IonButton type="submit" disabled={creatingOffer || title.trim().length < 3}>
+                      {t('storefrontOrders.offerEditor.create')}
+                    </IonButton>
+                  </form>
+                </IonCardContent>
+              </IonCard>
+              {offersLoading ? (
+                <Loading isOpen />
+              ) : offers.length === 0 ? (
+                <EmptyState message={t('storefrontOrders.offerEditor.empty')} />
+              ) : (
+                offers.map((offer) => (
+                  <IonCard key={offer.id}>
+                    <IonCardContent>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+                        <div>
+                          <IonChip color={offer.is_active ? 'success' : 'medium'}>
+                            {offer.is_active
+                              ? t('storefrontOrders.offerEditor.published')
+                              : t('storefrontOrders.offerEditor.draft')}
+                          </IonChip>
+                          <h2>{offer.title}</h2>
+                          {offer.description && <p>{offer.description}</p>}
+                          {offer.product?.name && (
+                            <p>
+                              <strong>{t('storefrontOrders.offerEditor.product')}:</strong>{' '}
+                              {offer.product.name}
+                            </p>
+                          )}
+                        </div>
+                        <div
+                          style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'start' }}
+                        >
+                          <IonButton
+                            fill="outline"
+                            onClick={() =>
+                              void updateOffer({
+                                id: offer.id,
+                                data: { is_active: !offer.is_active },
+                              })
+                            }
+                          >
+                            {offer.is_active
+                              ? t('storefrontOrders.offerEditor.unpublish')
+                              : t('storefrontOrders.offerEditor.publish')}
+                          </IonButton>
+                          <IonButton
+                            fill="clear"
+                            color="danger"
+                            onClick={() => void deleteOffer(offer.id)}
+                          >
+                            {t('common.delete')}
+                          </IonButton>
+                        </div>
+                      </div>
+                    </IonCardContent>
+                  </IonCard>
+                ))
+              )}
+            </>
+          ) : isLoading ? (
             <Loading isOpen />
           ) : orders.length === 0 ? (
             <EmptyState message={t('storefrontOrders.empty')} />
