@@ -17,9 +17,9 @@ interface SharePayload {
 }
 
 interface OutputDependencies {
-  createPdf: (receipt: ReceiptViewModel) => Promise<Blob>;
+  createPdf: (receipt: ReceiptViewModel, paperWidth?: ReceiptPaperWidth) => Promise<Blob>;
   download: (blob: Blob, fileName: string) => void;
-  print: (paperWidth: ReceiptPaperWidth) => Promise<void> | void;
+  print: (blob: Blob, paperWidth: ReceiptPaperWidth) => Promise<void> | void;
   webShare: {
     canShare: (payload: SharePayload) => boolean;
     share: (payload: SharePayload) => Promise<void>;
@@ -40,14 +40,58 @@ const downloadBlob = (blob: Blob, fileName: string) => {
   URL.revokeObjectURL(url);
 };
 
-const printReceipt = (paperWidth: ReceiptPaperWidth) => {
-  document.documentElement.dataset.receiptPaper = paperWidth;
-  const clear = () => {
-    delete document.documentElement.dataset.receiptPaper;
-  };
-  window.addEventListener('afterprint', clear, { once: true });
-  window.print();
-};
+const printReceipt = (blob: Blob, paperWidth: ReceiptPaperWidth) =>
+  new Promise<void>((resolve, reject) => {
+    const url = URL.createObjectURL(blob);
+    const frame = document.createElement('iframe');
+    frame.title = 'Receipt print preview';
+    frame.dataset.receiptPaper = paperWidth;
+    frame.style.position = 'fixed';
+    frame.style.width = '1px';
+    frame.style.height = '1px';
+    frame.style.right = '0';
+    frame.style.bottom = '0';
+    frame.style.border = '0';
+    frame.style.opacity = '0';
+
+    let cleaned = false;
+    let cleanupTimer: number | undefined;
+    const cleanup = () => {
+      if (cleaned) return;
+      cleaned = true;
+      if (cleanupTimer !== undefined) window.clearTimeout(cleanupTimer);
+      frame.remove();
+      URL.revokeObjectURL(url);
+    };
+    const fail = () => {
+      cleanup();
+      reject(new Error('Unable to prepare the receipt for printing'));
+    };
+
+    frame.addEventListener('error', fail, { once: true });
+    frame.addEventListener(
+      'load',
+      () => {
+        const target = frame.contentWindow;
+        if (!target) {
+          fail();
+          return;
+        }
+        target.addEventListener('afterprint', cleanup, { once: true });
+        try {
+          target.focus();
+          target.print();
+          resolve();
+          cleanupTimer = window.setTimeout(cleanup, 60_000);
+        } catch {
+          fail();
+        }
+      },
+      { once: true }
+    );
+    frame.src = url;
+    document.body.appendChild(frame);
+  });
 
 const defaultDependencies: OutputDependencies = {
   createPdf: async (receipt) => (await import('./pdfRenderer')).renderReceiptPdf(receipt),
@@ -67,10 +111,7 @@ const isCancellation = (error: unknown) =>
 
 export const getReceiptOutputFeedback = (state: ReceiptOutputState): ReceiptOutputFeedback => {
   if (state.phase === 'generating' || state.phase === 'handing-off') return 'working';
-  if (
-    state.phase === 'cancelled' ||
-    (state.phase === 'completed' && state.fallbackDownloaded)
-  ) {
+  if (state.phase === 'cancelled' || (state.phase === 'completed' && state.fallbackDownloaded)) {
     return 'downloaded';
   }
   if (state.phase === 'recoverable-error') return 'error';
@@ -113,7 +154,8 @@ export const createReceiptOutputService = (overrides: Partial<OutputDependencies
 
     try {
       if (action === 'print') {
-        await dependencies.print(paperWidth);
+        const blob = await dependencies.createPdf(receipt, paperWidth);
+        await dependencies.print(blob, paperWidth);
         setState({ phase: 'completed', action });
         return state;
       }
@@ -129,7 +171,11 @@ export const createReceiptOutputService = (overrides: Partial<OutputDependencies
       setState({ phase: 'handing-off', action });
       if (dependencies.isNative()) {
         try {
-          await dependencies.nativeShare(blob, fileName, `${receipt.title} ${receipt.invoiceNumber}`);
+          await dependencies.nativeShare(
+            blob,
+            fileName,
+            `${receipt.title} ${receipt.invoiceNumber}`
+          );
           setState({ phase: 'completed', action });
         } catch (error) {
           downloadShareFallback(blob, fileName, action, error);
