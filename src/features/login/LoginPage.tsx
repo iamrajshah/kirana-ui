@@ -255,7 +255,7 @@ export const LoginPage: React.FC = () => {
   return (
     <IonPage>
       <IonContent className="ion-padding">
-        <div className="flex flex-col items-center justify-center min-h-full px-4">
+        <div className="login-page-layout flex flex-col items-center justify-center min-h-full px-4">
           {/* Language & Theme Selector */}
           <div
             className="mb-4 flex items-center gap-4 p-3 rounded-lg"
@@ -294,7 +294,7 @@ export const LoginPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="w-full max-w-md">
+          <div className="login-page-content w-full max-w-md">
             {/* App Logo/Title */}
             <div className="text-center mb-12">
               <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--ion-color-primary)' }}>
@@ -306,7 +306,7 @@ export const LoginPage: React.FC = () => {
             {/* Login Form */}
             <form
               onSubmit={handleSubmit}
-              className="rounded-lg shadow-md p-6"
+              className="login-page-form rounded-lg shadow-md p-6"
               style={{ backgroundColor: 'var(--ion-card-background)' }}
             >
               <h2

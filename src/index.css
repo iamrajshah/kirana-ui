@@ -19,6 +19,38 @@ ion-app {
   background: var(--kirana-shell-background, var(--ion-background-color));
 }
 
+.login-page-layout,
+.login-page-content,
+.login-page-form {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.login-page-layout {
+  width: 100%;
+  overflow-x: clip;
+}
+
+.login-page-content,
+.login-page-form {
+  width: 100%;
+}
+
+.login-page-form {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+  .login-page-layout {
+    padding-inline: 0.25rem;
+  }
+
+  .login-page-form {
+    padding: 1.25rem;
+  }
+}
+
 ion-card {
   border: 1px solid color-mix(in srgb, var(--ion-border-color) 82%, transparent);
   border-radius: 18px;
