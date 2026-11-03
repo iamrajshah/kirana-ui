@@ -23,18 +23,48 @@ export interface ProtectedPageRouteAccess extends ProtectedRouteAccess {
 }
 
 export const protectedPageRoutes: readonly ProtectedPageRouteAccess[] = [
-  { id: 'customer-ledger', path: '/customers/:id/ledger', permission: 'customers' },
-  { id: 'product-detail', path: '/products/:id', permission: 'products' },
+  {
+    id: 'customer-ledger',
+    path: '/customers/:id/ledger',
+    permission: 'customers',
+    commercialFeature: 'CUSTOMERS_KHATA',
+  },
+  {
+    id: 'product-detail',
+    path: '/products/:id',
+    permission: 'products',
+    commercialFeature: 'PRODUCTS',
+  },
   {
     id: 'product-barcode',
     path: ROUTES.PRODUCT_BARCODE,
     permission: 'products',
     commercialFeature: 'CUSTOM_BARCODE',
   },
-  { id: 'supplier-ledger', path: '/suppliers/:id/ledger', permission: 'suppliers' },
-  { id: 'invoice-detail', path: '/invoices/:id', permission: 'invoices' },
-  { id: 'purchase-create', path: ROUTES.PURCHASE_CREATE, permission: 'purchases' },
-  { id: 'purchase-detail', path: '/purchases/:id(\\d+)', permission: 'purchases' },
+  {
+    id: 'supplier-ledger',
+    path: '/suppliers/:id/ledger',
+    permission: 'suppliers',
+    commercialFeature: 'SUPPLIERS',
+  },
+  {
+    id: 'invoice-detail',
+    path: '/invoices/:id',
+    permission: 'invoices',
+    commercialFeature: 'INVOICES',
+  },
+  {
+    id: 'purchase-create',
+    path: ROUTES.PURCHASE_CREATE,
+    permission: 'purchases',
+    commercialFeature: 'PURCHASES',
+  },
+  {
+    id: 'purchase-detail',
+    path: '/purchases/:id(\\d+)',
+    permission: 'purchases',
+    commercialFeature: 'PURCHASES',
+  },
 ];
 
 const mainLayoutRouteIds = [

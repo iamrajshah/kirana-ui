@@ -3,6 +3,11 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DashboardPage } from './DashboardPage';
 
+const authSelectors = vi.hoisted(() => ({
+  currentUser: vi.fn(),
+  commercialAccess: vi.fn(),
+}));
+
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   refetch: vi.fn(),
@@ -94,8 +99,14 @@ vi.mock('@components', () => ({
   Card: ({ children }: PropsWithChildren) => <div>{children}</div>,
   Loading: () => <div>common.loading</div>,
 }));
-vi.mock('@core/hooks', () => ({ useAppSelector: () => ({ roles: mocks.roles }) }));
-vi.mock('@core/auth/authSlice', () => ({ selectCurrentUser: vi.fn() }));
+vi.mock('@core/hooks', () => ({
+  useAppSelector: (selector: unknown) =>
+    selector === authSelectors.commercialAccess ? null : { roles: mocks.roles },
+}));
+vi.mock('@core/auth/authSlice', () => ({
+  selectCurrentUser: authSelectors.currentUser,
+  selectCommercialAccess: authSelectors.commercialAccess,
+}));
 vi.mock('@core/api/dashboardApi', () => ({
   useGetDashboardStatsQuery: () => ({ ...mocks.query, refetch: mocks.refetch }),
 }));
@@ -266,9 +277,100 @@ describe('DashboardPage', () => {
     expect(screen.getByRole('region', { name: 'dashboard.decisionInbox.title' })).toBeTruthy();
 
     mocks.roles = ['CASHIER'];
+    const dashboard = mocks.query.data?.data;
+    if (dashboard) {
+      dashboard.insights = {
+        scope: 'CASHIER',
+        cashier: { ownBills: 4, ownSales: 950, heldBills: 1 },
+      };
+    }
     rerender(<DashboardPage />);
     expect(screen.queryByRole('region', { name: 'dashboard.decisionInbox.title' })).toBeNull();
-    expect(screen.getByTestId('dashboard-priorities')).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'dashboard.insights.cashier.title' })).toBeTruthy();
+    expect(screen.queryByTestId('dashboard-priorities')).toBeNull();
+    expect(screen.queryByText('dashboard.supplierPayables')).toBeNull();
+    expect(screen.queryByText('dashboard.customerReceivables')).toBeNull();
+  });
+
+  it('shows owner seasonal guidance and opens the suggested product', () => {
+    const dashboard = mocks.query.data?.data;
+    if (dashboard) {
+      dashboard.insights = {
+        scope: 'OWNER',
+        owner: {
+          sales: { today: 2450, month: 48000, previousMonth: 42000, growthPercent: 14.3 },
+          paymentMix: [{ mode: 'CASH', amount: 1800, billCount: 6 }],
+          online: { pending: 2, accepted: 1, completed: 8 },
+          seasonalRestock: [
+            {
+              variantId: 'variant-sugar',
+              productId: 'product-sugar',
+              productName: 'Sugar 1 kg',
+              lastYearSameMonthQty: 100,
+              recentMonthlyQty: 90,
+              suggestedQty: 120,
+              confidence: 'HIGH',
+            },
+          ],
+        },
+      };
+    }
+
+    render(<DashboardPage />);
+    const owner = screen.getByRole('region', { name: 'dashboard.insights.owner.title' });
+    expect(within(owner).getByText('Sugar 1 kg')).toBeTruthy();
+    expect(within(owner).getByText('dashboard.insights.confidence.high')).toBeTruthy();
+    fireEvent.click(within(owner).getByRole('button', { name: /Sugar 1 kg/ }));
+    expect(mocks.push).toHaveBeenCalledWith('/products/product-sugar');
+  });
+
+  it('explains when owner seasonal history is not yet sufficient', () => {
+    const dashboard = mocks.query.data?.data;
+    if (dashboard) {
+      dashboard.insights = {
+        scope: 'OWNER',
+        owner: {
+          sales: { today: 0, month: 0, previousMonth: 0, growthPercent: null },
+          paymentMix: [],
+          online: { pending: 0, accepted: 0, completed: 0 },
+          seasonalRestock: [],
+        },
+      };
+    }
+
+    render(<DashboardPage />);
+    expect(screen.getByText('dashboard.insights.owner.historyBuilding')).toBeTruthy();
+    expect(screen.getByText('dashboard.insights.owner.historyBuildingHint')).toBeTruthy();
+  });
+
+  it('shows manager cashier performance without exposing it to a cashier session', () => {
+    mocks.roles = ['MANAGER'];
+    const dashboard = mocks.query.data?.data;
+    if (dashboard) {
+      dashboard.insights = {
+        scope: 'MANAGER',
+        manager: {
+          cashierPerformance: [
+            { userId: 'staff-1', name: 'Meena', billCount: 11, sales: 7200, averageBasket: 654.55 },
+          ],
+          onlineQueue: { pending: 2, accepted: 3 },
+          heldBills: 1,
+        },
+      };
+    }
+    const { rerender } = render(<DashboardPage />);
+    expect(screen.getByText('Meena')).toBeTruthy();
+
+    mocks.roles = ['CASHIER'];
+    if (dashboard) {
+      dashboard.insights = {
+        scope: 'CASHIER',
+        cashier: { ownBills: 5, ownSales: 1300, heldBills: 0 },
+      };
+    }
+    rerender(<DashboardPage />);
+    expect(screen.queryByText('Meena')).toBeNull();
+    expect(screen.getByText('dashboard.insights.cashier.title')).toBeTruthy();
   });
 
   it('degrades one unavailable decision group without hiding successful groups or totals', () => {

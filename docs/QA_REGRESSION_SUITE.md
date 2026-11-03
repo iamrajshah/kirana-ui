@@ -3,6 +3,17 @@
 Use a disposable or explicitly approved demo tenant. Never store passwords,
 tokens, OTPs, customer data, or provider keys in this file or a test report.
 
+## Release evidence — 4 November 2026 candidate
+
+- 99 test files / 454 tests passed after the trial, entitlement, dashboard and
+  margin-preview changes.
+- TypeScript, ESLint with zero warnings and the production Vite build passed.
+- New coverage verifies owner seasonal/history states, manager cashier
+  performance, cashier financial privacy, dynamic plan entitlements, direct
+  route gating, countdown boundaries and stable partial margin preview.
+- Production deployment and real-device APK smoke testing are release steps,
+  not implied by these local results.
+
 ## Release evidence — 3 November 2026
 
 Tested POS baseline: `b88e7bf` against server `9aeef37`.
@@ -46,6 +57,12 @@ Test server denial, not only hidden navigation.
    and automatic demo behaviour must match `/public/product` readiness flags.
 6. Suspended/expired subscription redirects to the in-app renewal/restricted
    screen without exposing business routes.
+7. Create two fresh Google demos at the same time. Confirm different tenant IDs,
+   exactly one firm in each, and that a product/bill change in one is invisible
+   in the other.
+8. Verify the trial banner shows days/hours, changes to red at five hours, and
+   expired operational data appears in Platform Admin cleanup only after the
+   configured retention point.
 
 ## Billing, khata, and documents
 
@@ -56,6 +73,9 @@ Test server denial, not only hidden navigation.
    balance, dashboard, and reports without a manual refresh.
 5. Verify authorized bill-level profit preview and confirm it never appears on
    the customer document.
+   Change quantities repeatedly and confirm the compact value does not flash.
+   When only some items have purchase cost, verify it shows the covered/total
+   count and warns that the final profit may vary.
 6. Hold, resume, release, and manager-takeover a bill across counters.
 7. Finalization returns to the next-bill workflow while Invoice History retains
    print, PDF, and share.
@@ -89,6 +109,24 @@ Test server denial, not only hidden navigation.
 5. Change plan, feature global state, and role policy in Admin; refresh session
    context and verify the POS changes without a UI deployment.
 6. Enforce staff/firm/device limits and add-ons server-side.
+7. Change public plan price, limits and entitlement list in Admin. Reopen Plan &
+   account and verify the returned catalogue version and features—not hard-coded
+   UI copy—are displayed. Existing paid access must remain pinned until an
+   explicit subscription change.
+8. Open every hidden page by its direct URL and call its API directly. Both must
+   deny access when the granular entitlement or role policy is absent.
+
+## Role-aware dashboard
+
+1. OWNER: verify month/current comparison, payment mix, order funnel and shop-wide
+   totals match source bills/payments.
+2. With less than one comparable year of history, verify the seasonal card says
+   history is building. With seeded comparable history, verify each suggested
+   item links to the correct product and exposes its confidence label.
+3. MANAGER: verify cashier bill count, sales and average bill are scoped to the
+   selected period and tenant.
+4. CASHIER: verify only their own counter figures appear; payables, receivables,
+   other cashiers and owner analysis must be absent from markup and API response.
 
 ## Remaining operational areas
 

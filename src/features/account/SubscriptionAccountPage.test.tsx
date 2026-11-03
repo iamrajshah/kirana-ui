@@ -20,7 +20,7 @@ const session = {
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, values?: Record<string, unknown>) =>
-      `${key}${values?.plan ? `:${values.plan}` : ''}`,
+      `${key}${values?.plan ? `:${values.plan}` : ''}${values?.version ? `:${values.version}` : ''}`,
   }),
 }));
 vi.mock('@core/hooks', () => ({ useAppSelector: () => session }));
@@ -34,9 +34,16 @@ vi.mock('@core/api/lifecycleApi', () => ({
     data: {
       plans: [
         {
-          code: 'DEMO', name: 'Demo', description: 'Seven-day preview',
-          quarterlyPricePaise: 0, halfYearlyPricePaise: 0, yearlyPricePaise: 0,
-          staffLimit: 3, firmLimit: 1, entitlements: ['CORE_POS'],
+          code: 'DEMO',
+          name: 'Demo',
+          description: 'Seven-day preview',
+          quarterlyPricePaise: 0,
+          halfYearlyPricePaise: 0,
+          yearlyPricePaise: 0,
+          staffLimit: 3,
+          firmLimit: 1,
+          version: 7,
+          entitlements: ['CORE_POS'],
         },
         {
           code: 'STARTER',
@@ -47,16 +54,59 @@ vi.mock('@core/api/lifecycleApi', () => ({
           yearlyPricePaise: 500000,
           staffLimit: 2,
           firmLimit: 1,
-          entitlements: ['CORE_POS', 'ESSENTIAL_REPORTS'],
+          version: 7,
+          entitlements: ['BILLING', 'CUSTOMERS_KHATA'],
         },
-        { code: 'PRO', name: 'Pro', description: 'Busy counter', quarterlyPricePaise: 240000, halfYearlyPricePaise: 450000, yearlyPricePaise: 800000, staffLimit: 3, firmLimit: 1, entitlements: ['CORE_POS', 'ADVANCED_REPORTS', 'CUSTOM_BARCODE'] },
-        { code: 'BUSINESS', name: 'Business', description: 'Family business', quarterlyPricePaise: 420000, halfYearlyPricePaise: 790000, yearlyPricePaise: 1400000, staffLimit: 5, firmLimit: 3, entitlements: ['CORE_POS', 'ADVANCED_REPORTS', 'CUSTOM_BARCODE', 'MULTI_FIRM'] },
+        {
+          code: 'PRO',
+          name: 'Pro',
+          description: 'Busy counter',
+          quarterlyPricePaise: 240000,
+          halfYearlyPricePaise: 450000,
+          yearlyPricePaise: 800000,
+          staffLimit: 3,
+          firmLimit: 1,
+          version: 7,
+          entitlements: ['BILLING', 'ADVANCED_REPORTS', 'CUSTOM_BARCODE'],
+        },
+        {
+          code: 'BUSINESS',
+          name: 'Business',
+          description: 'Family business',
+          quarterlyPricePaise: 420000,
+          halfYearlyPricePaise: 790000,
+          yearlyPricePaise: 1400000,
+          staffLimit: 5,
+          firmLimit: 3,
+          version: 7,
+          entitlements: ['BILLING', 'ADVANCED_REPORTS', 'CUSTOM_BARCODE', 'MULTI_FIRM'],
+        },
       ],
       addOns: [
-        { code: 'EXTRA_STAFF', name: 'Additional staff', description: 'Add staff', availableOn: ['PRO', 'BUSINESS'], quarterlyPricePaise: 25000, halfYearlyPricePaise: 45000, yearlyPricePaise: 80000 },
-        { code: 'EXTRA_FIRM', name: 'Additional firm', description: 'Add firm', availableOn: ['BUSINESS'], quarterlyPricePaise: 60000, halfYearlyPricePaise: 110000, yearlyPricePaise: 200000 },
+        {
+          code: 'EXTRA_STAFF',
+          name: 'Additional staff',
+          description: 'Add staff',
+          availableOn: ['PRO', 'BUSINESS'],
+          quarterlyPricePaise: 25000,
+          halfYearlyPricePaise: 45000,
+          yearlyPricePaise: 80000,
+        },
+        {
+          code: 'EXTRA_FIRM',
+          name: 'Additional firm',
+          description: 'Add firm',
+          availableOn: ['BUSINESS'],
+          quarterlyPricePaise: 60000,
+          halfYearlyPricePaise: 110000,
+          yearlyPricePaise: 200000,
+        },
       ],
-      billing: { periods: ['QUARTERLY', 'HALF_YEARLY', 'YEARLY'], yearlyRecommended: true, taxes: 'Prices exclude GST' },
+      billing: {
+        periods: ['QUARTERLY', 'HALF_YEARLY', 'YEARLY'],
+        yearlyRecommended: true,
+        taxes: 'Prices exclude GST',
+      },
       support: { email: 'support@test.dev' },
     },
   }),
@@ -82,7 +132,9 @@ describe('SubscriptionAccountPage', () => {
   it('shows lifecycle guidance and server-priced annual plans by default', () => {
     render(<SubscriptionAccountPage />);
     expect(screen.getByText('account.lifecycle.TRIALING')).toBeTruthy();
-    expect(screen.getByText((_, node) => node?.textContent === '₹5,000/account.term.yearly')).toBeTruthy();
+    expect(
+      screen.getByText((_, node) => node?.textContent === '₹5,000/account.term.yearly')
+    ).toBeTruthy();
     expect(
       screen.getByRole('button', { name: 'account.yearly' }).getAttribute('aria-pressed')
     ).toBe('true');
@@ -91,6 +143,8 @@ describe('SubscriptionAccountPage', () => {
     expect(screen.getAllByText('account.allDevices')).toHaveLength(3);
     expect(screen.getAllByText('account.gstExclusive')).toHaveLength(3);
     expect(screen.getByText('Additional staff')).toBeTruthy();
+    expect(screen.getAllByText('account.entitlements.BILLING')).toHaveLength(3);
+    expect(screen.getAllByText('account.catalogueVersion:7')).toHaveLength(3);
   });
 
   it('requires explicit deletion confirmation', () => {

@@ -182,6 +182,13 @@
     "deletionBody": "साइन इन केलेल्या खात्यातून हटवण्याची विनंती करा किंवा मदतीशी संपर्क साधा. आवश्यक तपासणीनंतर डेमो ओळख हटवता येते. सशुल्क दुकानाचे लेखा रेकॉर्ड सहाय्यित मालकी आणि कायदेशीर जतन प्रक्रियेनुसार हाताळले जातात.",
     "supportAction": "किराणा मदतीशी संपर्क साधा"
   },
+  "trialBanner": {
+    "label": "मोफत डेमो",
+    "daysHours": "{{days}} दिवस {{hours}} तास बाकी",
+    "hoursMinutes": "{{hours}} तास {{minutes}} मिनिटे बाकी",
+    "expired": "चाचणी संपली",
+    "viewPlans": "प्लॅन पहा"
+  },
   "account": {
     "eyebrow": "तुमचे किराणा खाते",
     "title": "प्लॅन आणि खाते",
@@ -205,6 +212,37 @@
     },
     "allDevices": "मोबाइल + वेब/डेस्कटॉप",
     "gstExclusive": "+ GST",
+    "catalogueVersion": "प्लॅन कॅटलॉग आवृत्ती {{version}}",
+    "entitlements": {
+      "DASHBOARD": "भूमिकेनुसार डॅशबोर्ड",
+      "BILLING": "जलद बिलिंग आणि चेकआउट",
+      "INVOICES": "बिले आणि पावत्या",
+      "CUSTOMERS_KHATA": "ग्राहक आणि खाते",
+      "PAYMENTS": "पेमेंट संकलन",
+      "PRODUCTS": "उत्पादने आणि बारकोड",
+      "INVENTORY": "स्टॉक आणि इन्व्हेंटरी",
+      "PURCHASES": "खरेदी",
+      "SUPPLIERS": "पुरवठादार",
+      "REPORTS": "व्यवसाय अहवाल",
+      "SHIFTS": "शिफ्ट ताळमेळ",
+      "STAFF": "कर्मचारी व्यवस्थापन",
+      "FIRMS_SETTINGS": "फर्म आणि दुकान सेटिंग्ज",
+      "IMPORT_EXPORT": "इम्पोर्ट आणि एक्सपोर्ट",
+      "ONLINE_ORDERS": "ऑनलाइन दुकान आणि ऑर्डर",
+      "CORE_POS": "मुख्य POS कामे",
+      "ESSENTIAL_REPORTS": "आवश्यक अहवाल",
+      "ADVANCED_REPORTS": "प्रगत अहवाल",
+      "IMPORT_CUSTOMER_PRODUCT": "ग्राहक आणि उत्पादन इम्पोर्ट",
+      "IMPORT_INVENTORY_CATEGORY_SUPPLIER": "स्टॉक, वर्ग आणि पुरवठादार इम्पोर्ट",
+      "EXPORT_CSV_SIX_DATASETS": "CSV एक्सपोर्ट",
+      "EXPORT_EXCEL": "Excel एक्सपोर्ट",
+      "CUSTOM_BARCODE": "कस्टम बारकोड लेबल",
+      "BACKUP_RESTORE": "बॅकअप आणि रिस्टोर",
+      "MULTI_FIRM": "अनेक कायदेशीर फर्म",
+      "BUSINESS_DOCUMENTS": "ब्रँडेड व्यवसाय दस्तऐवज",
+      "LIVE_MARGIN_PREVIEW": "खाजगी थेट नफा अंदाज",
+      "CUSTOMER_STOREFRONT": "ग्राहक ऑनलाइन दुकान"
+    },
     "staffCount": "{{count}} कर्मचारी",
     "firmCount": "{{count}} फर्म",
     "features": {
@@ -335,6 +373,52 @@
     "totalCustomers": "एकूण ग्राहक",
     "supplierPayables": "पुरवठादारांना देय रक्कम",
     "customerReceivables": "ग्राहकांकडून प्राप्य रक्कम",
+    "insights": {
+      "noData": "पहिल्या व्यवहारानंतर माहिती येथे दिसेल.",
+      "billCount": "{{count}} बिले",
+      "pending": "प्रतीक्षेत",
+      "accepted": "स्वीकारले",
+      "completed": "पूर्ण",
+      "owner": {
+        "title": "मालक नियंत्रण केंद्र",
+        "subtitle": "वाढ, पेमेंट, ऑनलाइन मागणी आणि स्टॉक संकेत एकाच ठिकाणी.",
+        "badge": "मालक दृश्य",
+        "monthSales": "या महिन्याची विक्री",
+        "previousMonth": "मागील महिना",
+        "paymentMix": "ग्राहकांनी कसे पैसे दिले",
+        "onlineOrders": "ऑनलाइन ऑर्डर स्थिती",
+        "seasonalTitle": "हंगामी स्टॉक सल्ला",
+        "seasonalSubtitle": "सूचना तुमच्या विक्री इतिहासावर आधारित आहेत; त्यांना मार्गदर्शन समजा, खरेदी ऑर्डर नाही.",
+        "historyBuilding": "विक्री इतिहास तयार होत आहे",
+        "historyBuildingHint": "पुरेसा जुना डेटा मिळाल्यावर हंगामी सूचना दिसतील.",
+        "lastYear": "गेल्या वर्षी याच महिन्यात: {{quantity}} युनिट",
+        "suggested": "सुचवलेले: {{quantity}} युनिट"
+      },
+      "manager": {
+        "title": "काउंटर कामगिरी",
+        "subtitle": "अनेक अहवाल न उघडता कॅशियरनुसार काम आणि विक्री पहा.",
+        "ordersWaiting": "ऑर्डर प्रतीक्षेत",
+        "ordersAccepted": "ऑर्डर स्वीकारले",
+        "heldBills": "होल्ड बिले",
+        "cashier": "कॅशियर",
+        "bills": "बिले",
+        "sales": "विक्री",
+        "averageBill": "सरासरी बिल"
+      },
+      "cashier": {
+        "title": "आजचा माझा काउंटर",
+        "subtitle": "काउंटर सुरू ठेवण्यासाठी फक्त आवश्यक आकडे.",
+        "bills": "माझी बिले",
+        "sales": "माझी विक्री",
+        "heldBills": "होल्ड बिले"
+      },
+      "confidence": {
+        "high": "उच्च विश्वास",
+        "medium": "मध्यम विश्वास",
+        "low": "प्रारंभिक संकेत",
+        "insufficient_history": "अधिक इतिहास आवश्यक"
+      }
+    },
     "decisionInbox": {
       "title": "लक्ष देण्याची कामे",
       "subtitle": "दुकान चालवण्यासाठी आत्ता सर्वात उपयुक्त तीन कामे.",
@@ -499,6 +583,9 @@
       "privateHint": "फक्त अधिकृत कर्मचाऱ्यांसाठी खाजगी अंदाज; ग्राहकाच्या बिलावर कधीही छापला जाणार नाही.",
       "detail": "अंदाजित खर्च {{cost}} · मार्जिन {{margin}}%",
       "missingCost": "हा अंदाज काढण्यासाठी {{count}} वस्तूंची खरेदी किंमत जोडा.",
+      "partial": "{{total}} पैकी {{covered}} वस्तूंवर आधारित. {{count}} वस्तूंची खरेदी किंमत नसल्यामुळे अंतिम नफा बदलू शकतो.",
+      "updating": "अपडेट होत आहे…",
+      "costNeeded": "खर्च आवश्यक",
       "manageCosts": "उत्पादन खर्च व्यवस्थापित करा"
     },
     "quoteChangedReview": "बिलाचे तपशील बदलले आहेत. पेमेंट घेण्यापूर्वी नवीन रक्कम तपासा.",

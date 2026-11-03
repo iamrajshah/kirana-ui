@@ -182,6 +182,13 @@
     "deletionBody": "आप साइन इन किए हुए खाते से हटाने का अनुरोध कर सकते हैं या सहायता से संपर्क कर सकते हैं। आवश्यक जाँच के बाद डेमो पहचान हटाई जा सकती है। भुगतान वाली दुकान के लेखा रिकॉर्ड सहायता-आधारित स्वामित्व और कानूनी संरक्षण प्रक्रिया का पालन करते हैं।",
     "supportAction": "किराना सहायता से संपर्क करें"
   },
+  "trialBanner": {
+    "label": "मुफ़्त डेमो",
+    "daysHours": "{{days}} दिन {{hours}} घंटे बाकी",
+    "hoursMinutes": "{{hours}} घंटे {{minutes}} मिनट बाकी",
+    "expired": "ट्रायल समाप्त",
+    "viewPlans": "प्लान देखें"
+  },
   "account": {
     "eyebrow": "आपका किराना खाता",
     "title": "प्लान और खाता",
@@ -205,6 +212,37 @@
     },
     "allDevices": "मोबाइल + वेब/डेस्कटॉप",
     "gstExclusive": "+ GST",
+    "catalogueVersion": "प्लान कैटलॉग संस्करण {{version}}",
+    "entitlements": {
+      "DASHBOARD": "भूमिका अनुसार डैशबोर्ड",
+      "BILLING": "तेज़ बिलिंग और चेकआउट",
+      "INVOICES": "इनवॉइस और रसीदें",
+      "CUSTOMERS_KHATA": "ग्राहक और खाता",
+      "PAYMENTS": "भुगतान संग्रह",
+      "PRODUCTS": "उत्पाद और बारकोड",
+      "INVENTORY": "स्टॉक और इन्वेंटरी",
+      "PURCHASES": "खरीद",
+      "SUPPLIERS": "सप्लायर",
+      "REPORTS": "व्यवसाय रिपोर्ट",
+      "SHIFTS": "शिफ्ट मिलान",
+      "STAFF": "स्टाफ प्रबंधन",
+      "FIRMS_SETTINGS": "फर्म और दुकान सेटिंग",
+      "IMPORT_EXPORT": "इम्पोर्ट और एक्सपोर्ट",
+      "ONLINE_ORDERS": "ऑनलाइन दुकान और ऑर्डर",
+      "CORE_POS": "मुख्य POS काम",
+      "ESSENTIAL_REPORTS": "ज़रूरी रिपोर्ट",
+      "ADVANCED_REPORTS": "उन्नत रिपोर्ट",
+      "IMPORT_CUSTOMER_PRODUCT": "ग्राहक और उत्पाद इम्पोर्ट",
+      "IMPORT_INVENTORY_CATEGORY_SUPPLIER": "स्टॉक, श्रेणी और सप्लायर इम्पोर्ट",
+      "EXPORT_CSV_SIX_DATASETS": "CSV एक्सपोर्ट",
+      "EXPORT_EXCEL": "Excel एक्सपोर्ट",
+      "CUSTOM_BARCODE": "कस्टम बारकोड लेबल",
+      "BACKUP_RESTORE": "बैकअप और रिस्टोर",
+      "MULTI_FIRM": "कई कानूनी फर्म",
+      "BUSINESS_DOCUMENTS": "ब्रांडेड व्यवसाय दस्तावेज़",
+      "LIVE_MARGIN_PREVIEW": "निजी लाइव लाभ अनुमान",
+      "CUSTOMER_STOREFRONT": "ग्राहक ऑनलाइन दुकान"
+    },
     "staffCount": "{{count}} स्टाफ",
     "firmCount": "{{count}} फर्म",
     "features": {
@@ -335,6 +373,52 @@
     "totalCustomers": "कुल ग्राहक",
     "supplierPayables": "आपूर्तिकर्ताओं को देय राशि",
     "customerReceivables": "ग्राहकों से प्राप्य राशि",
+    "insights": {
+      "noData": "पहले लेनदेन के बाद गतिविधि यहाँ दिखाई देगी।",
+      "billCount": "{{count}} बिल",
+      "pending": "प्रतीक्षा में",
+      "accepted": "स्वीकृत",
+      "completed": "पूरा",
+      "owner": {
+        "title": "मालिक नियंत्रण केंद्र",
+        "subtitle": "वृद्धि, भुगतान, ऑनलाइन मांग और स्टॉक संकेत एक जगह।",
+        "badge": "मालिक दृश्य",
+        "monthSales": "इस महीने की बिक्री",
+        "previousMonth": "पिछला महीना",
+        "paymentMix": "ग्राहकों ने कैसे भुगतान किया",
+        "onlineOrders": "ऑनलाइन ऑर्डर स्थिति",
+        "seasonalTitle": "मौसमी स्टॉक सलाह",
+        "seasonalSubtitle": "सुझाव आपकी बिक्री के इतिहास पर आधारित हैं; इन्हें मार्गदर्शन मानें, खरीद ऑर्डर नहीं।",
+        "historyBuilding": "बिक्री इतिहास बन रहा है",
+        "historyBuildingHint": "पर्याप्त पुराना डेटा मिलने पर मौसमी सुझाव दिखेंगे।",
+        "lastYear": "पिछले साल इसी महीने: {{quantity}} यूनिट",
+        "suggested": "सुझाव: {{quantity}} यूनिट"
+      },
+      "manager": {
+        "title": "काउंटर प्रदर्शन",
+        "subtitle": "कई रिपोर्ट खोले बिना कैशियर अनुसार काम और बिक्री देखें।",
+        "ordersWaiting": "ऑर्डर प्रतीक्षा में",
+        "ordersAccepted": "ऑर्डर स्वीकृत",
+        "heldBills": "होल्ड बिल",
+        "cashier": "कैशियर",
+        "bills": "बिल",
+        "sales": "बिक्री",
+        "averageBill": "औसत बिल"
+      },
+      "cashier": {
+        "title": "आज मेरा काउंटर",
+        "subtitle": "काउंटर चलाने के लिए केवल ज़रूरी आंकड़े।",
+        "bills": "मेरे बिल",
+        "sales": "मेरी बिक्री",
+        "heldBills": "होल्ड बिल"
+      },
+      "confidence": {
+        "high": "मज़बूत अनुमान",
+        "medium": "मध्यम अनुमान",
+        "low": "शुरुआती संकेत",
+        "insufficient_history": "और इतिहास चाहिए"
+      }
+    },
     "decisionInbox": {
       "title": "आपका ध्यान चाहिए",
       "subtitle": "दुकान चलाने के लिए अभी के तीन सबसे उपयोगी काम।",
@@ -499,6 +583,9 @@
       "privateHint": "केवल अधिकृत स्टाफ के लिए निजी अनुमान; ग्राहक के बिल पर कभी नहीं छपेगा।",
       "detail": "अनुमानित लागत {{cost}} · मार्जिन {{margin}}%",
       "missingCost": "यह अनुमान निकालने के लिए {{count}} वस्तु की खरीद लागत जोड़ें।",
+      "partial": "{{total}} में से {{covered}} वस्तुओं पर आधारित। {{count}} वस्तुओं की खरीद लागत नहीं है, इसलिए अंतिम लाभ बदल सकता है।",
+      "updating": "अपडेट हो रहा है…",
+      "costNeeded": "लागत चाहिए",
       "manageCosts": "उत्पाद लागत संभालें"
     },
     "quoteChangedReview": "बिल विवरण बदल गया है। भुगतान लेने से पहले नई राशि जांचें।",

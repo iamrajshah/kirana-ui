@@ -29,6 +29,35 @@ workflow should remain understandable in English, Hindi, Marathi, and Gujarati.
 
 ## What we have developed
 
+### Release candidate — 4 November 2026
+
+This candidate makes trial, plan and feature behaviour runtime-controlled rather
+than tied to a UI deployment:
+
+- a private Google demo receives its own tenant, owner, one legal firm and
+  tenant-scoped fixture data;
+- the Demo plan includes the online storefront/order workflow, while multi-firm
+  access remains excluded;
+- the plan page renders the current public catalogue version, prices, limits and
+  entitlement list returned by the server;
+- navigation, direct routes and server APIs use granular feature codes, and the
+  POS refreshes role/feature policy while it is open;
+- a visible seven-day countdown turns critical during the final five hours;
+- the private profit hint is compact, remains stable while quantities change and
+  labels partial estimates when one or more purchase costs are missing;
+- OWNER sees monthly trend, payment mix, online-order flow and honest seasonal
+  stock guidance; MANAGER sees cashier workload/sales; CASHIER sees only their
+  own counter summary;
+- the demo catalogue uses deterministic product-specific artwork rather than a
+  shared category placeholder.
+
+All trial tenants may share one physical MySQL service, but every operational
+row is scoped by `tenant_id` and authenticated membership. Parallel demos do
+not share firms, products, bills, customers, carts or orders. Expired demo
+operational data becomes cleanup-eligible 24 hours after expiry; identity,
+lead, consent and audit evidence remain for support and compliance. Cleanup is
+an explicit, reauthenticated Platform Admin action because it is destructive.
+
 ### Current release snapshot — 30 October 2026
 
 Runtime revision `7dc81aa` is the deployed 30 October demo baseline. Cloudflare
@@ -42,13 +71,13 @@ site's release manifest must match the intended runtime revision before a
 release is declared live; a later docs-only merge does not require another app
 deployment.
 
-Google entry is deliberately narrow: an active owner whose Google email is
-already linked, or whose Platform Admin invitation is still valid, may sign in.
-Generic new-Google-user admission and shared demo provisioning remain disabled.
-The first verified invitation claim links the Google subject to the existing
-owner without removing password login or creating another tenant, user, or
-membership. Public password and Google failures do not trigger protected-token
-refresh or global logout behaviour.
+Google entry supports two safe paths: an active owner whose Google email is
+already linked (or invited by Platform Admin) opens that membership; a genuinely
+new Google identity may create one private seven-day demo. The first verified
+invitation claim links the Google subject to the existing owner without removing
+password login or creating another tenant, user, or membership. Public password
+and Google failures do not trigger protected-token refresh or global logout
+behaviour.
 
 ### Platform-managed shop onboarding
 
@@ -107,6 +136,32 @@ totals:
 Each group shows at most three records and links to the screen where the action
 can be completed. If one group fails, the other groups and the dashboard totals
 remain usable. Cashiers continue to see their normal operational dashboard.
+
+### Role-aware business pulse
+
+- OWNER receives business-wide month comparison, payment mix and online-order
+  flow. Seasonal reorder suggestions appear only when comparable history exists;
+  otherwise the UI says that history is still building.
+- MANAGER receives cashier bill count, sales, average basket and the current
+  held/online queue.
+- CASHIER receives only their own bill count, sales and held bills. Supplier
+  payables, customer receivables and staff performance are not rendered.
+- These panels are API summaries, not browser-side accounting. Database indexes
+  support the bounded dashboard queries.
+
+### Runtime feature and plan controls
+
+- A plan version describes the feature ceiling, price and capacity shown to a
+  buyer. Existing paid subscriptions stay pinned to their contracted immutable
+  version until an explicit plan change.
+- Platform Admin feature-role policy independently decides which OWNER, MANAGER
+  or CASHIER roles may use each enabled feature. An empty role list disables it
+  for shop users.
+- The effective rule is the intersection of subscription entitlement and role
+  policy. The UI hides navigation and protects direct routes; the server repeats
+  the decision for every classified API route.
+- Public plan catalogue responses are refreshed without a release. Open POS
+  sessions also refresh feature-role access in the background.
 
 ### Store barcode labels
 

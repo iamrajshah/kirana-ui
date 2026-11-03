@@ -33,13 +33,22 @@ import { canEditTenantDocumentSettings } from './documentSettingsAccess';
 import './ProfilePage.css';
 import { DeviceSecurityCard } from './DeviceSecurityCard';
 import { StorefrontSettingsCard } from './StorefrontSettingsCard';
+import { selectCommercialAccess } from '@core/auth/authSlice';
+import { canUseCommercialFeature } from '@core/commercial';
 
 export const ProfilePage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const user = useAppSelector((state) => state.auth.user);
+  const commercialAccess = useAppSelector(selectCommercialAccess);
   const { theme, toggleTheme } = useTheme();
-  const canManageTenantSettings = canEditTenantDocumentSettings(user?.roles || []);
-  const canManageFirms = user?.roles?.includes('OWNER') || false;
+  const roles = user?.roles || [];
+  const canManageTenantSettings =
+    canEditTenantDocumentSettings(roles) &&
+    canUseCommercialFeature(roles, commercialAccess, 'FIRMS_SETTINGS');
+  const canManageFirms =
+    roles.includes('OWNER') && canUseCommercialFeature(roles, commercialAccess, 'FIRMS_SETTINGS');
+  const canManageStorefront =
+    roles.includes('OWNER') && canUseCommercialFeature(roles, commercialAccess, 'ONLINE_ORDERS');
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -163,7 +172,7 @@ export const ProfilePage: React.FC = () => {
 
         {canManageTenantSettings && <DocumentSettingsCard />}
         {canManageFirms && <FirmSettingsCard />}
-        {canManageFirms && <StorefrontSettingsCard />}
+        {canManageStorefront && <StorefrontSettingsCard />}
 
         <IonCard>
           <IonCardHeader>

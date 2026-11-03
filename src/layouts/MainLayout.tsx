@@ -29,6 +29,7 @@ import '@components/Workspace/workspace.css';
 import { useGetCommercialAccessQuery } from '@core/api/subscriptionApi';
 import { SessionLifecycleSync } from './SessionLifecycleSync';
 import { ProvisioningRecoveryPage } from '@features/account/ProvisioningRecoveryPage';
+import { TrialCountdownBanner } from '@components/TrialCountdownBanner';
 
 const DashboardPage = lazy(() =>
   import('@features/dashboard/DashboardPage').then((module) => ({ default: module.DashboardPage }))
@@ -159,7 +160,14 @@ export const MainLayout: React.FC = () => {
   const location = useLocation();
   const user = useAppSelector(selectCurrentUser);
   const commercialAccess = useAppSelector(selectCommercialAccess);
-  useGetCommercialAccessQuery();
+  // Admin feature/role changes are runtime configuration, not app releases.
+  // Refresh them quietly so an open POS session follows the control plane
+  // without requiring logout, cache clearing, or a new deployment.
+  useGetCommercialAccessQuery(undefined, {
+    pollingInterval: 60_000,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
   const isProvisioning = commercialAccess?.state === 'PROVISIONING';
   const navigation = useMemo(
     () => getNavigationItems(user?.roles ?? [], commercialAccess),
@@ -206,6 +214,7 @@ export const MainLayout: React.FC = () => {
       >
         <SideMenu />
         <div id="main-content" className="workspace-main">
+          <TrialCountdownBanner />
           <IonTabs className="workspace-tabs">
             <IonRouterOutlet>
               <Route exact path={ROUTES.PROFILE} render={() => renderPage(ProfilePage)} />

@@ -4,6 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfilePage } from './ProfilePage';
 
+const commercialSelector = vi.hoisted(() => vi.fn());
 const profileState = vi.hoisted(() => ({ roles: ['OWNER'] as string[] }));
 
 vi.mock('react-i18next', () => ({
@@ -14,15 +15,19 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('@core/hooks', () => ({
-  useAppSelector: () => ({
-    id: '1',
-    name: 'Rajesh',
-    phone: '9876543210',
-    email: 'rajesh@example.com',
-    roles: profileState.roles,
-    tenant: { id: '1', name: 'Shah Kirana', status: 'ACTIVE' },
-  }),
+  useAppSelector: (selector: unknown) =>
+    selector === commercialSelector
+      ? null
+      : {
+          id: '1',
+          name: 'Rajesh',
+          phone: '9876543210',
+          email: 'rajesh@example.com',
+          roles: profileState.roles,
+          tenant: { id: '1', name: 'Shah Kirana', status: 'ACTIVE' },
+        },
 }));
+vi.mock('@core/auth/authSlice', () => ({ selectCommercialAccess: commercialSelector }));
 
 vi.mock('@core/api/userApi', () => ({
   useUpdateProfileMutation: () => [vi.fn(), { isLoading: false }],
