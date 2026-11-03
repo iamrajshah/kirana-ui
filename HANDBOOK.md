@@ -314,3 +314,11 @@ The Online Orders screen opens that bill directly, Invoice Detail finalizes a
 draft and records payment, then returns to Online Orders. Only a server-confirmed
 `PAID` invoice exposes Complete. The list polls while visible and refetches on
 focus/reconnect so payment state is not held behind a browser refresh.
+
+## Private-demo provisioning resilience — 3 November 2026
+
+Fresh Google onboarding advances through several resumable fixture stages. The
+client deliberately spaces resume calls, displays a localized retry message for
+429 responses, and treats non-JSON failure bodies as an API failure rather than
+showing the browser's JSON parser text. Retry must preserve the provisioning
+token and resume the same tenant; it must never start a duplicate shop.
