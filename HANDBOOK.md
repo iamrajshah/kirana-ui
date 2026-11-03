@@ -187,8 +187,14 @@ remain usable. Cashiers continue to see their normal operational dashboard.
 - Unknown-barcode creation must remain tenant-scoped and permission-protected;
   never let a cashier bypass the server's product-creation permission.
 - Whole-bill margin preview is read-only decision support. Render it only when
-  the server resolves `BILL_MARGIN_PREVIEW` for the signed-in role, and never
+  the server resolves `LIVE_MARGIN_PREVIEW` for the signed-in role, and never
   print or share it on a customer document.
+- Authorized owners manage the current per-unit purchase cost from Product
+  Details. Use opening cost for existing stock and manual correction only with
+  a reason; ordinary purchases refresh the cost automatically.
+- Product lists and cashier-readable product responses must never expose cost
+  snapshots. Load them from the separately authorized product-cost endpoint,
+  and keep historical purchase invoices and completed bills unchanged.
 - Feature-role access comes from the active plan version. UI visibility must
   follow server access; it must never become an independent authorization rule.
 

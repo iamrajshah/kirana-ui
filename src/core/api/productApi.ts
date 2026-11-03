@@ -10,6 +10,7 @@ import type {
   BarcodeProductResponse,
   StoreBarcodeInfo,
   UqcCode,
+  VariantPurchaseCost,
 } from '../types';
 
 export interface BillingSearchVariant {
@@ -139,6 +140,32 @@ export const productApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Product'],
     }),
+    updateVariantPurchaseCost: builder.mutation<
+      ApiResponse<VariantPurchaseCost>,
+      {
+        id: string;
+        purchase_price: number;
+        source: 'OPENING_STOCK' | 'MANUAL_CORRECTION';
+        reason: string;
+      }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/variants/${id}/purchase-cost`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'Product', id: `cost-${id}` }],
+    }),
+    getProductPurchaseCosts: builder.query<ApiResponse<VariantPurchaseCost[]>, string>({
+      query: (productId) => `/products/${productId}/purchase-costs`,
+      providesTags: (result) => [
+        ...(result?.data.map((cost) => ({
+          type: 'Product' as const,
+          id: `cost-${cost.variant_id}`,
+        })) ?? []),
+        { type: 'Product', id: 'COSTS' },
+      ],
+    }),
     // Barcode endpoints
     // Lookup barcode (local + external - preferred)
     lookupBarcode: builder.query<BarcodeLookupResponse, string>({
@@ -181,6 +208,8 @@ export const {
   useCreateVariantMutation,
   useUpdateProductMutation,
   useUpdateVariantMutation,
+  useUpdateVariantPurchaseCostMutation,
+  useGetProductPurchaseCostsQuery,
   useLookupBarcodeQuery,
   useLazyLookupBarcodeQuery,
   useScanBarcodeQuery,

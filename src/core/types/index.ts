@@ -117,6 +117,14 @@ export interface ProductVariant {
   barcodes?: BarcodeInfo[];
 }
 
+export interface VariantPurchaseCost {
+  variant_id: string;
+  purchase_price: number | null;
+  source: 'PURCHASE' | 'OPENING_STOCK' | 'MANUAL_CORRECTION' | null;
+  updated_at: string | null;
+  note: string | null;
+}
+
 export type DocumentMode = 'SIMPLE_RECEIPT' | 'GST_TAX_INVOICE';
 export type ReceiptPaperWidth = 'MM58' | 'MM80';
 export type ReceiptTemplate = 'CLASSIC' | 'MODERN' | 'COMPACT';
