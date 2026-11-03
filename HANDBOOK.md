@@ -4,6 +4,11 @@
 
 The Business-plan `Online orders` screen is the POS action queue for public storefront requests. `PLACED` means no sale exists yet. Accepting creates one draft invoice, after which the shop can move the request through Preparing, Ready and Completed, or cancel it. Product create/edit owns the public catalogue image URL and preview; barcode enrichment remains a suggestion and the shop is responsible for the final image.
 
+The same screen has an `Offers` tab for OWNER and MANAGER users. They can
+create an offer, associate it with a product, publish or pause it, and remove it.
+Offer management is part of the Business-plan `CUSTOMER_STOREFRONT` feature;
+the server remains authoritative for role and plan access.
+
 Maintainer: [Rajesh Shah (@iamrajshah)](https://github.com/iamrajshah)
 
 This handbook explains what the Kirana POS interface is designed to do, why the

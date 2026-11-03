@@ -356,6 +356,7 @@ export const apiSlice = createApi({
     'Account',
     'Renewal',
     'Shift',
+    'StorefrontOffer',
   ],
   endpoints: () => ({}),
 });

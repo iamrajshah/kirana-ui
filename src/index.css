@@ -37,6 +37,12 @@ ion-app {
   width: 100%;
 }
 
+/* Keep the sign-in surface intentionally compact on wide web screens. The
+   class selector must not override Tailwind's max-w-md with max-width:100%. */
+.login-page-content {
+  max-width: 28rem;
+}
+
 .login-page-form {
   overflow-wrap: anywhere;
 }
