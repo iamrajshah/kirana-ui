@@ -75,6 +75,15 @@ export const navigationItems: readonly NavigationItem[] = [
     permission: 'invoices',
   },
   {
+    id: 'storefront-orders',
+    href: ROUTES.STOREFRONT_ORDERS,
+    labelKey: 'storefrontOrders.title',
+    icon: receipt,
+    group: 'sell',
+    permission: 'invoices',
+    commercialFeature: 'CUSTOMER_STOREFRONT',
+  },
+  {
     id: 'payments',
     href: ROUTES.PAYMENTS,
     labelKey: 'payments.title',

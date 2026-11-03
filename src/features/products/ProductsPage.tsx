@@ -109,6 +109,7 @@ export const ProductsPage: React.FC = () => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
 
   const [productName, setProductName] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [brand, setBrand] = useState('');
   const [size, setSize] = useState('');
@@ -154,6 +155,7 @@ export const ProductsPage: React.FC = () => {
 
   const resetForm = () => {
     setProductName('');
+    setImageUrl('');
     setCategoryId(null);
     setBrand('');
     setSize('');
@@ -188,6 +190,7 @@ export const ProductsPage: React.FC = () => {
 
       const productResult = await createProduct({
         name: productName,
+        image_url: imageUrl.trim() || null,
         category_id: categoryId,
         hsn_code: hsnCode.trim() || null,
       }).unwrap();
@@ -386,6 +389,21 @@ export const ProductsPage: React.FC = () => {
                   onChange={setProductName}
                   placeholder={t('products.enterProductNamePlaceholder')}
                 />
+
+                <Input
+                  label={t('products.imageUrlLabel')}
+                  value={imageUrl}
+                  onChange={setImageUrl}
+                  placeholder={t('products.imageUrlPlaceholder')}
+                  inputMode="text"
+                />
+                {imageUrl && (
+                  <img
+                    src={imageUrl}
+                    alt={productName || t('products.imagePreview')}
+                    style={{ width: 120, height: 120, objectFit: 'contain', borderRadius: 12 }}
+                  />
+                )}
 
                 <Select
                   label={t('products.categoryLabel')}

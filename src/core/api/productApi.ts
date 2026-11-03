@@ -33,12 +33,14 @@ export type Packaging = 'POUCH' | 'BOTTLE' | 'CAN' | 'BOX' | 'PACKET' | 'JAR' | 
 
 interface CreateProductRequest {
   name: string;
+  image_url?: string | null;
   category_id?: number | null;
   hsn_code?: string | null;
 }
 
 interface UpdateProductRequest {
   name?: string;
+  image_url?: string | null;
   category_id?: number | null;
   hsn_code?: string | null;
 }

@@ -20,7 +20,8 @@ export type CommercialFeatureCode =
   | 'BACKUP_RESTORE'
   | 'MULTI_FIRM'
   | 'BUSINESS_DOCUMENTS'
-  | 'LIVE_MARGIN_PREVIEW';
+  | 'LIVE_MARGIN_PREVIEW'
+  | 'CUSTOMER_STOREFRONT';
 export type CommercialDenialCode =
   | 'COMMERCIAL_SUSPENDED'
   | 'COMMERCIAL_READ_ONLY'

@@ -641,6 +641,9 @@
     "enterGSTPercentage": "જીએસટી ટકાવારી દાખલ કરો",
     "enterSKUCode": "એસકેયુ કોડ દાખલ કરો",
     "productNameLabel": "ઉત્પાદનનું નામ *",
+    "imageUrlLabel": "પ્રોડક્ટ ઇમેજ URL",
+    "imageUrlPlaceholder": "સુરક્ષિત ઇમેજ લિંક પેસ્ટ કરો",
+    "imagePreview": "પ્રોડક્ટ ઇમેજ પૂર્વદર્શન",
     "categoryLabel": "શ્રેણી",
     "brandLabel": "બ્રાન્ડ",
     "sizeLabel": "માપ",
@@ -1783,6 +1786,31 @@
     },
     "product": {
       "units": "એકમો"
+    }
+  },
+  "storefrontOrders": {
+    "title": "ઓનલાઇન ઓર્ડર",
+    "subtitle": "બિલ બનાવતાં પહેલાં ગ્રાહકની વિનંતી તપાસો",
+    "empty": "હજુ કોઈ ઓનલાઇન ઓર્ડર નથી",
+    "customer": "ગ્રાહક",
+    "item": "વસ્તુ",
+    "address": "ડિલિવરી સરનામું",
+    "note": "ગ્રાહક નોંધ",
+    "fulfillment": { "PICKUP": "દુકાનેથી પિકઅપ", "DELIVERY": "ઘરે ડિલિવરી" },
+    "status": {
+      "PLACED": "નવો",
+      "ACCEPTED": "સ્વીકાર્યો",
+      "PREPARING": "તૈયાર થઈ રહ્યો",
+      "READY": "તૈયાર",
+      "COMPLETED": "પૂર્ણ",
+      "CANCELLED": "રદ"
+    },
+    "actions": {
+      "ACCEPTED": "ઓર્ડર સ્વીકારો",
+      "PREPARING": "તૈયારી શરૂ કરો",
+      "READY": "તૈયાર દર્શાવો",
+      "COMPLETED": "પૂર્ણ કરો",
+      "CANCELLED": "રદ કરો"
     }
   }
 }

@@ -210,6 +210,7 @@ describe('protected route configuration', () => {
       [ROUTES.PRODUCTS, 'products'],
       [ROUTES.INVENTORY, 'inventory'],
       [ROUTES.INVOICES, 'invoices'],
+      [ROUTES.STOREFRONT_ORDERS, 'invoices'],
       [ROUTES.PAYMENTS, 'payments'],
       [ROUTES.REPORTS, 'reports'],
       [ROUTES.USERS, 'users'],

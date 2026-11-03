@@ -28,6 +28,7 @@ export const ROUTES = {
   PRODUCT_BARCODE: '/products/barcode/add',
   INVENTORY: '/inventory',
   INVOICES: '/invoices',
+  STOREFRONT_ORDERS: '/storefront-orders',
   PAYMENTS: '/payments',
   REPORTS: '/reports',
   USERS: '/users',

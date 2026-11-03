@@ -90,6 +90,7 @@ export interface Category {
 export interface Product {
   id: string;
   name: string;
+  image_url?: string | null;
   hsn_code?: string | null;
   category_id: string;
   category?: Category;
