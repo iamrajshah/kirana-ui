@@ -77,14 +77,18 @@ Test server denial, not only hidden navigation.
 ## Storefront and commercial controls
 
 1. Owner/authorized staff can copy the canonical `/shop/<slug>` URL.
-2. Owner/authorized manager can create, schedule, publish, pause, and edit an
+2. As OWNER, open Profile > Storefront settings. OFF is the safe default and the
+   customer shop shows only Available/Out of stock. Enable, save and reload the
+   shop to see exact counts. As MANAGER and CASHIER, the card must be absent and
+   a direct server PATCH must remain forbidden.
+3. Owner/authorized manager can create, schedule, publish, pause, and edit an
    offer with valid media; the public storefront shows only currently published
    offers for that tenant.
-3. Incoming orders refresh, status transitions obey the server state machine,
+4. Incoming orders refresh, status transitions obey the server state machine,
    acceptance creates one draft invoice, and the customer status page updates.
-4. Change plan, feature global state, and role policy in Admin; refresh session
+5. Change plan, feature global state, and role policy in Admin; refresh session
    context and verify the POS changes without a UI deployment.
-5. Enforce staff/firm/device limits and add-ons server-side.
+6. Enforce staff/firm/device limits and add-ons server-side.
 
 ## Remaining operational areas
 
