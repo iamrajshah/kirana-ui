@@ -111,3 +111,12 @@ Tenant leakage, role/feature bypass, duplicate financial write, incorrect stock
 or ledger, stale accounting after a successful write, blank/incorrect document,
 unrecoverable navigation, raw server error, broken deep link, or a regression at
 any supported viewport stops the release.
+
+## Online order cash-payment journey
+
+Create an order in the customer storefront. In POS: Accept, Start preparing,
+Mark ready, then confirm the only primary action is Open bill & collect payment.
+Record full cash payment and verify navigation returns to Online Orders. Complete
+must appear only after the refreshed invoice state is PAID. Confirm dashboard,
+invoice, customer ledger, order list, and customer status agree without manually
+refreshing the browser.

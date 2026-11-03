@@ -1849,6 +1849,7 @@
       "ACCEPTED": "Accept order",
       "PREPARING": "Start preparing",
       "READY": "Mark ready",
+      "COLLECT_PAYMENT": "Open bill & collect payment",
       "COMPLETED": "Complete",
       "CANCELLED": "Reject / cancel"
     }

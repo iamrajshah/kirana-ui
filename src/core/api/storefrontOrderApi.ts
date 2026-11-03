@@ -19,6 +19,10 @@ export interface StorefrontOrder {
   customer_note?: string | null;
   delivery_address_snapshot?: string | null;
   created_at?: string | null;
+  invoice_id?: string | null;
+  invoice_number?: string | null;
+  invoice_status?: 'DRAFT' | 'UNPAID' | 'PARTIAL' | 'PAID' | 'CANCELLED' | null;
+  paid_amount?: number | string | null;
   order_items: Array<{
     id: string;
     quantity: number;

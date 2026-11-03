@@ -80,3 +80,11 @@ Cloudflare Pages hosts `kirana-pos.pages.dev`. A release is complete only when
 `/release.json` identifies the tested commit and protected deep links load
 directly. Do not publish automatically for every documentation commit; batch a
 tested product release.
+
+## Online order/payment contract
+
+`StorefrontOrder` carries `invoice_id`, `invoice_status`, and `paid_amount` from
+the API. Never infer payment from the order status. Route unpaid ready orders to
+`/invoices/:id` with `returnTo=/storefront-orders`; after successful collection,
+return and let the refreshed API projection decide whether Complete is allowed.
+The server still enforces this invariant if the UI is bypassed.
