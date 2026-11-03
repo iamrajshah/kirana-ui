@@ -157,6 +157,19 @@ describe('GST report API contract', () => {
     store.dispatch(apiSlice.util.resetApiState());
   });
 
+  it('omits firm selection when the page asks the server to resolve the default firm', async () => {
+    const store = createStore();
+    const params = { from: '2026-11-01', to: '2026-11-04' };
+
+    await store.dispatch(gstReportsApi.endpoints.getGstSummary.initiate(params)).unwrap();
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).not.toContain('firmId=');
+    expect(requests[0]).not.toContain('scope=');
+    expect(gstReportExportUrl('summary', params)).not.toContain('firmId=');
+    store.dispatch(apiSlice.util.resetApiState());
+  });
+
   it('downloads each CA handoff through the authenticated API contract', async () => {
     const store = createStore();
     const params = { from: '2026-11-01', to: '2026-11-04', firmId: '3' };
