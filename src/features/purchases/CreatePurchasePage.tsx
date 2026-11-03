@@ -35,6 +35,11 @@ import { SearchBar, Input, Button, EmptyState } from '../../components';
 import { formatCurrency, debounce } from '@utils/helpers';
 import notificationService from '@core/services/notificationService';
 import { ROUTES } from '@core/constants';
+import {
+  GST_RATE_QUICK_PICKS,
+  isValidGstRate,
+  optionalHsnCodeIsSupported,
+} from '@core/constants/gstMasterData';
 import { reconcilePurchaseFirmId, resolvePurchaseFirmId } from './purchaseFirmSelection';
 import { useAppSelector } from '@core/hooks';
 import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice';
@@ -360,9 +365,8 @@ const CreatePurchasePage: React.FC = () => {
       Number.isInteger(item.quantity) &&
       item.quantity > 0 &&
       item.unit_price > 0 &&
-      item.gst_rate >= 0 &&
-      item.gst_rate <= 28 &&
-      (!item.hsn_code || /^\d{4,8}$/.test(item.hsn_code))
+      isValidGstRate(item.gst_rate) &&
+      optionalHsnCodeIsSupported(item.hsn_code)
   );
   const isFormValid =
     selectedSupplierId &&
@@ -400,12 +404,18 @@ const CreatePurchasePage: React.FC = () => {
             />
 
             {selectedSupplier && (
-              <section className="purchase-place-of-supply" aria-label={t('purchases.placeOfSupply')}>
+              <section
+                className="purchase-place-of-supply"
+                aria-label={t('purchases.placeOfSupply')}
+              >
                 <strong>{t('purchases.placeOfSupply')}</strong>
                 {selectedSupplier.state_code ? (
                   <p>
-                    {selectedSupplier.state || t('common.notAvailable')} ({selectedSupplier.state_code})
-                    {selectedSupplier.gstin ? ` · ${t('suppliers.gstin')}: ${selectedSupplier.gstin}` : ''}
+                    {selectedSupplier.state || t('common.notAvailable')} (
+                    {selectedSupplier.state_code})
+                    {selectedSupplier.gstin
+                      ? ` · ${t('suppliers.gstin')}: ${selectedSupplier.gstin}`
+                      : ''}
                   </p>
                 ) : (
                   <p className="purchase-tax-warning" role="status">
@@ -661,17 +671,27 @@ const CreatePurchasePage: React.FC = () => {
                       <div className="purchase-tax-line-editor">
                         <label>
                           <span>{t('purchases.gstRate')}</span>
-                          <select
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            list={`gst-rate-options-${item.variant_id}`}
                             aria-label={`${item.product_name} ${t('purchases.gstRate')}`}
                             value={item.gst_rate}
                             onChange={(event) =>
-                              updateTaxField(item.variant_id, 'gst_rate', Number(event.target.value))
+                              updateTaxField(
+                                item.variant_id,
+                                'gst_rate',
+                                Number(event.target.value)
+                              )
                             }
-                          >
-                            {[0, 0.25, 3, 5, 12, 18, 28].map((rate) => (
-                              <option key={rate} value={rate}>{rate}%</option>
+                          />
+                          <datalist id={`gst-rate-options-${item.variant_id}`}>
+                            {GST_RATE_QUICK_PICKS.map((rate) => (
+                              <option key={rate} value={rate} />
                             ))}
-                          </select>
+                          </datalist>
                         </label>
                         <label>
                           <span>{t('purchases.hsnCode')}</span>
@@ -757,7 +777,13 @@ const CreatePurchasePage: React.FC = () => {
                         {t('purchases.lineTotal')}{' '}
                         {formatCurrency(
                           calculatePurchaseTaxTotals(
-                            [{ quantity: item.quantity, unitPrice: item.unit_price, gstRate: item.gst_rate }],
+                            [
+                              {
+                                quantity: item.quantity,
+                                unitPrice: item.unit_price,
+                                gstRate: item.gst_rate,
+                              },
+                            ],
                             pricesIncludeTax
                           ).total
                         )}
@@ -792,8 +818,16 @@ const CreatePurchasePage: React.FC = () => {
                 <IonText>
                   <h2 style={{ margin: 0 }}>{formatCurrency(subtotal)}</h2>
                 </IonText>
-                <IonText color="medium"><p>{t('purchases.taxAmount')}: {formatCurrency(calculatedTotals.tax)}</p></IonText>
-                <IonText><h2>{t('purchases.totalAmount')}: {formatCurrency(total)}</h2></IonText>
+                <IonText color="medium">
+                  <p>
+                    {t('purchases.taxAmount')}: {formatCurrency(calculatedTotals.tax)}
+                  </p>
+                </IonText>
+                <IonText>
+                  <h2>
+                    {t('purchases.totalAmount')}: {formatCurrency(total)}
+                  </h2>
+                </IonText>
                 {!selectedSupplier?.state_code && (
                   <p className="purchase-tax-warning" role="status">
                     {t('purchases.taxJurisdictionIncomplete')}

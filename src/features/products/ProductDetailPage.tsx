@@ -39,6 +39,7 @@ import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice'
 import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
 import { hasPermission } from '@core/permissions/permissions';
 import { APP_NAME } from '@core/constants';
+import { optionalGstRateIsValid } from '@core/constants/gstMasterData';
 import { ProductBarcodeLabelModal } from './ProductBarcodeLabelModal';
 import { useGetExpiryAlertsQuery } from '@core/api/expiryApi';
 import { parseOptionalUqcQuantityFactor } from './uqcQuantityFactor';
@@ -159,6 +160,12 @@ export const ProductDetailPage: React.FC = () => {
       setShowError(true);
       return;
     }
+    const parsedGstPercent = editGstPercent ? Number(editGstPercent) : null;
+    if (!optionalGstRateIsValid(parsedGstPercent)) {
+      setErrorMessage(t('taxFields.unsupportedGstRate'));
+      setShowError(true);
+      return;
+    }
 
     try {
       await updateVariant({
@@ -166,7 +173,7 @@ export const ProductDetailPage: React.FC = () => {
         data: {
           selling_price: sellingPrice,
           mrp_price: mrpPrice,
-          gst_percent: editGstPercent ? parseFloat(editGstPercent) : null,
+          gst_percent: parsedGstPercent,
           uqc_code: (editUqcCode as UqcCode) || null,
           unit_label: editUnitLabel.trim() || null,
           uqc_quantity_factor: parsedUqcQuantityFactor.value,
@@ -745,6 +752,10 @@ export const ProductDetailPage: React.FC = () => {
                 <Input
                   label={t('products.gstLabel')}
                   type="number"
+                  min={0}
+                  max={100}
+                  step="0.01"
+                  inputMode="decimal"
                   value={editGstPercent}
                   onChange={setEditGstPercent}
                 />

@@ -22,6 +22,11 @@ import { useTranslation } from 'react-i18next';
 import { Navbar } from '@components/Navbar';
 import { ROUTES } from '@core/constants';
 import {
+  GST_RATE_QUICK_PICKS,
+  optionalGstRateIsValid,
+  optionalHsnCodeIsSupported,
+} from '@core/constants/gstMasterData';
+import {
   type PurchaseImportDraft,
   type PurchaseImportLine,
   useConfirmPurchaseImportMutation,
@@ -419,9 +424,8 @@ const PurchaseBillImportPage: React.FC = () => {
         item.quantity > 0 &&
         Number.isFinite(item.unitPrice) &&
         item.unitPrice > 0 &&
-        (item.gstRate == null ||
-          (Number.isFinite(item.gstRate) && item.gstRate >= 0 && item.gstRate <= 28)) &&
-        (!item.hsnCode?.trim() || /^\d{4,8}$/.test(item.hsnCode.trim())) &&
+        optionalGstRateIsValid(item.gstRate) &&
+        optionalHsnCodeIsSupported(item.hsnCode) &&
         (item.purchaseMode !== 'PACK' ||
           (Boolean(item.purchaseUnitLabel?.trim()) &&
             Number.isInteger(item.unitsPerPurchaseUnit) &&
@@ -885,6 +889,8 @@ const PurchaseBillImportPage: React.FC = () => {
                           min="0"
                           max="100"
                           step="0.01"
+                          list={`gst-rate-options-import-${index}`}
+                          aria-label={`${item.productName} ${t('purchaseImport.taxRate')}`}
                           value={item.gstRate ?? ''}
                           onChange={(event) =>
                             updateLine(item.lineId, {
@@ -892,6 +898,11 @@ const PurchaseBillImportPage: React.FC = () => {
                             })
                           }
                         />
+                        <datalist id={`gst-rate-options-import-${index}`}>
+                          {GST_RATE_QUICK_PICKS.map((rate) => (
+                            <option key={rate} value={rate} />
+                          ))}
+                        </datalist>
                       </label>
                       <label>
                         <span>{t('purchaseImport.hsnCode')}</span>

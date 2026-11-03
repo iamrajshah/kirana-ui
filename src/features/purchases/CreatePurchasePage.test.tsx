@@ -17,8 +17,12 @@ const state = vi.hoisted(() => ({
       state_code: '27',
       default_purchase_firm_id: '2',
       default_purchase_firm: {
-        id: '2', code: 'KJS', legal_name: 'KJS', display_name: 'KJS',
-        is_active: true, is_default_sales: true,
+        id: '2',
+        code: 'KJS',
+        legal_name: 'KJS',
+        display_name: 'KJS',
+        is_active: true,
+        is_default_sales: true,
       },
     },
   ] as Array<Record<string, unknown>>,
@@ -45,7 +49,20 @@ vi.mock('../../core/api/supplierApi', () => ({
 }));
 vi.mock('../../core/api/firmApi', () => ({
   useGetFirmsQuery: () => ({
-    data: { data: { firms: [{ id: '2', code: 'KJS', legal_name: 'KJS', display_name: 'KJS', is_active: true, is_default_sales: true }] } },
+    data: {
+      data: {
+        firms: [
+          {
+            id: '2',
+            code: 'KJS',
+            legal_name: 'KJS',
+            display_name: 'KJS',
+            is_active: true,
+            is_default_sales: true,
+          },
+        ],
+      },
+    },
     isLoading: false,
   }),
 }));
@@ -225,6 +242,12 @@ describe('CreatePurchasePage pending amount', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'search test product' }));
     fireEvent.click(screen.getByRole('button', { name: /Salt/ }));
+    fireEvent.change(screen.getByRole('spinbutton', { name: /Salt purchases.gstRate/ }), {
+      target: { value: '40' },
+    });
+    fireEvent.change(screen.getByLabelText(/Salt purchases.hsnCode/), {
+      target: { value: '100630' },
+    });
     fireEvent.click(screen.getByRole('radio', { name: 'purchases.pricesExcludeTax' }));
     fireEvent.click(screen.getByRole('button', { name: 'purchases.createPurchaseButton' }));
 
@@ -236,9 +259,37 @@ describe('CreatePurchasePage pending amount', () => {
         invoice_number: 'GEM-101',
         prices_include_tax: false,
         place_of_supply_code: '27',
-        items: [expect.objectContaining({ variant_id: 1, gst_rate: 18, hsn_code: '2501' })],
+        items: [expect.objectContaining({ variant_id: 1, gst_rate: 40, hsn_code: '100630' })],
       })
     );
+  });
+
+  it('accepts 4, 6 and 8 digit HSN codes but blocks 5 and 7 digits', () => {
+    render(<CreatePurchasePage />);
+    fireEvent.click(screen.getByRole('button', { name: 'purchases.selectSupplierButton' }));
+    fireEvent.click(screen.getByRole('button', { name: /Gemini Oils/ }));
+    fireEvent.change(screen.getByLabelText('purchases.invoiceNumberLabel'), {
+      target: { value: 'GEM-102' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'search test product' }));
+    fireEvent.click(screen.getByRole('button', { name: /Salt/ }));
+
+    const hsn = screen.getByLabelText(/Salt purchases.hsnCode/);
+    const create = screen.getByRole('button', { name: 'purchases.createPurchaseButton' });
+
+    for (const validHsn of ['1001', '100630', '10063020']) {
+      fireEvent.change(hsn, { target: { value: validHsn } });
+      expect(create.hasAttribute('disabled')).toBe(false);
+    }
+    for (const invalidHsn of ['10012', '1001234']) {
+      fireEvent.change(hsn, { target: { value: invalidHsn } });
+      expect(create.hasAttribute('disabled')).toBe(true);
+    }
+    fireEvent.change(hsn, { target: { value: '1001' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: /Salt purchases.gstRate/ }), {
+      target: { value: '1.5' },
+    });
+    expect(create.hasAttribute('disabled')).toBe(false);
   });
 
   it('warns visibly when supplier state is incomplete', () => {
@@ -247,8 +298,13 @@ describe('CreatePurchasePage pending amount', () => {
     fireEvent.click(screen.getByRole('button', { name: 'purchases.selectSupplierButton' }));
     fireEvent.click(screen.getByRole('button', { name: /Gemini Oils/ }));
     expect(screen.getByText('purchases.incompleteSupplierTaxIdentity')).toBeTruthy();
-    state.suppliers = [{
-      ...state.suppliers[0], gstin: '27ABCDE1234F1Z5', state: 'Maharashtra', state_code: '27',
-    }];
+    state.suppliers = [
+      {
+        ...state.suppliers[0],
+        gstin: '27ABCDE1234F1Z5',
+        state: 'Maharashtra',
+        state_code: '27',
+      },
+    ];
   });
 });

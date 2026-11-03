@@ -101,6 +101,9 @@ describe('AddProductBarcodePage GST quantity facts', () => {
     fireEvent.change(screen.getByLabelText('taxFields.uqcQuantityFactor'), {
       target: { value: '5' },
     });
+    fireEvent.change(screen.getByLabelText('products.gstLabel'), {
+      target: { value: '1.5' },
+    });
     fireEvent.change(screen.getByLabelText('foundation.barcode.initialQuantity *'), {
       target: { value: '2' },
     });
@@ -109,7 +112,7 @@ describe('AddProductBarcodePage GST quantity facts', () => {
     await waitFor(() => expect(state.createProduct).toHaveBeenCalledOnce());
     expect(state.createProduct).toHaveBeenCalledWith(
       expect.objectContaining({
-        variant: expect.objectContaining({ uqcQuantityFactor: 5 }),
+        variant: expect.objectContaining({ gstPercent: 1.5, uqcQuantityFactor: 5 }),
       })
     );
   });

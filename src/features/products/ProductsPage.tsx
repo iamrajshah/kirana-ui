@@ -42,6 +42,7 @@ import {
 } from '@components';
 import { formatCurrency } from '@utils/helpers';
 import { ROUTES } from '@core/constants';
+import { optionalGstRateIsValid } from '@core/constants/gstMasterData';
 import { filterProducts } from '@utils/localSearch';
 import { useDebouncedValue } from '@hooks/useDebouncedValue';
 import { useRequestSettledInfiniteScroll } from '@hooks/useRequestSettledInfiniteScroll';
@@ -205,6 +206,12 @@ export const ProductsPage: React.FC = () => {
         setShowError(true);
         return;
       }
+      const parsedGstPercent = gstPercent ? Number(gstPercent) : null;
+      if (!optionalGstRateIsValid(parsedGstPercent)) {
+        setErrorMessage(t('taxFields.unsupportedGstRate'));
+        setShowError(true);
+        return;
+      }
 
       const productResult = await createProduct({
         name: productName,
@@ -222,7 +229,7 @@ export const ProductsPage: React.FC = () => {
           price: parseFloat(price),
           selling_price: parseFloat(price),
           mrp_price: mrpPrice ? parseFloat(mrpPrice) : null,
-          gst_percent: gstPercent ? parseFloat(gstPercent) : null,
+          gst_percent: parsedGstPercent,
           uqc_code: (uqcCode as UqcCode) || null,
           unit_label: unitLabel.trim() || null,
           uqc_quantity_factor: parsedUqcQuantityFactor.value,
@@ -524,6 +531,10 @@ export const ProductsPage: React.FC = () => {
                   <Input
                     label={t('products.gstLabel')}
                     type="number"
+                    min={0}
+                    max={100}
+                    step="0.01"
+                    inputMode="decimal"
                     value={gstPercent}
                     onChange={setGstPercent}
                     placeholder={t('products.enterGSTPercentage')}

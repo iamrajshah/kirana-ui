@@ -35,6 +35,7 @@ import {
 } from '@components';
 import type { BarcodeLookupData, UqcCode } from '@core/types';
 import { useTranslation } from 'react-i18next';
+import { optionalGstRateIsValid } from '@core/constants/gstMasterData';
 import { parseOptionalUqcQuantityFactor } from './uqcQuantityFactor';
 import './stock-workspace.css';
 
@@ -168,6 +169,12 @@ export const AddProductBarcodePage: React.FC = () => {
       setShowError(true);
       return;
     }
+    const parsedGstPercent = gstPercent ? Number(gstPercent) : null;
+    if (!optionalGstRateIsValid(parsedGstPercent)) {
+      setErrorMessage(t('taxFields.unsupportedGstRate'));
+      setShowError(true);
+      return;
+    }
 
     try {
       const payload = {
@@ -189,7 +196,7 @@ export const AddProductBarcodePage: React.FC = () => {
           unit: unit || null,
           unitValue: unitValue ? parseFloat(unitValue) : null,
           imageUrl: foundProduct?.image_url || null,
-          gstPercent: gstPercent ? parseFloat(gstPercent) : null,
+          gstPercent: parsedGstPercent,
           uqcCode: (uqcCode as UqcCode) || null,
           unitLabel: unitLabel.trim() || null,
           uqcQuantityFactor: parsedUqcQuantityFactor.value,
@@ -490,6 +497,10 @@ export const AddProductBarcodePage: React.FC = () => {
                           value={gstPercent}
                           onChange={setGstPercent}
                           type="number"
+                          min={0}
+                          max={100}
+                          step="0.01"
+                          inputMode="decimal"
                         />
                         <Select
                           label={t('taxFields.uqcCode')}

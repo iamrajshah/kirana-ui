@@ -228,6 +228,89 @@ it('keeps an extracted bill read-only until the user explicitly confirms the rev
   await waitFor(() => expect(state.replace).toHaveBeenCalledWith('/purchases/88'));
 });
 
+it('supports the 40% GST rate and only 4, 6 or 8 digit HSN codes during review', async () => {
+  state.extract.mockReturnValue({
+    unwrap: () =>
+      Promise.resolve({
+        data: {
+          draftId: 'draft-statutory-rate',
+          status: 'READY',
+          supplier: { id: '7', name: 'Gemini Oils' },
+          invoiceNumber: 'GEM-40',
+          invoiceDate: '2026-11-04',
+          subtotal: 95.24,
+          taxAmount: 4.76,
+          totalAmount: 100,
+          warnings: [],
+          items: [
+            {
+              lineId: 'line-1',
+              variantId: '19',
+              productName: 'Gemini Oil 1 L',
+              sku: 'GEM-OIL-1L',
+              quantity: 1,
+              unitPrice: 100,
+              gstRate: 5,
+              hsnCode: '1001',
+              confidence: 0.93,
+            },
+          ],
+        },
+      }),
+  });
+  state.confirm.mockReturnValue({
+    unwrap: () =>
+      Promise.resolve({
+        data: {
+          draftId: 'draft-statutory-rate',
+          status: 'CONFIRMED',
+          purchase: { id: '93' },
+        },
+      }),
+  });
+
+  const { container } = render(<PurchaseBillImportPage />);
+  const invoice = new File(['supplier invoice'], 'invoice.pdf', { type: 'application/pdf' });
+  fireEvent.change(container.querySelectorAll<HTMLInputElement>('input[type="file"]')[1], {
+    target: { files: [invoice] },
+  });
+
+  expect(await screen.findByText('Gemini Oil 1 L')).toBeTruthy();
+  fireEvent.click(screen.getByLabelText('purchaseImport.confirmReview'));
+
+  const hsn = screen.getByLabelText('purchaseImport.hsnCode');
+  const confirm = screen.getByRole('button', { name: 'purchaseImport.confirmPurchase' });
+  await waitFor(() => expect(confirm.hasAttribute('disabled')).toBe(false));
+  for (const invalidHsn of ['10012', '1001234']) {
+    fireEvent.change(hsn, { target: { value: invalidHsn } });
+    fireEvent.click(screen.getByLabelText('purchaseImport.confirmReview'));
+    expect(confirm.hasAttribute('disabled')).toBe(true);
+  }
+  for (const validHsn of ['1001', '100630', '10063020']) {
+    fireEvent.change(hsn, { target: { value: validHsn } });
+    fireEvent.click(screen.getByLabelText('purchaseImport.confirmReview'));
+    expect(confirm.hasAttribute('disabled')).toBe(false);
+  }
+
+  const gstRate = screen.getByRole('spinbutton', {
+    name: /Gemini Oil 1 L purchaseImport.taxRate/,
+  });
+  for (const customRate of ['0.1', '1.5', '2.75', '40']) {
+    fireEvent.change(gstRate, { target: { value: customRate } });
+    fireEvent.click(screen.getByLabelText('purchaseImport.confirmReview'));
+    expect(confirm.hasAttribute('disabled')).toBe(false);
+  }
+  fireEvent.click(confirm);
+
+  await waitFor(() => expect(state.confirm).toHaveBeenCalledTimes(1));
+  expect(state.confirm).toHaveBeenCalledWith(
+    expect.objectContaining({
+      draftId: 'draft-statutory-rate',
+      items: [expect.objectContaining({ gst_rate: 40, hsn_code: '10063020' })],
+    })
+  );
+});
+
 it('rejects documents larger than the server five-megabyte limit before upload', async () => {
   const { container } = render(<PurchaseBillImportPage />);
   const inputs = container.querySelectorAll<HTMLInputElement>('input[type="file"]');
