@@ -5,6 +5,12 @@ client for the sibling `kirana-server` API.
 
 Maintainer: [Rajesh Shah (@iamrajshah)](https://github.com/iamrajshah)
 
+Developer diagnosis is maintained in
+[`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md); the current role, web,
+tablet, mobile, commercial, billing, purchase, storefront, and Android regression
+suite is in [`docs/QA_REGRESSION_SUITE.md`](docs/QA_REGRESSION_SUITE.md); the
+long-form manual guide remains in [`docs/QA_Guide.md`](docs/QA_Guide.md).
+
 ## What is implemented
 
 - Responsive owner, manager, and cashier navigation.

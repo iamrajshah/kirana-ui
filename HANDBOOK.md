@@ -291,3 +291,18 @@ suggestions and WhatsApp paste-to-bill are valuable follow-on features. Automate
 WhatsApp delivery or ingestion additionally needs provider, consent, privacy,
 and cost decisions. Batch-aware stock and expiry
 management is also pending; label dates alone do not change inventory truth.
+
+## Current release qualification
+
+On 3 November 2026, the deployed POS baseline passed 95 files / 435 tests, lint,
+production build, Google readiness, production-bundle verification, the
+authenticated production API journey, and desktop/tablet/mobile browser routes.
+The public storefront link, offer/order management, product cost and private
+margin preview, purchase unit conversion, role-configurable feature access,
+device limit, refreshed dashboard/report consumers, and document workflows are
+part of the maintained regression surface.
+
+Use [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) for defect diagnosis and
+[`docs/QA_REGRESSION_SUITE.md`](docs/QA_REGRESSION_SUITE.md) for the executable
+release checklist and [`docs/QA_Guide.md`](docs/QA_Guide.md) for the long-form
+manual guide.
