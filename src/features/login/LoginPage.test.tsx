@@ -192,6 +192,15 @@ describe('LoginPage', () => {
     expect(screen.getByText('auth.temporaryPasswordHelp')).toBeTruthy();
   });
 
+  it('keeps the login form inside the mobile viewport layout contract', () => {
+    render(<LoginPage />);
+
+    const form = screen.getByRole('button', { name: 'auth.loginButton' }).closest('form');
+    expect(form?.classList.contains('login-page-form')).toBe(true);
+    expect(form?.parentElement?.classList.contains('login-page-content')).toBe(true);
+    expect(form?.parentElement?.parentElement?.classList.contains('login-page-layout')).toBe(true);
+  });
+
   it('navigates immediately after credentials are stored without a timer or full reload', async () => {
     const auth = { access_token: 'access', refresh_token: 'refresh', user: { id: '1' } };
     mocks.login.mockResolvedValueOnce({ success: true, data: auth });
