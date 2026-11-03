@@ -72,6 +72,54 @@ body.dark .purchase-pending-notice strong {
   font-size: 0.82rem;
 }
 
+.purchase-batch-editor {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0.9rem 0;
+  padding: 0.85rem;
+  border: 1px solid var(--ion-border-color);
+  border-radius: 0.8rem;
+  background: var(--kirana-surface-accent);
+}
+
+.purchase-batch-editor legend {
+  padding-inline: 0.35rem;
+  color: var(--ion-text-color);
+  font-weight: 700;
+}
+
+.purchase-batch-editor label {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  color: var(--ion-text-color-secondary);
+  font-size: 0.8rem;
+}
+
+.purchase-batch-editor input {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.6rem;
+  border: 1px solid var(--ion-border-color);
+  border-radius: 0.55rem;
+  color: var(--ion-text-color);
+  background: var(--kirana-surface-raised);
+}
+
+.purchase-batch-warning {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--ion-color-warning-shade);
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .purchase-batch-editor {
+    grid-template-columns: 1fr;
+  }
+}
+
 .purchase-quantity-label {
   color: var(--ion-color-step-700, #33413b);
   font-size: 0.78rem;
@@ -87,6 +135,68 @@ body.dark .purchase-pending-notice strong {
   font-weight: 600;
 }
 
+.purchase-tax-treatment,
+.purchase-place-of-supply,
+.purchase-tax-line-editor {
+  margin: 0.9rem 0;
+  padding: 0.85rem;
+  border: 1px solid var(--ion-border-color, #d7e0dc);
+  border-radius: 0.75rem;
+  background: var(--kirana-surface-accent, var(--ion-color-light));
+  color: var(--ion-text-color);
+}
+
+.purchase-tax-treatment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+}
+
+.purchase-tax-treatment legend {
+  padding-inline: 0.35rem;
+  font-weight: 700;
+}
+
+.purchase-tax-treatment label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  min-height: 2.5rem;
+}
+
+.purchase-place-of-supply p {
+  margin: 0.35rem 0 0;
+}
+
+.purchase-tax-line-editor {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.5fr) minmax(10rem, 1fr);
+  gap: 0.75rem;
+}
+
+.purchase-tax-line-editor label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.purchase-tax-line-editor select,
+.purchase-tax-line-editor input {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.6rem;
+  border: 1px solid var(--ion-border-color, #c4d1cc);
+  border-radius: 0.55rem;
+  color: var(--ion-text-color);
+  background: var(--kirana-surface-raised, var(--ion-background-color));
+}
+
+.purchase-tax-warning {
+  color: var(--ion-color-warning-shade, #7a5200);
+  font-weight: 700;
+}
+
 @media (max-width: 520px) {
   .purchase-unit-conversion {
     grid-template-columns: 1fr;
@@ -98,5 +208,9 @@ body.dark .purchase-pending-notice strong {
 
   .purchase-unit-cost-preview {
     grid-column: auto;
+  }
+
+  .purchase-tax-line-editor {
+    grid-template-columns: 1fr;
   }
 }

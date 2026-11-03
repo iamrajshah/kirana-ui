@@ -203,6 +203,7 @@ export type UpdateTenantDocumentSettings = Partial<
 export interface Inventory {
   variant_id: string;
   quantity: number;
+  saleable_quantity?: number;
   low_stock_threshold: number;
   is_low_stock: boolean;
   variant?: ProductVariant;

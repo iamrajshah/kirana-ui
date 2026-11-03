@@ -16,6 +16,9 @@ export interface Supplier {
   phone: string | null;
   email: string | null;
   address: string | null;
+  gstin?: string | null;
+  state?: string | null;
+  state_code?: string | null;
   is_active: boolean;
   created_at: string;
   balance?: number;
@@ -86,6 +89,9 @@ export const supplierApi = apiSlice.injectEndpoints({
         phone?: string;
         email?: string;
         address?: string;
+        gstin?: string | null;
+        state?: string | null;
+        state_code?: string | null;
         default_purchase_firm_id?: number | null;
       }
     >({
@@ -104,6 +110,9 @@ export const supplierApi = apiSlice.injectEndpoints({
         phone?: string;
         email?: string;
         address?: string;
+        gstin?: string | null;
+        state?: string | null;
+        state_code?: string | null;
         default_purchase_firm_id?: number | null;
       }
     >({

@@ -77,6 +77,10 @@ const SuppliersPage: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
+  const [gstin, setGstin] = useState('');
+  const [stateName, setStateName] = useState('');
+  const [stateCode, setStateCode] = useState('');
+  const [taxIdentityError, setTaxIdentityError] = useState('');
   const [defaultFirmId, setDefaultFirmId] = useState('');
   const [formErrors, setFormErrors] = useState<Partial<Record<PartyFieldError, string>>>({});
 
@@ -139,6 +143,34 @@ const SuppliersPage: React.FC = () => {
       return;
     }
     setFormErrors({});
+    const normalizedGstin = gstin.trim().toUpperCase();
+    const normalizedStateCode = stateCode.trim();
+    if (
+      normalizedGstin &&
+      !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(normalizedGstin)
+    ) {
+      setTaxIdentityError(t('suppliers.invalidGstin'));
+      return;
+    }
+    if (normalizedStateCode && !/^(0[1-9]|[12][0-9]|3[0-8])$/.test(normalizedStateCode)) {
+      setTaxIdentityError(t('suppliers.invalidStateCode'));
+      return;
+    }
+    if (normalizedGstin && !normalizedStateCode) {
+      setTaxIdentityError(t('suppliers.stateCodeRequiredForGstin'));
+      return;
+    }
+    if (normalizedGstin && normalizedGstin.slice(0, 2) !== normalizedStateCode) {
+      setTaxIdentityError(t('suppliers.gstinStateMismatch'));
+      return;
+    }
+    setTaxIdentityError('');
+
+    const taxIdentity = {
+      gstin: normalizedGstin || null,
+      state: stateName.trim() || null,
+      state_code: normalizedStateCode || null,
+    };
 
     try {
       if (editingSupplier) {
@@ -148,6 +180,7 @@ const SuppliersPage: React.FC = () => {
           phone: phone.trim(),
           email: email.trim() || undefined,
           address: address.trim() || undefined,
+          ...taxIdentity,
           default_purchase_firm_id: defaultFirmId ? parseInt(defaultFirmId) : null,
         }).unwrap();
         notificationService.success(t('suppliers.supplierUpdated'));
@@ -157,6 +190,7 @@ const SuppliersPage: React.FC = () => {
           phone: phone.trim(),
           email: email.trim() || undefined,
           address: address.trim() || undefined,
+          ...taxIdentity,
           default_purchase_firm_id: defaultFirmId ? parseInt(defaultFirmId) : null,
         }).unwrap();
         notificationService.success(t('suppliers.supplierCreated'));
@@ -176,6 +210,10 @@ const SuppliersPage: React.FC = () => {
     setPhone(supplier.phone || '');
     setEmail(supplier.email || '');
     setAddress(supplier.address || '');
+    setGstin(supplier.gstin || '');
+    setStateName(supplier.state || '');
+    setStateCode(supplier.state_code || '');
+    setTaxIdentityError('');
     setDefaultFirmId(supplier.default_purchase_firm_id || '');
     setShowModal(true);
   };
@@ -186,6 +224,10 @@ const SuppliersPage: React.FC = () => {
     setPhone('');
     setEmail('');
     setAddress('');
+    setGstin('');
+    setStateName('');
+    setStateCode('');
+    setTaxIdentityError('');
     setDefaultFirmId('');
     setFormErrors({});
   };
@@ -302,6 +344,13 @@ const SuppliersPage: React.FC = () => {
                           <h2>{supplier.name}</h2>
                           <p>{supplier.phone}</p>
                           {supplier.email && <p>{supplier.email}</p>}
+                          {supplier.gstin && <p>{t('suppliers.gstin')}: {supplier.gstin}</p>}
+                          {(supplier.state || supplier.state_code) && (
+                            <p>
+                              {t('suppliers.supplierState')}: {supplier.state || t('common.notAvailable')}
+                              {supplier.state_code ? ` (${supplier.state_code})` : ''}
+                            </p>
+                          )}
                           {supplier.default_purchase_firm && (
                             <p>{t('suppliers.defaultPurchaseFirm')}: {supplier.default_purchase_firm.display_name}</p>
                           )}
@@ -440,6 +489,39 @@ const SuppliersPage: React.FC = () => {
                 onChange={setAddress}
                 maxLength={500}
               />
+              <Input
+                label={t('suppliers.gstin')}
+                value={gstin}
+                onChange={(value) => {
+                  const normalized = value.toUpperCase();
+                  setGstin(normalized);
+                  if (!stateCode && /^\d{2}/.test(normalized)) setStateCode(normalized.slice(0, 2));
+                  setTaxIdentityError('');
+                }}
+                maxLength={15}
+                placeholder={t('suppliers.gstinPlaceholder')}
+              />
+              <Input
+                label={t('suppliers.supplierState')}
+                value={stateName}
+                onChange={setStateName}
+                maxLength={100}
+                placeholder={t('suppliers.statePlaceholder')}
+              />
+              <Input
+                label={t('suppliers.stateCode')}
+                value={stateCode}
+                onChange={(value) => {
+                  setStateCode(value.replace(/\D/g, '').slice(0, 2));
+                  setTaxIdentityError('');
+                }}
+                maxLength={2}
+                inputMode="numeric"
+                placeholder={t('suppliers.stateCodePlaceholder')}
+              />
+              {taxIdentityError && (
+                <p className="stock-warning" role="alert">{taxIdentityError}</p>
+              )}
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
                   {t('suppliers.defaultPurchaseFirm')}

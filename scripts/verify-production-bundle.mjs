@@ -4,7 +4,8 @@ import { pathToFileURL } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
 const checkedExtensions = new Set(['.html', '.js', '.css', '.json']);
-const localApiPattern = /https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(?:\/api(?:\/v\d+)?)?/gi;
+const localApiPattern =
+  /https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(?:\/api(?:\/v\d+)?)?/gi;
 export const approvedProductionApi =
   'https://appealing-youthfulness-production-a6ab.up.railway.app/api/v1';
 export const productionBundleBudgets = Object.freeze({
@@ -12,17 +13,30 @@ export const productionBundleBudgets = Object.freeze({
   entryCssGzipBytes: 15 * 1024,
   initialTotalGzipBytes: 440 * 1024,
   largestLazyJavaScriptGzipBytes: 500 * 1024,
+  ocrAssetsBytes: 16 * 1024 * 1024,
 });
 
-const assetFiles = async (directory) => {
+const allFiles = async (directory) => {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = await Promise.all(
     entries.map((entry) => {
       const path = join(directory, entry.name);
-      return entry.isDirectory() ? assetFiles(path) : checkedExtensions.has(extname(entry.name)) ? [path] : [];
+      return entry.isDirectory() ? allFiles(path) : [path];
     })
   );
   return files.flat();
+};
+
+const assetFiles = async (directory) =>
+  (await allFiles(directory)).filter((file) => checkedExtensions.has(extname(file)));
+
+const optionalFiles = async (directory) => {
+  try {
+    return await allFiles(directory);
+  } catch (cause) {
+    if (cause && typeof cause === 'object' && 'code' in cause && cause.code === 'ENOENT') return [];
+    throw cause;
+  }
 };
 
 const attributesForTag = (tag) =>
@@ -74,9 +88,7 @@ export const measureProductionBundle = async (directory) => {
   const initialReferences = findInitialAssetReferences(await readFile(indexPath, 'utf8'));
   const initialFiles = [
     ...new Set(
-      initialReferences
-        .map((reference) => resolveBundleAsset(directory, reference))
-        .filter(Boolean)
+      initialReferences.map((reference) => resolveBundleAsset(directory, reference)).filter(Boolean)
     ),
   ];
   const initialMeasurements = await Promise.all(
@@ -93,16 +105,25 @@ export const measureProductionBundle = async (directory) => {
     0
   );
   const initialFileSet = new Set(initialFiles);
+  // Tesseract's Emscripten `*.wasm.js` files are self-hosted runtime assets,
+  // not Vite JavaScript chunks. Keep them out of the lazy-chunk budget while
+  // enforcing a separate aggregate OCR asset budget below.
+  const ocrFiles = await optionalFiles(join(directory, 'ocr'));
+  const ocrFileSet = new Set(ocrFiles);
   const lazyJavaScriptMeasurements = await Promise.all(
     (await assetFiles(directory))
-      .filter((file) => extname(file) === '.js' && !initialFileSet.has(file))
+      .filter(
+        (file) => extname(file) === '.js' && !initialFileSet.has(file) && !ocrFileSet.has(file)
+      )
       .map(async (file) => ({ file, gzipBytes: await gzipBytes(file) }))
   );
   const largestLazyJavaScript = lazyJavaScriptMeasurements.reduce(
-    (largest, measurement) =>
-      measurement.gzipBytes > largest.gzipBytes ? measurement : largest,
+    (largest, measurement) => (measurement.gzipBytes > largest.gzipBytes ? measurement : largest),
     { file: null, gzipBytes: 0 }
   );
+  const ocrAssetsBytes = (
+    await Promise.all(ocrFiles.map(async (file) => (await readFile(file)).byteLength))
+  ).reduce((total, bytes) => total + bytes, 0);
 
   return {
     entryJavaScriptGzipBytes,
@@ -110,6 +131,7 @@ export const measureProductionBundle = async (directory) => {
     initialTotalGzipBytes,
     largestLazyJavaScriptGzipBytes: largestLazyJavaScript.gzipBytes,
     largestLazyJavaScriptFile: largestLazyJavaScript.file,
+    ocrAssetsBytes,
   };
 };
 
@@ -127,6 +149,7 @@ export const verifyProductionBundleBudgets = async (
       measurements.largestLazyJavaScriptGzipBytes,
       budgets.largestLazyJavaScriptGzipBytes,
     ],
+    ['OCR runtime assets', measurements.ocrAssetsBytes, budgets.ocrAssetsBytes ?? Infinity],
   ].filter(([, actual, budget]) => actual > budget);
 
   if (failures.length > 0) {
@@ -153,7 +176,9 @@ export const verifyProductionBundle = async (directory) => {
   const files = await assetFiles(directory);
   const findings = await findLocalApiReferences(directory);
   if (findings.length > 0) {
-    const details = findings.map(({ file, matches }) => `${file}: ${matches.join(', ')}`).join('\n');
+    const details = findings
+      .map(({ file, matches }) => `${file}: ${matches.join(', ')}`)
+      .join('\n');
     throw new Error(`Production bundle contains a local API address:\n${details}`);
   }
 
@@ -161,7 +186,9 @@ export const verifyProductionBundle = async (directory) => {
     files.map(async (file) => (await readFile(file, 'utf8')).includes(approvedProductionApi))
   );
   if (!usesApprovedApi.some(Boolean)) {
-    throw new Error(`Production bundle does not contain the approved API address: ${approvedProductionApi}`);
+    throw new Error(
+      `Production bundle does not contain the approved API address: ${approvedProductionApi}`
+    );
   }
 
   return verifyProductionBundleBudgets(directory);

@@ -36,7 +36,10 @@ export type CommercialFeatureCode =
   | 'MULTI_FIRM'
   | 'BUSINESS_DOCUMENTS'
   | 'LIVE_MARGIN_PREVIEW'
-  | 'CUSTOMER_STOREFRONT';
+  | 'CUSTOMER_STOREFRONT'
+  | 'EXPIRY_TRACKING'
+  | 'PURCHASE_BILL_IMPORT'
+  | 'GST_CA_REPORTS';
 export type CommercialDenialCode =
   | 'COMMERCIAL_SUSPENDED'
   | 'COMMERCIAL_READ_ONLY'

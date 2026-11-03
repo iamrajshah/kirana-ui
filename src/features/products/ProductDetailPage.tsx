@@ -40,6 +40,8 @@ import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
 import { hasPermission } from '@core/permissions/permissions';
 import { APP_NAME } from '@core/constants';
 import { ProductBarcodeLabelModal } from './ProductBarcodeLabelModal';
+import { useGetExpiryAlertsQuery } from '@core/api/expiryApi';
+import './ProductDetailPage.css';
 
 export const ProductDetailPage: React.FC = () => {
   const { t } = useTranslation();
@@ -53,11 +55,20 @@ export const ProductDetailPage: React.FC = () => {
   const canManagePurchaseCost =
     hasPermission(currentUser?.roles ?? [], 'PRODUCT_UPDATE') &&
     canUseCommercialFeature(currentUser?.roles ?? [], commercialAccess, 'LIVE_MARGIN_PREVIEW');
+  const canTrackExpiry = canUseCommercialFeature(
+    currentUser?.roles ?? [],
+    commercialAccess,
+    'EXPIRY_TRACKING'
+  );
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, error } = useGetProductByIdQuery(id);
   const { data: purchaseCostsData } = useGetProductPurchaseCostsQuery(id, {
     skip: !canManagePurchaseCost,
   });
+  const { data: expiryResponse } = useGetExpiryAlertsQuery(
+    { windowDays: 90 },
+    { skip: !canTrackExpiry }
+  );
   const { data: categoriesData } = useGetCategoriesQuery();
   const [updateProduct, { isLoading: updating }] = useUpdateProductMutation();
   const [updateVariant, { isLoading: updatingVariant }] = useUpdateVariantMutation();
@@ -264,6 +275,9 @@ export const ProductDetailPage: React.FC = () => {
   const purchaseCostsByVariant = new Map(
     purchaseCostsData?.data.map((cost) => [cost.variant_id, cost]) ?? []
   );
+  const productExpiryBatches = (expiryResponse?.data.batches ?? []).filter(
+    (batch) => batch.productId === id
+  );
 
   return (
     <IonPage>
@@ -315,6 +329,36 @@ export const ProductDetailPage: React.FC = () => {
               </IonList>
             </IonCardContent>
           </IonCard>
+
+          {canTrackExpiry && productExpiryBatches.length > 0 && (
+            <IonCard className="product-expiry-card">
+              <IonCardHeader>
+                <IonCardTitle>{t('expiry.productAlerts')}</IonCardTitle>
+              </IonCardHeader>
+              <IonCardContent>
+                <div className="product-expiry-list">
+                  {productExpiryBatches.map((batch) => (
+                    <article key={batch.id}>
+                      <div>
+                        <strong>{batch.batchNumber || t('expiry.notRecorded')}</strong>
+                        <span>
+                          {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(
+                            new Date(batch.expiryDate)
+                          )}
+                        </span>
+                      </div>
+                      <IonBadge color={batch.state === 'EXPIRED' ? 'danger' : 'warning'}>
+                        {batch.state === 'EXPIRED'
+                          ? t('expiry.expired')
+                          : t('expiry.daysRemaining', { count: batch.daysToExpiry })}
+                      </IonBadge>
+                      <span>{t('expiry.unitsCount', { count: batch.quantity })}</span>
+                    </article>
+                  ))}
+                </div>
+              </IonCardContent>
+            </IonCard>
+          )}
 
           {variants && variants.length > 0 && (
             <div style={{ marginTop: '16px' }}>

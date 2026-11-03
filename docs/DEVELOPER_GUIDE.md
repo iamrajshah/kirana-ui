@@ -25,20 +25,24 @@ the accounting authority.
 
 ## Defect triage by symptom
 
-| Symptom | Inspect first |
-| --- | --- |
-| Route returns to login | token pair, device descriptor, session restore, API base URL |
-| First navigation flickers | lazy boundary and shell/session hydration |
-| Page stays stale after write | RTK Query tags and post-mutation navigation timing |
-| Button works only after refresh | disabled/busy state not reset in `finally`, stale overlay, or history replacement |
-| Wrong role sees action | route guard plus server entitlement; menu visibility is secondary |
-| Payment/khata mismatch | selected customer, invoice allocation response, ledger refetch |
-| Quantity fails at payment | catalogue stock metadata and local increment guard |
-| Purchase stock wrong | pack conversion preview and server base-unit response |
-| Bill print/PDF blank | frozen document endpoint, popup lifecycle, print CSS, asset readiness |
-| Storefront share link wrong | session tenant `storefrontSlug`, HTTPS origin, feature access |
-| Storefront leaks quantity | `storefront_show_stock_quantity`, OWNER role, public catalog response |
-| Google sign-in missing | public product readiness and build-time client ID, not a hard-coded button |
+| Symptom                         | Inspect first                                                                         |
+| ------------------------------- | ------------------------------------------------------------------------------------- |
+| Route returns to login          | token pair, device descriptor, session restore, API base URL                          |
+| First navigation flickers       | lazy boundary and shell/session hydration                                             |
+| Page stays stale after write    | RTK Query tags and post-mutation navigation timing                                    |
+| Button works only after refresh | disabled/busy state not reset in `finally`, stale overlay, or history replacement     |
+| Wrong role sees action          | route guard plus server entitlement; menu visibility is secondary                     |
+| Payment/khata mismatch          | selected customer, invoice allocation response, ledger refetch                        |
+| Quantity fails at payment       | catalogue stock metadata and local increment guard                                    |
+| Purchase stock wrong            | pack conversion preview and server base-unit response                                 |
+| Expiry count wrong              | tenant-scoped received batches, expiry window and remaining batch quantity            |
+| Import created stock early      | extraction/review must remain draft-only; inspect the explicit confirm mutation       |
+| Bill photo is slow              | confirm OCR is lazy, bounded and using self-hosted `/ocr` assets, not the API process |
+| GST report mismatch             | selected firm, local-date boundaries and frozen invoice/purchase tax facts            |
+| Bill print/PDF blank            | frozen document endpoint, popup lifecycle, print CSS, asset readiness                 |
+| Storefront share link wrong     | session tenant `storefrontSlug`, HTTPS origin, feature access                         |
+| Storefront leaks quantity       | `storefront_show_stock_quantity`, OWNER role, public catalog response                 |
+| Google sign-in missing          | public product readiness and build-time client ID, not a hard-coded button            |
 
 Never show raw API/Prisma errors. Convert known failures into translated,
 actionable messages and retain the user's entered data.
@@ -52,6 +56,24 @@ actionable messages and retain the user's entered data.
   `LIVE_MARGIN_PREVIEW` role policy allows it.
 - Purchase box/pack entry always previews base sale units and the server remains
   authoritative.
+- Expiry facts belong to purchase batches. Barcode-label dates are never used to
+  infer remaining stock or expiry risk.
+- Purchase-bill extraction is non-mutating. Only the acknowledged confirm call
+  may create a purchase or increase inventory, and retries must remain idempotent.
+- Browser image OCR is lazy and local. Keep `tesseract.js`, worker/core and
+  language data out of the initial POS chunk; do not replace it with paid OCR or
+  Railway CPU work without an explicit architecture decision.
+- `prepare-ocr-assets` owns `public/ocr` and must deterministically leave only
+  the three LSTM `*.wasm.js` variants, worker and English model. Scanned PDFs are
+  manual-review v1; JPG/PNG/WebP is the supported local OCR path.
+- GST CSV output uses a browser download on web/tablet and the Filesystem cache +
+  native Share adapter on Android. Do not reintroduce anchor-only mobile output.
+- GST & CA output is preparation evidence only. Never label it as a filed return,
+  e-invoice, IRN, e-way bill, or legal/tax certification.
+- Supplier tax identity uses `gstin`, `state` and `state_code`; GSTIN must start
+  with the state code. Both direct and imported purchases send explicit tax
+  treatment, line GST/HSN and supplier-derived place of supply. Keep the
+  UI/server per-line paise rounding identical.
 - Storefront offers/order management and share link require effective
   `CUSTOMER_STOREFRONT` access.
 - Exact storefront stock is an owner-only preference and defaults to hidden;
@@ -76,6 +98,10 @@ the exact API revision. Use [`QA_Guide.md`](QA_Guide.md) for the longer manual
 test catalogue.
 For Android, also run Capacitor sync/build and real-device checks for back button,
 camera/barcode, share, secure token restoration, and poor-network recovery.
+
+For purchase-bill scanning, also verify that `npm run prepare:ocr-assets` places
+the worker, WASM/JS core variants and `eng.traineddata.gz` under `public/ocr`, and
+that the production bundle loads the OCR JavaScript only after an image is chosen.
 
 ## Release
 

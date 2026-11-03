@@ -11,9 +11,16 @@ const query = vi.hoisted(() => ({
   refetch: vi.fn(),
   args: vi.fn(),
   updateInventory: vi.fn(),
+  push: vi.fn(),
 }));
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+vi.mock('react-router-dom', () => ({ useHistory: () => ({ push: query.push }) }));
+vi.mock('@core/hooks', () => ({ useAppSelector: () => ({ roles: ['OWNER'] }) }));
+vi.mock('@core/auth/authSlice', () => ({
+  selectCurrentUser: vi.fn(),
+  selectCommercialAccess: vi.fn(),
+}));
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('@core/api/inventoryApi', () => ({
   useGetInventoryQuery: (args: unknown) => {

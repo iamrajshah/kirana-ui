@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run verify:google-build-config && tsc && vite build && node scripts/write-release-manifest.mjs && npm run verify:production-bundle",
+    "build": "npm run prepare:ocr-assets && npm run verify:google-build-config && tsc && vite build && node scripts/write-release-manifest.mjs && npm run verify:production-bundle",
     "verify:google-build-config": "node scripts/check-google-release-readiness.mjs",
     "release:google:check": "node scripts/check-google-release-readiness.mjs --probe-api",
     "test:release-config": "node --test scripts/check-google-release-readiness.checks.mjs",
@@ -17,7 +17,8 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,json,css}\"",
     "ionic:serve": "vite",
     "ionic:build": "vite build",
-    "postinstall": "npm run patch:android-dependencies",
+    "postinstall": "npm run patch:android-dependencies && npm run prepare:ocr-assets",
+    "prepare:ocr-assets": "node scripts/prepare-ocr-assets.mjs",
     "patch:android-dependencies": "node scripts/patch-capacitor-share-android.mjs",
     "test:android-compat": "node --test scripts/patch-capacitor-share-android.checks.mjs",
     "android:sync": "npm run patch:android-dependencies && npm run build && cap sync android",
@@ -40,13 +41,15 @@
     "@ionic/react-router": "^7.6.2",
     "@react-pdf/renderer": "^4.9.0",
     "@reduxjs/toolkit": "^2.0.1",
+    "@tesseract.js-data/eng": "^1.0.0",
     "i18next": "^23.7.13",
     "i18next-browser-languagedetector": "^7.2.0",
     "ionicons": "^7.2.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-i18next": "^14.0.0",
-    "react-redux": "^9.0.4"
+    "react-redux": "^9.0.4",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^5.7.8",

@@ -19,7 +19,8 @@ import {
   IonInfiniteScroll,
   IonInfiniteScrollContent,
 } from '@ionic/react';
-import { statsChartOutline } from 'ionicons/icons';
+import { receiptOutline, statsChartOutline } from 'ionicons/icons';
+import { useHistory } from 'react-router-dom';
 import {
   useGetSalesReportQuery,
   useGetOutstandingCustomersQuery,
@@ -45,6 +46,7 @@ import { useAppSelector } from '@core/hooks';
 import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice';
 import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
 import { useGetFirmsQuery } from '@core/api/firmApi';
+import { ROUTES } from '@core/constants';
 
 const reportOptions = [
   ['sales', 'reports.salesReport'],
@@ -85,6 +87,7 @@ const firmScopedReports = new Set<ReportId>([
 
 export const ReportsPage: React.FC = () => {
   const { t } = useTranslation();
+  const history = useHistory();
   const currentUser = useAppSelector(selectCurrentUser);
   const commercialAccess = useAppSelector(selectCommercialAccess);
   const canUseAdvancedReports = canUseCommercialFeature(
@@ -92,15 +95,17 @@ export const ReportsPage: React.FC = () => {
     commercialAccess,
     'ADVANCED_REPORTS'
   );
+  const canUseGstReports = canUseCommercialFeature(
+    currentUser?.roles ?? [],
+    commercialAccess,
+    'GST_CA_REPORTS'
+  );
   const supportsFirmScope = canUseCommercialFeature(
     currentUser?.roles ?? [],
     commercialAccess,
     'MULTI_FIRM'
   );
-  const { data: firmsResponse } = useGetFirmsQuery(
-    { active: true },
-    { skip: !supportsFirmScope }
-  );
+  const { data: firmsResponse } = useGetFirmsQuery({ active: true }, { skip: !supportsFirmScope });
   const firms = firmsResponse?.data.firms ?? [];
   const defaultFirmId = firms.find((firm) => firm.is_default_sales)?.id ?? firms[0]?.id ?? '';
   const [selectedFirmId, setSelectedFirmId] = useState('');
@@ -992,6 +997,14 @@ export const ReportsPage: React.FC = () => {
               <h1>{t('reports.title')}</h1>
               <p>{t('reports.chooseReport')}</p>
             </div>
+            {canUseGstReports && (
+              <div className="workspace-actions">
+                <IonButton fill="outline" onClick={() => history.push(ROUTES.GST_REPORTS)}>
+                  <IonIcon slot="start" icon={receiptOutline} />
+                  {t('gstReports.title')}
+                </IonButton>
+              </div>
+            )}
           </div>
           {/* Report Selector Dropdown */}
           <IonCard className="mb-4 report-mobile-select-card">

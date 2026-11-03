@@ -1,0 +1,187 @@
+.gst-page {
+  display: grid;
+  gap: 1rem;
+}
+.gst-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  padding: 1rem;
+}
+.gst-filters label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--ion-text-color-secondary);
+  font-size: 0.8rem;
+}
+.gst-filters input,
+.gst-filters ion-select {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.55rem;
+  border: 1px solid var(--ion-border-color);
+  border-radius: 0.55rem;
+  color: var(--ion-text-color);
+  background: var(--kirana-surface-raised);
+}
+.gst-tabs {
+  display: flex;
+  gap: 0.45rem;
+  padding: 0.35rem;
+  overflow-x: auto;
+  border: 1px solid var(--ion-border-color);
+  border-radius: 0.8rem;
+  background: var(--kirana-surface-raised);
+}
+.gst-tabs button {
+  min-height: 2.65rem;
+  padding: 0.55rem 0.85rem;
+  border: 0;
+  border-radius: 0.55rem;
+  color: var(--ion-text-color-secondary);
+  background: transparent;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.gst-tabs button.is-active {
+  color: var(--ion-color-primary-contrast);
+  background: var(--ion-color-primary);
+  font-weight: 700;
+}
+.gst-readiness,
+.gst-warnings {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--ion-color-success);
+  border-radius: 0.8rem;
+  color: var(--ion-text-color);
+  background: color-mix(in srgb, var(--ion-color-success) 10%, var(--kirana-surface-raised));
+}
+.gst-readiness.needs-review,
+.gst-warnings {
+  border-color: var(--ion-color-warning);
+  background: color-mix(in srgb, var(--ion-color-warning) 12%, var(--kirana-surface-raised));
+}
+.gst-readiness span {
+  color: var(--ion-text-color-secondary);
+}
+.gst-warnings ul {
+  margin: 0.3rem 0 0;
+  padding-inline-start: 1.2rem;
+}
+.gst-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+.gst-summary-card {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+.gst-summary-card span,
+.gst-summary-card small {
+  color: var(--ion-text-color-secondary);
+}
+.gst-summary-card strong {
+  color: var(--ion-color-primary);
+  font-size: clamp(1.4rem, 3vw, 2rem);
+}
+.gst-summary-card--liability {
+  border-inline-start: 0.35rem solid var(--ion-color-warning);
+}
+.gst-tax-breakdown {
+  padding: 1rem;
+}
+.gst-tax-breakdown h2 {
+  margin: 0 0 0.8rem;
+  font-size: 1.05rem;
+}
+.gst-tax-breakdown dl,
+.gst-register-card dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 0;
+}
+.gst-tax-breakdown dl div,
+.gst-register-card dl div {
+  min-width: 0;
+}
+.gst-tax-breakdown dt,
+.gst-register-card dt {
+  color: var(--ion-text-color-secondary);
+  font-size: 0.72rem;
+}
+.gst-tax-breakdown dd,
+.gst-register-card dd {
+  margin: 0.2rem 0 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.gst-register-section {
+  display: grid;
+  gap: 0.8rem;
+}
+.gst-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+.gst-register-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+.gst-register-card {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem;
+}
+.gst-register-card > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+.gst-register-card > div span,
+.gst-register-card > div small {
+  color: var(--ion-text-color-secondary);
+}
+.gst-row-warning {
+  margin: 0;
+  color: var(--ion-color-warning-shade);
+  font-weight: 700;
+}
+.gst-disclaimer {
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--ion-color-warning);
+  border-radius: 0.8rem;
+  background: color-mix(in srgb, var(--ion-color-warning) 10%, var(--kirana-surface-raised));
+}
+.gst-disclaimer p {
+  margin: 0.3rem 0 0;
+  color: var(--ion-text-color-secondary);
+}
+@media (max-width: 900px) {
+  .gst-summary-grid {
+    grid-template-columns: 1fr;
+  }
+  .gst-register-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 620px) {
+  .gst-filters {
+    grid-template-columns: 1fr;
+  }
+  .gst-tax-breakdown dl,
+  .gst-register-card dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .gst-section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

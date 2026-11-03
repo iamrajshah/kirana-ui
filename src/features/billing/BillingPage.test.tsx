@@ -92,9 +92,8 @@ vi.mock('@core/hooks', () => ({
 }));
 vi.mock('@core/auth/authSlice', () => ({
   selectCurrentUser: (state: { auth: { user: unknown } }) => state.auth.user,
-  selectCommercialAccess: (state: {
-    auth: { sessionContext?: { commercialAccess?: unknown } };
-  }) => state.auth.sessionContext?.commercialAccess ?? null,
+  selectCommercialAccess: (state: { auth: { sessionContext?: { commercialAccess?: unknown } } }) =>
+    state.auth.sessionContext?.commercialAccess ?? null,
 }));
 vi.mock('./HeldBillsPanel', () => ({
   HeldBillsPanel: ({
@@ -694,12 +693,16 @@ describe('BillingPage', () => {
   });
 
   describe('barcode entry', () => {
-    it('prevents quantity edits from exceeding the scanned product stock', async () => {
+    it('prevents quantity edits from using expired units in aggregate stock', async () => {
       mocks.scanBarcode.mockResolvedValueOnce({
         ...matchedBarcode,
         data: {
           ...matchedBarcode.data,
-          inventory: { ...matchedBarcode.data.inventory, quantity: 2 },
+          inventory: {
+            ...matchedBarcode.data.inventory,
+            quantity: 12,
+            saleable_quantity: 2,
+          },
         },
       });
 

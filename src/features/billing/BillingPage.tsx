@@ -301,7 +301,7 @@ export const BillingPage: React.FC = () => {
       new Map(
         (billingCatalogData?.data ?? []).map((variant) => [
           variant.id,
-          Math.max(0, Number(variant.available_quantity) || 0),
+          Math.max(0, Number(variant.saleable_quantity ?? variant.available_quantity) || 0),
         ])
       ),
     [billingCatalogData?.data]
@@ -554,12 +554,12 @@ export const BillingPage: React.FC = () => {
   const addToCart = (
     value: Pick<
       BillingSearchVariant,
-      'id' | 'product_name' | 'price' | 'sku' | 'available_quantity'
+      'id' | 'product_name' | 'price' | 'sku' | 'available_quantity' | 'saleable_quantity'
     >
   ) => {
     const result = addBillingCartItem(cartItemsRef.current, {
       variant_id: value.id,
-      available_quantity: value.available_quantity,
+      available_quantity: value.saleable_quantity ?? value.available_quantity,
       unit_price: Number(value.price || 0),
       discount_amount: 0,
       discount_type: 'amount',
@@ -622,7 +622,7 @@ export const BillingPage: React.FC = () => {
           product_name: product.name,
           price: Number(variant.selling_price ?? variant.price ?? 0),
           sku: variant.sku || '',
-          available_quantity: inventory?.quantity ?? 0,
+          available_quantity: inventory?.saleable_quantity ?? inventory?.quantity ?? 0,
         });
         setShowBarcodeTools(false);
         if (outcome === 'added' || outcome === 'incremented') {
@@ -630,7 +630,7 @@ export const BillingPage: React.FC = () => {
         } else {
           notificationService.error(
             t(outcome === 'out-of-stock' ? 'billing.outOfStock' : 'billing.stockLimit', {
-              count: inventory?.quantity ?? 0,
+              count: inventory?.saleable_quantity ?? inventory?.quantity ?? 0,
             })
           );
         }
@@ -1429,7 +1429,12 @@ export const BillingPage: React.FC = () => {
                   {searchTerm && (
                     <IonList className="max-h-64 overflow-auto">
                       {matchingVariants.map((variant) => {
-                        const outOfStock = variant.available_quantity <= 0;
+                        const saleableQuantity =
+                          variant.saleable_quantity ?? variant.available_quantity;
+                        const expiredStockBlocked =
+                          variant.saleable_quantity !== undefined &&
+                          variant.saleable_quantity < variant.available_quantity;
+                        const outOfStock = saleableQuantity <= 0;
                         return (
                           <IonItem
                             key={variant.id}
@@ -1445,9 +1450,16 @@ export const BillingPage: React.FC = () => {
                                 {outOfStock
                                   ? t('billing.outOfStock')
                                   : t('billing.availableStock', {
-                                      count: variant.available_quantity,
+                                      count: saleableQuantity,
                                     })}
                               </p>
+                              {expiredStockBlocked && (
+                                <p className="font-semibold text-amber-700">
+                                  {t('billing.expiredStockBlocked', {
+                                    count: variant.available_quantity - saleableQuantity,
+                                  })}
+                                </p>
+                              )}
                             </IonLabel>
                             <strong className="mr-2">{formatCurrency(variant.price)}</strong>
                             {!outOfStock && <IonIcon icon={add} slot="end" color="primary" />}

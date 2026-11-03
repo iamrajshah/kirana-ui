@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   commercialDenialMessage,
+  commercialFeatureDependencyFailure,
   canUseCommercialFeature,
   isCommercialDenial,
 } from './commercialAccess';
@@ -36,6 +37,46 @@ describe('commercial client helpers', () => {
       )
     ).toBe(true);
   });
+
+  it('keeps GST/CA reports owner-only by fallback while honoring runtime role policy', () => {
+    const gstSummary = {
+      ...summary,
+      entitlements: ['GST_CA_REPORTS', 'ESSENTIAL_REPORTS', 'BILLING'] as const,
+    };
+    expect(canUseCommercialFeature(['OWNER'], gstSummary, 'GST_CA_REPORTS')).toBe(true);
+    expect(canUseCommercialFeature(['MANAGER'], gstSummary, 'GST_CA_REPORTS')).toBe(false);
+    expect(
+      canUseCommercialFeature(
+        ['MANAGER'],
+        { ...gstSummary, featureRoles: { GST_CA_REPORTS: ['OWNER', 'MANAGER'] } },
+        'GST_CA_REPORTS'
+      )
+    ).toBe(true);
+  });
+
+  it.each([
+    ['EXPIRY_TRACKING', ['INVENTORY', 'PRODUCTS'], 'PRODUCTS'],
+    ['PURCHASE_BILL_IMPORT', ['PURCHASES', 'SUPPLIERS', 'PRODUCTS', 'BILLING'], 'BILLING'],
+    ['GST_CA_REPORTS', ['ESSENTIAL_REPORTS', 'BILLING'], 'BILLING'],
+  ] as const)(
+    'requires the runtime dependency closure for %s',
+    (feature, dependencies, removedDependency) => {
+      const complete = {
+        ...summary,
+        entitlements: [feature, ...dependencies],
+      };
+      expect(canUseCommercialFeature(['OWNER'], complete, feature)).toBe(true);
+
+      const incomplete = {
+        ...complete,
+        entitlements: complete.entitlements.filter((item) => item !== removedDependency),
+      };
+      expect(canUseCommercialFeature(['OWNER'], incomplete, feature)).toBe(false);
+      expect(commercialFeatureDependencyFailure(['OWNER'], incomplete, feature)).toBe(
+        removedDependency
+      );
+    }
+  );
 
   it.each([
     ['COMMERCIAL_ENTITLEMENT_MISSING', 'Upgrade'],

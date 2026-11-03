@@ -10,7 +10,10 @@ export type ProtectedPageRouteId =
   | 'supplier-ledger'
   | 'invoice-detail'
   | 'purchase-detail'
-  | 'purchase-create';
+  | 'purchase-create'
+  | 'purchase-import'
+  | 'expiry-alerts'
+  | 'gst-reports';
 
 export interface ProtectedRouteAccess {
   path: string;
@@ -64,6 +67,24 @@ export const protectedPageRoutes: readonly ProtectedPageRouteAccess[] = [
     path: '/purchases/:id(\\d+)',
     permission: 'purchases',
     commercialFeature: 'PURCHASES',
+  },
+  {
+    id: 'purchase-import',
+    path: ROUTES.PURCHASE_IMPORT,
+    permission: 'purchases',
+    commercialFeature: 'PURCHASE_BILL_IMPORT',
+  },
+  {
+    id: 'expiry-alerts',
+    path: ROUTES.EXPIRY_ALERTS,
+    permission: 'inventory',
+    commercialFeature: 'EXPIRY_TRACKING',
+  },
+  {
+    id: 'gst-reports',
+    path: ROUTES.GST_REPORTS,
+    permission: 'reports',
+    commercialFeature: 'GST_CA_REPORTS',
   },
 ];
 

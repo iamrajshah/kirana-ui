@@ -24,8 +24,11 @@ export interface BillingSearchVariant {
   purchase_price?: number;
   mrp_price?: number;
   gst_percent?: number | null;
+  hsn_code?: string | null;
   sku: string;
   available_quantity: number;
+  /** Stock that can be sold now; excludes expired batches when the API supplies it. */
+  saleable_quantity?: number;
   low_stock_threshold: number;
 }
 
