@@ -182,6 +182,13 @@
     "deletionBody": "સાઇન ઇન કરેલા ખાતામાંથી કાઢી નાખવાની વિનંતી કરો અથવા સહાયનો સંપર્ક કરો. જરૂરી ચકાસણી પછી ડેમો ઓળખ દૂર કરી શકાય છે. ચૂકવણી કરેલી દુકાનના હિસાબી રેકોર્ડ સહાયિત માલિકી અને કાનૂની જાળવણી પ્રક્રિયા મુજબ સંભાળવામાં આવે છે.",
     "supportAction": "કિરાણા સહાયનો સંપર્ક કરો"
   },
+  "trialBanner": {
+    "label": "મફત ડેમો",
+    "daysHours": "{{days}} દિવસ {{hours}} કલાક બાકી",
+    "hoursMinutes": "{{hours}} કલાક {{minutes}} મિનિટ બાકી",
+    "expired": "ટ્રાયલ પૂર્ણ",
+    "viewPlans": "પ્લાન જુઓ"
+  },
   "account": {
     "eyebrow": "તમારું કિરાણા એકાઉન્ટ",
     "title": "પ્લાન અને એકાઉન્ટ",
@@ -205,6 +212,37 @@
     },
     "allDevices": "મોબાઇલ + વેબ/ડેસ્કટોપ",
     "gstExclusive": "+ GST",
+    "catalogueVersion": "પ્લાન કેટલોગ આવૃત્તિ {{version}}",
+    "entitlements": {
+      "DASHBOARD": "ભૂમિકા મુજબ ડેશબોર્ડ",
+      "BILLING": "ઝડપી બિલિંગ અને ચેકઆઉટ",
+      "INVOICES": "ઇન્વૉઇસ અને રસીદો",
+      "CUSTOMERS_KHATA": "ગ્રાહકો અને ખાતું",
+      "PAYMENTS": "ચુકવણી વસૂલાત",
+      "PRODUCTS": "ઉત્પાદનો અને બારકોડ",
+      "INVENTORY": "સ્ટોક અને ઇન્વેન્ટરી",
+      "PURCHASES": "ખરીદી",
+      "SUPPLIERS": "સપ્લાયર",
+      "REPORTS": "વ્યવસાય રિપોર્ટ",
+      "SHIFTS": "શિફ્ટ મિલાન",
+      "STAFF": "સ્ટાફ વ્યવસ્થાપન",
+      "FIRMS_SETTINGS": "ફર્મ અને દુકાન સેટિંગ્સ",
+      "IMPORT_EXPORT": "ઇમ્પોર્ટ અને એક્સપોર્ટ",
+      "ONLINE_ORDERS": "ઓનલાઇન દુકાન અને ઓર્ડર",
+      "CORE_POS": "મુખ્ય POS કામ",
+      "ESSENTIAL_REPORTS": "જરૂરી રિપોર્ટ",
+      "ADVANCED_REPORTS": "અદ્યતન રિપોર્ટ",
+      "IMPORT_CUSTOMER_PRODUCT": "ગ્રાહક અને ઉત્પાદન ઇમ્પોર્ટ",
+      "IMPORT_INVENTORY_CATEGORY_SUPPLIER": "સ્ટોક, શ્રેણી અને સપ્લાયર ઇમ્પોર્ટ",
+      "EXPORT_CSV_SIX_DATASETS": "CSV એક્સપોર્ટ",
+      "EXPORT_EXCEL": "Excel એક્સપોર્ટ",
+      "CUSTOM_BARCODE": "કસ્ટમ બારકોડ લેબલ",
+      "BACKUP_RESTORE": "બેકઅપ અને રિસ્ટોર",
+      "MULTI_FIRM": "ઘણી કાનૂની ફર્મ",
+      "BUSINESS_DOCUMENTS": "બ્રાન્ડેડ વ્યવસાય દસ્તાવેજો",
+      "LIVE_MARGIN_PREVIEW": "ખાનગી લાઇવ નફાનો અંદાજ",
+      "CUSTOMER_STOREFRONT": "ગ્રાહક ઓનલાઇન દુકાન"
+    },
     "staffCount": "{{count}} સ્ટાફ",
     "firmCount": "{{count}} ફર્મ",
     "features": {
@@ -330,6 +368,52 @@
     "totalCustomers": "કુલ ગ્રાહકો",
     "supplierPayables": "સપ્લાયર્સને ચૂકવવાની રકમ",
     "customerReceivables": "ગ્રાહકો પાસેથી પ્રાપ્ય રકમ",
+    "insights": {
+      "noData": "પ્રથમ વ્યવહાર પછી પ્રવૃત્તિ અહીં દેખાશે.",
+      "billCount": "{{count}} બિલ",
+      "pending": "રાહમાં",
+      "accepted": "સ્વીકારેલ",
+      "completed": "પૂર્ણ",
+      "owner": {
+        "title": "માલિક નિયંત્રણ કેન્દ્ર",
+        "subtitle": "વૃદ્ધિ, ચુકવણી, ઓનલાઇન માંગ અને સ્ટોક સંકેત એક જગ્યાએ.",
+        "badge": "માલિક દૃશ્ય",
+        "monthSales": "આ મહિનાનું વેચાણ",
+        "previousMonth": "પાછલો મહિનો",
+        "paymentMix": "ગ્રાહકોએ કેવી રીતે ચૂકવણી કરી",
+        "onlineOrders": "ઓનલાઇન ઓર્ડર સ્થિતિ",
+        "seasonalTitle": "મોસમી સ્ટોક સલાહ",
+        "seasonalSubtitle": "સૂચનો તમારા વેચાણ ઇતિહાસ પર આધારિત છે; તેને માર્ગદર્શન માનો, ખરીદી ઓર્ડર નહીં.",
+        "historyBuilding": "વેચાણ ઇતિહાસ બની રહ્યો છે",
+        "historyBuildingHint": "પૂરતો જૂનો ડેટા મળ્યા પછી મોસમી સૂચનો દેખાશે.",
+        "lastYear": "ગયા વર્ષે આ મહિને: {{quantity}} યુનિટ",
+        "suggested": "સૂચન: {{quantity}} યુનિટ"
+      },
+      "manager": {
+        "title": "કાઉન્ટર કામગીરી",
+        "subtitle": "ઘણા રિપોર્ટ ખોલ્યા વગર કેશિયર મુજબ કામ અને વેચાણ જુઓ.",
+        "ordersWaiting": "ઓર્ડર રાહમાં",
+        "ordersAccepted": "ઓર્ડર સ્વીકારેલ",
+        "heldBills": "હોલ્ડ બિલ",
+        "cashier": "કેશિયર",
+        "bills": "બિલ",
+        "sales": "વેચાણ",
+        "averageBill": "સરેરાશ બિલ"
+      },
+      "cashier": {
+        "title": "આજનું મારું કાઉન્ટર",
+        "subtitle": "કાઉન્ટર ચાલુ રાખવા માટે માત્ર જરૂરી આંકડા.",
+        "bills": "મારા બિલ",
+        "sales": "મારું વેચાણ",
+        "heldBills": "હોલ્ડ બિલ"
+      },
+      "confidence": {
+        "high": "ઉચ્ચ વિશ્વાસ",
+        "medium": "મધ્યમ વિશ્વાસ",
+        "low": "શરૂઆતી સંકેત",
+        "insufficient_history": "વધુ ઇતિહાસ જરૂરી"
+      }
+    },
     "decisionInbox": {
       "title": "ધ્યાન આપવાના કામ",
       "subtitle": "દુકાન ચલાવવા માટે અત્યારે સૌથી ઉપયોગી ત્રણ કામ.",
@@ -494,6 +578,9 @@
       "privateHint": "માત્ર અધિકૃત સ્ટાફ માટે ખાનગી અંદાજ; ગ્રાહકના બિલ પર ક્યારેય છપાશે નહીં.",
       "detail": "અંદાજિત ખર્ચ {{cost}} · માર્જિન {{margin}}%",
       "missingCost": "આ અંદાજ માટે {{count}} વસ્તુની ખરીદી કિંમત ઉમેરો.",
+      "partial": "{{total}} માંથી {{covered}} વસ્તુઓ પર આધારિત. {{count}} વસ્તુઓની ખરીદ કિંમત નથી, તેથી અંતિમ નફો બદલાઈ શકે છે.",
+      "updating": "અપડેટ થઈ રહ્યું છે…",
+      "costNeeded": "ખર્ચ જરૂરી",
       "manageCosts": "ઉત્પાદન ખર્ચ સંભાળો"
     },
     "quoteChangedReview": "બિલની વિગતો બદલાઈ છે. ચુકવણી લેતા પહેલાં નવી રકમ તપાસો.",

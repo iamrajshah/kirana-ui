@@ -9,7 +9,7 @@ import {
 import { useHistory } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGetDashboardStatsQuery } from '@core/api/dashboardApi';
-import { selectCurrentUser } from '@core/auth/authSlice';
+import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice';
 import { useAppSelector } from '@core/hooks';
 import { getNavigationItems } from '@core/navigation/navigation';
 import type {
@@ -95,17 +95,21 @@ export const DashboardPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const history = useHistory();
   const user = useAppSelector(selectCurrentUser);
+  const commercialAccess = useAppSelector(selectCommercialAccess);
   const { data, isLoading, isError, refetch } = useGetDashboardStatsQuery(undefined, {
     refetchOnMountOrArgChange: true,
     refetchOnFocus: true,
     refetchOnReconnect: true,
   });
   const stats = data?.data;
-  const shortcuts = getNavigationItems(user?.roles || []).filter((item) =>
+  const shortcuts = getNavigationItems(user?.roles || [], commercialAccess).filter((item) =>
     shortcutIds.has(item.id)
   );
   const canSeeDecisionInbox =
     user?.roles?.some((role) => role === 'OWNER' || role === 'MANAGER') ?? false;
+  const isCashierOnly =
+    Boolean(user?.roles?.includes('CASHIER')) &&
+    !user?.roles?.some((role) => role === 'OWNER' || role === 'MANAGER');
 
   const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
     try {
@@ -271,6 +275,205 @@ export const DashboardPage: React.FC = () => {
     </section>
   );
 
+  const renderOwnerInsights = () => {
+    const insight = stats?.insights?.owner;
+    if (!insight) return null;
+    const paymentTotal = insight.paymentMix.reduce((sum, item) => sum + item.amount, 0);
+    const growthTone = Number(insight.sales.growthPercent ?? 0) < 0 ? 'negative' : 'positive';
+
+    return (
+      <section className="dashboard-insights" aria-labelledby="dashboard-owner-insights">
+        <div className="dashboard-insights__heading">
+          <div>
+            <h2 id="dashboard-owner-insights">{t('dashboard.insights.owner.title')}</h2>
+            <p>{t('dashboard.insights.owner.subtitle')}</p>
+          </div>
+          <span className="dashboard-insights__badge">{t('dashboard.insights.owner.badge')}</span>
+        </div>
+        <div className="dashboard-insights__grid">
+          <article className="dashboard-insight-card dashboard-insight-card--sales">
+            <h3>{t('dashboard.insights.owner.monthSales')}</h3>
+            <strong>{formatCurrency(insight.sales.month)}</strong>
+            <div className="dashboard-comparison">
+              <span>
+                {t('dashboard.insights.owner.previousMonth')}:{' '}
+                {formatCurrency(insight.sales.previousMonth)}
+              </span>
+              {insight.sales.growthPercent !== null && (
+                <span className={`dashboard-growth dashboard-growth--${growthTone}`}>
+                  {insight.sales.growthPercent >= 0 ? '+' : ''}
+                  {insight.sales.growthPercent.toFixed(1)}%
+                </span>
+              )}
+            </div>
+          </article>
+
+          <article className="dashboard-insight-card">
+            <h3>{t('dashboard.insights.owner.paymentMix')}</h3>
+            {insight.paymentMix.length === 0 ? (
+              <p className="dashboard-insight-empty">{t('dashboard.insights.noData')}</p>
+            ) : (
+              <div className="dashboard-payment-mix">
+                {insight.paymentMix.map((item) => {
+                  const percent = paymentTotal > 0 ? (item.amount / paymentTotal) * 100 : 0;
+                  return (
+                    <div className="dashboard-payment-row" key={item.mode}>
+                      <div>
+                        <span>{t(`payments.modes.${item.mode.toLowerCase()}`, item.mode)}</span>
+                        <strong>{formatCurrency(item.amount)}</strong>
+                      </div>
+                      <div className="dashboard-payment-bar" aria-hidden="true">
+                        <span style={{ width: `${Math.max(3, percent)}%` }} />
+                      </div>
+                      <small>{t('dashboard.insights.billCount', { count: item.billCount })}</small>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </article>
+
+          <article className="dashboard-insight-card">
+            <h3>{t('dashboard.insights.owner.onlineOrders')}</h3>
+            <div className="dashboard-funnel">
+              <div>
+                <strong>{formatNumber(insight.online.pending)}</strong>
+                <span>{t('dashboard.insights.pending')}</span>
+              </div>
+              <div>
+                <strong>{formatNumber(insight.online.accepted)}</strong>
+                <span>{t('dashboard.insights.accepted')}</span>
+              </div>
+              <div>
+                <strong>{formatNumber(insight.online.completed)}</strong>
+                <span>{t('dashboard.insights.completed')}</span>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <article className="dashboard-seasonal">
+          <div>
+            <h3>{t('dashboard.insights.owner.seasonalTitle')}</h3>
+            <p>{t('dashboard.insights.owner.seasonalSubtitle')}</p>
+          </div>
+          {insight.seasonalRestock.length === 0 ? (
+            <div className="dashboard-history-state">
+              <strong>{t('dashboard.insights.owner.historyBuilding')}</strong>
+              <span>{t('dashboard.insights.owner.historyBuildingHint')}</span>
+            </div>
+          ) : (
+            <div className="dashboard-seasonal-list">
+              {insight.seasonalRestock.map((item) => (
+                <button
+                  type="button"
+                  className="dashboard-seasonal-item"
+                  key={item.variantId}
+                  onClick={() => history.push(`/products/${item.productId}`)}
+                >
+                  <span>
+                    <strong>{item.productName}</strong>
+                    <small>
+                      {t('dashboard.insights.owner.lastYear', {
+                        quantity: formatNumber(item.lastYearSameMonthQty),
+                      })}
+                    </small>
+                  </span>
+                  <span>
+                    {t('dashboard.insights.owner.suggested', {
+                      quantity: formatNumber(item.suggestedQty),
+                    })}
+                    <small>
+                      {t(`dashboard.insights.confidence.${item.confidence.toLowerCase()}`)}
+                    </small>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </article>
+      </section>
+    );
+  };
+
+  const renderManagerInsights = () => {
+    const insight = stats?.insights?.manager;
+    if (!insight) return null;
+    return (
+      <section className="dashboard-insights" aria-labelledby="dashboard-manager-insights">
+        <div className="dashboard-insights__heading">
+          <div>
+            <h2 id="dashboard-manager-insights">{t('dashboard.insights.manager.title')}</h2>
+            <p>{t('dashboard.insights.manager.subtitle')}</p>
+          </div>
+        </div>
+        <div className="dashboard-manager-strip">
+          <span>
+            <strong>{formatNumber(insight.onlineQueue.pending)}</strong>
+            {t('dashboard.insights.manager.ordersWaiting')}
+          </span>
+          <span>
+            <strong>{formatNumber(insight.onlineQueue.accepted)}</strong>
+            {t('dashboard.insights.manager.ordersAccepted')}
+          </span>
+          <span>
+            <strong>{formatNumber(insight.heldBills)}</strong>
+            {t('dashboard.insights.manager.heldBills')}
+          </span>
+        </div>
+        <div className="dashboard-cashiers" role="table">
+          <div className="dashboard-cashiers__row dashboard-cashiers__header" role="row">
+            <span role="columnheader">{t('dashboard.insights.manager.cashier')}</span>
+            <span role="columnheader">{t('dashboard.insights.manager.bills')}</span>
+            <span role="columnheader">{t('dashboard.insights.manager.sales')}</span>
+            <span role="columnheader">{t('dashboard.insights.manager.averageBill')}</span>
+          </div>
+          {insight.cashierPerformance.length === 0 ? (
+            <p className="dashboard-insight-empty">{t('dashboard.insights.noData')}</p>
+          ) : (
+            insight.cashierPerformance.map((cashier) => (
+              <div className="dashboard-cashiers__row" role="row" key={cashier.userId}>
+                <strong role="cell">{cashier.name}</strong>
+                <span role="cell">{formatNumber(cashier.billCount)}</span>
+                <span role="cell">{formatCurrency(cashier.sales)}</span>
+                <span role="cell">{formatCurrency(cashier.averageBasket)}</span>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+    );
+  };
+
+  const renderCashierInsights = () => {
+    const insight = stats?.insights?.cashier;
+    if (!insight) return null;
+    return (
+      <section className="dashboard-insights" aria-labelledby="dashboard-cashier-insights">
+        <div className="dashboard-insights__heading">
+          <div>
+            <h2 id="dashboard-cashier-insights">{t('dashboard.insights.cashier.title')}</h2>
+            <p>{t('dashboard.insights.cashier.subtitle')}</p>
+          </div>
+        </div>
+        <div className="dashboard-manager-strip">
+          <span>
+            <strong>{formatNumber(insight.ownBills)}</strong>
+            {t('dashboard.insights.cashier.bills')}
+          </span>
+          <span>
+            <strong>{formatCurrency(insight.ownSales)}</strong>
+            {t('dashboard.insights.cashier.sales')}
+          </span>
+          <span>
+            <strong>{formatNumber(insight.heldBills)}</strong>
+            {t('dashboard.insights.cashier.heldBills')}
+          </span>
+        </div>
+      </section>
+    );
+  };
+
   return (
     <IonPage>
       <Navbar title={t('dashboard.title')} />
@@ -322,6 +525,9 @@ export const DashboardPage: React.FC = () => {
             </div>
           ) : (
             <>
+              {stats.insights?.scope === 'OWNER' && renderOwnerInsights()}
+              {stats.insights?.scope === 'MANAGER' && renderManagerInsights()}
+              {stats.insights?.scope === 'CASHIER' && renderCashierInsights()}
               {canSeeDecisionInbox && (
                 <section
                   className="dashboard-decision-inbox"
@@ -354,19 +560,26 @@ export const DashboardPage: React.FC = () => {
                   )}
                 </section>
               )}
-              <section
-                className="dashboard-priorities"
-                data-testid="dashboard-priorities"
-                aria-label={t('dashboard.title')}
-              >
-                {priorityMetrics.map(renderMetric)}
-              </section>
-              <section className="dashboard-secondary" aria-labelledby="dashboard-secondary-title">
-                <h2 id="dashboard-secondary-title">{t('dashboard.moreMetrics')}</h2>
-                <div className="workspace-grid dashboard-secondary-grid">
-                  {otherMetrics.map(renderMetric)}
-                </div>
-              </section>
+              {!isCashierOnly && (
+                <>
+                  <section
+                    className="dashboard-priorities"
+                    data-testid="dashboard-priorities"
+                    aria-label={t('dashboard.title')}
+                  >
+                    {priorityMetrics.map(renderMetric)}
+                  </section>
+                  <section
+                    className="dashboard-secondary"
+                    aria-labelledby="dashboard-secondary-title"
+                  >
+                    <h2 id="dashboard-secondary-title">{t('dashboard.moreMetrics')}</h2>
+                    <div className="workspace-grid dashboard-secondary-grid">
+                      {otherMetrics.map(renderMetric)}
+                    </div>
+                  </section>
+                </>
+              )}
             </>
           )}
         </main>

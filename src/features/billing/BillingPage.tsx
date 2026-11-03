@@ -348,7 +348,13 @@ export const BillingPage: React.FC = () => {
           total: Number(activeQuote.total_amount),
         }
       : { ...totals, gstAmount: 0 };
-  const marginPreview = activeQuoteKey === quoteKey ? activeQuote?.margin_preview : undefined;
+  // Keep the last confirmed estimate visible while a new quote is calculated.
+  // Clearing it on every quantity click made the card visibly disappear and
+  // reappear, which looked like the whole bill was being rebuilt.
+  const marginPreview = activeQuote?.margin_preview;
+  const marginPreviewUpdating = Boolean(
+    marginPreview && activeQuoteKey !== quoteKey && !quoteError
+  );
   const hasCurrentCustomerBalance = selectedCustomerData?.data?.id?.toString() === customerId;
   const previousCustomerBalance = customerId
     ? Number(
@@ -508,10 +514,12 @@ export const BillingPage: React.FC = () => {
   useEffect(() => {
     quoteGenerationRef.current += 1;
     const generation = quoteGenerationRef.current;
-    setActiveQuote(null);
-    setActiveQuoteKey(null);
     setQuoteError(null);
-    if ((!isGstMode && !canViewMarginPreview) || !cartItems.length || completionInvoiceId) return;
+    if ((!isGstMode && !canViewMarginPreview) || !cartItems.length || completionInvoiceId) {
+      setActiveQuote(null);
+      setActiveQuoteKey(null);
+      return;
+    }
 
     let cancelled = false;
     let request: ReturnType<typeof quoteInvoice> | null = null;
@@ -1695,50 +1703,70 @@ export const BillingPage: React.FC = () => {
                         </p>
                       )}
                       {marginPreview && (
-                        <div
-                          className="rounded-xl border border-emerald-200 bg-emerald-50 p-3"
+                        <details
+                          className="group rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2"
                           aria-label={t('billing.marginPreview.title')}
                         >
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <p className="text-xs font-bold uppercase tracking-wide text-emerald-800">
-                                {t('billing.marginPreview.title')}
-                              </p>
-                              <p className="text-xs text-emerald-700">
-                                {t('billing.marginPreview.privateHint')}
-                              </p>
-                            </div>
+                          <summary className="flex min-h-8 cursor-pointer list-none items-center justify-between gap-3">
+                            <span className="text-xs font-bold uppercase tracking-wide text-emerald-800">
+                              {t('billing.marginPreview.title')}
+                              {marginPreviewUpdating ? (
+                                <span className="ml-2 font-medium normal-case text-emerald-600">
+                                  {t('billing.marginPreview.updating')}
+                                </span>
+                              ) : null}
+                            </span>
                             {marginPreview.available ? (
                               <strong
-                                className={`text-xl ${Number(marginPreview.estimatedProfit) < 0 ? 'text-red-700' : 'text-emerald-800'}`}
+                                className={`text-base ${Number(marginPreview.estimatedProfit) < 0 ? 'text-red-700' : 'text-emerald-800'}`}
                               >
                                 {formatCurrency(Number(marginPreview.estimatedProfit))}
                               </strong>
-                            ) : null}
-                          </div>
-                          {marginPreview.available ? (
-                            <p className="mt-2 text-xs text-emerald-800">
-                              {t('billing.marginPreview.detail', {
-                                cost: formatCurrency(Number(marginPreview.estimatedCost)),
-                                margin: marginPreview.marginPercent.toFixed(1),
-                              })}
-                            </p>
-                          ) : (
-                            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                              <p className="text-xs text-amber-800">
+                            ) : (
+                              <span className="text-xs font-semibold text-amber-800">
+                                {t('billing.marginPreview.costNeeded')}
+                              </span>
+                            )}
+                          </summary>
+                          <div className="mt-2 border-t border-emerald-200 pt-2 text-xs text-emerald-800">
+                            <p>{t('billing.marginPreview.privateHint')}</p>
+                            {marginPreview.available ? (
+                              <>
+                                <p className="mt-1">
+                                  {t('billing.marginPreview.detail', {
+                                    cost: formatCurrency(Number(marginPreview.estimatedCost)),
+                                    margin: marginPreview.marginPercent.toFixed(1),
+                                  })}
+                                </p>
+                                {(marginPreview.partial ||
+                                  Number(marginPreview.missingCostItems ?? 0) > 0) && (
+                                  <p className="mt-1 text-amber-800">
+                                    {t('billing.marginPreview.partial', {
+                                      covered: marginPreview.coveredCostItems ?? 0,
+                                      total:
+                                        marginPreview.totalItems ??
+                                        Number(marginPreview.coveredCostItems ?? 0) +
+                                          Number(marginPreview.missingCostItems ?? 0),
+                                      count: marginPreview.missingCostItems ?? 0,
+                                    })}
+                                  </p>
+                                )}
+                              </>
+                            ) : (
+                              <p className="mt-1 text-amber-800">
                                 {t('billing.marginPreview.missingCost', {
-                                  count:
-                                    'missingCostItems' in marginPreview
-                                      ? marginPreview.missingCostItems
-                                      : 0,
+                                  count: marginPreview.missingCostItems,
                                 })}
                               </p>
+                            )}
+                            {Number(marginPreview.missingCostItems ?? 0) > 0 ||
+                            !marginPreview.available ? (
                               <IonButton size="small" fill="clear" routerLink="/products">
                                 {t('billing.marginPreview.manageCosts')}
                               </IonButton>
-                            </div>
-                          )}
-                        </div>
+                            ) : null}
+                          </div>
+                        </details>
                       )}
                       <div className="border-t border-gray-200 pt-3">
                         {customerId && (

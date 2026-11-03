@@ -47,6 +47,7 @@ export const navigationItems: readonly NavigationItem[] = [
     group: 'sell',
     primary: true,
     permission: 'dashboard',
+    commercialFeature: 'DASHBOARD',
   },
   {
     id: 'billing',
@@ -56,6 +57,7 @@ export const navigationItems: readonly NavigationItem[] = [
     group: 'sell',
     primary: true,
     permission: 'billing',
+    commercialFeature: 'BILLING',
   },
   {
     id: 'customers',
@@ -65,6 +67,7 @@ export const navigationItems: readonly NavigationItem[] = [
     group: 'sell',
     primary: true,
     permission: 'customers',
+    commercialFeature: 'CUSTOMERS_KHATA',
   },
   {
     id: 'invoices',
@@ -73,6 +76,7 @@ export const navigationItems: readonly NavigationItem[] = [
     icon: receipt,
     group: 'sell',
     permission: 'invoices',
+    commercialFeature: 'INVOICES',
   },
   {
     id: 'storefront-orders',
@@ -81,7 +85,7 @@ export const navigationItems: readonly NavigationItem[] = [
     icon: receipt,
     group: 'sell',
     permission: 'invoices',
-    commercialFeature: 'CUSTOMER_STOREFRONT',
+    commercialFeature: 'ONLINE_ORDERS',
   },
   {
     id: 'payments',
@@ -91,6 +95,7 @@ export const navigationItems: readonly NavigationItem[] = [
     group: 'sell',
     primary: true,
     permission: 'payments',
+    commercialFeature: 'PAYMENTS',
   },
   {
     id: 'products',
@@ -100,6 +105,7 @@ export const navigationItems: readonly NavigationItem[] = [
     group: 'stock',
     primary: true,
     permission: 'products',
+    commercialFeature: 'PRODUCTS',
   },
   {
     id: 'inventory',
@@ -108,6 +114,7 @@ export const navigationItems: readonly NavigationItem[] = [
     icon: layers,
     group: 'stock',
     permission: 'inventory',
+    commercialFeature: 'INVENTORY',
   },
   {
     id: 'categories',
@@ -116,6 +123,7 @@ export const navigationItems: readonly NavigationItem[] = [
     icon: pricetags,
     group: 'stock',
     permission: 'products',
+    commercialFeature: 'PRODUCTS',
   },
   {
     id: 'suppliers',
@@ -124,6 +132,7 @@ export const navigationItems: readonly NavigationItem[] = [
     icon: briefcase,
     group: 'stock',
     permission: 'suppliers',
+    commercialFeature: 'SUPPLIERS',
   },
   {
     id: 'purchases',
@@ -132,6 +141,7 @@ export const navigationItems: readonly NavigationItem[] = [
     icon: cardOutline,
     group: 'stock',
     permission: 'purchases',
+    commercialFeature: 'PURCHASES',
   },
   {
     id: 'reports',
@@ -140,7 +150,7 @@ export const navigationItems: readonly NavigationItem[] = [
     icon: statsChart,
     group: 'manage',
     permission: 'reports',
-    commercialFeature: 'ESSENTIAL_REPORTS',
+    commercialFeature: 'REPORTS',
   },
   {
     id: 'users',
@@ -149,7 +159,7 @@ export const navigationItems: readonly NavigationItem[] = [
     icon: personAdd,
     group: 'manage',
     permission: 'users',
-    commercialFeature: 'CORE_POS',
+    commercialFeature: 'STAFF',
   },
   {
     id: 'import-export',
@@ -158,7 +168,7 @@ export const navigationItems: readonly NavigationItem[] = [
     icon: swapHorizontal,
     group: 'manage',
     permission: 'import-export',
-    commercialFeature: 'IMPORT_CUSTOMER_PRODUCT',
+    commercialFeature: 'IMPORT_EXPORT',
   },
   {
     id: 'account',
@@ -174,6 +184,7 @@ export const navigationItems: readonly NavigationItem[] = [
     icon: timerOutline,
     group: 'manage',
     permission: 'shifts',
+    commercialFeature: 'SHIFTS',
   },
   {
     id: 'getting-started',

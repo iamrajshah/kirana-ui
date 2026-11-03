@@ -18,6 +18,21 @@ export const PLAN_LABELS: Record<CommercialPlanCode, string> = {
 };
 
 const FEATURE_ROLES: Partial<Record<CommercialFeatureCode, readonly string[]>> = {
+  DASHBOARD: ['OWNER', 'MANAGER', 'CASHIER'],
+  BILLING: ['OWNER', 'MANAGER', 'CASHIER'],
+  INVOICES: ['OWNER', 'MANAGER', 'CASHIER'],
+  CUSTOMERS_KHATA: ['OWNER', 'MANAGER', 'CASHIER'],
+  PAYMENTS: ['OWNER', 'MANAGER', 'CASHIER'],
+  PRODUCTS: ['OWNER', 'MANAGER'],
+  INVENTORY: ['OWNER', 'MANAGER'],
+  PURCHASES: ['OWNER', 'MANAGER'],
+  SUPPLIERS: ['OWNER', 'MANAGER'],
+  REPORTS: ['OWNER', 'MANAGER'],
+  SHIFTS: ['OWNER', 'MANAGER', 'CASHIER'],
+  STAFF: ['OWNER'],
+  FIRMS_SETTINGS: ['OWNER'],
+  IMPORT_EXPORT: ['OWNER', 'MANAGER'],
+  ONLINE_ORDERS: ['OWNER', 'MANAGER'],
   CUSTOM_BARCODE: ['OWNER', 'MANAGER'],
   ADVANCED_REPORTS: ['OWNER', 'MANAGER'],
   ESSENTIAL_REPORTS: ['OWNER', 'MANAGER'],
@@ -42,7 +57,7 @@ export const canUseCommercialFeature = (
   const allowedRoles = access.featureRoles?.[feature] ?? FEATURE_ROLES[feature];
   return (
     (!allowedRoles || allowedRoles.some((role) => roles.includes(role))) &&
-    access.entitlements.includes(feature)
+    Boolean(access.entitlements?.includes(feature))
   );
 };
 

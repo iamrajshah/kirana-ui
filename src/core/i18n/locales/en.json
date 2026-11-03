@@ -182,6 +182,13 @@
     "deletionBody": "You can request deletion from your signed-in account or contact support. Demo identities can be removed after required checks. Paid-shop accounting records follow an assisted ownership and legal-retention process.",
     "supportAction": "Contact Kirana support"
   },
+  "trialBanner": {
+    "label": "Free demo",
+    "daysHours": "{{days}}d {{hours}}h left",
+    "hoursMinutes": "{{hours}}h {{minutes}}m left",
+    "expired": "Trial ended",
+    "viewPlans": "View plans"
+  },
   "account": {
     "eyebrow": "Your Kirana account",
     "title": "Plan & account",
@@ -205,6 +212,37 @@
     },
     "allDevices": "Mobile + web/desktop",
     "gstExclusive": "+ GST",
+    "catalogueVersion": "Plan catalogue version {{version}}",
+    "entitlements": {
+      "DASHBOARD": "Role-aware dashboard",
+      "BILLING": "Fast billing and checkout",
+      "INVOICES": "Invoices and receipts",
+      "CUSTOMERS_KHATA": "Customers and khata",
+      "PAYMENTS": "Payment collection",
+      "PRODUCTS": "Products and barcodes",
+      "INVENTORY": "Stock and inventory",
+      "PURCHASES": "Purchases",
+      "SUPPLIERS": "Suppliers",
+      "REPORTS": "Business reports",
+      "SHIFTS": "Shift reconciliation",
+      "STAFF": "Staff management",
+      "FIRMS_SETTINGS": "Firm and shop settings",
+      "IMPORT_EXPORT": "Import and export",
+      "ONLINE_ORDERS": "Online shop and orders",
+      "CORE_POS": "Core POS workflows",
+      "ESSENTIAL_REPORTS": "Essential reports",
+      "ADVANCED_REPORTS": "Advanced reports",
+      "IMPORT_CUSTOMER_PRODUCT": "Customer and product import",
+      "IMPORT_INVENTORY_CATEGORY_SUPPLIER": "Inventory, category and supplier import",
+      "EXPORT_CSV_SIX_DATASETS": "CSV exports",
+      "EXPORT_EXCEL": "Excel exports",
+      "CUSTOM_BARCODE": "Custom barcode labels",
+      "BACKUP_RESTORE": "Backup and restore",
+      "MULTI_FIRM": "Multiple legal firms",
+      "BUSINESS_DOCUMENTS": "Branded business documents",
+      "LIVE_MARGIN_PREVIEW": "Private live profit estimate",
+      "CUSTOMER_STOREFRONT": "Customer online storefront"
+    },
     "staffCount": "{{count}} staff",
     "firmCount": "{{count}} firm",
     "features": {
@@ -335,6 +373,52 @@
     "totalCustomers": "Total Customers",
     "supplierPayables": "Amount Owed to Suppliers",
     "customerReceivables": "Amount Customers Owe",
+    "insights": {
+      "noData": "Activity will appear here after the first transaction.",
+      "billCount": "{{count}} bills",
+      "pending": "Waiting",
+      "accepted": "Accepted",
+      "completed": "Completed",
+      "owner": {
+        "title": "Owner control centre",
+        "subtitle": "Growth, payment mix, online demand and stock signals in one view.",
+        "badge": "Owner view",
+        "monthSales": "Sales this month",
+        "previousMonth": "Previous month",
+        "paymentMix": "How customers paid",
+        "onlineOrders": "Online order flow",
+        "seasonalTitle": "Seasonal stock advisor",
+        "seasonalSubtitle": "Suggestions use your own sales history; treat them as guidance, not a purchase order.",
+        "historyBuilding": "History is still building",
+        "historyBuildingHint": "Seasonal suggestions appear after enough comparable sales history is available.",
+        "lastYear": "Same month last year: {{quantity}} units",
+        "suggested": "Suggested: {{quantity}} units"
+      },
+      "manager": {
+        "title": "Counter performance",
+        "subtitle": "See workload and sales by cashier without opening several reports.",
+        "ordersWaiting": "orders waiting",
+        "ordersAccepted": "orders accepted",
+        "heldBills": "held bills",
+        "cashier": "Cashier",
+        "bills": "Bills",
+        "sales": "Sales",
+        "averageBill": "Average bill"
+      },
+      "cashier": {
+        "title": "My counter today",
+        "subtitle": "Only the numbers needed to keep the counter moving.",
+        "bills": "my bills",
+        "sales": "my sales",
+        "heldBills": "held bills"
+      },
+      "confidence": {
+        "high": "High confidence",
+        "medium": "Medium confidence",
+        "low": "Early signal",
+        "insufficient_history": "More history needed"
+      }
+    },
     "decisionInbox": {
       "title": "Needs your attention",
       "subtitle": "The three most useful actions for running the shop right now.",
@@ -499,6 +583,9 @@
       "privateHint": "Private estimate for authorized staff only; never printed on the customer bill.",
       "detail": "Estimated cost {{cost}} · margin {{margin}}%",
       "missingCost": "Add a purchase cost for {{count}} item(s) to calculate this estimate.",
+      "partial": "Based on {{covered}} of {{total}} items. {{count}} item(s) have no purchase cost, so the final profit may vary.",
+      "updating": "Updating…",
+      "costNeeded": "Cost needed",
       "manageCosts": "Manage product costs"
     },
     "quoteChangedReview": "Bill details changed. Review the updated amount before taking payment.",

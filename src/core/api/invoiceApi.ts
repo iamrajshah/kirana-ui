@@ -17,13 +17,22 @@ export interface InvoiceQuote {
   total_amount: string;
   mrp_savings_amount?: string | null;
   margin_preview?:
-    | { available: false; missingCostItems: number }
+    | {
+        available: false;
+        missingCostItems: number;
+        coveredCostItems?: number;
+        totalItems?: number;
+      }
     | {
         available: true;
         revenue: string;
         estimatedCost: string;
         estimatedProfit: string;
         marginPercent: number;
+        partial?: boolean;
+        missingCostItems?: number;
+        coveredCostItems?: number;
+        totalItems?: number;
       };
   lines: Array<{
     variant_id: string;

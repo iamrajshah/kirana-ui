@@ -409,6 +409,56 @@ export interface DashboardStats {
   supplier_payables: number;
   customer_receivables: number;
   decision_inbox?: DashboardDecisionInbox | null;
+  insights?: DashboardRoleInsights | null;
+}
+
+export interface DashboardPaymentMixItem {
+  mode: string;
+  amount: number;
+  billCount: number;
+}
+
+export interface DashboardSeasonalRestockItem {
+  variantId: string;
+  productId: string;
+  productName: string;
+  lastYearSameMonthQty: number;
+  recentMonthlyQty: number;
+  suggestedQty: number;
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'INSUFFICIENT_HISTORY';
+}
+
+export interface DashboardCashierPerformanceItem {
+  userId: string;
+  name: string;
+  billCount: number;
+  sales: number;
+  averageBasket: number;
+}
+
+export interface DashboardRoleInsights {
+  scope: 'OWNER' | 'MANAGER' | 'CASHIER';
+  owner?: {
+    sales: {
+      today: number;
+      month: number;
+      previousMonth: number;
+      growthPercent: number | null;
+    };
+    paymentMix: DashboardPaymentMixItem[];
+    online: { pending: number; accepted: number; completed: number };
+    seasonalRestock: DashboardSeasonalRestockItem[];
+  };
+  manager?: {
+    cashierPerformance: DashboardCashierPerformanceItem[];
+    onlineQueue: { pending: number; accepted: number };
+    heldBills: number;
+  };
+  cashier?: {
+    ownBills: number;
+    ownSales: number;
+    heldBills: number;
+  };
 }
 
 export interface DashboardDecisionGroup<T> {
