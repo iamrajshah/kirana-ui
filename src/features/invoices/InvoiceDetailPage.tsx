@@ -56,6 +56,10 @@ const InvoiceDetailPage: React.FC = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [toast, setToast] = useState<{ color: 'success' | 'danger'; message: string } | null>(null);
   const paymentIdempotencyKey = useRef(generateIdempotencyKey());
+  const paymentReturnTo = useMemo(
+    () => new URLSearchParams(history.location?.search ?? '').get('returnTo'),
+    [history.location?.search]
+  );
 
   const finalizedDocument =
     documentQuery.data?.data.kind === 'FINALIZED_DOCUMENT' ? documentQuery.data.data : null;
@@ -92,6 +96,10 @@ const InvoiceDetailPage: React.FC = () => {
       paymentIdempotencyKey.current = generateIdempotencyKey();
       setShowPaymentModal(false);
       setToast({ color: 'success', message: t('invoiceDetail.paymentRecordedSuccess') });
+      if (paymentReturnTo) {
+        history.replace(`${paymentReturnTo}?payment=recorded`);
+        return;
+      }
       if (receipt) await documentQuery.refetch();
       else await invoiceQuery.refetch();
     } catch (error: unknown) {

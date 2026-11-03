@@ -5,6 +5,8 @@ import InvoiceDetailPage from './InvoiceDetailPage';
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
+  replace: vi.fn(),
+  locationSearch: '',
   documentResult: {} as Record<string, unknown>,
   invoiceResult: {} as Record<string, unknown>,
   refetchDocument: vi.fn(),
@@ -99,7 +101,11 @@ const trigger = (operation: ReturnType<typeof vi.fn>) => (payload: unknown) => (
 
 vi.mock('react-router-dom', () => ({
   useParams: () => ({ id: 'invoice-1' }),
-  useHistory: () => ({ push: mocks.push }),
+  useHistory: () => ({
+    push: mocks.push,
+    replace: mocks.replace,
+    location: { search: mocks.locationSearch },
+  }),
 }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('../../core/api/invoiceApi', () => ({
@@ -114,7 +120,15 @@ vi.mock('@core/api/tenantSettingsApi', () => ({
 vi.mock('@core/api/paymentApi', () => ({
   useCreatePaymentMutation: () => [trigger(mocks.createPayment), { isLoading: false }],
 }));
-vi.mock('@components/PaymentModal', () => ({ PaymentModal: () => null }));
+vi.mock('@components/PaymentModal', () => ({
+  PaymentModal: ({
+    isOpen,
+    onPayment,
+  }: {
+    isOpen: boolean;
+    onPayment: (amount: number, mode: 'CASH') => Promise<void>;
+  }) => isOpen ? <button onClick={() => void onPayment(100, 'CASH')}>Submit test payment</button> : null,
+}));
 vi.mock('./receipt', async (importOriginal) => {
   const original = await importOriginal<typeof import('./receipt')>();
   return {
@@ -176,6 +190,7 @@ vi.mock('@ionic/react', () => {
 });
 
 beforeEach(() => {
+  mocks.locationSearch = '';
   mocks.documentResult = {
     data: { data: document },
     isLoading: false,
@@ -191,6 +206,8 @@ beforeEach(() => {
   };
   mocks.runOutput.mockResolvedValue({ phase: 'completed', action: 'print' });
   mocks.outputState = { phase: 'idle', action: null };
+  mocks.finalize.mockResolvedValue({ data: {} });
+  mocks.createPayment.mockResolvedValue({ data: {} });
 });
 
 afterEach(() => {
@@ -357,5 +374,38 @@ describe('InvoiceDetailPage receipt workspace', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'invoiceDetail.openHeldBill' }));
     expect(mocks.push).toHaveBeenCalledWith('/billing?held=invoice-1');
+  });
+
+  it('finalizes an order draft, records cash, then returns to incoming orders', async () => {
+    mocks.locationSearch = '?returnTo=%2Fstorefront-orders&orderId=16';
+    mocks.documentResult = {
+      data: { data: { kind: 'NON_DOCUMENT', reason: 'NOT_ISSUED', invoice_id: 'invoice-1', status: 'DRAFT' } },
+      isLoading: false,
+      isFetching: false,
+      error: undefined,
+      refetch: mocks.refetchDocument,
+    };
+    mocks.invoiceResult = {
+      data: { data: {
+        id: 'invoice-1', invoice_number: 'DRAFT-1', status: 'DRAFT', held_at: null,
+        total_amount: 100, paid_amount: 0, customer: { id: 'customer-1' }, items: [],
+      } },
+      isLoading: false,
+      error: undefined,
+      refetch: mocks.refetchInvoice,
+    };
+
+    render(<InvoiceDetailPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'invoiceDetail.finalizeAndCollectPayment' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Submit test payment' }));
+
+    await waitFor(() => expect(mocks.createPayment).toHaveBeenCalledWith(expect.objectContaining({
+      customer_id: 'customer-1', invoice_id: 'invoice-1', amount: 100, payment_mode: 'CASH',
+    })));
+    expect(mocks.finalize).toHaveBeenCalledWith({ id: 'invoice-1' });
+    expect(mocks.finalize.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.createPayment.mock.invocationCallOrder[0],
+    );
+    expect(mocks.replace).toHaveBeenCalledWith('/storefront-orders?payment=recorded');
   });
 });

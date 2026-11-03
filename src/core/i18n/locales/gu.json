@@ -1835,6 +1835,7 @@
       "ACCEPTED": "ઓર્ડર સ્વીકારો",
       "PREPARING": "તૈયારી શરૂ કરો",
       "READY": "તૈયાર દર્શાવો",
+      "COLLECT_PAYMENT": "બિલ ખોલો અને ચુકવણી લો",
       "COMPLETED": "પૂર્ણ કરો",
       "CANCELLED": "રદ કરો"
     }

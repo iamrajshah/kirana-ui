@@ -9,9 +9,12 @@ const state = vi.hoisted(() => ({
   deleteOffer: vi.fn(),
   refetchOrders: vi.fn(),
   refetchOffers: vi.fn(),
+  push: vi.fn(),
+  orders: [] as Array<Record<string, unknown>>,
 }));
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+vi.mock('react-router-dom', () => ({ useHistory: () => ({ push: state.push }) }));
 vi.mock('@core/hooks', () => ({
   useAppSelector: () => ({ tenant: { id: '2', name: 'Kirana Demo Store' } }),
 }));
@@ -26,7 +29,7 @@ vi.mock('@core/api/productApi', () => ({
 }));
 vi.mock('@core/api/storefrontOrderApi', () => ({
   useGetIncomingStorefrontOrdersQuery: () => ({
-    data: { data: [] },
+    data: { data: state.orders },
     isLoading: false,
     refetch: state.refetchOrders,
   }),
@@ -117,6 +120,8 @@ beforeEach(() => {
   state.createOffer.mockReturnValue({ unwrap: () => Promise.resolve() });
   state.updateOffer.mockReset();
   state.deleteOffer.mockReset();
+  state.push.mockReset();
+  state.orders = [];
   Object.defineProperty(navigator, 'clipboard', {
     configurable: true,
     value: { writeText: vi.fn().mockResolvedValue(undefined) },
@@ -158,4 +163,28 @@ it('shows the tenant storefront link and lets staff copy it', async () => {
       'https://kirana-customer.pages.dev/shop/shop-2'
     )
   );
+});
+
+it('routes a ready unpaid order to its bill before completion', () => {
+  state.orders = [
+    {
+      id: '16',
+      status: 'READY',
+      total_amount: 299,
+      fulfillment_type: 'PICKUP',
+      invoice_id: '277',
+      invoice_status: 'DRAFT',
+      order_items: [],
+    },
+  ];
+
+  render(<StorefrontOrdersPage />);
+  fireEvent.click(
+    screen.getByRole('button', { name: 'storefrontOrders.actions.COLLECT_PAYMENT' })
+  );
+
+  expect(state.push).toHaveBeenCalledWith(
+    '/invoices/277?returnTo=%2Fstorefront-orders&orderId=16'
+  );
+  expect(screen.queryByRole('button', { name: 'storefrontOrders.actions.COMPLETED' })).toBeNull();
 });

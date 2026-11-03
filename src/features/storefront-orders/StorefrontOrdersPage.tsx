@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import {
   IonButton,
   IonCard,
@@ -40,15 +41,19 @@ const nextActions: Partial<Record<StorefrontOrderStatus, StorefrontOrderStatus[]
   PLACED: ['ACCEPTED', 'CANCELLED'],
   ACCEPTED: ['PREPARING', 'CANCELLED'],
   PREPARING: ['READY', 'CANCELLED'],
-  READY: ['COMPLETED'],
 };
 
 const StorefrontOrdersPage: React.FC = () => {
   const { t } = useTranslation();
+  const history = useHistory();
   const currentUser = useAppSelector(selectCurrentUser);
   const [section, setSection] = useState<'orders' | 'offers'>('orders');
   const [linkCopied, setLinkCopied] = useState(false);
-  const { data, isLoading, refetch } = useGetIncomingStorefrontOrdersQuery();
+  const { data, isLoading, refetch } = useGetIncomingStorefrontOrdersQuery(undefined, {
+    pollingInterval: 10_000,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
   const {
     data: offerData,
     isLoading: offersLoading,
@@ -338,6 +343,27 @@ const StorefrontOrdersPage: React.FC = () => {
                         {t(`storefrontOrders.actions.${status}`)}
                       </IonButton>
                     ))}
+                    {order.status === 'READY' && order.invoice_status !== 'PAID' && (
+                      <IonButton
+                        disabled={!order.invoice_id}
+                        onClick={() => {
+                          if (!order.invoice_id) return;
+                          history.push(
+                            `/invoices/${encodeURIComponent(order.invoice_id)}?returnTo=${encodeURIComponent('/storefront-orders')}&orderId=${encodeURIComponent(order.id)}`
+                          );
+                        }}
+                      >
+                        {t('storefrontOrders.actions.COLLECT_PAYMENT')}
+                      </IonButton>
+                    )}
+                    {order.status === 'READY' && order.invoice_status === 'PAID' && (
+                      <IonButton
+                        disabled={updating}
+                        onClick={() => updateStatus({ id: order.id, status: 'COMPLETED' })}
+                      >
+                        {t('storefrontOrders.actions.COMPLETED')}
+                      </IonButton>
+                    )}
                   </div>
                 </IonCardContent>
               </IonCard>

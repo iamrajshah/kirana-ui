@@ -306,3 +306,11 @@ Use [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) for defect diagnosis an
 [`docs/QA_REGRESSION_SUITE.md`](docs/QA_REGRESSION_SUITE.md) for the executable
 release checklist and [`docs/QA_Guide.md`](docs/QA_Guide.md) for the long-form
 manual guide.
+
+## Online-order payment handoff — 3 November 2026
+
+A ready online order is not complete until its linked invoice is fully paid.
+The Online Orders screen opens that bill directly, Invoice Detail finalizes a
+draft and records payment, then returns to Online Orders. Only a server-confirmed
+`PAID` invoice exposes Complete. The list polls while visible and refetches on
+focus/reconnect so payment state is not held behind a browser refresh.
