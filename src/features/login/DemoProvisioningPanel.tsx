@@ -12,6 +12,16 @@ interface ProvisioningStatus {
   error?: { message: string } | null;
 }
 
+class ProvisioningRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number
+  ) {
+    super(message);
+    this.name = 'ProvisioningRequestError';
+  }
+}
+
 const request = async (
   token: string,
   path: string,
@@ -23,8 +33,19 @@ const request = async (
     headers: { authorization: `Bearer ${token}` },
     signal,
   });
-  const body = (await response.json()) as { data?: ProvisioningStatus; message?: string };
-  if (!response.ok || !body.data) throw new Error(body.message || 'Demo setup could not continue');
+  let body: { data?: ProvisioningStatus; message?: string } | null = null;
+  try {
+    body = (await response.json()) as { data?: ProvisioningStatus; message?: string };
+  } catch {
+    // Gateways and older rate-limit middleware can return plain text. Keep the
+    // transport detail out of the customer UI and classify by HTTP status.
+  }
+  if (!response.ok || !body?.data) {
+    throw new ProvisioningRequestError(
+      body?.message || '',
+      response.status
+    );
+  }
   return body.data;
 };
 
@@ -52,10 +73,12 @@ export const DemoProvisioningPanel: React.FC<{
   const generation = useRef(0);
   const activeRun = useRef<{ generation: number; controller: AbortController } | null>(null);
   const onReadyRef = useRef(onReady);
+  const tRef = useRef(t);
 
   useEffect(() => {
     onReadyRef.current = onReady;
-  }, [onReady]);
+    tRef.current = t;
+  }, [onReady, t]);
 
   const provision = useCallback(async () => {
     if (activeRun.current) return;
@@ -72,7 +95,10 @@ export const DemoProvisioningPanel: React.FC<{
       setStatus(current);
 
       while (current.state === 'PROVISIONING') {
-        if (current.inProgress) await waitForResume(controller.signal);
+        // Provisioning is a bounded stage machine, not a tight polling loop.
+        // A small pause also leaves room for the previous transaction to finish
+        // and avoids bursting authenticated resume requests at the API edge.
+        await waitForResume(controller.signal);
         current = await request(token, '/demo/provision/resume', 'POST', controller.signal);
         if (!isCurrent()) return;
         setStatus(current);
@@ -87,7 +113,15 @@ export const DemoProvisioningPanel: React.FC<{
       }
     } catch (reason) {
       if (isCurrent()) {
-        setError(reason instanceof Error ? reason.message : 'Demo setup could not continue');
+        setError(
+          reason instanceof ProvisioningRequestError
+            ? reason.status === 429
+              ? tRef.current('auth.demoRateLimited')
+              : reason.message || tRef.current('auth.demoRequestFailed')
+            : reason instanceof Error
+              ? reason.message
+              : tRef.current('auth.demoRequestFailed')
+        );
       }
     } finally {
       if (activeRun.current?.generation === currentGeneration) activeRun.current = null;

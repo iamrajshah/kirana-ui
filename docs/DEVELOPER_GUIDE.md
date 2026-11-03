@@ -88,3 +88,12 @@ the API. Never infer payment from the order status. Route unpaid ready orders to
 `/invoices/:id` with `returnTo=/storefront-orders`; after successful collection,
 return and let the refreshed API projection decide whether Complete is allowed.
 The server still enforces this invariant if the UI is bypassed.
+
+## Demo provisioning error contract
+
+`DemoProvisioningPanel` must tolerate JSON and non-JSON error bodies. Never call
+`response.json()` without a safe fallback or surface parser text such as
+`Unexpected token` to the user. A 429 maps to `auth.demoRateLimited`; other
+transport/protocol failures map to `auth.demoRequestFailed`. Keep translations
+complete in English, Hindi, Marathi, and Gujarati. The resume loop is sequential
+and paced so it cannot burst every fixture stage at once.

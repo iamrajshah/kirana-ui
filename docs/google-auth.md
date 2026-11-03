@@ -39,3 +39,12 @@ This web proof is not a Play Store release. Before publishing Android, register
 the Play App Signing SHA fingerprint as an Android OAuth client, produce a
 signed AAB, and repeat Google sign-in, relaunch, device replacement, logout, and
 network recovery on physical phone and tablet hardware.
+
+## Private demo rollout
+
+When both server rollout flags and the public-product readiness contract allow
+unknown Google entry, a verified identity without a shop receives a short-lived
+provisioning token and a resumable seven-day demo setup. One start call is
+followed by one resume call per server fixture stage. The POS spaces these calls
+and safely handles JSON or non-JSON failures. A throttled setup remains on the
+same provisioning state and offers Retry; it must not create another tenant.

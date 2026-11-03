@@ -108,6 +108,22 @@ describe('DemoProvisioningPanel', () => {
     expect(screen.queryByRole('button', { name: 'auth.demoRetry' })).toBeNull();
   });
 
+  it('shows a safe retry message when a gateway returns a plain-text 429', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      json: async () => {
+        throw new SyntaxError('Unexpected token T in JSON');
+      },
+    } as unknown as Response);
+
+    render(<DemoProvisioningPanel token="prospect-a" onReady={vi.fn()} />);
+
+    expect(await screen.findByText('auth.demoRateLimited')).toBeTruthy();
+    expect(screen.queryByText(/Unexpected token/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'auth.demoRetry' })).toBeTruthy();
+  });
+
   it('discards a late completion when a newer provisioning token replaces it', async () => {
     const first = deferredResponse();
     vi.mocked(fetch)

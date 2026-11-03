@@ -168,7 +168,9 @@
     "demoStatus": "स्थिती: {{status}}",
     "demoCompleted": "पूर्ण: {{stage}}",
     "demoNext": "पुढील: {{stage}}",
-    "demoRetry": "डेमो सेटअप पुन्हा करा"
+    "demoRetry": "डेमो सेटअप पुन्हा करा",
+    "demoRateLimited": "डेमो सेटअप सध्या व्यस्त आहे. कृपया थोड्या वेळाने पुन्हा प्रयत्न करा.",
+    "demoRequestFailed": "डेमो सेटअप पुढे जाऊ शकला नाही. कृपया पुन्हा प्रयत्न करा."
   },
   "legal": {
     "backToLogin": "साइन इनकडे परत जा",

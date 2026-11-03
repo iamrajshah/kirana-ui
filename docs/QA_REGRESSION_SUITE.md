@@ -120,3 +120,13 @@ Record full cash payment and verify navigation returns to Online Orders. Complet
 must appear only after the refreshed invoice state is PAID. Confirm dashboard,
 invoice, customer ledger, order list, and customer status agree without manually
 refreshing the browser.
+
+## Fresh Google demo provisioning
+
+With a new approved Google identity, accept the legal terms and start the
+private seven-day demo. Watch every displayed stage through VERIFIED and confirm
+the app enters the new shop without a manual refresh. Retry one recoverable
+failure and verify the same demo resumes without duplicate data. Simulate a
+plain-text 429 and a malformed server response: both must show a localized,
+actionable message, and neither may expose `Unexpected token` or raw response
+text. Repeat at desktop, tablet, and mobile widths.
