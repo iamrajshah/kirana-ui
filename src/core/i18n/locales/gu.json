@@ -2071,6 +2071,7 @@
     "purchaseValue": "ખરીદી મૂલ્ય",
     "outwardTax": "વેચાણ પર આઉટપુટ કર",
     "inputTax": "પાત્ર ઇનપુટ કર",
+    "ineligibleInputTax": "અપાત્ર ઇનપુટ કર",
     "outputTax": "આઉટપુટ કર",
     "saleQuantity": "વેચાણ જથ્થો",
     "saleTaxableValue": "વેચાણ કરપાત્ર મૂલ્ય",

@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core';
+import type { GstDownloadReport } from '@core/api/gstReportsApi';
 
 interface GstReportExportDependencies {
   isNative: () => boolean;
@@ -31,6 +32,33 @@ const asCsv = (blob: Blob): Blob =>
   blob.type.toLowerCase().includes('text/csv')
     ? blob
     : new Blob([blob], { type: 'text/csv;charset=utf-8' });
+
+const safeFilePart = (value: string): string =>
+  value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+
+export const buildGstReportFilename = ({
+  report,
+  from,
+  to,
+  firm,
+}: {
+  report: GstDownloadReport;
+  from: string;
+  to: string;
+  firm?: { displayName?: string; code?: string; gstin?: string | null } | null;
+}): string => {
+  const firmIdentity = firm
+    ? [firm.displayName, firm.gstin || firm.code].filter(Boolean).join('-')
+    : 'consolidated';
+  const safeFirmIdentity = safeFilePart(firmIdentity) || 'consolidated';
+  return `kirana-gst-${safeFirmIdentity}-${report}-${from}-to-${to}.csv`;
+};
 
 export const exportGstCsv = async (
   blob: Blob,

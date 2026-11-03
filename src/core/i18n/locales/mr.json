@@ -2076,6 +2076,7 @@
     "purchaseValue": "खरेदी मूल्य",
     "outwardTax": "विक्रीवरील आउटपुट कर",
     "inputTax": "पात्र इनपुट कर",
+    "ineligibleInputTax": "अपात्र इनपुट कर",
     "outputTax": "आउटपुट कर",
     "saleQuantity": "विक्री प्रमाण",
     "saleTaxableValue": "विक्री करपात्र मूल्य",

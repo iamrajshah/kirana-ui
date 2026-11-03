@@ -81,6 +81,7 @@ export interface GstHsnRow {
   purchaseQuantity: number;
   purchaseTaxableValue: number;
   inputTax: number;
+  ineligibleInputTax?: number;
 }
 
 export type GstDownloadReport = 'summary' | 'sales-register' | 'purchase-register' | 'hsn-summary';

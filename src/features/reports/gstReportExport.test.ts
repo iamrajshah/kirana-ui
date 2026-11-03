@@ -1,7 +1,27 @@
 import { describe, expect, it, vi } from 'vitest';
-import { exportGstCsv } from './gstReportExport';
+import { buildGstReportFilename, exportGstCsv } from './gstReportExport';
 
 describe('GST CSV output', () => {
+  it('makes multi-firm and consolidated exports distinguishable with safe filenames', () => {
+    expect(
+      buildGstReportFilename({
+        report: 'sales-register',
+        from: '2026-10-01',
+        to: '2026-10-31',
+        firm: { displayName: 'Jayesh Trading / Mumbai', code: 'JT-01' },
+      })
+    ).toBe('kirana-gst-jayesh-trading-mumbai-jt-01-sales-register-2026-10-01-to-2026-10-31.csv');
+
+    expect(
+      buildGstReportFilename({
+        report: 'summary',
+        from: '2026-10-01',
+        to: '2026-10-31',
+        firm: null,
+      })
+    ).toBe('kirana-gst-consolidated-summary-2026-10-01-to-2026-10-31.csv');
+  });
+
   it('downloads a typed CSV on web and tablet browsers', async () => {
     const downloadWeb = vi.fn();
     const shareNative = vi.fn();

@@ -26,7 +26,7 @@ import { useGetFirmsQuery } from '@core/api/firmApi';
 import { formatCurrency, formatDate, formatNumber } from '@utils/helpers';
 import { apiErrorMessage } from '@core/services/notificationService';
 import { currentLocalDate, currentLocalMonthRange } from './gstReportDates';
-import { exportGstCsv } from './gstReportExport';
+import { buildGstReportFilename, exportGstCsv } from './gstReportExport';
 import './GstReportsPage.css';
 
 type GstView = 'SUMMARY' | 'SALES' | 'PURCHASES' | 'HSN';
@@ -43,6 +43,10 @@ const GstReportsPage: React.FC = () => {
   // Posting screens intentionally keep using `{ active: true }`.
   const { data: firmsResponse } = useGetFirmsQuery();
   const firms = useMemo(() => firmsResponse?.data.firms ?? [], [firmsResponse?.data.firms]);
+  const selectedFirm = useMemo(
+    () => firms.find((firm) => firm.id === firmId) ?? null,
+    [firmId, firms]
+  );
 
   useEffect(() => {
     if (firmId || firms.length === 0) return;
@@ -86,7 +90,17 @@ const GstReportsPage: React.FC = () => {
       const blob = await downloadReport({ report, params }).unwrap();
       await exportGstCsv(
         blob,
-        `kirana-gst-${report}-${from}-to-${to}.csv`,
+        buildGstReportFilename({
+          report,
+          from,
+          to,
+          firm: selectedFirm
+            ? {
+                displayName: selectedFirm.display_name,
+                code: selectedFirm.code,
+              }
+            : null,
+        }),
         t('gstReports.exportTitle', { report: t(`gstReports.tabs.${view}`) })
       );
     } catch (cause) {
@@ -403,6 +417,12 @@ const GstReportsPage: React.FC = () => {
                         <dt>{t('gstReports.inputTax')}</dt>
                         <dd>{formatCurrency(row.inputTax)}</dd>
                       </div>
+                      {typeof row.ineligibleInputTax === 'number' && (
+                        <div>
+                          <dt>{t('gstReports.ineligibleInputTax')}</dt>
+                          <dd>{formatCurrency(row.ineligibleInputTax)}</dd>
+                        </div>
+                      )}
                     </dl>
                   </article>
                 ))}

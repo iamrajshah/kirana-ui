@@ -11,6 +11,7 @@ const state = vi.hoisted(() => ({
   hsn: vi.fn(),
   download: vi.fn(),
   firmsQuery: vi.fn(),
+  webDownload: vi.fn(),
 }));
 
 const base = {
@@ -31,12 +32,14 @@ vi.mock('@core/api/firmApi', () => ({
         firms: [
           {
             id: '3',
+            code: 'JT',
             display_name: 'Jitendra Trading',
             is_active: true,
             is_default_sales: true,
           },
           {
             id: '4',
+            code: 'JAY',
             display_name: 'Jayesh Trading',
             is_active: false,
             is_default_sales: false,
@@ -101,7 +104,11 @@ const query = (data: unknown) => ({
 });
 
 beforeEach(() => {
-  vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+  vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+    this: HTMLAnchorElement
+  ) {
+    state.webDownload(this.download);
+  });
   state.summary.mockImplementation(() =>
     query({
       ...base,
@@ -165,6 +172,7 @@ beforeEach(() => {
           purchaseQuantity: 1,
           purchaseTaxableValue: 40,
           inputTax: 2,
+          ineligibleInputTax: 0.5,
         },
       ],
     })
@@ -228,6 +236,7 @@ describe('GST / CA report route', () => {
     expect(screen.getByText('gstReports.taxSnapshotIncomplete')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'gstReports.tabs.HSN' }));
     expect(await screen.findByText('1512')).toBeTruthy();
+    expect(screen.getByText('gstReports.ineligibleInputTax')).toBeTruthy();
   });
 
   it('downloads the active CA handoff through the authenticated mutation', async () => {
@@ -239,6 +248,11 @@ describe('GST / CA report route', () => {
         report: 'summary',
         params: expect.objectContaining({ firmId: '3' }),
       })
+    );
+    expect(state.webDownload).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^kirana-gst-jitendra-trading-jt-summary-\d{4}-\d{2}-\d{2}-to-\d{4}-\d{2}-\d{2}\.csv$/
+      )
     );
   });
 });

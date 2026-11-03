@@ -2085,6 +2085,7 @@
     "purchaseValue": "Purchase value",
     "outwardTax": "Output tax on sales",
     "inputTax": "Eligible input tax",
+    "ineligibleInputTax": "Ineligible input tax",
     "outputTax": "Output tax",
     "saleQuantity": "Sale quantity",
     "saleTaxableValue": "Sale taxable value",

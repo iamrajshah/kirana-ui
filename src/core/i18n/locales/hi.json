@@ -2076,6 +2076,7 @@
     "purchaseValue": "खरीद मूल्य",
     "outwardTax": "बिक्री पर आउटपुट टैक्स",
     "inputTax": "योग्य इनपुट टैक्स",
+    "ineligibleInputTax": "अयोग्य इनपुट टैक्स",
     "outputTax": "आउटपुट टैक्स",
     "saleQuantity": "बिक्री मात्रा",
     "saleTaxableValue": "बिक्री करयोग्य मूल्य",
