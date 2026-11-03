@@ -20,21 +20,24 @@ import {
   IonModal,
   IonToast,
 } from '@ionic/react';
-import { pencil, close, barcodeOutline } from 'ionicons/icons';
+import { pencil, close, barcodeOutline, cashOutline } from 'ionicons/icons';
 import { useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import {
   useGetProductByIdQuery,
   useUpdateProductMutation,
   useUpdateVariantMutation,
+  useUpdateVariantPurchaseCostMutation,
+  useGetProductPurchaseCostsQuery,
 } from '@core/api/productApi';
 import { useGetCategoriesQuery } from '@core/api/categoryApi';
 import { Loading, EmptyState, Input, Select, Button } from '@components';
 import { formatCurrency } from '@utils/helpers';
-import type { ProductVariant, UqcCode } from '@core/types';
+import type { ProductVariant, UqcCode, VariantPurchaseCost } from '@core/types';
 import { useAppSelector } from '@core/hooks';
 import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice';
 import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
+import { hasPermission } from '@core/permissions/permissions';
 import { APP_NAME } from '@core/constants';
 import { ProductBarcodeLabelModal } from './ProductBarcodeLabelModal';
 
@@ -43,17 +46,28 @@ export const ProductDetailPage: React.FC = () => {
   const currentUser = useAppSelector(selectCurrentUser);
   const commercialAccess = useAppSelector(selectCommercialAccess);
   const canManageBarcodes = canUseCommercialFeature(
-    currentUser?.roles ?? [], commercialAccess, 'CUSTOM_BARCODE'
+    currentUser?.roles ?? [],
+    commercialAccess,
+    'CUSTOM_BARCODE'
   );
+  const canManagePurchaseCost =
+    hasPermission(currentUser?.roles ?? [], 'PRODUCT_UPDATE') &&
+    canUseCommercialFeature(currentUser?.roles ?? [], commercialAccess, 'LIVE_MARGIN_PREVIEW');
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, error } = useGetProductByIdQuery(id);
+  const { data: purchaseCostsData } = useGetProductPurchaseCostsQuery(id, {
+    skip: !canManagePurchaseCost,
+  });
   const { data: categoriesData } = useGetCategoriesQuery();
   const [updateProduct, { isLoading: updating }] = useUpdateProductMutation();
   const [updateVariant, { isLoading: updatingVariant }] = useUpdateVariantMutation();
+  const [updateVariantPurchaseCost, { isLoading: updatingPurchaseCost }] =
+    useUpdateVariantPurchaseCostMutation();
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [showVariantEditModal, setShowVariantEditModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -67,6 +81,12 @@ export const ProductDetailPage: React.FC = () => {
   const [editUqcCode, setEditUqcCode] = useState('');
   const [editUnitLabel, setEditUnitLabel] = useState('');
   const [barcodeVariant, setBarcodeVariant] = useState<ProductVariant | null>(null);
+  const [costVariant, setCostVariant] = useState<ProductVariant | null>(null);
+  const [purchaseCost, setPurchaseCost] = useState('');
+  const [purchaseCostSource, setPurchaseCostSource] = useState<
+    'OPENING_STOCK' | 'MANUAL_CORRECTION'
+  >('OPENING_STOCK');
+  const [purchaseCostReason, setPurchaseCostReason] = useState('');
 
   const categories = categoriesData?.data || [];
 
@@ -130,6 +150,7 @@ export const ProductDetailPage: React.FC = () => {
         },
       }).unwrap();
 
+      setSuccessMessage(t('products.productUpdated'));
       setShowSuccess(true);
       setShowVariantEditModal(false);
       setEditingVariant(null);
@@ -153,6 +174,7 @@ export const ProductDetailPage: React.FC = () => {
         },
       }).unwrap();
 
+      setSuccessMessage(t('products.productUpdated'));
       setShowSuccess(true);
       setShowEditModal(false);
     } catch (err) {
@@ -160,6 +182,56 @@ export const ProductDetailPage: React.FC = () => {
       setErrorMessage(error?.data?.message || t('products.updateFailed'));
       setShowError(true);
     }
+  };
+
+  const handlePurchaseCostClick = (variant: ProductVariant) => {
+    const currentCost = purchaseCostsData?.data.find(
+      (cost) => cost.variant_id === variant.id.toString()
+    );
+    setCostVariant(variant);
+    setPurchaseCost(currentCost?.purchase_price?.toString() ?? '');
+    setPurchaseCostSource(
+      currentCost?.purchase_price == null ? 'OPENING_STOCK' : 'MANUAL_CORRECTION'
+    );
+    setPurchaseCostReason('');
+  };
+
+  const handleUpdatePurchaseCost = async () => {
+    if (!costVariant) return;
+    const value = Number(purchaseCost);
+    if (!Number.isFinite(value) || value < 0) {
+      setErrorMessage(t('products.purchaseCostInvalid'));
+      setShowError(true);
+      return;
+    }
+    if (purchaseCostReason.trim().length < 3) {
+      setErrorMessage(t('products.purchaseCostReasonRequired'));
+      setShowError(true);
+      return;
+    }
+
+    try {
+      await updateVariantPurchaseCost({
+        id: costVariant.id,
+        purchase_price: value,
+        source: purchaseCostSource,
+        reason: purchaseCostReason.trim(),
+      }).unwrap();
+      setCostVariant(null);
+      setSuccessMessage(t('products.purchaseCostUpdated'));
+      setShowSuccess(true);
+    } catch (err) {
+      const error = err as { data?: { message?: string } };
+      setErrorMessage(error?.data?.message || t('products.updateFailed'));
+      setShowError(true);
+    }
+  };
+
+  const purchaseCostSourceLabel = (source: VariantPurchaseCost['source']) => {
+    if (source === 'PURCHASE') return t('products.purchaseCostSourcePurchase');
+    if (source === 'OPENING_STOCK') return t('products.purchaseCostSourceOpening');
+    if (source === 'MANUAL_CORRECTION') return t('products.purchaseCostSourceCorrection');
+    return t('common.notAvailable');
   };
 
   if (isLoading) {
@@ -186,6 +258,9 @@ export const ProductDetailPage: React.FC = () => {
 
   const product = data.data;
   const variants = product.variants || product.product_variants || [];
+  const purchaseCostsByVariant = new Map(
+    purchaseCostsData?.data.map((cost) => [cost.variant_id, cost]) ?? []
+  );
 
   return (
     <IonPage>
@@ -250,139 +325,181 @@ export const ProductDetailPage: React.FC = () => {
               >
                 {t('products.variants')} ({variants.length})
               </h2>
-              {variants.map((variant: ProductVariant) => (
-                <IonCard key={variant.id} style={{ backgroundColor: 'var(--ion-card-background)' }}>
-                  <IonCardHeader>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <IonCardTitle style={{ color: 'var(--ion-text-color)' }}>
-                        {variant.brand || t('products.variant')} - {variant.size || ''}
-                      </IonCardTitle>
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <IonButton
-                          fill="clear"
-                          size="small"
-                          aria-label={t('products.editVariant')}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleVariantEditClick(variant.id?.toString());
-                          }}
-                        >
-                          <IonIcon icon={pencil} />
-                        </IonButton>
+              {variants.map((variant: ProductVariant) => {
+                const cost = purchaseCostsByVariant.get(variant.id.toString());
+                return (
+                  <IonCard
+                    key={variant.id}
+                    style={{ backgroundColor: 'var(--ion-card-background)' }}
+                  >
+                    <IonCardHeader>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <IonCardTitle style={{ color: 'var(--ion-text-color)' }}>
+                          {variant.brand || t('products.variant')} - {variant.size || ''}
+                        </IonCardTitle>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <IonButton
+                            fill="clear"
+                            size="small"
+                            aria-label={t('products.editVariant')}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleVariantEditClick(variant.id?.toString());
+                            }}
+                          >
+                            <IonIcon icon={pencil} />
+                          </IonButton>
+                        </div>
                       </div>
-                    </div>
-                  </IonCardHeader>
-                  <IonCardContent>
-                    <IonList>
-                      {variant.packaging && (
+                    </IonCardHeader>
+                    <IonCardContent>
+                      <IonList>
+                        {variant.packaging && (
+                          <IonItem>
+                            <IonLabel style={{ color: 'var(--ion-text-color)' }}>
+                              {t('products.packaging')}
+                            </IonLabel>
+                            <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>
+                              {variant.packaging}
+                            </IonLabel>
+                          </IonItem>
+                        )}
                         <IonItem>
                           <IonLabel style={{ color: 'var(--ion-text-color)' }}>
-                            {t('products.packaging')}
-                          </IonLabel>
-                          <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>
-                            {variant.packaging}
-                          </IonLabel>
-                        </IonItem>
-                      )}
-                      <IonItem>
-                        <IonLabel style={{ color: 'var(--ion-text-color)' }}>
-                          {t('products.price')}
-                        </IonLabel>
-                        <IonLabel
-                          slot="end"
-                          style={{ fontWeight: 'bold', color: 'var(--ion-text-color)' }}
-                        >
-                          {formatCurrency(Number(variant.price))}
-                        </IonLabel>
-                      </IonItem>
-                      {variant.selling_price && (
-                        <IonItem>
-                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>
-                            {t('products.sellingPrice')}
+                            {t('products.price')}
                           </IonLabel>
                           <IonLabel
                             slot="end"
-                            style={{ fontWeight: 'bold', color: 'var(--ion-color-success)' }}
+                            style={{ fontWeight: 'bold', color: 'var(--ion-text-color)' }}
                           >
-                            {formatCurrency(Number(variant.selling_price))}
+                            {formatCurrency(Number(variant.price))}
                           </IonLabel>
                         </IonItem>
+                        {variant.selling_price && (
+                          <IonItem>
+                            <IonLabel style={{ color: 'var(--ion-text-color)' }}>
+                              {t('products.sellingPrice')}
+                            </IonLabel>
+                            <IonLabel
+                              slot="end"
+                              style={{ fontWeight: 'bold', color: 'var(--ion-color-success)' }}
+                            >
+                              {formatCurrency(Number(variant.selling_price))}
+                            </IonLabel>
+                          </IonItem>
+                        )}
+                        {variant.mrp_price && (
+                          <IonItem>
+                            <IonLabel style={{ color: 'var(--ion-text-color)' }}>
+                              {t('products.mrpShort')}
+                            </IonLabel>
+                            <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>
+                              {formatCurrency(Number(variant.mrp_price))}
+                            </IonLabel>
+                          </IonItem>
+                        )}
+                        {canManagePurchaseCost && (
+                          <IonItem>
+                            <IonLabel style={{ color: 'var(--ion-text-color)' }}>
+                              <h3>{t('products.latestPurchaseCost')}</h3>
+                              <p>
+                                {cost?.source
+                                  ? purchaseCostSourceLabel(cost.source)
+                                  : t('products.purchaseCostNotRecorded')}
+                                {cost?.updated_at
+                                  ? ` · ${new Intl.DateTimeFormat(undefined, {
+                                      dateStyle: 'medium',
+                                    }).format(new Date(cost.updated_at))}`
+                                  : ''}
+                              </p>
+                            </IonLabel>
+                            <IonLabel slot="end" style={{ fontWeight: 'bold' }}>
+                              {cost?.purchase_price == null
+                                ? t('common.notAvailable')
+                                : formatCurrency(cost.purchase_price)}
+                            </IonLabel>
+                          </IonItem>
+                        )}
+                        {variant.gst_percent && (
+                          <IonItem>
+                            <IonLabel style={{ color: 'var(--ion-text-color)' }}>
+                              {t('products.gstLabel')}
+                            </IonLabel>
+                            <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>
+                              {variant.gst_percent}%
+                            </IonLabel>
+                          </IonItem>
+                        )}
+                        {(variant.uqc_code || variant.unit_label) && (
+                          <IonItem>
+                            <IonLabel>{t('taxFields.unitOfQuantity')}</IonLabel>
+                            <IonLabel slot="end">
+                              {[variant.uqc_code, variant.unit_label].filter(Boolean).join(' · ')}
+                            </IonLabel>
+                          </IonItem>
+                        )}
+                        {variant.sku && (
+                          <IonItem>
+                            <IonLabel style={{ color: 'var(--ion-text-color)' }}>
+                              {t('products.sku')}
+                            </IonLabel>
+                            <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>
+                              {variant.sku}
+                            </IonLabel>
+                          </IonItem>
+                        )}
+                        {variant.inventory && (
+                          <IonItem>
+                            <IonLabel style={{ color: 'var(--ion-text-color)' }}>
+                              {t('inventory.currentStock')}
+                            </IonLabel>
+                            <IonBadge
+                              slot="end"
+                              color={
+                                (variant.inventory.quantity || 0) <=
+                                (variant.inventory.low_stock_threshold || 5)
+                                  ? 'danger'
+                                  : 'success'
+                              }
+                            >
+                              {variant.inventory.quantity || 0} {t('foundation.product.units')}
+                            </IonBadge>
+                          </IonItem>
+                        )}
+                      </IonList>
+                      {canManageBarcodes && (
+                        <IonButton
+                          expand="block"
+                          fill="outline"
+                          onClick={() => setBarcodeVariant(variant)}
+                        >
+                          <IonIcon slot="start" icon={barcodeOutline} />
+                          {t('products.manageBarcodeLabel')}
+                        </IonButton>
                       )}
-                      {variant.mrp_price && (
-                        <IonItem>
-                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>
-                            {t('products.mrpShort')}
-                          </IonLabel>
-                          <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>
-                            {formatCurrency(Number(variant.mrp_price))}
-                          </IonLabel>
-                        </IonItem>
+                      {canManagePurchaseCost && (
+                        <IonButton
+                          expand="block"
+                          fill="outline"
+                          onClick={() => handlePurchaseCostClick(variant)}
+                        >
+                          <IonIcon slot="start" icon={cashOutline} />
+                          {cost?.purchase_price == null
+                            ? t('products.setOpeningCost')
+                            : t('products.correctPurchaseCost')}
+                        </IonButton>
                       )}
-                      {variant.gst_percent && (
-                        <IonItem>
-                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>
-                            {t('products.gstLabel')}
-                          </IonLabel>
-                          <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>
-                            {variant.gst_percent}%
-                          </IonLabel>
-                        </IonItem>
-                      )}
-                      {(variant.uqc_code || variant.unit_label) && (
-                        <IonItem>
-                          <IonLabel>{t('taxFields.unitOfQuantity')}</IonLabel>
-                          <IonLabel slot="end">{[variant.uqc_code, variant.unit_label].filter(Boolean).join(' · ')}</IonLabel>
-                        </IonItem>
-                      )}
-                      {variant.sku && (
-                        <IonItem>
-                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>
-                            {t('products.sku')}
-                          </IonLabel>
-                          <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>
-                            {variant.sku}
-                          </IonLabel>
-                        </IonItem>
-                      )}
-                      {variant.inventory && (
-                        <IonItem>
-                          <IonLabel style={{ color: 'var(--ion-text-color)' }}>
-                            {t('inventory.currentStock')}
-                          </IonLabel>
-                          <IonBadge
-                            slot="end"
-                            color={
-                              (variant.inventory.quantity || 0) <=
-                              (variant.inventory.low_stock_threshold || 5)
-                                ? 'danger'
-                                : 'success'
-                            }
-                          >
-                            {variant.inventory.quantity || 0} {t('foundation.product.units')}
-                          </IonBadge>
-                        </IonItem>
-                      )}
-                    </IonList>
-                    {canManageBarcodes && (
-                      <IonButton
-                        expand="block"
-                        fill="outline"
-                        onClick={() => setBarcodeVariant(variant)}
-                      >
-                        <IonIcon slot="start" icon={barcodeOutline} />
-                        {t('products.manageBarcodeLabel')}
-                      </IonButton>
-                    )}
-                  </IonCardContent>
-                </IonCard>
-              ))}
+                    </IonCardContent>
+                  </IonCard>
+                );
+              })}
             </div>
           )}
 
@@ -397,7 +514,7 @@ export const ProductDetailPage: React.FC = () => {
 
         <IonToast
           isOpen={showSuccess}
-          message={t('products.productUpdated')}
+          message={successMessage || t('products.productUpdated')}
           duration={2000}
           color="success"
           onDidDismiss={() => setShowSuccess(false)}
@@ -449,7 +566,13 @@ export const ProductDetailPage: React.FC = () => {
                   placeholder={t('common.placeholders.selectCategory')}
                 />
 
-                <Input label={t('taxFields.hsnCode')} value={editHsnCode} onChange={setEditHsnCode} maxLength={8} inputMode="numeric" />
+                <Input
+                  label={t('taxFields.hsnCode')}
+                  value={editHsnCode}
+                  onChange={setEditHsnCode}
+                  maxLength={8}
+                  inputMode="numeric"
+                />
 
                 <div style={{ marginTop: '24px' }}>
                   <Button
@@ -537,17 +660,44 @@ export const ProductDetailPage: React.FC = () => {
                   placeholder={t('products.enterMrpPlaceholder')}
                 />
 
-                <Input label={t('products.gstLabel')} type="number" value={editGstPercent} onChange={setEditGstPercent} />
+                <Input
+                  label={t('products.gstLabel')}
+                  type="number"
+                  value={editGstPercent}
+                  onChange={setEditGstPercent}
+                />
                 <Select
                   label={t('taxFields.uqcCode')}
                   value={editUqcCode}
                   onChange={setEditUqcCode}
                   options={[
                     { value: '', label: t('common.notAvailable') },
-                    ...['BAG','BAL','BDL','BOX','BTL','CTN','DOZ','GMS','KGS','LTR','MLT','MTR','NOS','PAC','PCS','SET'].map((value) => ({ value, label: value })),
+                    ...[
+                      'BAG',
+                      'BAL',
+                      'BDL',
+                      'BOX',
+                      'BTL',
+                      'CTN',
+                      'DOZ',
+                      'GMS',
+                      'KGS',
+                      'LTR',
+                      'MLT',
+                      'MTR',
+                      'NOS',
+                      'PAC',
+                      'PCS',
+                      'SET',
+                    ].map((value) => ({ value, label: value })),
                   ]}
                 />
-                <Input label={t('taxFields.unitLabel')} value={editUnitLabel} onChange={setEditUnitLabel} maxLength={30} />
+                <Input
+                  label={t('taxFields.unitLabel')}
+                  value={editUnitLabel}
+                  onChange={setEditUnitLabel}
+                  maxLength={30}
+                />
 
                 <div style={{ marginTop: '24px' }}>
                   <Button
@@ -564,6 +714,68 @@ export const ProductDetailPage: React.FC = () => {
             </IonContent>
           </IonModal>
         )}
+
+        <IonModal isOpen={Boolean(costVariant)} onDidDismiss={() => setCostVariant(null)}>
+          <IonHeader>
+            <IonToolbar>
+              <IonTitle>{t('products.costAndPricing')}</IonTitle>
+              <IonButtons slot="end">
+                <IonButton onClick={() => setCostVariant(null)}>
+                  <IonIcon icon={close} />
+                </IonButton>
+              </IonButtons>
+            </IonToolbar>
+          </IonHeader>
+          <IonContent>
+            <div style={{ padding: '16px' }}>
+              <p style={{ color: 'var(--ion-color-medium)' }}>{t('products.purchaseCostHelp')}</p>
+              <Input
+                label={t('products.purchaseCostLabel')}
+                type="number"
+                value={purchaseCost}
+                onChange={setPurchaseCost}
+                placeholder={t('products.purchaseCostPlaceholder')}
+              />
+              <Select
+                label={t('products.purchaseCostSource')}
+                value={purchaseCostSource}
+                onChange={(value) =>
+                  setPurchaseCostSource(value as 'OPENING_STOCK' | 'MANUAL_CORRECTION')
+                }
+                options={[
+                  { value: 'OPENING_STOCK', label: t('products.purchaseCostSourceOpening') },
+                  {
+                    value: 'MANUAL_CORRECTION',
+                    label: t('products.purchaseCostSourceCorrection'),
+                  },
+                ]}
+              />
+              <Input
+                label={t('products.purchaseCostReason')}
+                value={purchaseCostReason}
+                onChange={setPurchaseCostReason}
+                placeholder={t('products.purchaseCostReasonPlaceholder')}
+                maxLength={255}
+              />
+              <p style={{ color: 'var(--ion-color-medium)', fontSize: '13px' }}>
+                {t('products.purchaseCostHistoryNote')}
+              </p>
+              <Button
+                onClick={handleUpdatePurchaseCost}
+                disabled={
+                  updatingPurchaseCost ||
+                  purchaseCost === '' ||
+                  !Number.isFinite(Number(purchaseCost)) ||
+                  Number(purchaseCost) < 0 ||
+                  purchaseCostReason.trim().length < 3
+                }
+                loading={updatingPurchaseCost}
+              >
+                {t('products.savePurchaseCost')}
+              </Button>
+            </div>
+          </IonContent>
+        </IonModal>
       </IonContent>
     </IonPage>
   );

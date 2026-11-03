@@ -1724,14 +1724,19 @@ export const BillingPage: React.FC = () => {
                               })}
                             </p>
                           ) : (
-                            <p className="mt-2 text-xs text-amber-800">
-                              {t('billing.marginPreview.missingCost', {
-                                count:
-                                  'missingCostItems' in marginPreview
-                                    ? marginPreview.missingCostItems
-                                    : 0,
-                              })}
-                            </p>
+                            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                              <p className="text-xs text-amber-800">
+                                {t('billing.marginPreview.missingCost', {
+                                  count:
+                                    'missingCostItems' in marginPreview
+                                      ? marginPreview.missingCostItems
+                                      : 0,
+                                })}
+                              </p>
+                              <IonButton size="small" fill="clear" routerLink="/products">
+                                {t('billing.marginPreview.manageCosts')}
+                              </IonButton>
+                            </div>
                           )}
                         </div>
                       )}
