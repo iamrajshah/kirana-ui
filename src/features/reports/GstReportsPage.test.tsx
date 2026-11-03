@@ -18,7 +18,7 @@ const base = {
   firm: { id: '3', legalName: 'Jitendra Trading', displayName: 'Jitendra Trading' },
   period: { from: '2026-11-01', to: '2026-11-04' },
   disclaimer: 'Preparation aid only — CA review is required.',
-  warnings: ['Purchase tax snapshots are incomplete.'],
+  warnings: ['Product Atta 5 kg is missing its UQC quantity factor.'],
 };
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
@@ -222,7 +222,7 @@ describe('GST / CA report route', () => {
     expect(screen.getByRole('option', { name: 'Jayesh Trading (common.inactive)' })).toBeTruthy();
     expect((await screen.findAllByText('gstReports.needsCaReview')).length).toBeGreaterThan(0);
     expect(screen.getByText('gstReports.notFiled')).toBeTruthy();
-    expect(screen.getByText('Purchase tax snapshots are incomplete.')).toBeTruthy();
+    expect(screen.getByText('Product Atta 5 kg is missing its UQC quantity factor.')).toBeTruthy();
     expect(document.body.textContent).not.toMatch(/NaN|undefined/);
     await waitFor(() =>
       expect(state.summary).toHaveBeenLastCalledWith(

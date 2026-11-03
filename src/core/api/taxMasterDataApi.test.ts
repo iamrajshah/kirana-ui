@@ -86,6 +86,7 @@ describe('tax master-data API contracts', () => {
             gst_percent: 5,
             uqc_code: 'KGS',
             unit_label: 'kg',
+            uqc_quantity_factor: 5,
           },
         })
       )
@@ -94,7 +95,55 @@ describe('tax master-data API contracts', () => {
     expect(requests[0].body).toEqual({ name: 'Loose Rice', hsn_code: '100630' });
     expect(requests[1]).toMatchObject({
       url: expect.stringContaining('/products/1/variants'),
-      body: { price: 72, gst_percent: 5, uqc_code: 'KGS', unit_label: 'kg' },
+      body: {
+        price: 72,
+        gst_percent: 5,
+        uqc_code: 'KGS',
+        unit_label: 'kg',
+        uqc_quantity_factor: 5,
+      },
+    });
+    store.dispatch(apiSlice.util.resetApiState());
+  });
+
+  it('preserves the explicit UQC quantity factor when editing and creating by barcode', async () => {
+    const store = createStore();
+    await store
+      .dispatch(
+        productApi.endpoints.updateVariant.initiate({
+          id: '7',
+          data: { uqc_code: 'GMS', uqc_quantity_factor: 500 },
+        })
+      )
+      .unwrap();
+    await store
+      .dispatch(
+        productApi.endpoints.createProductFromBarcode.initiate({
+          barcode: '890000000001',
+          productMaster: { name: 'Atta' },
+          product: { name: 'Atta 5 kg' },
+          variant: {
+            mrp: 300,
+            sellingPrice: 280,
+            uqcCode: 'KGS',
+            uqcQuantityFactor: 5,
+          },
+          inventory: { quantity: 2 },
+        })
+      )
+      .unwrap();
+
+    expect(requests[0]).toMatchObject({
+      method: 'PATCH',
+      url: expect.stringContaining('/variants/7'),
+      body: { uqc_code: 'GMS', uqc_quantity_factor: 500 },
+    });
+    expect(requests[1]).toMatchObject({
+      method: 'POST',
+      url: expect.stringContaining('/products/barcode'),
+      body: expect.objectContaining({
+        variant: expect.objectContaining({ uqcCode: 'KGS', uqcQuantityFactor: 5 }),
+      }),
     });
     store.dispatch(apiSlice.util.resetApiState());
   });

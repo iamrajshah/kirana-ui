@@ -79,6 +79,11 @@ actionable messages and retain the user's entered data.
   with the state code. Both direct and imported purchases send explicit tax
   treatment, line GST/HSN and supplier-derived place of supply. Keep the
   UI/server per-line paise rounding identical.
+- GST Table 12 quantities use the optional variant `uqc_quantity_factor`; preserve
+  it as a number or null in normal create/PATCH payloads and as
+  `uqcQuantityFactor` in the legacy nested barcode-create payload. Accept only
+  values greater than zero, no more than 1,000,000 and with at most three decimal
+  places. Never infer it from the variant's free-text size.
 - Storefront offers/order management and share link require effective
   `CUSTOMER_STOREFRONT` access.
 - Exact storefront stock is an owner-only preference and defaults to hidden;

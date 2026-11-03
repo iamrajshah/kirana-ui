@@ -1701,7 +1701,10 @@
     "hsnCode": "HSN कोड",
     "uqcCode": "UQC कोड",
     "unitLabel": "इकाई नाम",
-    "unitOfQuantity": "मात्रा की इकाई"
+    "unitOfQuantity": "मात्रा की इकाई",
+    "uqcQuantityFactor": "प्रति बिक्री इकाई GST मात्रा",
+    "uqcQuantityFactorHint": "एक बिक्री इकाई में दर्शाई गई मूल GST मात्रा दर्ज करें। उदाहरण: UQC KGS वाला 5 किग्रा पैक = 5; 500 ग्राम पैक के लिए UQC KGS = 0.5 (या UQC GMS = 500); UQC BTL वाली एक बोतल = 1। जानकारी न हो तो खाली छोड़ें—GST रिपोर्ट की समीक्षा आवश्यक होगी।",
+    "uqcQuantityFactorInvalid": "0 से अधिक, 10,00,000 से अधिक नहीं और अधिकतम 3 दशमलव स्थान वाली मात्रा दर्ज करें।"
   },
   "documentSettings": {
     "title": "बिल और GST सेटिंग्स",

@@ -35,6 +35,7 @@ import {
 } from '@components';
 import type { BarcodeLookupData, UqcCode } from '@core/types';
 import { useTranslation } from 'react-i18next';
+import { parseOptionalUqcQuantityFactor } from './uqcQuantityFactor';
 import './stock-workspace.css';
 
 export const AddProductBarcodePage: React.FC = () => {
@@ -64,6 +65,7 @@ export const AddProductBarcodePage: React.FC = () => {
   const [gstPercent, setGstPercent] = useState('');
   const [uqcCode, setUqcCode] = useState('');
   const [unitLabel, setUnitLabel] = useState('');
+  const [uqcQuantityFactor, setUqcQuantityFactor] = useState('');
 
   // Toasts
   const [showSuccess, setShowSuccess] = useState(false);
@@ -95,12 +97,12 @@ export const AddProductBarcodePage: React.FC = () => {
 
     try {
       const result = await lookupBarcode(barcodeValue).unwrap();
-      
+
       if (result.data.found && result.data.data) {
         const productData = result.data.data;
         setFoundProduct(productData);
         setProductSource(result.data.source);
-        
+
         // If external product, pre-fill the form
         if (result.data.source === 'EXTERNAL') {
           setProductMasterName(productData.name || '');
@@ -160,6 +162,12 @@ export const AddProductBarcodePage: React.FC = () => {
       setShowError(true);
       return;
     }
+    const parsedUqcQuantityFactor = parseOptionalUqcQuantityFactor(uqcQuantityFactor);
+    if (!parsedUqcQuantityFactor.valid) {
+      setErrorMessage(t('taxFields.uqcQuantityFactorInvalid'));
+      setShowError(true);
+      return;
+    }
 
     try {
       const payload = {
@@ -184,16 +192,17 @@ export const AddProductBarcodePage: React.FC = () => {
           gstPercent: gstPercent ? parseFloat(gstPercent) : null,
           uqcCode: (uqcCode as UqcCode) || null,
           unitLabel: unitLabel.trim() || null,
+          uqcQuantityFactor: parsedUqcQuantityFactor.value,
         },
         inventory: {
           quantity: parseInt(quantity),
         },
       };
-      
+
       await createProduct(payload).unwrap();
 
       setShowSuccess(true);
-      
+
       // Reset form and navigate back after a delay
       setTimeout(() => {
         history.goBack();
@@ -223,6 +232,7 @@ export const AddProductBarcodePage: React.FC = () => {
     setGstPercent('');
     setUqcCode('');
     setUnitLabel('');
+    setUqcQuantityFactor('');
   };
 
   return (
@@ -300,12 +310,7 @@ export const AddProductBarcodePage: React.FC = () => {
                 onUpdateInventory={handleUpdateInventory}
                 onEditProduct={handleEditProduct}
               />
-              <IonButton
-                expand="block"
-                fill="outline"
-                onClick={resetForm}
-                className="mt-4"
-              >
+              <IonButton expand="block" fill="outline" onClick={resetForm} className="mt-4">
                 {t('foundation.barcode.scanAnother')}
               </IonButton>
             </div>
@@ -337,7 +342,9 @@ export const AddProductBarcodePage: React.FC = () => {
               <IonCard>
                 <IonCardHeader>
                   <IonCardTitle>
-                    {productSource === 'EXTERNAL' ? t('foundation.barcode.completeDetails') : t('foundation.barcode.createNew')}
+                    {productSource === 'EXTERNAL'
+                      ? t('foundation.barcode.completeDetails')
+                      : t('foundation.barcode.createNew')}
                   </IonCardTitle>
                 </IonCardHeader>
                 <IonCardContent>
@@ -350,8 +357,8 @@ export const AddProductBarcodePage: React.FC = () => {
                   {/* Show product image if available from external source */}
                   {foundProduct?.image_url && productSource === 'EXTERNAL' && (
                     <div className="flex justify-center mb-4">
-                      <img 
-                        src={foundProduct.image_url} 
+                      <img
+                        src={foundProduct.image_url}
                         alt={foundProduct.name || t('foundation.barcode.imageAlt')}
                         className="h-40 w-40 object-contain rounded border"
                       />
@@ -391,7 +398,7 @@ export const AddProductBarcodePage: React.FC = () => {
                         onChange={(value) => setProductName(value)}
                         placeholder={t('foundation.barcode.productExample')}
                       />
-                      
+
                       <div className="space-y-2">
                         <Select
                           label={`${t('products.category')} *`}
@@ -414,9 +421,9 @@ export const AddProductBarcodePage: React.FC = () => {
                               })),
                           ]}
                         />
-                        <IonButton 
-                          expand="block" 
-                          fill="outline" 
+                        <IonButton
+                          expand="block"
+                          fill="outline"
                           size="small"
                           onClick={() => {
                             setShowCategoryModal(true);
@@ -471,18 +478,70 @@ export const AddProductBarcodePage: React.FC = () => {
                       <details className="product-tax-details">
                         <summary>{t('taxFields.productDetails')}</summary>
                         <p>{t('taxFields.productDetailsHint')}</p>
-                        <Input label={t('taxFields.hsnCode')} value={hsnCode} onChange={setHsnCode} maxLength={8} inputMode="numeric" />
-                        <Input label={t('products.gstLabel')} value={gstPercent} onChange={setGstPercent} type="number" />
+                        <Input
+                          label={t('taxFields.hsnCode')}
+                          value={hsnCode}
+                          onChange={setHsnCode}
+                          maxLength={8}
+                          inputMode="numeric"
+                        />
+                        <Input
+                          label={t('products.gstLabel')}
+                          value={gstPercent}
+                          onChange={setGstPercent}
+                          type="number"
+                        />
                         <Select
                           label={t('taxFields.uqcCode')}
                           value={uqcCode}
                           onChange={setUqcCode}
                           options={[
                             { value: '', label: t('common.notAvailable') },
-                            ...['BAG','BAL','BDL','BOX','BTL','CTN','DOZ','GMS','KGS','LTR','MLT','MTR','NOS','PAC','PCS','SET'].map((value) => ({ value, label: value })),
+                            ...[
+                              'BAG',
+                              'BAL',
+                              'BDL',
+                              'BOX',
+                              'BTL',
+                              'CTN',
+                              'DOZ',
+                              'GMS',
+                              'KGS',
+                              'LTR',
+                              'MLT',
+                              'MTR',
+                              'NOS',
+                              'PAC',
+                              'PCS',
+                              'SET',
+                            ].map((value) => ({ value, label: value })),
                           ]}
                         />
-                        <Input label={t('taxFields.unitLabel')} value={unitLabel} onChange={setUnitLabel} maxLength={30} />
+                        <Input
+                          label={t('taxFields.unitLabel')}
+                          value={unitLabel}
+                          onChange={setUnitLabel}
+                          maxLength={30}
+                        />
+                        <Input
+                          label={t('taxFields.uqcQuantityFactor')}
+                          value={uqcQuantityFactor}
+                          onChange={setUqcQuantityFactor}
+                          type="number"
+                          inputMode="decimal"
+                          min={0.001}
+                          max={1_000_000}
+                          step="0.001"
+                          error={
+                            uqcQuantityFactor &&
+                            !parseOptionalUqcQuantityFactor(uqcQuantityFactor).valid
+                              ? t('taxFields.uqcQuantityFactorInvalid')
+                              : undefined
+                          }
+                        />
+                        <p className="product-tax-field-hint">
+                          {t('taxFields.uqcQuantityFactorHint')}
+                        </p>
                       </details>
                     </div>
 

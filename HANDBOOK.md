@@ -262,6 +262,11 @@ remain usable. Cashiers continue to see their normal operational dashboard.
   Android writes it to an app-cache file, opens the native share sheet, then
   removes the temporary file. These are preparation aids, not GST filing, legal
   certification, e-invoice generation or an e-way-bill integration.
+- Product variants optionally store `uqc_quantity_factor`, the GST base quantity
+  represented by one sale unit (for example a 5 kg KGS pack is `5`, while a
+  500 g KGS pack is `0.5`). Create, edit and barcode-product flows capture the
+  value explicitly and never derive it from free-text size. Missing factors remain
+  visible CA-review warnings instead of guessed Table 12 quantities.
 
 ### Tenant backup and restore
 

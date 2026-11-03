@@ -164,7 +164,12 @@ Test server denial, not only hidden navigation.
    web/tablet it must download without navigating away from the report.
 4. Confirm the disclaimer states these are CA-preparation estimates, not filing,
    e-invoice/IRN or e-way-bill submission.
-5. Disable `GST_CA_REPORTS` or its role policy. The Reports action, direct
+5. Create, edit and barcode-create variants with UQC factors such as `5` KGS,
+   `0.5` KGS and `500` GMS. Verify values round-trip and Table 12 uses the base
+   quantity. Zero, negative, more than three decimals and values above 1,000,000
+   must be blocked. Leaving it blank remains allowed but produces a visible
+   review-needed warning; the app must not guess from `size` text.
+6. Disable `GST_CA_REPORTS` or its role policy. The Reports action, direct
    `/reports/gst-ca` route and GST API calls must all be denied.
 
 ## Storefront and commercial controls

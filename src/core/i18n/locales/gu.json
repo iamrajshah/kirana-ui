@@ -1696,7 +1696,10 @@
     "hsnCode": "HSN કોડ",
     "uqcCode": "UQC કોડ",
     "unitLabel": "એકમ નામ",
-    "unitOfQuantity": "જથ્થાનું એકમ"
+    "unitOfQuantity": "જથ્થાનું એકમ",
+    "uqcQuantityFactor": "પ્રતિ વેચાણ એકમ GST જથ્થો",
+    "uqcQuantityFactorHint": "એક વેચાણ એકમમાં દર્શાવાતો મૂળ GST જથ્થો દાખલ કરો. ઉદાહરણ: UQC KGS ધરાવતું 5 કિગ્રા પૅક = 5; 500 ગ્રામ પૅક માટે UQC KGS = 0.5 (અથવા UQC GMS = 500); UQC BTL ધરાવતી એક બોટલ = 1. માહિતી ન હોય તો ખાલી રાખો—GST રિપોર્ટની સમીક્ષા જરૂરી રહેશે.",
+    "uqcQuantityFactorInvalid": "0 કરતાં વધુ, 10,00,000 કરતાં વધુ નહીં અને વધુમાં વધુ 3 દશાંશ સ્થાન ધરાવતો જથ્થો દાખલ કરો."
   },
   "documentSettings": {
     "title": "બિલ અને GST સેટિંગ્સ",

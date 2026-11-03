@@ -1701,7 +1701,10 @@
     "hsnCode": "HSN code",
     "uqcCode": "UQC code",
     "unitLabel": "Unit label",
-    "unitOfQuantity": "Unit of quantity"
+    "unitOfQuantity": "Unit of quantity",
+    "uqcQuantityFactor": "GST quantity per sale unit",
+    "uqcQuantityFactorHint": "Enter the GST base quantity represented by one sale unit. Examples: a 5 kg pack with UQC KGS = 5; a 500 g pack with UQC KGS = 0.5 (or UQC GMS = 500); one bottle with UQC BTL = 1. Leave blank if unknown—GST reports will require review.",
+    "uqcQuantityFactorInvalid": "Enter a quantity greater than 0, not more than 1,000,000, with up to 3 decimal places."
   },
   "documentSettings": {
     "title": "Bill & GST settings",

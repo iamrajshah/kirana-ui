@@ -41,6 +41,7 @@ import { hasPermission } from '@core/permissions/permissions';
 import { APP_NAME } from '@core/constants';
 import { ProductBarcodeLabelModal } from './ProductBarcodeLabelModal';
 import { useGetExpiryAlertsQuery } from '@core/api/expiryApi';
+import { parseOptionalUqcQuantityFactor } from './uqcQuantityFactor';
 import './ProductDetailPage.css';
 
 export const ProductDetailPage: React.FC = () => {
@@ -92,6 +93,7 @@ export const ProductDetailPage: React.FC = () => {
   const [editGstPercent, setEditGstPercent] = useState('');
   const [editUqcCode, setEditUqcCode] = useState('');
   const [editUnitLabel, setEditUnitLabel] = useState('');
+  const [editUqcQuantityFactor, setEditUqcQuantityFactor] = useState('');
   const [barcodeVariant, setBarcodeVariant] = useState<ProductVariant | null>(null);
   const [costVariant, setCostVariant] = useState<ProductVariant | null>(null);
   const [purchaseCost, setPurchaseCost] = useState('');
@@ -132,6 +134,7 @@ export const ProductDetailPage: React.FC = () => {
     setEditGstPercent(variant.gst_percent?.toString() || '');
     setEditUqcCode(variant.uqc_code || '');
     setEditUnitLabel(variant.unit_label || '');
+    setEditUqcQuantityFactor(variant.uqc_quantity_factor?.toString() || '');
     setShowVariantEditModal(true);
   };
 
@@ -150,6 +153,12 @@ export const ProductDetailPage: React.FC = () => {
       setShowError(true);
       return;
     }
+    const parsedUqcQuantityFactor = parseOptionalUqcQuantityFactor(editUqcQuantityFactor);
+    if (!parsedUqcQuantityFactor.valid) {
+      setErrorMessage(t('taxFields.uqcQuantityFactorInvalid'));
+      setShowError(true);
+      return;
+    }
 
     try {
       await updateVariant({
@@ -160,6 +169,7 @@ export const ProductDetailPage: React.FC = () => {
           gst_percent: editGstPercent ? parseFloat(editGstPercent) : null,
           uqc_code: (editUqcCode as UqcCode) || null,
           unit_label: editUnitLabel.trim() || null,
+          uqc_quantity_factor: parsedUqcQuantityFactor.value,
         },
       }).unwrap();
 
@@ -169,6 +179,7 @@ export const ProductDetailPage: React.FC = () => {
       setEditingVariant(null);
       setEditSellingPrice('');
       setEditMrpPrice('');
+      setEditUqcQuantityFactor('');
     } catch (err) {
       const error = err as { data?: { message?: string } };
       setErrorMessage(error?.data?.message || t('products.updateFailed'));
@@ -492,6 +503,14 @@ export const ProductDetailPage: React.FC = () => {
                             </IonLabel>
                           </IonItem>
                         )}
+                        {variant.uqc_quantity_factor != null && (
+                          <IonItem lines="none">
+                            <IonLabel>
+                              <p>{t('taxFields.uqcQuantityFactor')}</p>
+                              <h3>{variant.uqc_quantity_factor}</h3>
+                            </IonLabel>
+                          </IonItem>
+                        )}
                         {variant.sku && (
                           <IonItem>
                             <IonLabel style={{ color: 'var(--ion-text-color)' }}>
@@ -658,6 +677,7 @@ export const ProductDetailPage: React.FC = () => {
               setEditingVariant(null);
               setEditSellingPrice('');
               setEditMrpPrice('');
+              setEditUqcQuantityFactor('');
             }}
           >
             <IonHeader>
@@ -760,6 +780,23 @@ export const ProductDetailPage: React.FC = () => {
                   onChange={setEditUnitLabel}
                   maxLength={30}
                 />
+                <Input
+                  label={t('taxFields.uqcQuantityFactor')}
+                  value={editUqcQuantityFactor}
+                  onChange={setEditUqcQuantityFactor}
+                  type="number"
+                  inputMode="decimal"
+                  min={0.001}
+                  max={1_000_000}
+                  step="0.001"
+                  error={
+                    editUqcQuantityFactor &&
+                    !parseOptionalUqcQuantityFactor(editUqcQuantityFactor).valid
+                      ? t('taxFields.uqcQuantityFactorInvalid')
+                      : undefined
+                  }
+                />
+                <p className="product-tax-field-hint">{t('taxFields.uqcQuantityFactorHint')}</p>
 
                 <div style={{ marginTop: '24px' }}>
                   <Button

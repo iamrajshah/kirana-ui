@@ -112,6 +112,8 @@ export interface ProductVariant {
   gst_percent?: number;
   uqc_code?: UqcCode | null;
   unit_label?: string | null;
+  /** Base UQC quantity represented by one sale unit (for example 5 for a 5 kg KGS pack). */
+  uqc_quantity_factor?: number | null;
   is_active: boolean;
   product?: Product;
   inventory?: Inventory;
@@ -626,6 +628,7 @@ export interface CreateProductFromBarcodeRequest {
     gstPercent?: number | null;
     uqcCode?: UqcCode | null;
     unitLabel?: string | null;
+    uqcQuantityFactor?: number | null;
   };
   inventory: {
     quantity: number;

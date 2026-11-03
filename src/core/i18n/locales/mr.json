@@ -1701,7 +1701,10 @@
     "hsnCode": "HSN कोड",
     "uqcCode": "UQC कोड",
     "unitLabel": "एकक नाव",
-    "unitOfQuantity": "प्रमाणाचे एकक"
+    "unitOfQuantity": "प्रमाणाचे एकक",
+    "uqcQuantityFactor": "प्रति विक्री एकक GST प्रमाण",
+    "uqcQuantityFactorHint": "एका विक्री एककात दर्शवलेले मूळ GST प्रमाण भरा. उदाहरण: UQC KGS असलेले 5 किग्रॅ पॅक = 5; 500 ग्रॅम पॅकसाठी UQC KGS = 0.5 (किंवा UQC GMS = 500); UQC BTL असलेली एक बाटली = 1. माहिती नसल्यास रिकामे ठेवा—GST अहवालाला पुनरावलोकन आवश्यक असेल.",
+    "uqcQuantityFactorInvalid": "0 पेक्षा जास्त, 10,00,000 पेक्षा जास्त नसलेले आणि कमाल 3 दशांश स्थान असलेले प्रमाण भरा."
   },
   "documentSettings": {
     "title": "बिल आणि GST सेटिंग्ज",

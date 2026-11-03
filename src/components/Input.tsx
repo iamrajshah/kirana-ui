@@ -14,6 +14,8 @@ interface InputProps {
   error?: string;
   maxLength?: number;
   min?: number;
+  max?: number;
+  step?: string;
   inputMode?: 'text' | 'email' | 'tel' | 'numeric' | 'decimal';
 }
 
@@ -28,6 +30,8 @@ export const Input: React.FC<InputProps> = ({
   error,
   maxLength,
   min,
+  max,
+  step,
   inputMode,
 }) => {
   const { t } = useTranslation();
@@ -49,6 +53,8 @@ export const Input: React.FC<InputProps> = ({
           disabled={disabled}
           maxlength={maxLength}
           min={min}
+          max={max}
+          step={step}
           inputmode={inputMode}
           required={required}
           className={`text-base ${error ? 'ion-invalid' : ''} ${isPasswordField ? 'pr-12' : ''}`}

@@ -25,6 +25,7 @@ export interface BillingSearchVariant {
   mrp_price?: number;
   gst_percent?: number | null;
   hsn_code?: string | null;
+  uqc_quantity_factor?: number | null;
   sku: string;
   available_quantity: number;
   /** Stock that can be sold now; excludes expired batches when the API supplies it. */
@@ -58,6 +59,7 @@ interface CreateVariantRequest {
   gst_percent?: number | null;
   uqc_code?: UqcCode | null;
   unit_label?: string | null;
+  uqc_quantity_factor?: number | null;
   sku?: string | null;
 }
 
@@ -136,6 +138,7 @@ export const productApi = apiSlice.injectEndpoints({
           gst_percent?: number | null;
           uqc_code?: UqcCode | null;
           unit_label?: string | null;
+          uqc_quantity_factor?: number | null;
         };
       }
     >({
