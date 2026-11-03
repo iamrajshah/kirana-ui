@@ -29,6 +29,12 @@ import {
   useUpdateStorefrontOfferMutation,
 } from '@core/api/storefrontOrderApi';
 import { useGetProductsQuery } from '@core/api/productApi';
+import { useAppSelector } from '@core/hooks';
+import { selectCurrentUser } from '@core/auth/authSlice';
+
+const storefrontBaseUrl = (
+  import.meta.env.VITE_CUSTOMER_STOREFRONT_URL || 'https://kirana-customer.pages.dev'
+).replace(/\/$/, '');
 
 const nextActions: Partial<Record<StorefrontOrderStatus, StorefrontOrderStatus[]>> = {
   PLACED: ['ACCEPTED', 'CANCELLED'],
@@ -39,7 +45,9 @@ const nextActions: Partial<Record<StorefrontOrderStatus, StorefrontOrderStatus[]
 
 const StorefrontOrdersPage: React.FC = () => {
   const { t } = useTranslation();
+  const currentUser = useAppSelector(selectCurrentUser);
   const [section, setSection] = useState<'orders' | 'offers'>('orders');
+  const [linkCopied, setLinkCopied] = useState(false);
   const { data, isLoading, refetch } = useGetIncomingStorefrontOrdersQuery();
   const {
     data: offerData,
@@ -59,6 +67,28 @@ const StorefrontOrdersPage: React.FC = () => {
   const orders = data?.data ?? [];
   const offers = offerData?.data ?? [];
   const products = productData?.data ?? [];
+  const tenantId = currentUser?.tenant?.id;
+  const storefrontUrl = tenantId ? `${storefrontBaseUrl}/shop/shop-${tenantId}` : '';
+
+  const copyStorefrontLink = async () => {
+    if (!storefrontUrl) return;
+    await navigator.clipboard.writeText(storefrontUrl);
+    setLinkCopied(true);
+    window.setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  const shareStorefrontLink = async () => {
+    if (!storefrontUrl) return;
+    if (navigator.share) {
+      await navigator.share({
+        title: currentUser?.tenant?.name || t('storefrontOrders.share.title'),
+        text: t('storefrontOrders.share.message'),
+        url: storefrontUrl,
+      });
+      return;
+    }
+    await copyStorefrontLink();
+  };
 
   const submitOffer = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -95,6 +125,31 @@ const StorefrontOrdersPage: React.FC = () => {
               <p>{t('storefrontOrders.subtitle')}</p>
             </div>
           </div>
+          {storefrontUrl && (
+            <IonCard>
+              <IonCardContent>
+                <div style={{ display: 'grid', gap: 10 }}>
+                  <div>
+                    <h2>{t('storefrontOrders.share.title')}</h2>
+                    <p>{t('storefrontOrders.share.help')}</p>
+                  </div>
+                  <a href={storefrontUrl} target="_blank" rel="noreferrer">
+                    {storefrontUrl}
+                  </a>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <IonButton fill="outline" onClick={() => void copyStorefrontLink()}>
+                      {linkCopied
+                        ? t('storefrontOrders.share.copied')
+                        : t('storefrontOrders.share.copy')}
+                    </IonButton>
+                    <IonButton onClick={() => void shareStorefrontLink()}>
+                      {t('storefrontOrders.share.share')}
+                    </IonButton>
+                  </div>
+                </div>
+              </IonCardContent>
+            </IonCard>
+          )}
           <IonSegment
             value={section}
             onIonChange={(event) => setSection(event.detail.value as 'orders' | 'offers')}

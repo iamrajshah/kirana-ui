@@ -7,6 +7,7 @@ interface ImportMetaEnv {
   readonly VITE_GOOGLE_WEB_CLIENT_ID?: string;
   readonly VITE_GOOGLE_ANDROID_CLIENT_ID?: string;
   readonly VITE_GOOGLE_ENTRY_ENABLED?: string;
+  readonly VITE_CUSTOMER_STOREFRONT_URL?: string;
 }
 
 interface ImportMeta {
