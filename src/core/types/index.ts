@@ -166,6 +166,7 @@ export interface TenantDocumentSettings {
   receipt_template: ReceiptTemplate;
   brand_color: string;
   logo_url: string | null;
+  storefront_show_stock_quantity: boolean;
   settings_version: number;
   created_at: string | null;
   updated_at: string | null;
@@ -195,6 +196,7 @@ export type UpdateTenantDocumentSettings = Partial<
     | 'receipt_template'
     | 'brand_color'
     | 'logo_url'
+    | 'storefront_show_stock_quantity'
   >
 >;
 

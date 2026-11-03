@@ -63,6 +63,10 @@ refresh or global logout behaviour.
   password is never visible or recoverable, and the owner must replace the reset
   password after signing in. Share it outside ordinary logs and source control.
 - The profile permits name and phone changes but displays login email as read-only.
+- The owner profile contains Storefront settings. Exact customer-facing stock is
+  OFF by default; OWNER may enable it, while MANAGER and CASHIER cannot see or
+  mutate the control. The server remains authoritative for permission and tenant
+  scope.
 - Setup progress is derived from password change, products, staff, and first sale;
   it is not a manually maintained checklist.
 

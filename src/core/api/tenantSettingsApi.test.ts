@@ -43,6 +43,7 @@ describe('tenant settings API contract', () => {
             tenant_id: '1',
             document_mode: 'SIMPLE_RECEIPT',
             default_paper_width: 'MM58',
+            storefront_show_stock_quantity: false,
             settings_version: 0,
             capabilities: {
               receipt_documents_enabled: true,
@@ -62,6 +63,7 @@ describe('tenant settings API contract', () => {
           document_mode: 'SIMPLE_RECEIPT',
           footer: 'Thank you',
           default_paper_width: 'MM58',
+          storefront_show_stock_quantity: true,
         })
       )
       .unwrap();
@@ -74,6 +76,7 @@ describe('tenant settings API contract', () => {
         document_mode: 'SIMPLE_RECEIPT',
         footer: 'Thank you',
         default_paper_width: 'MM58',
+        storefront_show_stock_quantity: true,
       },
     });
     store.dispatch(apiSlice.util.resetApiState());

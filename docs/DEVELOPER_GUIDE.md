@@ -37,6 +37,7 @@ the accounting authority.
 | Purchase stock wrong | pack conversion preview and server base-unit response |
 | Bill print/PDF blank | frozen document endpoint, popup lifecycle, print CSS, asset readiness |
 | Storefront share link wrong | session tenant `storefrontSlug`, HTTPS origin, feature access |
+| Storefront leaks quantity | `storefront_show_stock_quantity`, OWNER role, public catalog response |
 | Google sign-in missing | public product readiness and build-time client ID, not a hard-coded button |
 
 Never show raw API/Prisma errors. Convert known failures into translated,
@@ -53,6 +54,8 @@ actionable messages and retain the user's entered data.
   authoritative.
 - Storefront offers/order management and share link require effective
   `CUSTOMER_STOREFRONT` access.
+- Exact storefront stock is an owner-only preference and defaults to hidden;
+  server redaction is authoritative even if UI controls are bypassed.
 - Email is immutable in Profile; name and phone may change.
 - Every user-facing string exists in English, Hindi, Marathi, and Gujarati.
 - Web, 390px mobile, and 768px tablet must remain usable in light and dark mode.

@@ -24,10 +24,17 @@ vi.mock('@core/hooks', () => ({
   }),
 }));
 
-vi.mock('@core/api/userApi', () => ({ useUpdateProfileMutation: () => [vi.fn(), { isLoading: false }] }));
-vi.mock('../../contexts/useTheme', () => ({ useTheme: () => ({ theme: 'light', toggleTheme: vi.fn() }) }));
+vi.mock('@core/api/userApi', () => ({
+  useUpdateProfileMutation: () => [vi.fn(), { isLoading: false }],
+}));
+vi.mock('../../contexts/useTheme', () => ({
+  useTheme: () => ({ theme: 'light', toggleTheme: vi.fn() }),
+}));
 vi.mock('./DocumentSettingsCard', () => ({ DocumentSettingsCard: () => null }));
 vi.mock('./FirmSettingsCard', () => ({ FirmSettingsCard: () => <div>firm-settings</div> }));
+vi.mock('./StorefrontSettingsCard', () => ({
+  StorefrontSettingsCard: () => <div>storefront-settings</div>,
+}));
 vi.mock('./DeviceSecurityCard', () => ({ DeviceSecurityCard: () => <div>device-security</div> }));
 
 describe('ProfilePage', () => {
@@ -54,5 +61,15 @@ describe('ProfilePage', () => {
   it('shows firm management to an owner', () => {
     render(<ProfilePage />);
     expect(screen.getByText('firm-settings')).toBeTruthy();
+    expect(screen.getByText('storefront-settings')).toBeTruthy();
   });
+
+  it.each(['MANAGER', 'CASHIER'])(
+    'keeps customer shop visibility owner-only for the %s role',
+    (role) => {
+      profileState.roles = [role];
+      render(<ProfilePage />);
+      expect(screen.queryByText('storefront-settings')).toBeNull();
+    }
+  );
 });

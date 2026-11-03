@@ -21,6 +21,7 @@ const completeSettings: TenantDocumentSettings = {
   receipt_template: 'CLASSIC',
   brand_color: '#087F5B',
   logo_url: null,
+  storefront_show_stock_quantity: false,
   settings_version: 1,
   created_at: null,
   updated_at: null,

@@ -32,6 +32,7 @@ import { FirmSettingsCard } from './FirmSettingsCard';
 import { canEditTenantDocumentSettings } from './documentSettingsAccess';
 import './ProfilePage.css';
 import { DeviceSecurityCard } from './DeviceSecurityCard';
+import { StorefrontSettingsCard } from './StorefrontSettingsCard';
 
 export const ProfilePage: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -162,6 +163,7 @@ export const ProfilePage: React.FC = () => {
 
         {canManageTenantSettings && <DocumentSettingsCard />}
         {canManageFirms && <FirmSettingsCard />}
+        {canManageFirms && <StorefrontSettingsCard />}
 
         <IonCard>
           <IonCardHeader>

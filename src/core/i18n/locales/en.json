@@ -1317,6 +1317,19 @@
     "changePassword": "Change Password",
     "updatedSuccess": "Profile updated successfully"
   },
+  "storefrontSettings": {
+    "title": "Customer shop visibility",
+    "description": "Choose what shoppers can see on your public shop link. Only the shop owner can change this.",
+    "showExactStock": "Show exact stock quantity",
+    "showExactStockHelp": "Show the number of units remaining for each product on the customer storefront.",
+    "impactHidden": "Recommended: shoppers see availability without exact item counts, so low quantities are not exposed.",
+    "impactVisible": "Shoppers can see the exact available quantity for every product.",
+    "loadFailed": "Customer shop settings could not be loaded.",
+    "save": "Save customer shop setting",
+    "saving": "Saving...",
+    "saved": "Customer shop visibility updated.",
+    "saveFailed": "Customer shop visibility could not be updated."
+  },
   "platform": {
     "adminTitle": "Platform Admin",
     "adminSubtitle": "Create shops and track their setup without entering shop data.",

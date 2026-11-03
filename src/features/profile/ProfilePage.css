@@ -62,6 +62,54 @@
   gap: 0.6rem;
 }
 
+.storefront-settings-card ion-card-title {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.storefront-settings-card ion-card-header p,
+.storefront-settings-control p {
+  color: var(--ion-color-medium);
+  margin-bottom: 0;
+}
+
+.storefront-settings-control {
+  align-items: center;
+  background: color-mix(in srgb, var(--ion-color-primary) 7%, var(--ion-card-background));
+  border: 1px solid color-mix(in srgb, var(--ion-color-primary) 20%, transparent);
+  border-radius: 14px;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1rem;
+}
+
+.storefront-settings-impact {
+  background: var(--ion-color-light);
+  border-left: 4px solid var(--ion-color-primary);
+  border-radius: 8px;
+  color: var(--ion-color-medium-shade);
+  margin: 0.8rem 0 1rem;
+  padding: 0.8rem 1rem;
+}
+
+.storefront-settings-notice {
+  border-radius: 10px;
+  margin: 0.75rem 0;
+  padding: 0.8rem 1rem;
+}
+
+.storefront-settings-error {
+  background: color-mix(in srgb, var(--ion-color-danger) 12%, transparent);
+  color: var(--ion-color-danger-shade);
+}
+
+.storefront-settings-success {
+  background: color-mix(in srgb, var(--ion-color-success) 12%, transparent);
+  color: var(--ion-color-success-shade);
+}
+
 .document-settings-card ion-card-header p,
 .document-settings-gst > p {
   color: var(--ion-color-medium);
@@ -87,12 +135,40 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 1rem;
 }
-.document-settings-template-grid { display: grid; gap: .75rem; grid-template-columns: repeat(3, 1fr); margin-top: 1rem; }
-.document-template { background: var(--ion-card-background); border: 1px solid var(--ion-color-light-shade); border-radius: 12px; color: var(--ion-text-color); cursor: pointer; padding: .75rem; text-align: left; }
-.document-template--active { border: 2px solid var(--ion-color-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ion-color-primary) 12%, transparent); }
-.document-template__preview { background: linear-gradient(var(--ion-color-medium) 0 0) 10px 10px / 45% 5px no-repeat, repeating-linear-gradient(to bottom, var(--ion-color-light-shade) 0 3px, transparent 3px 8px); border: 1px solid var(--ion-color-light-shade); display: block; height: 66px; margin-bottom: .5rem; }
-.document-template__preview--modern { border-top: 6px solid var(--ion-color-primary); }
-.document-template__preview--compact { height: 48px; }
+.document-settings-template-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 1rem;
+}
+.document-template {
+  background: var(--ion-card-background);
+  border: 1px solid var(--ion-color-light-shade);
+  border-radius: 12px;
+  color: var(--ion-text-color);
+  cursor: pointer;
+  padding: 0.75rem;
+  text-align: left;
+}
+.document-template--active {
+  border: 2px solid var(--ion-color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ion-color-primary) 12%, transparent);
+}
+.document-template__preview {
+  background:
+    linear-gradient(var(--ion-color-medium) 0 0) 10px 10px / 45% 5px no-repeat,
+    repeating-linear-gradient(to bottom, var(--ion-color-light-shade) 0 3px, transparent 3px 8px);
+  border: 1px solid var(--ion-color-light-shade);
+  display: block;
+  height: 66px;
+  margin-bottom: 0.5rem;
+}
+.document-template__preview--modern {
+  border-top: 6px solid var(--ion-color-primary);
+}
+.document-template__preview--compact {
+  height: 48px;
+}
 
 .document-settings-notice {
   border-radius: 10px;
@@ -114,5 +190,10 @@
   .document-settings-grid {
     grid-template-columns: 1fr;
   }
-  .document-settings-template-grid { grid-template-columns: 1fr; }
+  .document-settings-template-grid {
+    grid-template-columns: 1fr;
+  }
+  .storefront-settings-control {
+    align-items: flex-start;
+  }
 }
