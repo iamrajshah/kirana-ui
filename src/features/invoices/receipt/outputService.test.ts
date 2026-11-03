@@ -13,16 +13,53 @@ const receipt = {
 const pdf = new Blob(['pdf'], { type: 'application/pdf' });
 
 describe('receipt output service', () => {
-  it('selects the requested thermal width only for the active print job', async () => {
-    vi.spyOn(window, 'print').mockImplementation(() => undefined);
-    const service = createReceiptOutputService();
+  it('prints an isolated generated PDF instead of the Ionic application page', async () => {
+    const createPdf = vi.fn().mockResolvedValue(pdf);
+    const print = vi.fn().mockResolvedValue(undefined);
+    const service = createReceiptOutputService({ createPdf, print });
 
     await service.run('print', receipt, '58mm');
 
-    expect(document.documentElement.dataset.receiptPaper).toBe('58mm');
-    expect(window.print).toHaveBeenCalledOnce();
-    window.dispatchEvent(new Event('afterprint'));
-    expect(document.documentElement.dataset.receiptPaper).toBeUndefined();
+    expect(createPdf).toHaveBeenCalledWith(receipt, '58mm');
+    expect(print).toHaveBeenCalledWith(pdf, '58mm');
+    expect(service.getState()).toMatchObject({ phase: 'completed', action: 'print' });
+  });
+
+  it('loads the generated PDF in a dedicated print frame and cleans it after printing', async () => {
+    const createObjectUrl = vi.fn().mockReturnValue('blob:receipt-pdf');
+    const revokeObjectUrl = vi.fn();
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      value: createObjectUrl,
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      value: revokeObjectUrl,
+    });
+    const service = createReceiptOutputService({
+      createPdf: vi.fn().mockResolvedValue(pdf),
+    });
+
+    const output = service.run('print', receipt, '80mm');
+    let frame: HTMLIFrameElement | null = null;
+    await vi.waitFor(() => {
+      frame = document.querySelector<HTMLIFrameElement>('iframe[title="Receipt print preview"]');
+      expect(frame).not.toBeNull();
+    });
+    expect(frame!.src).toContain('blob:receipt-pdf');
+    expect(frame!.dataset.receiptPaper).toBe('80mm');
+    vi.spyOn(frame!.contentWindow!, 'focus').mockImplementation(() => undefined);
+    const print = vi.spyOn(frame!.contentWindow!, 'print').mockImplementation(() => undefined);
+
+    frame!.dispatchEvent(new Event('load'));
+    await output;
+
+    expect(print).toHaveBeenCalledOnce();
+    frame!.contentWindow!.dispatchEvent(new Event('afterprint'));
+    expect(document.querySelector('iframe[title="Receipt print preview"]')).toBeNull();
+    expect(revokeObjectUrl).toHaveBeenCalledWith('blob:receipt-pdf');
+    Reflect.deleteProperty(URL, 'createObjectURL');
+    Reflect.deleteProperty(URL, 'revokeObjectURL');
   });
 
   it('shares one PDF file when web file sharing is supported', async () => {
