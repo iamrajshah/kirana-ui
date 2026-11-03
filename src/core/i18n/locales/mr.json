@@ -838,6 +838,10 @@
   },
   "inventory": {
     "onHand": "उपलब्ध साठा",
+    "physicalOnHand": "प्रत्यक्ष उपलब्ध साठा",
+    "saleableStock": "विक्रीसाठी उपलब्ध",
+    "physicalQuantityRequired": "प्रत्यक्ष उपलब्ध प्रमाण *",
+    "saleableAfterExpiry": "मुदत नियंत्रणानंतर {{count}} युनिट विक्रीसाठी उपलब्ध आहेत.",
     "validThresholdRequired": "कमी साठा मर्यादा ऋण असू शकत नाही",
     "title": "इन्व्हेंटरी",
     "loadError": "साठा लोड झाला नाही.",

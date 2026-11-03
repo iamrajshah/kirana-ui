@@ -202,7 +202,11 @@ export type UpdateTenantDocumentSettings = Partial<
 
 export interface Inventory {
   variant_id: string;
+  /** Physical units recorded in the store, including units blocked from sale. */
+  physical_quantity?: number;
+  /** Legacy physical/on-hand field retained by the API for compatibility. */
   quantity: number;
+  /** Units currently eligible for billing after expiry and other stock rules. */
   saleable_quantity?: number;
   low_stock_threshold: number;
   is_low_stock: boolean;

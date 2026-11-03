@@ -838,6 +838,10 @@
   },
   "inventory": {
     "onHand": "On hand",
+    "physicalOnHand": "Physical on hand",
+    "saleableStock": "Available to sell",
+    "physicalQuantityRequired": "Physical on-hand quantity *",
+    "saleableAfterExpiry": "{{count}} units are available to sell after expiry controls.",
     "validThresholdRequired": "Low stock threshold cannot be negative",
     "title": "Inventory",
     "loadError": "Couldn't load inventory.",

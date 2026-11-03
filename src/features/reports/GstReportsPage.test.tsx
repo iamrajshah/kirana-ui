@@ -10,6 +10,7 @@ const state = vi.hoisted(() => ({
   purchases: vi.fn(),
   hsn: vi.fn(),
   download: vi.fn(),
+  firmsQuery: vi.fn(),
 }));
 
 const base = {
@@ -22,16 +23,29 @@ const base = {
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('@core/api/firmApi', () => ({
-  useGetFirmsQuery: () => ({
+  useGetFirmsQuery: (params?: unknown) => {
+    state.firmsQuery(params);
+    return {
     data: {
       data: {
         firms: [
-          { id: '3', display_name: 'Jitendra Trading', is_default_sales: true },
-          { id: '4', display_name: 'Jayesh Trading', is_default_sales: false },
+          {
+            id: '3',
+            display_name: 'Jitendra Trading',
+            is_active: true,
+            is_default_sales: true,
+          },
+          {
+            id: '4',
+            display_name: 'Jayesh Trading',
+            is_active: false,
+            is_default_sales: false,
+          },
         ],
       },
     },
-  }),
+    };
+  },
 }));
 vi.mock('@core/api/gstReportsApi', () => ({
   useGetGstSummaryQuery: (params: unknown, options: unknown) => state.summary(params, options),
@@ -181,6 +195,8 @@ describe('GST / CA report route', () => {
   it('loads the default firm summary and prominently marks CA review warnings', async () => {
     render(<GstReportsPage />);
 
+    expect(state.firmsQuery).toHaveBeenCalledWith(undefined);
+    expect(screen.getByRole('option', { name: 'Jayesh Trading (common.inactive)' })).toBeTruthy();
     expect((await screen.findAllByText('gstReports.needsCaReview')).length).toBeGreaterThan(0);
     expect(screen.getByText('gstReports.notFiled')).toBeTruthy();
     expect(screen.getByText('Purchase tax snapshots are incomplete.')).toBeTruthy();

@@ -838,6 +838,10 @@
   },
   "inventory": {
     "onHand": "उपलब्ध स्टॉक",
+    "physicalOnHand": "वास्तविक उपलब्ध स्टॉक",
+    "saleableStock": "बिक्री के लिए उपलब्ध",
+    "physicalQuantityRequired": "वास्तविक उपलब्ध मात्रा *",
+    "saleableAfterExpiry": "एक्सपायरी नियंत्रण के बाद {{count}} यूनिट बिक्री के लिए उपलब्ध हैं।",
     "validThresholdRequired": "कम स्टॉक सीमा ऋणात्मक नहीं हो सकती",
     "title": "इन्वेंटरी",
     "loadError": "स्टॉक लोड नहीं हो सका।",

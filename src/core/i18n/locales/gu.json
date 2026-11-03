@@ -833,6 +833,10 @@
   },
   "inventory": {
     "onHand": "હાથ પરનો સ્ટોક",
+    "physicalOnHand": "વાસ્તવિક હાથ પરનો સ્ટોક",
+    "saleableStock": "વેચાણ માટે ઉપલબ્ધ",
+    "physicalQuantityRequired": "વાસ્તવિક હાથ પરનું પ્રમાણ *",
+    "saleableAfterExpiry": "સમાપ્તિ નિયંત્રણ પછી {{count}} યુનિટ વેચાણ માટે ઉપલબ્ધ છે.",
     "validThresholdRequired": "ઓછા સ્ટોકની મર્યાદા ઋણ હોઈ શકતી નથી",
     "title": "ઇન્વેન્ટરી",
     "loadError": "સ્ટોક લોડ થયો નથી.",

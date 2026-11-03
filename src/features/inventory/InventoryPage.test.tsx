@@ -81,6 +81,41 @@ it('keeps a low-stock item editable with a named visible action', () => {
   expect(screen.getByText('inventory.updateInventoryTitle')).toBeTruthy();
 });
 
+it('shows physical and saleable stock separately and edits only physical on-hand stock', async () => {
+  query.data = {
+    data: [
+      {
+        variant_id: 'variant-1',
+        quantity: 100,
+        physical_quantity: 100,
+        saleable_quantity: 90,
+        low_stock_threshold: 5,
+        is_low_stock: false,
+        variant: { sku: 'RICE-1', product: { name: 'Rice' } },
+      },
+    ],
+    meta: { total: 1 },
+  };
+  render(<InventoryPage />);
+
+  expect(screen.getByText('inventory.physicalOnHand')).toBeTruthy();
+  expect(screen.getByText('inventory.saleableStock')).toBeTruthy();
+  expect(screen.getByText('100')).toBeTruthy();
+  expect(screen.getByText('90')).toBeTruthy();
+
+  fireEvent.click(screen.getByRole('button', { name: 'common.edit' }));
+  expect(screen.getByText('inventory.saleableAfterExpiry')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'inventory.updateInventoryButton' }));
+
+  await waitFor(() =>
+    expect(query.updateInventory).toHaveBeenCalledWith({
+      variant_id: 'variant-1',
+      quantity: 100,
+      low_stock_threshold: 5,
+    })
+  );
+});
+
 it('filters the loaded inventory locally before sending a debounced search request', () => {
   vi.useFakeTimers();
   render(<InventoryPage />);

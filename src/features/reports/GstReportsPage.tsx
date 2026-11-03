@@ -39,7 +39,9 @@ const GstReportsPage: React.FC = () => {
   const [firmId, setFirmId] = useState('');
   const [view, setView] = useState<GstView>('SUMMARY');
   const [downloadError, setDownloadError] = useState('');
-  const { data: firmsResponse } = useGetFirmsQuery({ active: true });
+  // Historical statutory reports remain available after a firm is deactivated.
+  // Posting screens intentionally keep using `{ active: true }`.
+  const { data: firmsResponse } = useGetFirmsQuery();
   const firms = useMemo(() => firmsResponse?.data.firms ?? [], [firmsResponse?.data.firms]);
 
   useEffect(() => {
@@ -259,6 +261,7 @@ const GstReportsPage: React.FC = () => {
                 {firms.map((firm) => (
                   <IonSelectOption key={firm.id} value={firm.id}>
                     {firm.display_name}
+                    {!firm.is_active ? ` (${t('common.inactive')})` : ''}
                   </IonSelectOption>
                 ))}
               </IonSelect>

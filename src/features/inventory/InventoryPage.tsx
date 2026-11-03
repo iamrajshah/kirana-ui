@@ -34,6 +34,9 @@ import '../products/stock-workspace.css';
 
 const PAGE_SIZE = 50;
 
+const physicalQuantity = (item: Inventory) => item.physical_quantity ?? item.quantity;
+const saleableQuantity = (item: Inventory) => item.saleable_quantity ?? item.quantity;
+
 export const InventoryPage: React.FC = () => {
   const { t } = useTranslation();
   const history = useHistory();
@@ -134,7 +137,7 @@ export const InventoryPage: React.FC = () => {
 
   const handleEditClick = (item: Inventory) => {
     setSelectedItem(item);
-    setQuantity(item.quantity.toString());
+    setQuantity(physicalQuantity(item).toString());
     setLowStockThreshold(item.low_stock_threshold.toString());
     setShowModal(true);
   };
@@ -230,14 +233,24 @@ export const InventoryPage: React.FC = () => {
                                 {t('products.sku')}: {item.variant?.sku}
                               </p>
                             </div>
-                            <div>
-                              <p>{t('inventory.onHand')}</p>
-                              <IonBadge
-                                color={item.is_low_stock ? 'danger' : 'success'}
-                                className="text-lg"
-                              >
-                                {formatNumber(item.quantity)}
-                              </IonBadge>
+                            <div className="stock-card-quantities">
+                              <div>
+                                <p>{t('inventory.physicalOnHand')}</p>
+                                <IonBadge
+                                  color={item.is_low_stock ? 'danger' : 'success'}
+                                  className="text-lg"
+                                >
+                                  {formatNumber(physicalQuantity(item))}
+                                </IonBadge>
+                              </div>
+                              {saleableQuantity(item) !== physicalQuantity(item) && (
+                                <div>
+                                  <p>{t('inventory.saleableStock')}</p>
+                                  <IonBadge color="warning" className="text-lg">
+                                    {formatNumber(saleableQuantity(item))}
+                                  </IonBadge>
+                                </div>
+                              )}
                             </div>
                           </div>
                           <div className="stock-card-bottom">
@@ -306,7 +319,7 @@ export const InventoryPage: React.FC = () => {
                   </div>
 
                   <Input
-                    label={t('inventory.quantityRequired')}
+                    label={t('inventory.physicalQuantityRequired')}
                     type="number"
                     value={quantity}
                     onChange={setQuantity}
@@ -314,6 +327,14 @@ export const InventoryPage: React.FC = () => {
                     inputMode="decimal"
                     placeholder={t('inventory.enterQuantityPlaceholder')}
                   />
+
+                  {saleableQuantity(selectedItem) !== physicalQuantity(selectedItem) && (
+                    <p className="text-sm text-gray-600">
+                      {t('inventory.saleableAfterExpiry', {
+                        count: saleableQuantity(selectedItem),
+                      })}
+                    </p>
+                  )}
 
                   <Input
                     label={t('inventory.lowStockThresholdLabel')}
