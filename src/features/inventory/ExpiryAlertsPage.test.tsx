@@ -42,6 +42,7 @@ vi.mock('@core/api/expiryApi', () => ({
           nearExpiryBatches: 1,
           affectedUnits: 9,
           affectedValue: 540,
+          valuationEstimated: true,
         },
         batches: [
           {
@@ -137,6 +138,8 @@ describe.each([
 
     expect(screen.getByText('expiry.expired')).toBeTruthy();
     expect(screen.getByText('expiry.nearExpiry')).toBeTruthy();
+    expect(screen.getByText('expiry.stockAtRiskEstimated')).toBeTruthy();
+    expect(screen.getByText('expiry.valuationEstimatedHint')).toBeTruthy();
     expect(screen.getByText('Groundnut oil')).toBeTruthy();
     const groundnutRow = screen.getByText('Groundnut oil').closest('article');
     expect(groundnutRow).toBeTruthy();

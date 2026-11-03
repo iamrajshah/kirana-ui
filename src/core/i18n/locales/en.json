@@ -1945,6 +1945,8 @@
     "nearExpiry": "Near expiry",
     "affectedUnits": "Affected units",
     "stockAtRisk": "Stock value at risk",
+    "stockAtRiskEstimated": "Estimated stock value at risk",
+    "valuationEstimatedHint": "Estimate based on the purchase costs currently recorded.",
     "expiredToday": "Expires today — not saleable",
     "expiredDaysAgo": "Expired {{count}} days ago",
     "daysRemaining": "{{count}} days left",

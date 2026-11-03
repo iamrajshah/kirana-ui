@@ -1936,6 +1936,8 @@
     "nearExpiry": "लवकर कालबाह्य",
     "affectedUnits": "प्रभावित युनिट",
     "stockAtRisk": "धोक्यातील साठा मूल्य",
+    "stockAtRiskEstimated": "धोक्यातील साठ्याचे अंदाजित मूल्य",
+    "valuationEstimatedHint": "हा अंदाज सध्या नोंदवलेल्या खरेदी किमतींवर आधारित आहे.",
     "expiredToday": "आज मुदत संपते — विक्रीयोग्य नाही",
     "expiredDaysAgo": "{{count}} दिवसांपूर्वी कालबाह्य",
     "daysRemaining": "{{count}} दिवस शिल्लक",

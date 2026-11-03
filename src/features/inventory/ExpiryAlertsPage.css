@@ -35,6 +35,10 @@ button.expiry-summary-card {
 .expiry-summary-card strong {
   font-size: clamp(1.45rem, 3vw, 2.2rem);
 }
+.expiry-summary-card small {
+  color: var(--ion-text-color-secondary);
+  line-height: 1.3;
+}
 .expiry-summary-card ion-icon {
   font-size: 1.4rem;
 }

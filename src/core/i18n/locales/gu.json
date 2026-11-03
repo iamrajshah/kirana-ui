@@ -1931,6 +1931,8 @@
     "nearExpiry": "ટૂંક સમયમાં સમાપ્ત",
     "affectedUnits": "અસરગ્રસ્ત યુનિટ",
     "stockAtRisk": "જોખમમાં સ્ટોક મૂલ્ય",
+    "stockAtRiskEstimated": "જોખમમાં રહેલા સ્ટોકનું અંદાજિત મૂલ્ય",
+    "valuationEstimatedHint": "આ અંદાજ હાલમાં નોંધાયેલા ખરીદ ખર્ચ પર આધારિત છે.",
     "expiredToday": "આજે સમાપ્ત — વેચાણયોગ્ય નથી",
     "expiredDaysAgo": "{{count}} દિવસ પહેલાં સમાપ્ત",
     "daysRemaining": "{{count}} દિવસ બાકી",

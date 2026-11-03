@@ -181,8 +181,17 @@ const ExpiryAlertsPage: React.FC = () => {
               </article>
               {typeof alerts.summary.affectedValue === 'number' && (
                 <article className="expiry-summary-card expiry-summary-card--neutral">
-                  <span>{t('expiry.stockAtRisk')}</span>
+                  <span>
+                    {t(
+                      alerts.summary.valuationEstimated
+                        ? 'expiry.stockAtRiskEstimated'
+                        : 'expiry.stockAtRisk'
+                    )}
+                  </span>
                   <strong>{formatCurrency(alerts.summary.affectedValue)}</strong>
+                  {alerts.summary.valuationEstimated && (
+                    <small>{t('expiry.valuationEstimatedHint')}</small>
+                  )}
                 </article>
               )}
             </section>

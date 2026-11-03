@@ -25,6 +25,7 @@ export interface ExpiryAlertsData {
     nearExpiryBatches: number;
     affectedUnits: number;
     affectedValue?: number;
+    valuationEstimated?: boolean;
   };
   batches: ExpiryInventoryBatch[];
 }

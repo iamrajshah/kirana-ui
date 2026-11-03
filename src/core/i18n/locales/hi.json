@@ -1936,6 +1936,8 @@
     "nearExpiry": "जल्द एक्सपायर",
     "affectedUnits": "प्रभावित यूनिट",
     "stockAtRisk": "जोखिम में स्टॉक मूल्य",
+    "stockAtRiskEstimated": "जोखिम में स्टॉक का अनुमानित मूल्य",
+    "valuationEstimatedHint": "यह अनुमान अभी दर्ज खरीद लागतों पर आधारित है।",
     "expiredToday": "आज एक्सपायर — बिक्री योग्य नहीं",
     "expiredDaysAgo": "{{count}} दिन पहले एक्सपायर",
     "daysRemaining": "{{count}} दिन बाकी",
