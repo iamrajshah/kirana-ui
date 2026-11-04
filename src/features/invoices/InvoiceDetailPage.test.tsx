@@ -185,7 +185,20 @@ vi.mock('@ionic/react', () => {
     IonIcon: () => null,
     IonSpinner: () => <span>loading</span>,
     IonAlert: () => null,
-    IonToast: () => null,
+    IonToast: ({
+      isOpen,
+      message,
+      color,
+    }: {
+      isOpen: boolean;
+      message?: string;
+      color?: string;
+    }) =>
+      isOpen ? (
+        <div role="status" data-color={color}>
+          {message}
+        </div>
+      ) : null,
   };
 });
 
@@ -208,6 +221,8 @@ beforeEach(() => {
   mocks.outputState = { phase: 'idle', action: null };
   mocks.finalize.mockResolvedValue({ data: {} });
   mocks.createPayment.mockResolvedValue({ data: {} });
+  mocks.refetchDocument.mockResolvedValue({ data: { data: document } });
+  mocks.refetchInvoice.mockResolvedValue({ data: undefined });
 });
 
 afterEach(() => {
@@ -407,5 +422,99 @@ describe('InvoiceDetailPage receipt workspace', () => {
       mocks.createPayment.mock.invocationCallOrder[0],
     );
     expect(mocks.replace).toHaveBeenCalledWith('/storefront-orders?payment=recorded');
+  });
+
+  it('refreshes the canonical document after draft payment without refetching a skipped invoice query', async () => {
+    mocks.documentResult = {
+      data: {
+        data: {
+          kind: 'NON_DOCUMENT',
+          reason: 'NOT_ISSUED',
+          invoice_id: 'invoice-1',
+          status: 'DRAFT',
+        },
+      },
+      isLoading: false,
+      isFetching: false,
+      error: undefined,
+      refetch: mocks.refetchDocument,
+    };
+    mocks.invoiceResult = {
+      data: {
+        data: {
+          id: 'invoice-1',
+          invoice_number: 'DRAFT-1',
+          status: 'DRAFT',
+          held_at: null,
+          total_amount: 100,
+          paid_amount: 0,
+          customer: { id: 'customer-1' },
+          items: [],
+        },
+      },
+      isLoading: false,
+      error: undefined,
+      refetch: mocks.refetchInvoice,
+    };
+    mocks.refetchInvoice.mockRejectedValue(
+      new Error('Cannot refetch a query that has not been started yet')
+    );
+
+    render(<InvoiceDetailPage />);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'invoiceDetail.finalizeAndCollectPayment' })
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Submit test payment' }));
+
+    await waitFor(() => expect(mocks.refetchDocument).toHaveBeenCalledOnce());
+    expect(mocks.refetchInvoice).not.toHaveBeenCalled();
+    expect(screen.getByRole('status').textContent).toBe('invoiceDetail.paymentRecordedSuccess');
+  });
+
+  it('keeps a successful payment successful when the follow-up document refresh fails', async () => {
+    mocks.documentResult = {
+      data: {
+        data: {
+          kind: 'NON_DOCUMENT',
+          reason: 'NOT_ISSUED',
+          invoice_id: 'invoice-1',
+          status: 'DRAFT',
+        },
+      },
+      isLoading: false,
+      isFetching: false,
+      error: undefined,
+      refetch: mocks.refetchDocument,
+    };
+    mocks.invoiceResult = {
+      data: {
+        data: {
+          id: 'invoice-1',
+          invoice_number: 'DRAFT-1',
+          status: 'DRAFT',
+          held_at: null,
+          total_amount: 100,
+          paid_amount: 0,
+          customer: { id: 'customer-1' },
+          items: [],
+        },
+      },
+      isLoading: false,
+      error: undefined,
+      refetch: mocks.refetchInvoice,
+    };
+    mocks.refetchDocument.mockRejectedValue(new Error('Temporary refresh failure'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    render(<InvoiceDetailPage />);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'invoiceDetail.finalizeAndCollectPayment' })
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Submit test payment' }));
+
+    await waitFor(() => expect(warn).toHaveBeenCalledOnce());
+    expect(screen.getByRole('status').textContent).toBe('invoiceDetail.paymentRecordedSuccess');
+    expect(screen.queryByText('invoiceDetail.paymentFailed')).toBeNull();
+    warn.mockRestore();
   });
 });

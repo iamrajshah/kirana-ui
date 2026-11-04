@@ -93,21 +93,28 @@ const InvoiceDetailPage: React.FC = () => {
         reference_note: reference,
         idempotency_key: paymentIdempotencyKey.current,
       }).unwrap();
-      paymentIdempotencyKey.current = generateIdempotencyKey();
-      setShowPaymentModal(false);
-      setToast({ color: 'success', message: t('invoiceDetail.paymentRecordedSuccess') });
-      if (paymentReturnTo) {
-        history.replace(`${paymentReturnTo}?payment=recorded`);
-        return;
-      }
-      if (receipt) await documentQuery.refetch();
-      else await invoiceQuery.refetch();
     } catch (error: unknown) {
       setToast({
         color: 'danger',
         message: apiErrorMessage(error, t('invoiceDetail.paymentFailed')),
       });
       throw error;
+    }
+
+    paymentIdempotencyKey.current = generateIdempotencyKey();
+    setShowPaymentModal(false);
+    setToast({ color: 'success', message: t('invoiceDetail.paymentRecordedSuccess') });
+    if (paymentReturnTo) {
+      history.replace(`${paymentReturnTo}?payment=recorded`);
+      return;
+    }
+
+    try {
+      // A finalized draft invalidates and skips the mutable invoice query. Refresh the canonical
+      // document instead, and never report a successful payment as failed because refresh lagged.
+      await documentQuery.refetch();
+    } catch (error: unknown) {
+      console.warn('Payment recorded, but the invoice document could not be refreshed', error);
     }
   };
 
