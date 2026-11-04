@@ -44,6 +44,53 @@ const FEATURE_ROLES: Partial<Record<CommercialFeatureCode, readonly string[]>> =
   MULTI_FIRM: ['OWNER'],
   LIVE_MARGIN_PREVIEW: ['OWNER'],
   CUSTOMER_STOREFRONT: ['OWNER', 'MANAGER'],
+  EXPIRY_TRACKING: ['OWNER', 'MANAGER'],
+  PURCHASE_BILL_IMPORT: ['OWNER', 'MANAGER'],
+  GST_CA_REPORTS: ['OWNER'],
+};
+
+export const COMMERCIAL_FEATURE_DEPENDENCIES: Partial<
+  Record<CommercialFeatureCode, readonly CommercialFeatureCode[]>
+> = {
+  EXPIRY_TRACKING: ['INVENTORY', 'PRODUCTS'],
+  PURCHASE_BILL_IMPORT: ['PURCHASES', 'SUPPLIERS', 'PRODUCTS', 'BILLING'],
+  GST_CA_REPORTS: ['ESSENTIAL_REPORTS', 'BILLING'],
+};
+
+const hasCommercialFeatureRoleAccess = (
+  roles: string[],
+  access: CommercialAccessSummary,
+  feature: CommercialFeatureCode
+): boolean => {
+  const allowedRoles = access.featureRoles?.[feature] ?? FEATURE_ROLES[feature];
+  return !allowedRoles || allowedRoles.some((role) => roles.includes(role));
+};
+
+const hasCommercialFeatureEntitlement = (
+  access: CommercialAccessSummary,
+  feature: CommercialFeatureCode
+): boolean =>
+  access.planCode === 'LEGACY_COMPAT' || Boolean(access.entitlements?.includes(feature));
+
+const hasDirectCommercialFeatureAccess = (
+  roles: string[],
+  access: CommercialAccessSummary,
+  feature: CommercialFeatureCode
+): boolean =>
+  hasCommercialFeatureRoleAccess(roles, access, feature) &&
+  hasCommercialFeatureEntitlement(access, feature);
+
+export const commercialFeatureDependencyFailure = (
+  roles: string[],
+  access: CommercialAccessSummary | null | undefined,
+  feature: CommercialFeatureCode
+): CommercialFeatureCode | null => {
+  if (!access) return null;
+  return (
+    COMMERCIAL_FEATURE_DEPENDENCIES[feature]?.find(
+      (dependency) => !hasDirectCommercialFeatureAccess(roles, access, dependency)
+    ) ?? null
+  );
 };
 
 export const canUseCommercialFeature = (
@@ -52,12 +99,13 @@ export const canUseCommercialFeature = (
   feature: CommercialFeatureCode
 ): boolean => {
   if (!access) return true;
-  if (access.planCode === 'LEGACY_COMPAT') return true;
-  if (['SUSPENDED', 'CANCELLED', 'EXPIRED', 'PROVISIONING'].includes(access.state)) return false;
-  const allowedRoles = access.featureRoles?.[feature] ?? FEATURE_ROLES[feature];
+  if (
+    ['SUSPENDED', 'CANCELLED', 'EXPIRED', 'PROVISIONING', 'READ_ONLY'].includes(access.state)
+  )
+    return false;
   return (
-    (!allowedRoles || allowedRoles.some((role) => roles.includes(role))) &&
-    Boolean(access.entitlements?.includes(feature))
+    hasDirectCommercialFeatureAccess(roles, access, feature) &&
+    commercialFeatureDependencyFailure(roles, access, feature) === null
   );
 };
 

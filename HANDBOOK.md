@@ -174,8 +174,99 @@ remain usable. Cashiers continue to see their normal operational dashboard.
 - Shop name, product and variant, price, packed date, expiry date, batch/lot,
   MRP, and free text are configurable. The on-screen preview uses the same
   choices as printing so the operator can catch clipping before wasting labels.
-- Packed and expiry values are currently label metadata, not inventory batches.
-  True expiry tracking remains future stock-ledger work.
+- A label's optional dates remain print metadata. Purchase receipt dates are a
+  separate inventory truth: a received batch records its lot, manufacture date,
+  expiry date and remaining quantity so warnings never depend on a printed label.
+
+### Expiry-aware inventory
+
+- OWNER and MANAGER can record optional batch, manufacture and expiry facts for
+  each purchase line when `EXPIRY_TRACKING` is enabled for their role and plan.
+- An already-expired purchase line is rejected before submission. A manufacture
+  date after its expiry date is invalid, while near-expiry stock is allowed with
+  a clear warning so the operator can make an informed receiving decision.
+- Dashboard, Inventory and Product Detail consume the server's tenant-scoped
+  batch projection. Expired and near-expiry are kept distinct; affected units
+  and cost value are shown when authoritative cost is available.
+- `/inventory/expiry-alerts` is a protected direct route. Hiding the button is
+  not authorization: feature, role and inventory permission must all pass.
+- Expiry Tracking is usable only while the plan also exposes Inventory and
+  Products; Platform Admin cannot create a visible-but-broken add-on by removing
+  either dependency.
+- The expiry date is the first non-saleable day. Stock expiring today is treated
+  as expired, excluded from saleable billing quantity, and cannot be received as
+  new stock. OWNER/MANAGER may remove expired or damaged batch stock only after
+  entering quantity, a mandatory reason and explicit confirmation; the request
+  is idempotent and refreshes both inventory and alerts.
+
+### Purchase bill import
+
+- `PURCHASE_BILL_IMPORT` adds camera, image and PDF entry from Purchases. The
+  uploaded bill becomes a draft review; extraction never changes stock or
+  supplier accounting.
+- Its effective dependency set is Purchases, Suppliers, Products and Billing.
+  Missing any dependency hides the action and denies its direct route/API.
+- Clear JPG/PNG/WebP photos are read locally in a lazily loaded OCR worker. The
+  worker, OCR core and English model are self-hosted with the UI release, so a
+  phone scan does not consume Railway CPU or send the image to another provider.
+  OCR is bounded, reports progress, can be cancelled and falls back to manual
+  review when text confidence is insufficient or the browser cannot run it.
+- Only the three Tesseract LSTM browser core variants are packaged (about 12 MB
+  before transfer), plus the worker and compressed English model (about 3 MB).
+  They are fetched only after an image is selected and never enter the initial
+  POS JavaScript chunk.
+- Text PDFs are extracted by the API. A scanned PDF can require manual review in
+  the first release; taking a photo remains the supported phone-scan path.
+- Supplier, firm, invoice facts, item mapping, quantity, price, tax, HSN and
+  batch dates remain editable. Reviewers can add missed lines and remove spurious
+  OCR lines, including recovering a zero-line draft. The user must tick the
+  final-review acknowledgement and explicitly Confirm before the server creates
+  the purchase and mutates stock.
+- Review compares supplier-extracted subtotal/tax/total with the exact
+  server-compatible per-line calculation. The user chooses whether prices include
+  tax, acknowledges material total differences, inherits the supplier's default
+  purchase firm, and may convert packs to sale units. Batch fields still require
+  the separate `EXPIRY_TRACKING` entitlement.
+- Manual supplier maintenance captures GSTIN, state and the matching two-digit
+  state code. Direct purchases also make tax-inclusive/exclusive treatment,
+  line GST/HSN and supplier-derived place of supply visible before confirmation.
+  Missing supplier jurisdiction stays visibly incomplete; the UI never invents
+  CGST/SGST/IGST classification.
+- An unfinished review is kept only in the current browser tab's session storage,
+  scoped by tenant and signed-in user, while its draft ID is retained in the URL.
+  Refreshing or navigating back restores reviewed edits from that session and
+  verifies the draft with the API. Review and mismatch acknowledgements are
+  deliberately reset. If a confirmation response is lost, the restored draft can
+  be confirmed again through the server's idempotent endpoint without creating a
+  second purchase. Recovery is cleared automatically only after confirmed success
+  (or when the user explicitly discards it).
+
+### GST preparation for the CA
+
+- `GST_CA_REPORTS` adds a protected GST & CA workspace with OWNER as the default
+  role policy; Platform Admin may widen its runtime role policy without a deploy.
+  It prepares one selected legal firm at a time and shows outward tax,
+  inward tax credit, estimated net liability, sales register and purchase register.
+  Its HSN workspace prepares outward Table 12 rows split into B2B/B2C and grouped
+  by HSN, UQC and GST rate, with CGST/SGST/IGST shown separately. Inward HSN/input
+  tax analysis is displayed in a separate section and never mixed into outward
+  quantities.
+- It also requires Essential Reports and Billing. Runtime plan customization
+  therefore cannot expose a GST workspace without the records it depends on.
+- A selected default firm is sent implicitly, allowing a one-firm demo/shop to
+  prepare GST records without buying `MULTI_FIRM`. Choosing an alternate or
+  inactive historical firm sends its explicit ID and remains subject to the
+  multi-firm access policy. The displayed firm identity still names every CSV.
+- Sales, purchase and outward HSN/Table 12 registers download as authenticated CSV files for
+  review with the shop's accountant. Browser/tablet builds download the CSV;
+  Android writes it to an app-cache file, opens the native share sheet, then
+  removes the temporary file. These are preparation aids, not GST filing, legal
+  certification, e-invoice generation or an e-way-bill integration.
+- Product variants optionally store `uqc_quantity_factor`, the GST base quantity
+  represented by one sale unit (for example a 5 kg KGS pack is `5`, while a
+  500 g KGS pack is `0.5`). Create, edit and barcode-product flows capture the
+  value explicitly and never derive it from free-text size. Missing factors remain
+  visible CA-review warnings instead of guessed Table 12 quantities.
 
 ### Tenant backup and restore
 
@@ -271,7 +362,7 @@ remain usable. Cashiers continue to see their normal operational dashboard.
 - Purchase entry may describe packs/boxes and units per pack, but submitted and
   displayed inventory effects must use the server-computed base-unit quantity.
 - Make the conversion visible before save (for example, `2 boxes × 20 = 40
-  pouches`) so a shopkeeper can catch an entry mistake.
+pouches`) so a shopkeeper can catch an entry mistake.
 - Customer sorting is server-backed and stable across pages. Do not sort only
   the currently loaded rows and present that as the complete result.
 
@@ -348,8 +439,8 @@ Offline billing requires an explicit outbox, conflict, stock, and payment
 reconciliation design and should not be represented as ready. Smart reorder
 suggestions and WhatsApp paste-to-bill are valuable follow-on features. Automated
 WhatsApp delivery or ingestion additionally needs provider, consent, privacy,
-and cost decisions. Batch-aware stock and expiry
-management is also pending; label dates alone do not change inventory truth.
+and cost decisions. GST filing, e-invoice/IRN and e-way-bill submission remain
+outside the current CA-preparation reports.
 
 ## Current release qualification
 

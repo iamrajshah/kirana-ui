@@ -1,0 +1,39 @@
+.product-expiry-card {
+  border-inline-start: 0.35rem solid var(--ion-color-warning);
+}
+
+.product-expiry-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.product-expiry-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem;
+  border: 1px solid var(--ion-border-color);
+  border-radius: 0.65rem;
+}
+
+.product-expiry-list article > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.product-expiry-list article > div span,
+.product-expiry-list article > span {
+  color: var(--ion-text-color-secondary);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 520px) {
+  .product-expiry-list article {
+    grid-template-columns: 1fr auto;
+  }
+
+  .product-expiry-list article > span {
+    grid-column: 1 / -1;
+  }
+}

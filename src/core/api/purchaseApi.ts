@@ -8,6 +8,11 @@ export interface PurchaseItem {
   unit_price: number;
   units_per_purchase_unit?: number;
   purchase_unit_label?: string;
+  batch_number?: string;
+  manufacturing_date?: string;
+  expiry_date?: string;
+  gst_rate?: number;
+  hsn_code?: string;
 }
 
 export interface Purchase {
@@ -78,6 +83,8 @@ export const purchaseApi = apiSlice.injectEndpoints({
         items: PurchaseItem[];
         payment_amount?: number;
         payment_mode?: 'CASH' | 'UPI' | 'CARD' | 'BANK';
+        prices_include_tax?: boolean;
+        place_of_supply_code?: string;
       }
     >({
       query: (body) => ({

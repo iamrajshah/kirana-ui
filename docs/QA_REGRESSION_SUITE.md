@@ -32,16 +32,16 @@ Tested POS baseline: `b88e7bf` against server `9aeef37`.
 Effective access always combines the active subscription, plan entitlement,
 global feature switch, and admin-configured role policy.
 
-| Area | OWNER | MANAGER | CASHIER |
-| --- | --- | --- | --- |
-| Billing, customers, invoice/payment collection | Yes | Yes | Yes |
-| Dashboard and operational exceptions | Yes | Yes | No unless policy changes |
-| Products/inventory | Yes | Yes when allowed | No by default |
-| Suppliers/purchases | Yes | Manager when allowed | No |
-| Reports | Plan/policy | Plan/policy | No by default |
-| Staff, plan, firms, backup/restore | Owner only | No | No |
-| Storefront offers/orders/share link | Plan/policy | Plan/policy | Share link may be enabled; management is not automatic |
-| Private bill margin | Policy, default yes | Policy, default no | Policy, default no |
+| Area                                           | OWNER               | MANAGER              | CASHIER                                                |
+| ---------------------------------------------- | ------------------- | -------------------- | ------------------------------------------------------ |
+| Billing, customers, invoice/payment collection | Yes                 | Yes                  | Yes                                                    |
+| Dashboard and operational exceptions           | Yes                 | Yes                  | No unless policy changes                               |
+| Products/inventory                             | Yes                 | Yes when allowed     | No by default                                          |
+| Suppliers/purchases                            | Yes                 | Manager when allowed | No                                                     |
+| Reports                                        | Plan/policy         | Plan/policy          | No by default                                          |
+| Staff, plan, firms, backup/restore             | Owner only          | No                   | No                                                     |
+| Storefront offers/orders/share link            | Plan/policy         | Plan/policy          | Share link may be enabled; management is not automatic |
+| Private bill margin                            | Policy, default yes | Policy, default no   | Policy, default no                                     |
 
 Test server denial, not only hidden navigation.
 
@@ -90,9 +90,87 @@ Test server denial, not only hidden navigation.
 3. Create a supplier purchase in sale units and in box/pack units. Confirm the
    preview (`packs x units = base units`), persisted snapshots, stock increase,
    latest cost, supplier balance, dashboard, and purchase reports.
+   Repeat with tax-inclusive and tax-exclusive prices. Verify line GST/HSN,
+   supplier GSTIN/state/place-of-supply and subtotal/tax/grand total. A supplier
+   without a state code must show an incomplete-jurisdiction warning.
 4. Pay a supplier partly and fully; all summaries must refresh.
 5. Confirm CASHIER receives 403 for supplier/purchase endpoints even with a
    manually entered URL.
+
+### Expiry-aware receiving
+
+1. With `EXPIRY_TRACKING` enabled for OWNER, receive one future batch and verify
+   its batch number, manufacture date, expiry date and base-unit quantity on
+   Dashboard, Inventory expiry alerts and Product Detail.
+2. Receive a batch inside the selected warning window and verify it is labelled
+   Near expiry. A batch expiring today is Expired and excluded from saleable
+   billing stock; `+` must stop before aggregate expired units can be sold.
+3. Enter a manufacture date after expiry and an expiry date of today or earlier;
+   both must be blocked before the request. Near-expiry stock may proceed only
+   with its warning visible.
+4. Disable the feature or remove the role policy. The buttons must disappear,
+   `/inventory/expiry-alerts` must redirect, and the API must deny direct access.
+5. Repeat the alert list and purchase editor at 390px, 768px and desktop widths;
+   batch facts and the primary action must remain readable without horizontal
+   page overflow.
+6. OWNER/MANAGER can write off part of an expired batch only with a valid whole
+   quantity, meaningful reason and explicit confirmation. Retry the same request
+   without removing stock twice; CASHIER/non-entitled users remain blocked.
+
+### Purchase-bill import
+
+1. Choose a clear JPG/PNG/WebP bill. Verify OCR is downloaded only after file
+   selection, progress is visible, Cancel works, and the extracted draft retains
+   all entered/reviewed values. Repeat on an Android camera capture.
+2. Make OCR unavailable and use an unreadable image. The page must fall back to
+   editable manual review without exposing a raw worker/network error.
+3. Upload a text PDF and verify supplier, invoice, line, tax/HSN and total fields.
+   Treat a scanned-PDF manual-review warning as supported v1 behaviour.
+   A zero-line draft must remain recoverable: add missed items, remove spurious
+   OCR lines, map them, and verify each row edit resets prior acknowledgements.
+4. Map every line, edit quantity/price/tax/batch/expiry, choose tax-inclusive or
+   tax-exclusive pricing and compare extracted versus calculated totals. A
+   material mismatch requires acknowledgment. A 2-box × 20 conversion must add
+   40 sale units. Verify no inventory, purchase, supplier balance or report
+   changes before final acknowledgement.
+5. Tick the review acknowledgement and Confirm once. Verify exactly one purchase,
+   correct stock/batches, supplier balance, dashboard and reports. Retry/reload
+   must not duplicate the purchase.
+6. Before confirmation, edit a mapped line, refresh the browser and reopen the
+   copied `?draftId=` URL. The same tenant/user session must restore the edit but
+   reset review and mismatch acknowledgements. Simulate a lost confirmation
+   response, refresh, then confirm the recovered `CONFIRMED` draft again. Verify
+   the original purchase opens and no second purchase or stock mutation occurs.
+   Another tenant or user must never receive that browser-session recovery data.
+7. Disable `PURCHASE_BILL_IMPORT` or its role policy. The Purchases action and
+   direct `/purchases/import-bill` route/API must be denied.
+
+### GST & CA reports
+
+1. For a known period, reconcile outward tax to finalized sales and inward tax
+   to purchases. Verify CGST/SGST versus IGST components and estimated net
+   liability; do not accept negative or stale totals after a payment/write.
+2. Switch between legal firms. Confirm a firm is always explicit and no other
+   tenant's or unselected firm's rows appear. For a one-firm DEMO tenant, the
+   selected default firm must load without an explicit `firmId` or `MULTI_FIRM`;
+   selecting an alternate/inactive historical firm must send its ID and enforce
+   multi-firm access. The downloaded filename must still name the displayed firm.
+3. Open Sales register, Purchase register and HSN summary. Verify outward HSN
+   rows are split B2B/B2C and grouped by HSN + UQC + rate with separate
+   CGST/SGST/IGST, while inward purchase/input-tax analysis appears in its own
+   section and never changes outward Table 12 quantities. Download each CSV and
+   verify authentication, headers, date range, row totals and UTF-8 content.
+   On Android the native share sheet must receive a meaningful `.csv` file; on
+   web/tablet it must download without navigating away from the report.
+4. Confirm the disclaimer states these are CA-preparation estimates, not filing,
+   e-invoice/IRN or e-way-bill submission.
+5. Create, edit and barcode-create variants with UQC factors such as `5` KGS,
+   `0.5` KGS and `500` GMS. Verify values round-trip and Table 12 uses the base
+   quantity. Zero, negative, more than three decimals and values above 1,000,000
+   must be blocked. Leaving it blank remains allowed but produces a visible
+   review-needed warning; the app must not guess from `size` text.
+6. Disable `GST_CA_REPORTS` or its role policy. The Reports action, direct
+   `/reports/gst-ca` route and GST API calls must all be denied.
 
 ## Storefront and commercial controls
 

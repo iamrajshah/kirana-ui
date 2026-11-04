@@ -4,7 +4,18 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ProductsPage } from './ProductsPage';
 
 const state = vi.hoisted(() => ({
-  data: { data: [{ id: 'product-1', name: 'Rice', category: { name: 'Staples' }, is_active: true, variants: [{ id: 'variant-1', sku: 'RICE-1', price: 50 }] }], meta: { total: 1 } } as unknown,
+  data: {
+    data: [
+      {
+        id: 'product-1',
+        name: 'Rice',
+        category: { name: 'Staples' },
+        is_active: true,
+        variants: [{ id: 'variant-1', sku: 'RICE-1', price: 50 }],
+      },
+    ],
+    meta: { total: 1 },
+  } as unknown,
   isError: false,
   failAtSkip: null as number | null,
   pendingAtSkip: null as number | null,
@@ -38,39 +49,106 @@ vi.mock('@core/api/productApi', () => ({
 }));
 vi.mock('@core/api/categoryApi', () => ({ useGetCategoriesQuery: () => ({ data: { data: [] } }) }));
 vi.mock('@components', () => ({
-  SearchBar: ({ onChange }: { onChange: (value: string) => void }) => <input aria-label="search" onChange={(event) => onChange(event.target.value)} />,
-  Loading: () => <div>loading</div>, EmptyState: ({ message }: { message: string }) => <div>{message}</div>,
-  Input: ({ label, value, onChange }: { label: string; value?: string; onChange?: (value: string) => void }) => <input aria-label={label} value={value || ''} onChange={(event) => onChange?.(event.target.value)} />,
-  Select: () => <select />, AddCategoryModal: () => null,
-  Button: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => <button onClick={onClick}>{children}</button>,
+  SearchBar: ({ onChange }: { onChange: (value: string) => void }) => (
+    <input aria-label="search" onChange={(event) => onChange(event.target.value)} />
+  ),
+  Loading: () => <div>loading</div>,
+  EmptyState: ({ message }: { message: string }) => <div>{message}</div>,
+  Input: ({
+    label,
+    value,
+    onChange,
+  }: {
+    label: string;
+    value?: string;
+    onChange?: (value: string) => void;
+  }) => (
+    <input
+      aria-label={label}
+      value={value || ''}
+      onChange={(event) => onChange?.(event.target.value)}
+    />
+  ),
+  Select: () => <select />,
+  AddCategoryModal: () => null,
+  Button: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
+    <button onClick={onClick}>{children}</button>
+  ),
 }));
 vi.mock('@ionic/react', () => {
   const Container = ({ children }: PropsWithChildren) => <div>{children}</div>;
   return {
-    IonPage: Container, IonContent: Container, IonList: Container, IonItem: Container,
-    IonLabel: Container, IonBadge: Container, IonIcon: Container, IonFab: Container,
-    IonFabButton: Container, IonModal: Container, IonButtons: Container, IonToast: Container,
-    IonHeader: Container, IonToolbar: Container, IonTitle: Container,
-    IonInfiniteScroll: ({ children, onIonInfinite, disabled }: PropsWithChildren<{ onIonInfinite?: (event: CustomEvent) => void; disabled?: boolean }>) => (
-      <button aria-label="load-more" disabled={disabled} onClick={() => onIonInfinite?.({ target: { complete: state.infiniteComplete } } as unknown as CustomEvent)}>{children}</button>
+    IonPage: Container,
+    IonContent: Container,
+    IonList: Container,
+    IonItem: Container,
+    IonLabel: Container,
+    IonBadge: Container,
+    IonIcon: Container,
+    IonFab: Container,
+    IonFabButton: Container,
+    IonModal: Container,
+    IonButtons: Container,
+    IonToast: ({ isOpen, message }: { isOpen?: boolean; message?: string }) =>
+      isOpen ? <div role="alert">{message}</div> : null,
+    IonHeader: Container,
+    IonToolbar: Container,
+    IonTitle: Container,
+    IonInfiniteScroll: ({
+      children,
+      onIonInfinite,
+      disabled,
+    }: PropsWithChildren<{ onIonInfinite?: (event: CustomEvent) => void; disabled?: boolean }>) => (
+      <button
+        aria-label="load-more"
+        disabled={disabled}
+        onClick={() =>
+          onIonInfinite?.({
+            target: { complete: state.infiniteComplete },
+          } as unknown as CustomEvent)
+        }
+      >
+        {children}
+      </button>
     ),
-    IonInfiniteScrollContent: Container, IonListHeader: Container,
-    IonButton: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => <button onClick={onClick}>{children}</button>,
+    IonInfiniteScrollContent: Container,
+    IonListHeader: Container,
+    IonButton: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
+      <button onClick={onClick}>{children}</button>
+    ),
     useIonActionSheet: () => [vi.fn()],
   };
 });
 
 beforeEach(() => {
-  state.data = { data: [{ id: 'product-1', name: 'Rice', category: { name: 'Staples' }, is_active: true, variants: [{ id: 'variant-1', sku: 'RICE-1', price: 50 }] }], meta: { total: 1 } };
+  state.data = {
+    data: [
+      {
+        id: 'product-1',
+        name: 'Rice',
+        category: { name: 'Staples' },
+        is_active: true,
+        variants: [{ id: 'variant-1', sku: 'RICE-1', price: 50 }],
+      },
+    ],
+    meta: { total: 1 },
+  };
   state.isError = false;
   state.failAtSkip = null;
   state.pendingAtSkip = null;
   state.infiniteComplete.mockReset();
   state.infiniteComplete.mockResolvedValue(undefined);
-  state.refetch.mockClear(); state.push.mockClear(); state.query.mockClear();
-  state.createProduct.mockReset(); state.createVariant.mockReset();
-  state.createProduct.mockReturnValue({ unwrap: () => Promise.resolve({ data: { id: 'product-2' } }) });
-  state.createVariant.mockReturnValue({ unwrap: () => Promise.resolve({ data: { id: 'variant-2' } }) });
+  state.refetch.mockClear();
+  state.push.mockClear();
+  state.query.mockClear();
+  state.createProduct.mockReset();
+  state.createVariant.mockReset();
+  state.createProduct.mockReturnValue({
+    unwrap: () => Promise.resolve({ data: { id: 'product-2' } }),
+  });
+  state.createVariant.mockReturnValue({
+    unwrap: () => Promise.resolve({ data: { id: 'variant-2' } }),
+  });
 });
 afterEach(() => {
   cleanup();
@@ -102,7 +180,18 @@ it('debounces remote search while preserving the immediate local result', () => 
 });
 
 it('loads products in 50-row pages', async () => {
-  state.data = { data: [{ id: 'product-1', name: 'Rice', category: { name: 'Staples' }, is_active: true, variants: [] }], meta: { total: 100 } };
+  state.data = {
+    data: [
+      {
+        id: 'product-1',
+        name: 'Rice',
+        category: { name: 'Staples' },
+        is_active: true,
+        variants: [],
+      },
+    ],
+    meta: { total: 100 },
+  };
   render(<ProductsPage />);
 
   fireEvent.click(screen.getByRole('button', { name: 'load-more' }));
@@ -110,7 +199,18 @@ it('loads products in 50-row pages', async () => {
 });
 
 it('keeps the Ionic indicator active until the page request settles', async () => {
-  state.data = { data: [{ id: 'product-1', name: 'Rice', category: { name: 'Staples' }, is_active: true, variants: [] }], meta: { total: 100 } };
+  state.data = {
+    data: [
+      {
+        id: 'product-1',
+        name: 'Rice',
+        category: { name: 'Staples' },
+        is_active: true,
+        variants: [],
+      },
+    ],
+    meta: { total: 100 },
+  };
   state.pendingAtSkip = 50;
   const { rerender } = render(<ProductsPage />);
 
@@ -124,7 +224,18 @@ it('keeps the Ionic indicator active until the page request settles', async () =
 });
 
 it('keeps loaded products visible and offers retry when a later page fails', async () => {
-  state.data = { data: [{ id: 'product-1', name: 'Rice', category: { name: 'Staples' }, is_active: true, variants: [] }], meta: { total: 100 } };
+  state.data = {
+    data: [
+      {
+        id: 'product-1',
+        name: 'Rice',
+        category: { name: 'Staples' },
+        is_active: true,
+        variants: [],
+      },
+    ],
+    meta: { total: 100 },
+  };
   state.failAtSkip = 50;
   render(<ProductsPage />);
 
@@ -147,14 +258,63 @@ it('offers retry rather than an empty catalog on request failure', () => {
 it('saves selling price and MRP when creating a product variant', async () => {
   render(<ProductsPage />);
   fireEvent.click(screen.getByRole('button', { name: 'products.addManually' }));
-  fireEvent.change(screen.getByLabelText('products.productNameLabel'), { target: { value: 'Tata Salt' } });
-  fireEvent.change(screen.getByLabelText('products.sellingPriceLabel'), { target: { value: '40' } });
+  fireEvent.change(screen.getByLabelText('products.productNameLabel'), {
+    target: { value: 'Tata Salt' },
+  });
+  fireEvent.change(screen.getByLabelText('products.sellingPriceLabel'), {
+    target: { value: '40' },
+  });
   fireEvent.change(screen.getByLabelText('products.mrpPriceLabel'), { target: { value: '50' } });
+  fireEvent.change(screen.getByLabelText('taxFields.uqcQuantityFactor'), {
+    target: { value: '1' },
+  });
   fireEvent.click(screen.getByRole('button', { name: 'products.createProductButton' }));
 
   await waitFor(() => expect(state.createVariant).toHaveBeenCalledOnce());
   expect(state.createVariant).toHaveBeenCalledWith({
     productId: 'product-2',
-    variant: expect.objectContaining({ price: 40, selling_price: 40, mrp_price: 50 }),
+    variant: expect.objectContaining({
+      price: 40,
+      selling_price: 40,
+      mrp_price: 50,
+      uqc_quantity_factor: 1,
+    }),
   });
+});
+
+it('blocks product creation when the optional UQC quantity factor is not positive', () => {
+  render(<ProductsPage />);
+  fireEvent.click(screen.getByRole('button', { name: 'products.addManually' }));
+  fireEvent.change(screen.getByLabelText('products.productNameLabel'), {
+    target: { value: 'Tata Salt' },
+  });
+  fireEvent.change(screen.getByLabelText('products.sellingPriceLabel'), {
+    target: { value: '40' },
+  });
+  fireEvent.change(screen.getByLabelText('taxFields.uqcQuantityFactor'), {
+    target: { value: '0' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'products.createProductButton' }));
+
+  expect(state.createProduct).not.toHaveBeenCalled();
+  expect(state.createVariant).not.toHaveBeenCalled();
+});
+
+it('blocks product creation locally when the HSN length is invalid', () => {
+  render(<ProductsPage />);
+  fireEvent.click(screen.getByRole('button', { name: 'products.addManually' }));
+  fireEvent.change(screen.getByLabelText('products.productNameLabel'), {
+    target: { value: 'Tata Salt' },
+  });
+  fireEvent.change(screen.getByLabelText('products.sellingPriceLabel'), {
+    target: { value: '40' },
+  });
+  fireEvent.change(screen.getByLabelText('taxFields.hsnCode'), {
+    target: { value: '12345' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'products.createProductButton' }));
+
+  expect(state.createProduct).not.toHaveBeenCalled();
+  expect(state.createVariant).not.toHaveBeenCalled();
+  expect(screen.getByText('taxFields.hsnCodeInvalid')).toBeTruthy();
 });

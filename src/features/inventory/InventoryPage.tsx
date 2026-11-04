@@ -16,8 +16,9 @@ import {
   IonInfiniteScroll,
   IonInfiniteScrollContent,
 } from '@ionic/react';
-import { create, close } from 'ionicons/icons';
+import { create, close, warningOutline } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
+import { useHistory } from 'react-router-dom';
 import { useGetInventoryQuery, useUpdateInventoryMutation } from '@core/api/inventoryApi';
 import { SearchBar, Loading, EmptyState, Input, Button } from '@components';
 import { formatNumber } from '@utils/helpers';
@@ -25,12 +26,27 @@ import type { Inventory } from '@core/types';
 import { filterInventory } from '@utils/localSearch';
 import { useDebouncedValue } from '@hooks/useDebouncedValue';
 import { useRequestSettledInfiniteScroll } from '@hooks/useRequestSettledInfiniteScroll';
+import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice';
+import { useAppSelector } from '@core/hooks';
+import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
+import { ROUTES } from '@core/constants';
 import '../products/stock-workspace.css';
 
 const PAGE_SIZE = 50;
 
+const physicalQuantity = (item: Inventory) => item.physical_quantity ?? item.quantity;
+const saleableQuantity = (item: Inventory) => item.saleable_quantity ?? item.quantity;
+
 export const InventoryPage: React.FC = () => {
   const { t } = useTranslation();
+  const history = useHistory();
+  const user = useAppSelector(selectCurrentUser);
+  const commercialAccess = useAppSelector(selectCommercialAccess);
+  const canTrackExpiry = canUseCommercialFeature(
+    user?.roles ?? [],
+    commercialAccess,
+    'EXPIRY_TRACKING'
+  );
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search.trim(), 300);
   const [querySearch, setQuerySearch] = useState('');
@@ -121,7 +137,7 @@ export const InventoryPage: React.FC = () => {
 
   const handleEditClick = (item: Inventory) => {
     setSelectedItem(item);
-    setQuantity(item.quantity.toString());
+    setQuantity(physicalQuantity(item).toString());
     setLowStockThreshold(item.low_stock_threshold.toString());
     setShowModal(true);
   };
@@ -171,6 +187,14 @@ export const InventoryPage: React.FC = () => {
         <div className="workspace-page stock-page">
           <div className="workspace-header">
             <h1>{t('inventory.title')}</h1>
+            {canTrackExpiry && (
+              <div className="workspace-actions">
+                <IonButton fill="outline" onClick={() => history.push(ROUTES.EXPIRY_ALERTS)}>
+                  <IonIcon slot="start" icon={warningOutline} />
+                  {t('expiry.title')}
+                </IonButton>
+              </div>
+            )}
           </div>
           <div className="stock-toolbar">
             <SearchBar
@@ -209,14 +233,24 @@ export const InventoryPage: React.FC = () => {
                                 {t('products.sku')}: {item.variant?.sku}
                               </p>
                             </div>
-                            <div>
-                              <p>{t('inventory.onHand')}</p>
-                              <IonBadge
-                                color={item.is_low_stock ? 'danger' : 'success'}
-                                className="text-lg"
-                              >
-                                {formatNumber(item.quantity)}
-                              </IonBadge>
+                            <div className="stock-card-quantities">
+                              <div>
+                                <p>{t('inventory.physicalOnHand')}</p>
+                                <IonBadge
+                                  color={item.is_low_stock ? 'danger' : 'success'}
+                                  className="text-lg"
+                                >
+                                  {formatNumber(physicalQuantity(item))}
+                                </IonBadge>
+                              </div>
+                              {saleableQuantity(item) !== physicalQuantity(item) && (
+                                <div>
+                                  <p>{t('inventory.saleableStock')}</p>
+                                  <IonBadge color="warning" className="text-lg">
+                                    {formatNumber(saleableQuantity(item))}
+                                  </IonBadge>
+                                </div>
+                              )}
                             </div>
                           </div>
                           <div className="stock-card-bottom">
@@ -285,7 +319,7 @@ export const InventoryPage: React.FC = () => {
                   </div>
 
                   <Input
-                    label={t('inventory.quantityRequired')}
+                    label={t('inventory.physicalQuantityRequired')}
                     type="number"
                     value={quantity}
                     onChange={setQuantity}
@@ -293,6 +327,14 @@ export const InventoryPage: React.FC = () => {
                     inputMode="decimal"
                     placeholder={t('inventory.enterQuantityPlaceholder')}
                   />
+
+                  {saleableQuantity(selectedItem) !== physicalQuantity(selectedItem) && (
+                    <p className="text-sm text-gray-600">
+                      {t('inventory.saleableAfterExpiry', {
+                        count: saleableQuantity(selectedItem),
+                      })}
+                    </p>
+                  )}
 
                   <Input
                     label={t('inventory.lowStockThresholdLabel')}

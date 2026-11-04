@@ -35,6 +35,12 @@ long-form manual guide remains in [`docs/QA_Guide.md`](docs/QA_Guide.md).
 - Owner/manager-generated EAN-13 labels for loose or store-packed product
   variants. Configurable, previewed labels print in paginated batches and scan
   through the ordinary billing flow.
+- Feature-gated expiry tracking from received purchase batches, with distinct
+  near-expiry/expired alerts on Dashboard, Inventory and Product Detail.
+- Feature-gated purchase-bill import with lazy, self-hosted image OCR, editable
+  supplier/product/batch review and an explicit non-mutating-before-confirm step.
+- Feature-gated GST & CA preparation for a selected legal firm's sales,
+  purchases, HSN and liability review, including authenticated CSV downloads.
 - Owner-only, tenant-scoped JSON backup preview and transactional restore.
 - Durable Simple Receipt or GST Tax Invoice snapshots with a sale completion
   sheet, historical receipt workspace, print, PDF, and device-share recovery.

@@ -112,6 +112,8 @@ export interface ProductVariant {
   gst_percent?: number;
   uqc_code?: UqcCode | null;
   unit_label?: string | null;
+  /** Base UQC quantity represented by one sale unit (for example 5 for a 5 kg KGS pack). */
+  uqc_quantity_factor?: number | null;
   is_active: boolean;
   product?: Product;
   inventory?: Inventory;
@@ -202,7 +204,12 @@ export type UpdateTenantDocumentSettings = Partial<
 
 export interface Inventory {
   variant_id: string;
+  /** Physical units recorded in the store, including units blocked from sale. */
+  physical_quantity?: number;
+  /** Legacy physical/on-hand field retained by the API for compatibility. */
   quantity: number;
+  /** Units currently eligible for billing after expiry and other stock rules. */
+  saleable_quantity?: number;
   low_stock_threshold: number;
   is_low_stock: boolean;
   variant?: ProductVariant;
@@ -621,6 +628,7 @@ export interface CreateProductFromBarcodeRequest {
     gstPercent?: number | null;
     uqcCode?: UqcCode | null;
     unitLabel?: string | null;
+    uqcQuantityFactor?: number | null;
   };
   inventory: {
     quantity: number;

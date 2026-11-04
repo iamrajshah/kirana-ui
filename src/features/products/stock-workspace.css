@@ -98,6 +98,15 @@
   font-size: .9rem;
 }
 
+.stock-card-quantities {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  text-align: right;
+}
+
 .stock-card-bottom {
   align-items: center;
   margin-top: auto;

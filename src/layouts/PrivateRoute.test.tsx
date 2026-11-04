@@ -87,6 +87,79 @@ describe('PrivateRoute', () => {
     expect(screen.queryByText('barcode')).toBeNull();
   });
 
+  it.each([
+    [ROUTES.EXPIRY_ALERTS, 'inventory', 'EXPIRY_TRACKING'],
+    [ROUTES.PURCHASE_IMPORT, 'purchases', 'PURCHASE_BILL_IMPORT'],
+    [ROUTES.GST_REPORTS, 'reports', 'GST_CA_REPORTS'],
+  ] as const)(
+    'blocks direct access to %s when the feature is not entitled',
+    (path, permission, feature) => {
+      useLocation.mockReturnValue({ pathname: path });
+      useAppSelector
+        .mockReturnValueOnce(true)
+        .mockReturnValueOnce({ roles: ['OWNER'] })
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce({
+          planCode: 'STARTER',
+          state: 'ACTIVE',
+          accessStateVersion: '6',
+          entitlements: [],
+          limits: { staff: 3, firms: 1 },
+          demoExpiresAt: null,
+          endsAt: null,
+          graceExpiresAt: null,
+        });
+
+      render(
+        <PrivateRoute permission={permission} commercialFeature={feature}>
+          <div>protected feature</div>
+        </PrivateRoute>
+      );
+
+      expect(screen.getByTestId('redirect').textContent).toBe(ROUTES.DASHBOARD);
+      expect(screen.queryByText('protected feature')).toBeNull();
+    }
+  );
+
+  it.each([
+    [ROUTES.EXPIRY_ALERTS, 'inventory', 'EXPIRY_TRACKING', ['EXPIRY_TRACKING', 'INVENTORY']],
+    [
+      ROUTES.PURCHASE_IMPORT,
+      'purchases',
+      'PURCHASE_BILL_IMPORT',
+      ['PURCHASE_BILL_IMPORT', 'PURCHASES', 'SUPPLIERS', 'PRODUCTS'],
+    ],
+    [ROUTES.GST_REPORTS, 'reports', 'GST_CA_REPORTS', ['GST_CA_REPORTS', 'ESSENTIAL_REPORTS']],
+  ] as const)(
+    'blocks direct access to %s when an enabled add-on is missing a dependency',
+    (path, permission, feature, entitlements) => {
+      useLocation.mockReturnValue({ pathname: path });
+      useAppSelector
+        .mockReturnValueOnce(true)
+        .mockReturnValueOnce({ roles: ['OWNER'] })
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce({
+          planCode: 'PRO',
+          state: 'ACTIVE',
+          accessStateVersion: '7',
+          entitlements,
+          limits: { staff: 3, firms: 1 },
+          demoExpiresAt: null,
+          endsAt: null,
+          graceExpiresAt: null,
+        });
+
+      render(
+        <PrivateRoute permission={permission} commercialFeature={feature}>
+          <div>dependency-protected feature</div>
+        </PrivateRoute>
+      );
+
+      expect(screen.getByTestId('redirect').textContent).toBe(ROUTES.DASHBOARD);
+      expect(screen.queryByText('dependency-protected feature')).toBeNull();
+    }
+  );
+
   it('forces a first-login owner to change the temporary password', () => {
     useAppSelector
       .mockReturnValueOnce(true)
@@ -220,6 +293,9 @@ describe('protected route configuration', () => {
       ['/invoices/:id', 'invoices'],
       [ROUTES.PURCHASE_CREATE, 'purchases'],
       ['/purchases/:id(\\d+)', 'purchases'],
+      [ROUTES.PURCHASE_IMPORT, 'purchases'],
+      [ROUTES.EXPIRY_ALERTS, 'inventory'],
+      [ROUTES.GST_REPORTS, 'reports'],
       [ROUTES.DASHBOARD, 'dashboard'],
       [ROUTES.BILLING, 'billing'],
       [ROUTES.CUSTOMERS, 'customers'],

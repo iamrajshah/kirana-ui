@@ -35,7 +35,17 @@ import { SearchBar, Input, Button, EmptyState } from '../../components';
 import { formatCurrency, debounce } from '@utils/helpers';
 import notificationService from '@core/services/notificationService';
 import { ROUTES } from '@core/constants';
+import {
+  GST_RATE_QUICK_PICKS,
+  isValidGstRate,
+  optionalHsnCodeIsSupported,
+} from '@core/constants/gstMasterData';
 import { reconcilePurchaseFirmId, resolvePurchaseFirmId } from './purchaseFirmSelection';
+import { useAppSelector } from '@core/hooks';
+import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice';
+import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
+import { addCalendarDays, canReceiveExpiryDate, kolkataCalendarDate } from './purchaseExpiryDates';
+import { calculatePurchaseTaxTotals } from './purchaseImportCalculation';
 import './CreatePurchasePage.css';
 
 interface CartItem {
@@ -47,6 +57,11 @@ interface CartItem {
   purchase_mode: 'UNIT' | 'PACK';
   purchase_unit_label: string;
   units_per_purchase_unit: number;
+  batch_number: string;
+  manufacturing_date: string;
+  expiry_date: string;
+  gst_rate: number;
+  hsn_code: string;
 }
 
 const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
@@ -54,6 +69,13 @@ const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100)
 const CreatePurchasePage: React.FC = () => {
   const { t } = useTranslation();
   const history = useHistory();
+  const currentUser = useAppSelector(selectCurrentUser);
+  const commercialAccess = useAppSelector(selectCommercialAccess);
+  const canTrackExpiry = canUseCommercialFeature(
+    currentUser?.roles ?? [],
+    commercialAccess,
+    'EXPIRY_TRACKING'
+  );
 
   const [searchVariants, { data: variantsData, isLoading: searchLoading }] =
     useLazySearchVariantsQuery();
@@ -72,9 +94,10 @@ const CreatePurchasePage: React.FC = () => {
   const [selectedFirmId, setSelectedFirmId] = useState('');
   const [firmWasOverridden, setFirmWasOverridden] = useState(false);
   const [invoiceNumber, setInvoiceNumber] = useState('');
-  const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
+  const [invoiceDate, setInvoiceDate] = useState(kolkataCalendarDate());
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMode, setPaymentMode] = useState('CASH');
+  const [pricesIncludeTax, setPricesIncludeTax] = useState(true);
   const [showSupplierModal, setShowSupplierModal] = useState(false);
   const [supplierSearch, setSupplierSearch] = useState('');
 
@@ -92,6 +115,7 @@ const CreatePurchasePage: React.FC = () => {
     const term = supplierSearch.trim().toLowerCase();
     return !term || supplier.name.toLowerCase().includes(term) || supplier.phone?.includes(term);
   });
+  const selectedSupplier = suppliers.find((supplier) => supplier.id === selectedSupplierId);
 
   // Debounced search
   const handleSearch = debounce((term: string) => {
@@ -116,6 +140,11 @@ const CreatePurchasePage: React.FC = () => {
           purchase_mode: 'UNIT',
           purchase_unit_label: 'Box',
           units_per_purchase_unit: 20,
+          batch_number: '',
+          manufacturing_date: '',
+          expiry_date: '',
+          gst_rate: Number(variant.gst_percent ?? 0),
+          hsn_code: variant.hsn_code ?? '',
         },
       ]);
     }
@@ -132,6 +161,26 @@ const CreatePurchasePage: React.FC = () => {
 
   const updatePrice = (variantId: string, unit_price: number) => {
     setCart(cart.map((item) => (item.variant_id === variantId ? { ...item, unit_price } : item)));
+  };
+
+  const updateTaxField = (
+    variantId: string,
+    field: 'gst_rate' | 'hsn_code',
+    value: number | string
+  ) => {
+    setCart(
+      cart.map((item) => (item.variant_id === variantId ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const updateBatchField = (
+    variantId: string,
+    field: 'batch_number' | 'manufacturing_date' | 'expiry_date',
+    value: string
+  ) => {
+    setCart(
+      cart.map((item) => (item.variant_id === variantId ? { ...item, [field]: value } : item))
+    );
   };
 
   const updatePurchaseUnitLabel = (variantId: string, purchaseUnitLabel: string) => {
@@ -181,14 +230,18 @@ const CreatePurchasePage: React.FC = () => {
     setCart(cart.filter((item) => item.variant_id !== variantId));
   };
 
-  const calculateSubtotal = () => {
-    return cart.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
-  };
+  const calculatedTotals = calculatePurchaseTaxTotals(
+    cart.map((item) => ({
+      quantity: item.quantity,
+      unitPrice: item.unit_price,
+      gstRate: item.gst_rate,
+    })),
+    pricesIncludeTax
+  );
 
   const calculatePending = () => {
-    const subtotal = calculateSubtotal();
     const paid = parseFloat(paymentAmount) || 0;
-    return subtotal - paid;
+    return calculatedTotals.total - paid;
   };
 
   const handleCreatePurchase = async () => {
@@ -225,6 +278,25 @@ const CreatePurchasePage: React.FC = () => {
       return;
     }
 
+    const invalidDateItem = cart.find(
+      (item) =>
+        item.expiry_date && item.manufacturing_date && item.manufacturing_date > item.expiry_date
+    );
+    if (invalidDateItem) {
+      notificationService.warning(
+        t('expiry.manufacturingAfterExpiry', { product: invalidDateItem.product_name })
+      );
+      return;
+    }
+
+    const expiredItem = cart.find((item) => !canReceiveExpiryDate(item.expiry_date));
+    if (expiredItem) {
+      notificationService.warning(
+        t('expiry.cannotReceiveExpired', { product: expiredItem.product_name })
+      );
+      return;
+    }
+
     try {
       const items = cart.map((item) => ({
         variant_id: parseInt(item.variant_id),
@@ -236,6 +308,15 @@ const CreatePurchasePage: React.FC = () => {
               purchase_unit_label: item.purchase_unit_label.trim(),
             }
           : {}),
+        ...(canTrackExpiry && item.batch_number.trim()
+          ? { batch_number: item.batch_number.trim() }
+          : {}),
+        ...(canTrackExpiry && item.manufacturing_date
+          ? { manufacturing_date: item.manufacturing_date }
+          : {}),
+        ...(canTrackExpiry && item.expiry_date ? { expiry_date: item.expiry_date } : {}),
+        gst_rate: item.gst_rate,
+        ...(item.hsn_code.trim() ? { hsn_code: item.hsn_code.trim() } : {}),
       }));
 
       await createPurchase({
@@ -246,6 +327,10 @@ const CreatePurchasePage: React.FC = () => {
         items,
         payment_amount: parseFloat(paymentAmount) || 0,
         payment_mode: paymentMode as 'CASH' | 'UPI' | 'CARD' | 'BANK',
+        prices_include_tax: pricesIncludeTax,
+        ...(selectedSupplier?.state_code
+          ? { place_of_supply_code: selectedSupplier.state_code }
+          : {}),
       }).unwrap();
 
       notificationService.success(t('purchases.purchaseCreated'));
@@ -256,9 +341,10 @@ const CreatePurchasePage: React.FC = () => {
       setSelectedFirmId('');
       setFirmWasOverridden(false);
       setInvoiceNumber('');
-      setInvoiceDate(new Date().toISOString().split('T')[0]);
+      setInvoiceDate(kolkataCalendarDate());
       setPaymentAmount('');
       setPaymentMode('CASH');
+      setPricesIncludeTax(true);
       setSearchTerm('');
       setSupplierSearch('');
 
@@ -274,14 +360,24 @@ const CreatePurchasePage: React.FC = () => {
       item.purchase_mode === 'UNIT' ||
       (item.purchase_unit_label.trim() && item.units_per_purchase_unit >= 2)
   );
+  const hasValidTaxFields = cart.every(
+    (item) =>
+      Number.isInteger(item.quantity) &&
+      item.quantity > 0 &&
+      item.unit_price > 0 &&
+      isValidGstRate(item.gst_rate) &&
+      optionalHsnCodeIsSupported(item.hsn_code)
+  );
   const isFormValid =
     selectedSupplierId &&
     selectedFirmId &&
     invoiceNumber.trim() &&
     cart.length > 0 &&
-    hasValidPurchaseUnits;
+    hasValidPurchaseUnits &&
+    hasValidTaxFields;
 
-  const subtotal = calculateSubtotal();
+  const subtotal = calculatedTotals.subtotal;
+  const total = calculatedTotals.total;
   const pending = calculatePending();
 
   return (
@@ -306,6 +402,52 @@ const CreatePurchasePage: React.FC = () => {
               placeholder={t('purchases.enterSupplierInvoiceNumber')}
               required
             />
+
+            {selectedSupplier && (
+              <section
+                className="purchase-place-of-supply"
+                aria-label={t('purchases.placeOfSupply')}
+              >
+                <strong>{t('purchases.placeOfSupply')}</strong>
+                {selectedSupplier.state_code ? (
+                  <p>
+                    {selectedSupplier.state || t('common.notAvailable')} (
+                    {selectedSupplier.state_code})
+                    {selectedSupplier.gstin
+                      ? ` · ${t('suppliers.gstin')}: ${selectedSupplier.gstin}`
+                      : ''}
+                  </p>
+                ) : (
+                  <p className="purchase-tax-warning" role="status">
+                    {t('purchases.incompleteSupplierTaxIdentity')}
+                  </p>
+                )}
+              </section>
+            )}
+
+            <fieldset className="purchase-tax-treatment">
+              <legend>{t('purchases.taxTreatment')}</legend>
+              <label>
+                <input
+                  type="radio"
+                  name="purchase-tax-treatment"
+                  value="INCLUSIVE"
+                  checked={pricesIncludeTax}
+                  onChange={() => setPricesIncludeTax(true)}
+                />
+                {t('purchases.pricesIncludeTax')}
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="purchase-tax-treatment"
+                  value="EXCLUSIVE"
+                  checked={!pricesIncludeTax}
+                  onChange={() => setPricesIncludeTax(false)}
+                />
+                {t('purchases.pricesExcludeTax')}
+              </label>
+            </fieldset>
 
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
@@ -468,6 +610,108 @@ const CreatePurchasePage: React.FC = () => {
                         )}
                       </div>
 
+                      {canTrackExpiry && (
+                        <fieldset className="purchase-batch-editor">
+                          <legend>{t('expiry.batchDetails')}</legend>
+                          <label>
+                            <span>{t('expiry.batch')}</span>
+                            <input
+                              value={item.batch_number}
+                              maxLength={80}
+                              onChange={(event) =>
+                                updateBatchField(
+                                  item.variant_id,
+                                  'batch_number',
+                                  event.target.value
+                                )
+                              }
+                              placeholder={t('expiry.batchPlaceholder')}
+                            />
+                          </label>
+                          <label>
+                            <span>{t('expiry.manufacturingDate')}</span>
+                            <input
+                              type="date"
+                              value={item.manufacturing_date}
+                              max={item.expiry_date || undefined}
+                              onChange={(event) =>
+                                updateBatchField(
+                                  item.variant_id,
+                                  'manufacturing_date',
+                                  event.target.value
+                                )
+                              }
+                            />
+                          </label>
+                          <label>
+                            <span>{t('expiry.expiryDate')}</span>
+                            <input
+                              type="date"
+                              value={item.expiry_date}
+                              min={
+                                item.manufacturing_date &&
+                                item.manufacturing_date > addCalendarDays(kolkataCalendarDate(), 1)
+                                  ? item.manufacturing_date
+                                  : addCalendarDays(kolkataCalendarDate(), 1)
+                              }
+                              onChange={(event) =>
+                                updateBatchField(item.variant_id, 'expiry_date', event.target.value)
+                              }
+                            />
+                          </label>
+                          {item.expiry_date &&
+                            item.expiry_date <= addCalendarDays(kolkataCalendarDate(), 30) && (
+                              <p className="purchase-batch-warning" role="status">
+                                {t('expiry.nearExpiryPurchaseWarning')}
+                              </p>
+                            )}
+                        </fieldset>
+                      )}
+
+                      <div className="purchase-tax-line-editor">
+                        <label>
+                          <span>{t('purchases.gstRate')}</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            list={`gst-rate-options-${item.variant_id}`}
+                            aria-label={`${item.product_name} ${t('purchases.gstRate')}`}
+                            value={item.gst_rate}
+                            onChange={(event) =>
+                              updateTaxField(
+                                item.variant_id,
+                                'gst_rate',
+                                Number(event.target.value)
+                              )
+                            }
+                          />
+                          <datalist id={`gst-rate-options-${item.variant_id}`}>
+                            {GST_RATE_QUICK_PICKS.map((rate) => (
+                              <option key={rate} value={rate} />
+                            ))}
+                          </datalist>
+                        </label>
+                        <label>
+                          <span>{t('purchases.hsnCode')}</span>
+                          <input
+                            aria-label={`${item.product_name} ${t('purchases.hsnCode')}`}
+                            value={item.hsn_code}
+                            inputMode="numeric"
+                            maxLength={8}
+                            onChange={(event) =>
+                              updateTaxField(
+                                item.variant_id,
+                                'hsn_code',
+                                event.target.value.replace(/\D/g, '').slice(0, 8)
+                              )
+                            }
+                            placeholder={t('purchases.hsnPlaceholder')}
+                          />
+                        </label>
+                      </div>
+
                       <div
                         style={{
                           display: 'flex',
@@ -530,7 +774,19 @@ const CreatePurchasePage: React.FC = () => {
                       </div>
 
                       <p style={{ marginTop: '8px', color: 'var(--ion-color-primary)' }}>
-                        {t('purchases.lineTotal')} {formatCurrency(item.quantity * item.unit_price)}
+                        {t('purchases.lineTotal')}{' '}
+                        {formatCurrency(
+                          calculatePurchaseTaxTotals(
+                            [
+                              {
+                                quantity: item.quantity,
+                                unitPrice: item.unit_price,
+                                gstRate: item.gst_rate,
+                              },
+                            ],
+                            pricesIncludeTax
+                          ).total
+                        )}
                       </p>
                     </IonLabel>
 
@@ -562,6 +818,21 @@ const CreatePurchasePage: React.FC = () => {
                 <IonText>
                   <h2 style={{ margin: 0 }}>{formatCurrency(subtotal)}</h2>
                 </IonText>
+                <IonText color="medium">
+                  <p>
+                    {t('purchases.taxAmount')}: {formatCurrency(calculatedTotals.tax)}
+                  </p>
+                </IonText>
+                <IonText>
+                  <h2>
+                    {t('purchases.totalAmount')}: {formatCurrency(total)}
+                  </h2>
+                </IonText>
+                {!selectedSupplier?.state_code && (
+                  <p className="purchase-tax-warning" role="status">
+                    {t('purchases.taxJurisdictionIncomplete')}
+                  </p>
+                )}
               </div>
 
               <div style={{ marginBottom: '16px' }}>
@@ -577,7 +848,7 @@ const CreatePurchasePage: React.FC = () => {
                   <IonButton
                     size="small"
                     fill="outline"
-                    onClick={() => setPaymentAmount(subtotal.toString())}
+                    onClick={() => setPaymentAmount(total.toString())}
                   >
                     {t('purchases.payFull')}
                   </IonButton>

@@ -12,6 +12,9 @@ import { useGetDashboardStatsQuery } from '@core/api/dashboardApi';
 import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice';
 import { useAppSelector } from '@core/hooks';
 import { getNavigationItems } from '@core/navigation/navigation';
+import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
+import { useGetExpiryAlertsQuery } from '@core/api/expiryApi';
+import { ROUTES } from '@core/constants';
 import type {
   CustomerCreditDecision,
   DashboardDecisionGroup,
@@ -96,12 +99,25 @@ export const DashboardPage: React.FC = () => {
   const history = useHistory();
   const user = useAppSelector(selectCurrentUser);
   const commercialAccess = useAppSelector(selectCommercialAccess);
+  const canTrackExpiry = canUseCommercialFeature(
+    user?.roles ?? [],
+    commercialAccess,
+    'EXPIRY_TRACKING'
+  );
   const { data, isLoading, isError, refetch } = useGetDashboardStatsQuery(undefined, {
     refetchOnMountOrArgChange: true,
     refetchOnFocus: true,
     refetchOnReconnect: true,
   });
   const stats = data?.data;
+  const {
+    data: expiryResponse,
+    isError: expiryError,
+    refetch: refetchExpiry,
+  } = useGetExpiryAlertsQuery(
+    { windowDays: 30 },
+    { skip: !canTrackExpiry, refetchOnFocus: true, refetchOnReconnect: true }
+  );
   const shortcuts = getNavigationItems(user?.roles || [], commercialAccess).filter((item) =>
     shortcutIds.has(item.id)
   );
@@ -113,7 +129,7 @@ export const DashboardPage: React.FC = () => {
 
   const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
     try {
-      await refetch();
+      await Promise.all([refetch(), ...(canTrackExpiry ? [refetchExpiry()] : [])]);
     } finally {
       event.detail.complete();
     }
@@ -528,6 +544,31 @@ export const DashboardPage: React.FC = () => {
               {stats.insights?.scope === 'OWNER' && renderOwnerInsights()}
               {stats.insights?.scope === 'MANAGER' && renderManagerInsights()}
               {stats.insights?.scope === 'CASHIER' && renderCashierInsights()}
+              {canTrackExpiry && expiryResponse?.data && (
+                <button
+                  type="button"
+                  className="dashboard-expiry-alert"
+                  onClick={() => history.push(ROUTES.EXPIRY_ALERTS)}
+                >
+                  <span>
+                    <strong>{t('expiry.dashboardTitle')}</strong>
+                    <small>{t('expiry.dashboardHint')}</small>
+                  </span>
+                  <span>
+                    <strong>{formatNumber(expiryResponse.data.summary.expiredBatches)}</strong>
+                    <small>{t('expiry.expired')}</small>
+                  </span>
+                  <span>
+                    <strong>{formatNumber(expiryResponse.data.summary.nearExpiryBatches)}</strong>
+                    <small>{t('expiry.nearExpiry')}</small>
+                  </span>
+                </button>
+              )}
+              {canTrackExpiry && expiryError && (
+                <div className="dashboard-expiry-unavailable" role="status">
+                  {t('expiry.dashboardUnavailable')}
+                </div>
+              )}
               {canSeeDecisionInbox && (
                 <section
                   className="dashboard-decision-inbox"

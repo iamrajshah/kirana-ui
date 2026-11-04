@@ -39,7 +39,14 @@ import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice'
 import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
 import { hasPermission } from '@core/permissions/permissions';
 import { APP_NAME } from '@core/constants';
+import {
+  optionalGstRateIsValid,
+  optionalHsnCodeIsSupported,
+} from '@core/constants/gstMasterData';
 import { ProductBarcodeLabelModal } from './ProductBarcodeLabelModal';
+import { useGetExpiryAlertsQuery } from '@core/api/expiryApi';
+import { parseOptionalUqcQuantityFactor } from './uqcQuantityFactor';
+import './ProductDetailPage.css';
 
 export const ProductDetailPage: React.FC = () => {
   const { t } = useTranslation();
@@ -53,11 +60,20 @@ export const ProductDetailPage: React.FC = () => {
   const canManagePurchaseCost =
     hasPermission(currentUser?.roles ?? [], 'PRODUCT_UPDATE') &&
     canUseCommercialFeature(currentUser?.roles ?? [], commercialAccess, 'LIVE_MARGIN_PREVIEW');
+  const canTrackExpiry = canUseCommercialFeature(
+    currentUser?.roles ?? [],
+    commercialAccess,
+    'EXPIRY_TRACKING'
+  );
   const { id } = useParams<{ id: string }>();
   const { data, isLoading, error } = useGetProductByIdQuery(id);
   const { data: purchaseCostsData } = useGetProductPurchaseCostsQuery(id, {
     skip: !canManagePurchaseCost,
   });
+  const { data: expiryResponse } = useGetExpiryAlertsQuery(
+    { windowDays: 90 },
+    { skip: !canTrackExpiry }
+  );
   const { data: categoriesData } = useGetCategoriesQuery();
   const [updateProduct, { isLoading: updating }] = useUpdateProductMutation();
   const [updateVariant, { isLoading: updatingVariant }] = useUpdateVariantMutation();
@@ -81,6 +97,7 @@ export const ProductDetailPage: React.FC = () => {
   const [editGstPercent, setEditGstPercent] = useState('');
   const [editUqcCode, setEditUqcCode] = useState('');
   const [editUnitLabel, setEditUnitLabel] = useState('');
+  const [editUqcQuantityFactor, setEditUqcQuantityFactor] = useState('');
   const [barcodeVariant, setBarcodeVariant] = useState<ProductVariant | null>(null);
   const [costVariant, setCostVariant] = useState<ProductVariant | null>(null);
   const [purchaseCost, setPurchaseCost] = useState('');
@@ -121,6 +138,7 @@ export const ProductDetailPage: React.FC = () => {
     setEditGstPercent(variant.gst_percent?.toString() || '');
     setEditUqcCode(variant.uqc_code || '');
     setEditUnitLabel(variant.unit_label || '');
+    setEditUqcQuantityFactor(variant.uqc_quantity_factor?.toString() || '');
     setShowVariantEditModal(true);
   };
 
@@ -139,6 +157,18 @@ export const ProductDetailPage: React.FC = () => {
       setShowError(true);
       return;
     }
+    const parsedUqcQuantityFactor = parseOptionalUqcQuantityFactor(editUqcQuantityFactor);
+    if (!parsedUqcQuantityFactor.valid) {
+      setErrorMessage(t('taxFields.uqcQuantityFactorInvalid'));
+      setShowError(true);
+      return;
+    }
+    const parsedGstPercent = editGstPercent ? Number(editGstPercent) : null;
+    if (!optionalGstRateIsValid(parsedGstPercent)) {
+      setErrorMessage(t('taxFields.unsupportedGstRate'));
+      setShowError(true);
+      return;
+    }
 
     try {
       await updateVariant({
@@ -146,9 +176,10 @@ export const ProductDetailPage: React.FC = () => {
         data: {
           selling_price: sellingPrice,
           mrp_price: mrpPrice,
-          gst_percent: editGstPercent ? parseFloat(editGstPercent) : null,
+          gst_percent: parsedGstPercent,
           uqc_code: (editUqcCode as UqcCode) || null,
           unit_label: editUnitLabel.trim() || null,
+          uqc_quantity_factor: parsedUqcQuantityFactor.value,
         },
       }).unwrap();
 
@@ -158,6 +189,7 @@ export const ProductDetailPage: React.FC = () => {
       setEditingVariant(null);
       setEditSellingPrice('');
       setEditMrpPrice('');
+      setEditUqcQuantityFactor('');
     } catch (err) {
       const error = err as { data?: { message?: string } };
       setErrorMessage(error?.data?.message || t('products.updateFailed'));
@@ -166,6 +198,11 @@ export const ProductDetailPage: React.FC = () => {
   };
 
   const handleUpdateProduct = async () => {
+    if (!optionalHsnCodeIsSupported(editHsnCode)) {
+      setErrorMessage(t('taxFields.hsnCodeInvalid'));
+      setShowError(true);
+      return;
+    }
     try {
       await updateProduct({
         id,
@@ -264,6 +301,9 @@ export const ProductDetailPage: React.FC = () => {
   const purchaseCostsByVariant = new Map(
     purchaseCostsData?.data.map((cost) => [cost.variant_id, cost]) ?? []
   );
+  const productExpiryBatches = (expiryResponse?.data.batches ?? []).filter(
+    (batch) => batch.productId === id
+  );
 
   return (
     <IonPage>
@@ -274,7 +314,7 @@ export const ProductDetailPage: React.FC = () => {
           </IonButtons>
           <IonTitle>{product.name}</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handleEditClick}>
+            <IonButton onClick={handleEditClick} aria-label={t('products.editProduct')}>
               <IonIcon slot="icon-only" icon={pencil} />
             </IonButton>
           </IonButtons>
@@ -315,6 +355,36 @@ export const ProductDetailPage: React.FC = () => {
               </IonList>
             </IonCardContent>
           </IonCard>
+
+          {canTrackExpiry && productExpiryBatches.length > 0 && (
+            <IonCard className="product-expiry-card">
+              <IonCardHeader>
+                <IonCardTitle>{t('expiry.productAlerts')}</IonCardTitle>
+              </IonCardHeader>
+              <IonCardContent>
+                <div className="product-expiry-list">
+                  {productExpiryBatches.map((batch) => (
+                    <article key={batch.id}>
+                      <div>
+                        <strong>{batch.batchNumber || t('expiry.notRecorded')}</strong>
+                        <span>
+                          {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(
+                            new Date(batch.expiryDate)
+                          )}
+                        </span>
+                      </div>
+                      <IonBadge color={batch.state === 'EXPIRED' ? 'danger' : 'warning'}>
+                        {batch.state === 'EXPIRED'
+                          ? t('expiry.expired')
+                          : t('expiry.daysRemaining', { count: batch.daysToExpiry })}
+                      </IonBadge>
+                      <span>{t('expiry.unitsCount', { count: batch.quantity })}</span>
+                    </article>
+                  ))}
+                </div>
+              </IonCardContent>
+            </IonCard>
+          )}
 
           {variants && variants.length > 0 && (
             <div style={{ marginTop: '16px' }}>
@@ -445,6 +515,14 @@ export const ProductDetailPage: React.FC = () => {
                             <IonLabel>{t('taxFields.unitOfQuantity')}</IonLabel>
                             <IonLabel slot="end">
                               {[variant.uqc_code, variant.unit_label].filter(Boolean).join(' · ')}
+                            </IonLabel>
+                          </IonItem>
+                        )}
+                        {variant.uqc_quantity_factor != null && (
+                          <IonItem lines="none">
+                            <IonLabel>
+                              <p>{t('taxFields.uqcQuantityFactor')}</p>
+                              <h3>{variant.uqc_quantity_factor}</h3>
                             </IonLabel>
                           </IonItem>
                         )}
@@ -614,6 +692,7 @@ export const ProductDetailPage: React.FC = () => {
               setEditingVariant(null);
               setEditSellingPrice('');
               setEditMrpPrice('');
+              setEditUqcQuantityFactor('');
             }}
           >
             <IonHeader>
@@ -681,6 +760,10 @@ export const ProductDetailPage: React.FC = () => {
                 <Input
                   label={t('products.gstLabel')}
                   type="number"
+                  min={0}
+                  max={100}
+                  step="0.01"
+                  inputMode="decimal"
                   value={editGstPercent}
                   onChange={setEditGstPercent}
                 />
@@ -716,6 +799,23 @@ export const ProductDetailPage: React.FC = () => {
                   onChange={setEditUnitLabel}
                   maxLength={30}
                 />
+                <Input
+                  label={t('taxFields.uqcQuantityFactor')}
+                  value={editUqcQuantityFactor}
+                  onChange={setEditUqcQuantityFactor}
+                  type="number"
+                  inputMode="decimal"
+                  min={0.001}
+                  max={1_000_000}
+                  step="0.001"
+                  error={
+                    editUqcQuantityFactor &&
+                    !parseOptionalUqcQuantityFactor(editUqcQuantityFactor).valid
+                      ? t('taxFields.uqcQuantityFactorInvalid')
+                      : undefined
+                  }
+                />
+                <p className="product-tax-field-hint">{t('taxFields.uqcQuantityFactorHint')}</p>
 
                 <div style={{ marginTop: '24px' }}>
                   <Button

@@ -34,14 +34,15 @@ describe('production bundle verification', () => {
     await expect(verifyProductionBundle(directory)).rejects.toThrow('approved API address');
   });
 
-  it.each(['http://localhost:3000/api/v1', 'https://127.0.0.1:3000/api/v1', 'http://[::1]:3000/api']) (
-    'rejects local API reference %s',
-    async (address) => {
-      const directory = await mkdtemp(join(tmpdir(), 'kirana-bundle-'));
-      await writeFile(join(directory, 'index.html'), `<script>window.api='${address}'</script>`);
-      await expect(verifyProductionBundle(directory)).rejects.toThrow('local API address');
-    }
-  );
+  it.each([
+    'http://localhost:3000/api/v1',
+    'https://127.0.0.1:3000/api/v1',
+    'http://[::1]:3000/api',
+  ])('rejects local API reference %s', async (address) => {
+    const directory = await mkdtemp(join(tmpdir(), 'kirana-bundle-'));
+    await writeFile(join(directory, 'index.html'), `<script>window.api='${address}'</script>`);
+    await expect(verifyProductionBundle(directory)).rejects.toThrow('local API address');
+  });
 
   it('deduplicates direct scripts, stylesheets and module preloads', () => {
     expect(
@@ -73,6 +74,25 @@ describe('production bundle verification', () => {
     });
   });
 
+  it('accounts self-hosted OCR files separately from lazy application chunks', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'kirana-bundle-'));
+    await mkdir(join(directory, 'assets'));
+    await mkdir(join(directory, 'ocr', 'core'), { recursive: true });
+    await writeFile(
+      join(directory, 'index.html'),
+      '<script type="module" src="/assets/app.js"></script>'
+    );
+    await writeFile(join(directory, 'assets', 'app.js'), 'console.log("entry")');
+    const ocrCore = 'emscript-core'.repeat(1000);
+    await writeFile(join(directory, 'ocr', 'core', 'tesseract-core-lstm.wasm.js'), ocrCore);
+
+    await expect(measureProductionBundle(directory)).resolves.toMatchObject({
+      largestLazyJavaScriptGzipBytes: 0,
+      largestLazyJavaScriptFile: null,
+      ocrAssetsBytes: Buffer.byteLength(ocrCore),
+    });
+  });
+
   it('rejects a deterministic entry asset that exceeds its gzip budget', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'kirana-bundle-'));
     await mkdir(join(directory, 'assets'));
@@ -82,7 +102,9 @@ describe('production bundle verification', () => {
     );
     await writeFile(
       join(directory, 'assets', 'app.js'),
-      Array.from({ length: 1024 }, (_, index) => String.fromCharCode(32 + ((index * 73) % 90))).join('')
+      Array.from({ length: 1024 }, (_, index) =>
+        String.fromCharCode(32 + ((index * 73) % 90))
+      ).join('')
     );
 
     await expect(

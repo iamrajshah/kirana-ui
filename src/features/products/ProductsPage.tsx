@@ -25,14 +25,31 @@ import {
 } from '@ionic/react';
 import { add, close, barcodeOutline } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
-import { useGetProductsQuery, useCreateProductMutation, useCreateVariantMutation } from '@core/api/productApi';
+import {
+  useGetProductsQuery,
+  useCreateProductMutation,
+  useCreateVariantMutation,
+} from '@core/api/productApi';
 import { useGetCategoriesQuery } from '@core/api/categoryApi';
-import { SearchBar, Loading, EmptyState, Input, Select, Button, AddCategoryModal } from '@components';
+import {
+  SearchBar,
+  Loading,
+  EmptyState,
+  Input,
+  Select,
+  Button,
+  AddCategoryModal,
+} from '@components';
 import { formatCurrency } from '@utils/helpers';
 import { ROUTES } from '@core/constants';
+import {
+  optionalGstRateIsValid,
+  optionalHsnCodeIsSupported,
+} from '@core/constants/gstMasterData';
 import { filterProducts } from '@utils/localSearch';
 import { useDebouncedValue } from '@hooks/useDebouncedValue';
 import { useRequestSettledInfiniteScroll } from '@hooks/useRequestSettledInfiniteScroll';
+import { parseOptionalUqcQuantityFactor } from './uqcQuantityFactor';
 import './stock-workspace.css';
 
 const PAGE_SIZE = 50;
@@ -93,7 +110,7 @@ export const ProductsPage: React.FC = () => {
       if (skip === 0) {
         setAllProducts(pageData.data);
       } else {
-        setAllProducts(prev => {
+        setAllProducts((prev) => {
           const existingIds = new Set(prev.map((p) => p.id));
           const newProducts = pageData.data.filter((p) => !existingIds.has(p.id));
           return [...prev, ...newProducts];
@@ -121,17 +138,15 @@ export const ProductsPage: React.FC = () => {
   const [hsnCode, setHsnCode] = useState('');
   const [uqcCode, setUqcCode] = useState('');
   const [unitLabel, setUnitLabel] = useState('');
+  const [uqcQuantityFactor, setUqcQuantityFactor] = useState('');
 
   const hasMore = allProducts.length < totalProducts;
 
-  const visibleProducts = useMemo(
-    () => filterProducts(allProducts, search),
-    [allProducts, search]
-  );
+  const visibleProducts = useMemo(() => filterProducts(allProducts, search), [allProducts, search]);
 
   const groupedProducts = useMemo(() => {
     const groups: Record<string, Product[]> = {};
-    
+
     visibleProducts.forEach((product) => {
       const categoryName = product.category?.name || t('products.uncategorized');
       if (!groups[categoryName]) {
@@ -139,7 +154,7 @@ export const ProductsPage: React.FC = () => {
       }
       groups[categoryName].push(product);
     });
-    
+
     return groups;
   }, [visibleProducts, t]);
 
@@ -167,6 +182,7 @@ export const ProductsPage: React.FC = () => {
     setHsnCode('');
     setUqcCode('');
     setUnitLabel('');
+    setUqcQuantityFactor('');
   };
 
   const handleCreateProduct = async () => {
@@ -187,6 +203,23 @@ export const ProductsPage: React.FC = () => {
         setShowError(true);
         return;
       }
+      const parsedUqcQuantityFactor = parseOptionalUqcQuantityFactor(uqcQuantityFactor);
+      if (!parsedUqcQuantityFactor.valid) {
+        setErrorMessage(t('taxFields.uqcQuantityFactorInvalid'));
+        setShowError(true);
+        return;
+      }
+      const parsedGstPercent = gstPercent ? Number(gstPercent) : null;
+      if (!optionalGstRateIsValid(parsedGstPercent)) {
+        setErrorMessage(t('taxFields.unsupportedGstRate'));
+        setShowError(true);
+        return;
+      }
+      if (!optionalHsnCodeIsSupported(hsnCode)) {
+        setErrorMessage(t('taxFields.hsnCodeInvalid'));
+        setShowError(true);
+        return;
+      }
 
       const productResult = await createProduct({
         name: productName,
@@ -204,9 +237,10 @@ export const ProductsPage: React.FC = () => {
           price: parseFloat(price),
           selling_price: parseFloat(price),
           mrp_price: mrpPrice ? parseFloat(mrpPrice) : null,
-          gst_percent: gstPercent ? parseFloat(gstPercent) : null,
+          gst_percent: parsedGstPercent,
           uqc_code: (uqcCode as UqcCode) || null,
           unit_label: unitLabel.trim() || null,
+          uqc_quantity_factor: parsedUqcQuantityFactor.value,
           sku: sku || null,
         },
       }).unwrap();
@@ -275,13 +309,16 @@ export const ProductsPage: React.FC = () => {
                 <section key={categoryName} className="stock-category">
                   <h2 className="stock-category-heading">
                     {categoryName}
-                    <IonBadge color="primary">
-                      {groupedProducts[categoryName].length}
-                    </IonBadge>
+                    <IonBadge color="primary">{groupedProducts[categoryName].length}</IonBadge>
                   </h2>
                   <div className="stock-card-grid">
                     {groupedProducts[categoryName].map((product) => (
-                      <button key={product.id} type="button" className="workspace-record stock-card stock-card-button" onClick={() => handleProductClick(product.id)}>
+                      <button
+                        key={product.id}
+                        type="button"
+                        className="workspace-record stock-card stock-card-button"
+                        onClick={() => handleProductClick(product.id)}
+                      >
                         <div className="stock-card-top">
                           <h2>{product.name}</h2>
                           <IonBadge color={product.is_active ? 'success' : 'medium'}>
@@ -292,7 +329,9 @@ export const ProductsPage: React.FC = () => {
                           <div className="stock-variant-list">
                             {product.variants.map((variant) => (
                               <div key={variant.id} className="stock-variant">
-                                <span>{t('products.sku')}: {variant.sku}</span>
+                                <span>
+                                  {t('products.sku')}: {variant.sku}
+                                </span>
                                 <strong>{formatCurrency(variant.price)}</strong>
                               </div>
                             ))}
@@ -303,7 +342,7 @@ export const ProductsPage: React.FC = () => {
                   </div>
                 </section>
               ))}
-              
+
               {isError && allProducts.length > 0 && (
                 <div className="workspace-state" role="alert">
                   <p>{t('common.loadMoreError')}</p>
@@ -324,31 +363,34 @@ export const ProductsPage: React.FC = () => {
         </div>
 
         <IonFab vertical="bottom" horizontal="end" slot="fixed" className="stock-fab">
-          <IonFabButton aria-label={t('products.addProduct')} onClick={() => {
-            present({
-              header: t('products.addProduct'),
-              buttons: [
-                {
-                  text: t('products.scanBarcode'),
-                  icon: barcodeOutline,
-                  handler: () => {
-                    history.push(ROUTES.PRODUCT_BARCODE);
+          <IonFabButton
+            aria-label={t('products.addProduct')}
+            onClick={() => {
+              present({
+                header: t('products.addProduct'),
+                buttons: [
+                  {
+                    text: t('products.scanBarcode'),
+                    icon: barcodeOutline,
+                    handler: () => {
+                      history.push(ROUTES.PRODUCT_BARCODE);
+                    },
                   },
-                },
-                {
-                  text: t('products.addManually'),
-                  icon: add,
-                  handler: () => {
-                    setShowModal(true);
+                  {
+                    text: t('products.addManually'),
+                    icon: add,
+                    handler: () => {
+                      setShowModal(true);
+                    },
                   },
-                },
-                {
-                  text: t('common.cancel'),
-                  role: 'cancel',
-                },
-              ],
-            });
-          }}>
+                  {
+                    text: t('common.cancel'),
+                    role: 'cancel',
+                  },
+                ],
+              });
+            }}
+          >
             <IonIcon icon={add} />
           </IonFabButton>
         </IonFab>
@@ -419,10 +461,10 @@ export const ProductsPage: React.FC = () => {
                   ]}
                   placeholder={t('products.selectCategoryPlaceholder2')}
                 />
-                
-                <IonButton 
-                  expand="block" 
-                  fill="outline" 
+
+                <IonButton
+                  expand="block"
+                  fill="outline"
                   size="small"
                   onClick={() => setShowCategoryModal(true)}
                   style={{ marginTop: '8px' }}
@@ -431,10 +473,29 @@ export const ProductsPage: React.FC = () => {
                   {t('products.addNewCategory')}
                 </IonButton>
 
-                <h3 style={{ fontSize: '16px', fontWeight: '600', marginTop: '24px', marginBottom: '8px' }}>{t('products.variantDetailsHeading')}</h3>
+                <h3
+                  style={{
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    marginTop: '24px',
+                    marginBottom: '8px',
+                  }}
+                >
+                  {t('products.variantDetailsHeading')}
+                </h3>
 
-                <Input label={t('products.brandLabel')} value={brand} onChange={setBrand} placeholder={t('products.enterBrandPlaceholder')} />
-                <Input label={t('products.sizeLabel')} value={size} onChange={setSize} placeholder={t('products.sizePlaceholder')} />
+                <Input
+                  label={t('products.brandLabel')}
+                  value={brand}
+                  onChange={setBrand}
+                  placeholder={t('products.enterBrandPlaceholder')}
+                />
+                <Input
+                  label={t('products.sizeLabel')}
+                  value={size}
+                  onChange={setSize}
+                  placeholder={t('products.sizePlaceholder')}
+                />
 
                 <Select
                   label={t('products.packagingLabel')}
@@ -444,25 +505,96 @@ export const ProductsPage: React.FC = () => {
                   options={PACKAGING_OPTIONS}
                 />
 
-                <Input label={t('products.sellingPriceLabel')} type="number" value={price} onChange={setPrice} placeholder={t('products.enterPricePlaceholder')} />
-                <Input label={t('products.mrpPriceLabel')} type="number" value={mrpPrice} onChange={setMrpPrice} placeholder={t('products.enterMrpPlaceholder')} />
-                <Input label={t('products.skuLabel')} value={sku} onChange={setSku} placeholder={t('products.enterSKUCode')} />
+                <Input
+                  label={t('products.sellingPriceLabel')}
+                  type="number"
+                  value={price}
+                  onChange={setPrice}
+                  placeholder={t('products.enterPricePlaceholder')}
+                />
+                <Input
+                  label={t('products.mrpPriceLabel')}
+                  type="number"
+                  value={mrpPrice}
+                  onChange={setMrpPrice}
+                  placeholder={t('products.enterMrpPlaceholder')}
+                />
+                <Input
+                  label={t('products.skuLabel')}
+                  value={sku}
+                  onChange={setSku}
+                  placeholder={t('products.enterSKUCode')}
+                />
 
                 <details className="product-tax-details">
                   <summary>{t('taxFields.productDetails')}</summary>
                   <p>{t('taxFields.productDetailsHint')}</p>
-                  <Input label={t('taxFields.hsnCode')} value={hsnCode} onChange={setHsnCode} maxLength={8} inputMode="numeric" />
-                  <Input label={t('products.gstLabel')} type="number" value={gstPercent} onChange={setGstPercent} placeholder={t('products.enterGSTPercentage')} />
+                  <Input
+                    label={t('taxFields.hsnCode')}
+                    value={hsnCode}
+                    onChange={setHsnCode}
+                    maxLength={8}
+                    inputMode="numeric"
+                  />
+                  <Input
+                    label={t('products.gstLabel')}
+                    type="number"
+                    min={0}
+                    max={100}
+                    step="0.01"
+                    inputMode="decimal"
+                    value={gstPercent}
+                    onChange={setGstPercent}
+                    placeholder={t('products.enterGSTPercentage')}
+                  />
                   <Select
                     label={t('taxFields.uqcCode')}
                     value={uqcCode}
                     onChange={setUqcCode}
                     options={[
                       { value: '', label: t('common.notAvailable') },
-                      ...['BAG','BAL','BDL','BOX','BTL','CTN','DOZ','GMS','KGS','LTR','MLT','MTR','NOS','PAC','PCS','SET'].map((value) => ({ value, label: value })),
+                      ...[
+                        'BAG',
+                        'BAL',
+                        'BDL',
+                        'BOX',
+                        'BTL',
+                        'CTN',
+                        'DOZ',
+                        'GMS',
+                        'KGS',
+                        'LTR',
+                        'MLT',
+                        'MTR',
+                        'NOS',
+                        'PAC',
+                        'PCS',
+                        'SET',
+                      ].map((value) => ({ value, label: value })),
                     ]}
                   />
-                  <Input label={t('taxFields.unitLabel')} value={unitLabel} onChange={setUnitLabel} maxLength={30} />
+                  <Input
+                    label={t('taxFields.unitLabel')}
+                    value={unitLabel}
+                    onChange={setUnitLabel}
+                    maxLength={30}
+                  />
+                  <Input
+                    label={t('taxFields.uqcQuantityFactor')}
+                    value={uqcQuantityFactor}
+                    onChange={setUqcQuantityFactor}
+                    type="number"
+                    inputMode="decimal"
+                    min={0.001}
+                    max={1_000_000}
+                    step="0.001"
+                    error={
+                      uqcQuantityFactor && !parseOptionalUqcQuantityFactor(uqcQuantityFactor).valid
+                        ? t('taxFields.uqcQuantityFactorInvalid')
+                        : undefined
+                    }
+                  />
+                  <p className="product-tax-field-hint">{t('taxFields.uqcQuantityFactorHint')}</p>
                 </details>
 
                 <div style={{ marginTop: '24px' }}>

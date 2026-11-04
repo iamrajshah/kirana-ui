@@ -13,7 +13,10 @@ const state = vi.hoisted(() => ({
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('react-router', () => ({ useHistory: () => ({ push: state.push }) }));
 vi.mock('@core/hooks', () => ({ useAppSelector: () => ({ roles: ['OWNER'] }) }));
-vi.mock('@core/auth/authSlice', () => ({ selectCurrentUser: vi.fn() }));
+vi.mock('@core/auth/authSlice', () => ({
+  selectCurrentUser: vi.fn(),
+  selectCommercialAccess: vi.fn(),
+}));
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('../../core/api/purchaseApi', () => ({ useGetPurchasesQuery: () => ({ ...state, isLoading: false }) }));
 vi.mock('@core/api/firmApi', () => ({ useGetFirmsQuery: () => ({ data: { data: { firms: [] } } }) }));

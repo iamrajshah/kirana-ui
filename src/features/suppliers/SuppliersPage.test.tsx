@@ -23,6 +23,8 @@ const state = vi.hoisted(() => ({
   refetch: vi.fn(),
   push: vi.fn(),
   makePayment: vi.fn(() => ({ unwrap: () => Promise.resolve() })),
+  createSupplier: vi.fn(() => ({ unwrap: () => Promise.resolve() })),
+  updateSupplier: vi.fn(() => ({ unwrap: () => Promise.resolve() })),
 }));
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
@@ -32,8 +34,8 @@ vi.mock('@core/auth/authSlice', () => ({ selectCurrentUser: vi.fn() }));
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('@core/api/supplierApi', () => ({
   useGetSuppliersQuery: () => ({ ...state, isLoading: false, isFetching: false }),
-  useCreateSupplierMutation: () => [vi.fn(), { isLoading: false }],
-  useUpdateSupplierMutation: () => [vi.fn(), { isLoading: false }],
+  useCreateSupplierMutation: () => [state.createSupplier, { isLoading: false }],
+  useUpdateSupplierMutation: () => [state.updateSupplier, { isLoading: false }],
   useMakeSupplierPaymentMutation: () => [state.makePayment, { isLoading: false }],
 }));
 vi.mock('@core/api/firmApi', () => ({ useGetFirmsQuery: () => ({ data: { data: { firms: [] } } }) }));
@@ -44,8 +46,8 @@ vi.mock('../../components', () => ({
   SearchBar: ({ onChange }: { onChange: (value: string) => void }) => (
     <input aria-label="search" onChange={(event) => onChange(event.target.value)} />
   ),
-  Input: ({ label, onChange }: { label: string; onChange?: (value: string) => void }) => (
-    <input aria-label={label} onChange={(event) => onChange?.(event.target.value)} />
+  Input: ({ label, value, onChange }: { label: string; value?: string; onChange?: (value: string) => void }) => (
+    <input aria-label={label} value={value ?? ''} onChange={(event) => onChange?.(event.target.value)} />
   ),
   Button: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
     <button onClick={onClick}>{children}</button>
@@ -61,7 +63,9 @@ vi.mock('@ionic/react', () => {
     IonLabel: Container,
     IonText: Container,
     IonFab: Container,
-    IonFabButton: Container,
+    IonFabButton: ({ children, onClick, ...props }: PropsWithChildren<{ onClick?: () => void; 'aria-label'?: string }>) => (
+      <button onClick={onClick} aria-label={props['aria-label']}>{children}</button>
+    ),
     IonIcon: Container,
     IonSpinner: Container,
     IonRefresher: Container,
@@ -106,6 +110,8 @@ beforeEach(() => {
   state.refetch.mockClear();
   state.push.mockClear();
   state.makePayment.mockClear();
+  state.createSupplier.mockClear();
+  state.updateSupplier.mockClear();
 });
 afterEach(cleanup);
 
@@ -161,4 +167,42 @@ it('offers payment for a positive firm balance even when an advance offsets the 
   expect(screen.getByRole('button', { name: 'suppliers.makePayment' })).toBeTruthy();
   expect(screen.getByText(/Jitendra Trading/)).toBeTruthy();
   expect(screen.getByText(/Jayesh Trading/)).toBeTruthy();
+});
+
+it('captures supplier GST identity and state when creating a supplier', async () => {
+  render(<SuppliersPage />);
+  fireEvent.click(screen.getAllByRole('button', { name: 'suppliers.addSupplier' })[0]);
+  fireEvent.change(screen.getByLabelText('suppliers.supplierName'), { target: { value: 'Gemini Oils' } });
+  fireEvent.change(screen.getByLabelText('suppliers.supplierPhone'), { target: { value: '9876543211' } });
+  fireEvent.change(screen.getByLabelText('suppliers.gstin'), { target: { value: '27ABCDE1234F1Z5' } });
+  fireEvent.change(screen.getByLabelText('suppliers.supplierState'), { target: { value: 'Maharashtra' } });
+  fireEvent.click(screen.getByRole('button', { name: 'common.save' }));
+
+  await vi.waitFor(() =>
+    expect(state.createSupplier).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Gemini Oils',
+        phone: '9876543211',
+        gstin: '27ABCDE1234F1Z5',
+        state: 'Maharashtra',
+        state_code: '27',
+      })
+    )
+  );
+});
+
+it('preloads GST identity for supplier editing', () => {
+  state.data = {
+    data: [{
+      id: 'supplier-1', name: 'Patel Traders', phone: '9876543210', email: null,
+      address: null, gstin: '24ABCDE1234F1Z5', state: 'Gujarat', state_code: '24',
+      balance: 0, default_purchase_firm_id: null, balances_by_firm: [],
+    }],
+    meta: { total: 1 },
+  };
+  render(<SuppliersPage />);
+  fireEvent.click(screen.getAllByRole('button', { name: 'common.edit' })[0]);
+  expect((screen.getByLabelText('suppliers.gstin') as HTMLInputElement).value).toBe('24ABCDE1234F1Z5');
+  expect((screen.getByLabelText('suppliers.supplierState') as HTMLInputElement).value).toBe('Gujarat');
+  expect((screen.getByLabelText('suppliers.stateCode') as HTMLInputElement).value).toBe('24');
 });

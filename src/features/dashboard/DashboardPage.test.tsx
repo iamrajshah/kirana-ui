@@ -110,6 +110,13 @@ vi.mock('@core/auth/authSlice', () => ({
 vi.mock('@core/api/dashboardApi', () => ({
   useGetDashboardStatsQuery: () => ({ ...mocks.query, refetch: mocks.refetch }),
 }));
+vi.mock('@core/api/expiryApi', () => ({
+  useGetExpiryAlertsQuery: () => ({
+    data: undefined,
+    isError: false,
+    refetch: vi.fn(),
+  }),
+}));
 vi.mock('@ionic/react', () => {
   const Container = ({ children }: PropsWithChildren) => <div>{children}</div>;
   return {

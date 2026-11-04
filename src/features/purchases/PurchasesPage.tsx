@@ -20,7 +20,7 @@ import {
   IonSelectOption,
   RefresherEventDetail,
 } from '@ionic/react';
-import { add, documentText } from 'ionicons/icons';
+import { add, documentText, scanOutline } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router';
 import { Navbar } from '@components/Navbar';
@@ -28,23 +28,30 @@ import { Navbar } from '@components/Navbar';
 import { useGetPurchasesQuery } from '../../core/api/purchaseApi';
 import { formatCurrency, formatDate } from '@utils/helpers';
 import { useAppSelector } from '../../core/hooks';
-import { selectCurrentUser } from '../../core/auth/authSlice';
+import { selectCommercialAccess, selectCurrentUser } from '../../core/auth/authSlice';
 import { hasPermission } from '../../core/permissions/permissions';
 import { ROUTES } from '@core/constants';
 import '../products/stock-workspace.css';
 import { purchaseMatchesSearch } from '@utils/formValidation';
 import { useGetFirmsQuery } from '@core/api/firmApi';
+import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
 
 const PurchasesPage: React.FC = () => {
   const { t } = useTranslation();
   const history = useHistory();
   const user = useAppSelector(selectCurrentUser);
+  const commercialAccess = useAppSelector(selectCommercialAccess);
   const userRoles = user?.roles || [];
   const hasCreatePermission = hasPermission(userRoles, 'PURCHASE_CREATE');
+  const canImportPurchaseBill =
+    hasCreatePermission &&
+    canUseCommercialFeature(userRoles, commercialAccess, 'PURCHASE_BILL_IMPORT');
   const [searchTerm, setSearchTerm] = useState('');
   const [firmId, setFirmId] = useState('');
 
-  const { data, isLoading, isError, refetch } = useGetPurchasesQuery(firmId ? { firm_id: firmId } : {});
+  const { data, isLoading, isError, refetch } = useGetPurchasesQuery(
+    firmId ? { firm_id: firmId } : {}
+  );
   const { data: firmsData } = useGetFirmsQuery({ active: true });
 
   const purchases = data?.data || [];
@@ -83,6 +90,12 @@ const PurchasesPage: React.FC = () => {
             <h1>{t('purchases.title')}</h1>
             {hasCreatePermission && (
               <div className="workspace-actions stock-primary-actions">
+                {canImportPurchaseBill && (
+                  <IonButton fill="outline" onClick={() => history.push(ROUTES.PURCHASE_IMPORT)}>
+                    <IonIcon slot="start" icon={scanOutline} />
+                    {t('purchaseImport.title')}
+                  </IonButton>
+                )}
                 <IonButton onClick={() => history.push(ROUTES.PURCHASE_CREATE)}>
                   <IonIcon slot="start" icon={add} />
                   {t('purchases.createPurchase')}
@@ -105,7 +118,9 @@ const PurchasesPage: React.FC = () => {
             >
               <IonSelectOption value="">{t('purchases.allFirms')}</IonSelectOption>
               {(firmsData?.data.firms || []).map((firm) => (
-                <IonSelectOption key={firm.id} value={firm.id}>{firm.display_name}</IonSelectOption>
+                <IonSelectOption key={firm.id} value={firm.id}>
+                  {firm.display_name}
+                </IonSelectOption>
               ))}
             </IonSelect>
           </div>

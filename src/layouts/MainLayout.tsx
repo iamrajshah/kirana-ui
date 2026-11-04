@@ -119,6 +119,9 @@ const PurchaseDetailPage = lazy(() => import('@features/purchases/PurchaseDetail
 const ShiftsPage = lazy(() => import('@features/shifts/ShiftsPage'));
 const GettingStartedPage = lazy(() => import('@features/onboarding/GettingStartedPage'));
 const StorefrontOrdersPage = lazy(() => import('@features/storefront-orders/StorefrontOrdersPage'));
+const PurchaseBillImportPage = lazy(() => import('@features/purchases/PurchaseBillImportPage'));
+const ExpiryAlertsPage = lazy(() => import('@features/inventory/ExpiryAlertsPage'));
+const GstReportsPage = lazy(() => import('@features/reports/GstReportsPage'));
 
 const priorityRoutePreloaders: readonly { href: string; load: RouteLoader }[] = [
   { href: ROUTES.BILLING, load: loadBillingPage },
@@ -153,6 +156,9 @@ const protectedPageComponents: Record<ProtectedPageRouteId, React.ComponentType>
   'invoice-detail': InvoiceDetailPage,
   'purchase-detail': PurchaseDetailPage,
   'purchase-create': CreatePurchasePage,
+  'purchase-import': PurchaseBillImportPage,
+  'expiry-alerts': ExpiryAlertsPage,
+  'gst-reports': GstReportsPage,
 };
 
 export const MainLayout: React.FC = () => {
