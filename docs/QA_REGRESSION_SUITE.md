@@ -58,6 +58,14 @@ global feature switch, and admin-configured role policy.
 
 Test server denial, not only hidden navigation.
 
+For a legacy compatibility shop, disable Reports in Platform Admin and refresh
+the POS session: the menu must disappear and a direct `/reports` visit must be
+blocked. Enable it again and confirm recovery. The returned entitlement array is
+authoritative for every plan, including an empty array; `LEGACY_COMPAT` does not
+grant removed features. Disable private margin while a GST bill already has a
+quote: its cached profit must disappear immediately while normal billing totals
+remain visible. Repeat after session refresh without reloading the application.
+
 ## Authentication and lifecycle
 
 1. Password login works for each active role and invalid credentials show one

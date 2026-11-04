@@ -69,8 +69,7 @@ const hasCommercialFeatureRoleAccess = (
 const hasCommercialFeatureEntitlement = (
   access: CommercialAccessSummary,
   feature: CommercialFeatureCode
-): boolean =>
-  access.planCode === 'LEGACY_COMPAT' || Boolean(access.entitlements?.includes(feature));
+): boolean => Boolean(access.entitlements?.includes(feature));
 
 const hasDirectCommercialFeatureAccess = (
   roles: string[],
@@ -99,9 +98,7 @@ export const canUseCommercialFeature = (
   feature: CommercialFeatureCode
 ): boolean => {
   if (!access) return true;
-  if (
-    ['SUSPENDED', 'CANCELLED', 'EXPIRED', 'PROVISIONING', 'READ_ONLY'].includes(access.state)
-  )
+  if (['SUSPENDED', 'CANCELLED', 'EXPIRED', 'PROVISIONING', 'READ_ONLY'].includes(access.state))
     return false;
   return (
     hasDirectCommercialFeatureAccess(roles, access, feature) &&

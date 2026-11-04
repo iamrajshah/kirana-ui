@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getNavigationItems, getPrimaryTabForPath } from './navigation';
+import type { CommercialAccessSummary } from '@core/commercial';
 
 describe('workspace navigation', () => {
   it('keeps the same permitted destinations for mobile and wide navigation', () => {
@@ -22,6 +23,29 @@ describe('workspace navigation', () => {
     expect(owner.map((item) => item.id)).toContain('users');
     expect(manager.map((item) => item.id)).not.toContain('users');
     expect(manager.map((item) => item.id)).toContain('categories');
+  });
+
+  it('removes shop-disabled reports from legacy navigation when the access snapshot changes', () => {
+    const access: CommercialAccessSummary = {
+      planCode: 'LEGACY_COMPAT',
+      state: 'ACTIVE',
+      accessStateVersion: '1',
+      entitlements: ['DASHBOARD', 'BILLING', 'REPORTS'],
+      limits: { staff: null, firms: null },
+      demoExpiresAt: null,
+      endsAt: null,
+      graceExpiresAt: null,
+    };
+    expect(getNavigationItems(['OWNER'], access).map((item) => item.id)).toContain('reports');
+
+    const disabled = {
+      ...access,
+      accessStateVersion: '2',
+      entitlements: access.entitlements.filter((feature) => feature !== 'REPORTS'),
+    };
+    const destinations = getNavigationItems(['OWNER'], disabled).map((item) => item.id);
+    expect(destinations).not.toContain('reports');
+    expect(destinations).toContain('billing');
   });
 
   it('keeps related secondary screens anchored to their primary mobile destination', () => {
