@@ -45,6 +45,10 @@ const mocks = vi.hoisted(() => ({
   searchCustomers: vi.fn(),
   customerSearchData: { data: [] as Array<Record<string, unknown>> },
   pathname: '/billing',
+  locationState: null as { claimedVersion?: number } | null,
+  currentInvoice: undefined as Record<string, unknown> | null | undefined,
+  invoiceError: false,
+  refetchInvoice: vi.fn(),
 }));
 
 const apiTrigger = (operation: ReturnType<typeof vi.fn>) => (payload: unknown) => ({
@@ -70,7 +74,11 @@ const matchedBarcode = {
 
 vi.mock('react-router-dom', () => ({
   useHistory: () => ({ replace: mocks.historyReplace, push: mocks.historyPush }),
-  useLocation: () => ({ pathname: mocks.pathname, search: mocks.search }),
+  useLocation: () => ({
+    pathname: mocks.pathname,
+    search: mocks.search,
+    state: mocks.locationState,
+  }),
 }));
 
 vi.mock('react-i18next', () => ({
@@ -187,8 +195,11 @@ vi.mock('@core/api/invoiceApi', () => ({
   useGetHeldBillsQuery: () => ({ data: { success: true, data: [] } }),
   useGetInvoiceByIdQuery: () => ({
     data: { data: mocks.invoice },
+    currentData:
+      mocks.currentInvoice === null ? undefined : { data: mocks.currentInvoice ?? mocks.invoice },
     isLoading: false,
-    refetch: vi.fn(),
+    isError: mocks.invoiceError,
+    refetch: mocks.refetchInvoice,
   }),
   useLazyGetInvoiceByIdQuery: () => [apiTrigger(mocks.getInvoiceForSplitRecovery), {}],
   useGetFinalizedDocumentQuery: () => ({
@@ -299,6 +310,9 @@ beforeEach(() => {
   localStorage.clear();
   mocks.search = '?edit=edit-1';
   mocks.pathname = '/billing';
+  mocks.locationState = null;
+  mocks.currentInvoice = undefined;
+  mocks.invoiceError = false;
   mocks.document = null;
   mocks.documentError = false;
   mocks.settingsMode = 'SIMPLE_RECEIPT';
@@ -564,6 +578,138 @@ describe('BillingPage', () => {
 
       expect(mocks.historyReplace).toHaveBeenCalledWith('/billing');
       expect(screen.queryByText('Rice')).toBeNull();
+    });
+
+    it('restores the same held bill after releasing and reclaiming it on the retained page', async () => {
+      mocks.search = '?edit=edit-1&held=edit-1';
+      const { rerender } = render(<BillingPage />);
+      await screen.findByText('Rice');
+
+      fireEvent.click(screen.getByRole('button', { name: 'release current mock' }));
+      expect(screen.queryByText('Rice')).toBeNull();
+      expect(mocks.historyReplace).toHaveBeenCalledWith('/billing');
+
+      // Ionic keeps this BillingPage mounted while the editor query changes.
+      mocks.search = '';
+      rerender(<BillingPage />);
+      expect(screen.queryByText('Rice')).toBeNull();
+
+      mocks.search = '?edit=edit-1';
+      mocks.invoice = { ...mocks.invoice, version: 5 };
+      rerender(<BillingPage />);
+
+      expect(await screen.findByText('Rice')).toBeTruthy();
+      expect(
+        (screen.getByRole('spinbutton', { name: 'billing.quantityFor Rice' }) as HTMLInputElement)
+          .value
+      ).toBe('1');
+      fireEvent.click(screen.getByRole('button', { name: 'billing.update' }));
+      await waitFor(() =>
+        expect(mocks.updateInvoice).toHaveBeenCalledWith({
+          id: 'edit-1',
+          data: expect.objectContaining({ expected_version: 5 }),
+        })
+      );
+    });
+
+    it('preserves local quantity edits when an open held bill is refreshed', async () => {
+      const { rerender } = render(<BillingPage />);
+      await screen.findByText('Rice');
+      fireEvent.change(screen.getByRole('spinbutton', { name: 'billing.quantityFor Rice' }), {
+        target: { value: '2' },
+      });
+
+      mocks.invoice = { ...mocks.invoice };
+      rerender(<BillingPage />);
+
+      expect(
+        (screen.getByRole('spinbutton', { name: 'billing.quantityFor Rice' }) as HTMLInputElement)
+          .value
+      ).toBe('2');
+    });
+
+    it('preserves unsaved edits when navigating away and back to the same held bill', async () => {
+      const { rerender } = render(<BillingPage />);
+      await screen.findByText('Rice');
+      fireEvent.change(screen.getByRole('spinbutton', { name: 'billing.quantityFor Rice' }), {
+        target: { value: '2' },
+      });
+
+      mocks.pathname = '/customers';
+      mocks.search = '';
+      rerender(<BillingPage />);
+      mocks.pathname = '/billing';
+      mocks.search = '?edit=edit-1';
+      rerender(<BillingPage />);
+
+      expect(
+        (screen.getByRole('spinbutton', { name: 'billing.quantityFor Rice' }) as HTMLInputElement)
+          .value
+      ).toBe('2');
+    });
+
+    it('waits for the claimed version instead of initializing from an older cached draft', async () => {
+      mocks.locationState = { claimedVersion: 5 };
+      const { rerender } = render(<BillingPage />);
+      expect(screen.queryByText('Rice')).toBeNull();
+
+      mocks.invoice = { ...mocks.invoice, version: 5 };
+      rerender(<BillingPage />);
+
+      expect(await screen.findByText('Rice')).toBeTruthy();
+    });
+
+    it('blocks editing while a different invoice response is still pending', async () => {
+      const { rerender } = render(<BillingPage />);
+      await screen.findByText('Rice');
+      mocks.search = '?edit=edit-2';
+      mocks.currentInvoice = null;
+      rerender(<BillingPage />);
+      expect(
+        (screen.getByRole('button', { name: 'billing.update' }) as HTMLButtonElement).disabled
+      ).toBe(true);
+
+      mocks.currentInvoice = {
+        ...mocks.invoice,
+        id: 'edit-2',
+        items: [
+          {
+            variant_id: 'variant-2',
+            quantity: 3,
+            unit_price: 50,
+            variant: { sku: 'TEA-1', product: { name: 'Tea' } },
+          },
+        ],
+      };
+      rerender(<BillingPage />);
+
+      expect(await screen.findByText('Tea')).toBeTruthy();
+      expect(screen.queryByText('Rice')).toBeNull();
+      expect(
+        (screen.getByRole('spinbutton', { name: 'billing.quantityFor Tea' }) as HTMLInputElement)
+          .value
+      ).toBe('3');
+    });
+
+    it('offers retry and blocks checkout if the draft requested for resume cannot be loaded', async () => {
+      mocks.currentInvoice = null;
+      mocks.invoiceError = true;
+      const { rerender } = render(<BillingPage />);
+
+      expect(screen.getByRole('alert').textContent).toContain('invoiceDetail.invoiceNotFound');
+      fireEvent.click(screen.getByRole('button', { name: 'common.retry' }));
+      expect(mocks.refetchInvoice).toHaveBeenCalledOnce();
+      expect(
+        (screen.getByRole('button', { name: 'billing.payCash' }) as HTMLButtonElement).disabled
+      ).toBe(true);
+      expect(mocks.updateInvoice).not.toHaveBeenCalled();
+      expect(mocks.finalizeInvoice).not.toHaveBeenCalled();
+
+      mocks.invoiceError = false;
+      mocks.currentInvoice = undefined;
+      rerender(<BillingPage />);
+      expect(await screen.findByText('Rice')).toBeTruthy();
+      expect(screen.queryByRole('alert')).toBeNull();
     });
 
     it('clears a previous customer when the next opened bill is walk-in', async () => {

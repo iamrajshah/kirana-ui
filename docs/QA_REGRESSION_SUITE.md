@@ -3,6 +3,23 @@
 Use a disposable or explicitly approved demo tenant. Never store passwords,
 tokens, OTPs, customer data, or provider keys in this file or a test report.
 
+## Held-bill editor continuity — 4 November 2026
+
+Keep the same browser tab and Billing page mounted: add an item, Hold it using
+the in-app counter dialog, then choose Use at this counter. Confirm its items
+and quantities return. Release that draft, reopen Held bills, and choose Use at
+this counter for the **same invoice** again. Its cart must return without a
+refresh, with the new claim version used on the next save. Holding and claiming
+must not finalize the invoice or reduce stock. Close the browser before restoring
+an approved demo backup so lease-renewal timers cannot race with restoration.
+
+Also edit a quantity, visit Customers, and return to the same open draft:
+unsaved edits must survive. An ordinary background refetch must not overwrite
+them. When changing to another draft or awaiting the new claim version, stale
+cached invoice data must not initialize the editor or allow checkout. Component
+tests cover these retained-page transitions; a passing API claim alone does not
+prove the cart was hydrated.
+
 ## Dialog themes — 4 November 2026
 
 In both themes at 390, 820 and 1440 pixels, open Collect Payment, its payment-mode

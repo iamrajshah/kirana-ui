@@ -122,7 +122,7 @@ const isInvoiceSettled = (invoice: Invoice) => {
 
 export const BillingPage: React.FC = () => {
   const { t } = useTranslation();
-  const location = useLocation();
+  const location = useLocation<{ claimedVersion?: number }>();
   const history = useHistory();
   const currentUser = useAppSelector(selectCurrentUser);
   const commercialAccess = useAppSelector(selectCommercialAccess);
@@ -141,6 +141,7 @@ export const BillingPage: React.FC = () => {
   const query = new URLSearchParams(location.search);
   const editInvoiceId = query.get('edit');
   const focusedHeldBillId = query.get('held');
+  const claimedVersion = location.state?.claimedVersion;
 
   const {
     data: billingCatalogData,
@@ -164,10 +165,21 @@ export const BillingPage: React.FC = () => {
   const [createSplitPayment, { isLoading: splittingPayment }] = useCreateSplitPaymentMutation();
   const [getInvoiceForSplitRecovery] = useLazyGetInvoiceByIdQuery();
   const {
-    data: invoiceData,
-    isLoading: invoiceLoading,
+    currentData: invoiceData,
+    isLoading: invoiceQueryLoading,
+    isError: invoiceError,
     refetch: refetchInvoice,
-  } = useGetInvoiceByIdQuery(editInvoiceId || '', { skip: !editInvoiceId });
+  } = useGetInvoiceByIdQuery(editInvoiceId || '', {
+    skip: !editInvoiceId,
+    refetchOnMountOrArgChange: true,
+  });
+  const invoiceUnavailable = Boolean(
+    editInvoiceId &&
+      (!invoiceData?.data ||
+        String(invoiceData.data.id) !== editInvoiceId ||
+        (claimedVersion !== undefined && invoiceData.data.version < claimedVersion))
+  );
+  const invoiceLoading = invoiceQueryLoading || (invoiceUnavailable && !invoiceError);
   const { data: heldBillsData } = useGetHeldBillsQuery({ take: 50 });
   const { data: tenantSettingsData, isLoading: tenantSettingsLoading } =
     useGetTenantSettingsQuery();
@@ -386,6 +398,7 @@ export const BillingPage: React.FC = () => {
     currentUser?.roles?.some((role) => ['OWNER', 'MANAGER'].includes(role.toUpperCase()))
   );
   const isBusy =
+    invoiceUnavailable ||
     creating ||
     updating ||
     finalizing ||
@@ -420,8 +433,12 @@ export const BillingPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (location.pathname !== ROUTES.BILLING) return;
+    if (!editInvoiceId) {
+      initializedInvoiceId.current = null;
+      return;
+    }
     if (
-      !editInvoiceId ||
       !invoiceData?.data ||
       invoiceLoading ||
       initializedInvoiceId.current === editInvoiceId
@@ -464,7 +481,15 @@ export const BillingPage: React.FC = () => {
       discount_amount: calculateBillingTotals(nextCartItems, nextDiscount, 'amount', 0)
         .billDiscountAmount,
     });
-  }, [editInvoiceId, invoiceData, invoiceLoading, t, replaceCartItems, updateActiveHeldVersion]);
+  }, [
+    editInvoiceId,
+    invoiceData,
+    invoiceLoading,
+    location.pathname,
+    t,
+    replaceCartItems,
+    updateActiveHeldVersion,
+  ]);
 
   useEffect(() => {
     const invoice = invoiceData?.data;
@@ -910,6 +935,12 @@ export const BillingPage: React.FC = () => {
   };
 
   const validateBillReady = () => {
+    if (invoiceUnavailable) {
+      notificationService.error(
+        t(invoiceError ? 'invoiceDetail.invoiceNotFound' : 'billing.loadingInvoice')
+      );
+      return false;
+    }
     if (barcodeWorkPendingRef.current > 0) {
       notificationService.error(t('billing.barcodeInProgress'));
       return false;
@@ -1216,7 +1247,7 @@ export const BillingPage: React.FC = () => {
       />
       <IonContent>
         <Loading
-          isOpen={!completionInvoiceId && (invoiceLoading || isBusy)}
+          isOpen={!completionInvoiceId && (invoiceLoading || (!invoiceError && isBusy))}
           message={invoiceLoading ? t('billing.loadingInvoice') : t('billing.processingBill')}
         />
 
@@ -1237,6 +1268,14 @@ export const BillingPage: React.FC = () => {
           />
         ) : (
           <main className="mx-auto max-w-7xl px-3 pb-44 pt-3 sm:px-5 lg:pb-8">
+            {invoiceUnavailable && invoiceError && (
+              <div role="alert" className="mb-3 rounded-xl border border-red-200 p-3">
+                <p>{t('invoiceDetail.invoiceNotFound')}</p>
+                <IonButton fill="outline" onClick={() => void refetchInvoice()}>
+                  {t('common.retry')}
+                </IonButton>
+              </div>
+            )}
             <div className="mb-3 flex items-center justify-between gap-3">
               <h1 className="text-xl font-black text-gray-900 sm:text-2xl">
                 {editInvoiceId ? t('billing.editDraftInvoice') : t('billing.fastBilling')}
