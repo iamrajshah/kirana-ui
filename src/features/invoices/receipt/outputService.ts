@@ -94,7 +94,8 @@ const printReceipt = (blob: Blob, paperWidth: ReceiptPaperWidth) =>
   });
 
 const defaultDependencies: OutputDependencies = {
-  createPdf: async (receipt) => (await import('./pdfRenderer')).renderReceiptPdf(receipt),
+  createPdf: async (receipt, paperWidth) =>
+    (await import('./pdfRenderer')).renderReceiptPdf(receipt, paperWidth),
   download: downloadBlob,
   print: printReceipt,
   webShare: {

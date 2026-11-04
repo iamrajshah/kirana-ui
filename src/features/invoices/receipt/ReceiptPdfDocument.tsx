@@ -235,9 +235,9 @@ export const ReceiptPdfDocument: React.FC<{
   const thermal = paperWidth !== undefined;
   const pageSize =
     paperWidth === '58mm'
-      ? { width: 164, height: 842 }
+      ? { width: (58 / 25.4) * 72, height: 842 }
       : paperWidth === '80mm'
-        ? { width: 227, height: 842 }
+        ? { width: (80 / 25.4) * 72, height: 842 }
         : 'A4';
   const labels = { ...defaultReceiptLabels, ...receipt.labels };
 
