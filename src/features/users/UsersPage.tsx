@@ -2,9 +2,6 @@ import React, { useState } from 'react';
 import {
   IonPage,
   IonContent,
-  IonList,
-  IonItem,
-  IonLabel,
   IonCard,
   IonButton,
   IonIcon,
@@ -151,17 +148,21 @@ export const UsersPage: React.FC = () => {
             </div>
           ) : (
             <>
-              <IonList className="workspace-grid">
+              <div className="workspace-grid users-grid" role="list">
                 {users.map((user) => (
-                  <IonCard key={user.id} className="workspace-record">
-                    <IonItem lines="none">
-                      <IonIcon icon={person} slot="start" />
-                      <IonLabel>
-                        <h2>{user.name}</h2>
-                        <p>{user.phone}</p>
-                        {user.email && <p>{user.email}</p>}
-                      </IonLabel>
-                      <div slot="end" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <IonCard key={user.id} className="workspace-record user-card" role="listitem">
+                    <div className="user-card__content">
+                      <div className="user-card__identity">
+                        <span className="user-card__avatar" aria-hidden="true">
+                          <IonIcon icon={person} />
+                        </span>
+                        <div className="user-card__details">
+                          <h2>{user.name}</h2>
+                          <p>{user.phone}</p>
+                          {user.email && <p>{user.email}</p>}
+                        </div>
+                      </div>
+                      <div className="user-card__actions">
                         <IonBadge color={getRoleBadgeColor(user.roles)}>
                           <IonIcon icon={shield} style={{ marginRight: '4px' }} />
                           {user.roles[0] || t('common.defaultUserRole')}
@@ -171,13 +172,16 @@ export const UsersPage: React.FC = () => {
                         </IonBadge>
                         <IonToggle
                           checked={user.is_active}
+                          aria-label={`${user.name}: ${
+                            user.is_active ? t('common.active') : t('common.inactive')
+                          }`}
                           onIonChange={() => handleToggleStatus(user.id, user.is_active)}
                         />
                       </div>
-                    </IonItem>
+                    </div>
                   </IonCard>
                 ))}
-              </IonList>
+              </div>
 
               {users.length === 0 && (
                 <div className="empty-state">
