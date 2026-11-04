@@ -21,7 +21,6 @@ export interface BillingSearchVariant {
   size?: string | null;
   packaging?: Packaging | null;
   price: number;
-  purchase_price?: number;
   mrp_price?: number;
   gst_percent?: number | null;
   hsn_code?: string | null;
@@ -219,6 +218,7 @@ export const {
   useUpdateVariantMutation,
   useUpdateVariantPurchaseCostMutation,
   useGetProductPurchaseCostsQuery,
+  useLazyGetProductPurchaseCostsQuery,
   useLookupBarcodeQuery,
   useLazyLookupBarcodeQuery,
   useScanBarcodeQuery,

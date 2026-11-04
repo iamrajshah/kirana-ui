@@ -380,6 +380,11 @@ remain usable. Cashiers continue to see their normal operational dashboard.
 
 ## Purchase and customer-list rules
 
+- Purchase selection loads cost from the separate authorized endpoint only when
+  `PRODUCT_UPDATE` and `LIVE_MARGIN_PREVIEW` allow it. Resolve that per-unit cost
+  before showing row/pack controls; shared search/catalogue stays cost-free.
+  Repeated selections preserve an edited price, and missing/failed private cost
+  keeps the existing editable fallback. Pending additions cannot be submitted.
 - Purchase entry may describe packs/boxes and units per pack, but submitted and
   displayed inventory effects must use the server-computed base-unit quantity.
 - Make the conversion visible before save (for example, `2 boxes × 20 = 40
