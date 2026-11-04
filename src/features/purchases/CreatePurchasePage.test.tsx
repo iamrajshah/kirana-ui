@@ -5,6 +5,9 @@ import CreatePurchasePage from './CreatePurchasePage';
 
 const state = vi.hoisted(() => ({
   createPurchase: vi.fn(() => ({ unwrap: () => Promise.resolve({ data: { id: '1' } }) })),
+  loadPurchaseCosts: vi.fn(() => ({
+    unwrap: () => Promise.resolve({ data: [{ variant_id: '1', purchase_price: 40 }] }),
+  })),
   suppliers: [
     {
       id: '7',
@@ -35,7 +38,14 @@ afterEach(() => {
 });
 
 vi.mock('react-router', () => ({ useHistory: () => ({ push: vi.fn() }) }));
-vi.mock('@core/hooks', () => ({ useAppSelector: () => ({ roles: ['OWNER'] }) }));
+vi.mock('@core/hooks', () => ({
+  useAppSelector: () => ({
+    roles: ['OWNER'],
+    state: 'ACTIVE',
+    entitlements: ['LIVE_MARGIN_PREVIEW'],
+    featureRoles: { LIVE_MARGIN_PREVIEW: ['OWNER'] },
+  }),
+}));
 vi.mock('@core/auth/authSlice', () => ({
   selectCurrentUser: vi.fn(),
   selectCommercialAccess: vi.fn(),
@@ -70,6 +80,7 @@ vi.mock('../../core/api/purchaseApi', () => ({
   useCreatePurchaseMutation: () => [state.createPurchase, { isLoading: false }],
 }));
 vi.mock('../../core/api/productApi', () => ({
+  useLazyGetProductPurchaseCostsQuery: () => [state.loadPurchaseCosts],
   useLazySearchVariantsQuery: () => [
     vi.fn(),
     {
@@ -77,10 +88,10 @@ vi.mock('../../core/api/productApi', () => ({
         data: [
           {
             id: '1',
+            product_id: '3',
             product_name: 'Salt',
             sku: 'SALT-1',
             price: 50,
-            purchase_price: 40,
             gst_percent: 18,
             hsn_code: '2501',
           },
@@ -167,6 +178,12 @@ vi.mock('ionicons/icons', () => ({
   checkmarkCircle: 'checkmarkCircle',
 }));
 
+const selectSalt = async () => {
+  fireEvent.click(screen.getByRole('button', { name: 'search test product' }));
+  fireEvent.click(screen.getByRole('button', { name: /Salt/ }));
+  await screen.findByRole('spinbutton', { name: /Salt purchases.unitPrice/ });
+};
+
 describe('CreatePurchasePage pending amount', () => {
   it('defaults the purchase invoice to the Kolkata calendar date before dawn', () => {
     vi.useFakeTimers();
@@ -179,11 +196,10 @@ describe('CreatePurchasePage pending amount', () => {
     );
   });
 
-  it('uses a readable theme-aware notice instead of danger text on a danger background', () => {
+  it('uses a readable theme-aware notice instead of danger text on a danger background', async () => {
     render(<CreatePurchasePage />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'search test product' }));
-    fireEvent.click(screen.getByRole('button', { name: /Salt/ }));
+    await selectSalt();
 
     const notice = screen
       .getAllByRole('status')
@@ -193,11 +209,10 @@ describe('CreatePurchasePage pending amount', () => {
     expect(notice.querySelector('ion-text[color="danger"]')).toBeNull();
   });
 
-  it('previews a box-to-stock conversion before the purchase is submitted', () => {
+  it('previews a box-to-stock conversion before the purchase is submitted', async () => {
     render(<CreatePurchasePage />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'search test product' }));
-    fireEvent.click(screen.getByRole('button', { name: /Salt/ }));
+    await selectSalt();
     fireEvent.change(screen.getByRole('combobox', { name: /Salt purchases.enteredAs/ }), {
       target: { value: 'PACK' },
     });
@@ -223,10 +238,9 @@ describe('CreatePurchasePage pending amount', () => {
     ).toBe('480');
   });
 
-  it('reviews tax-inclusive and tax-exclusive totals using server paise rounding', () => {
+  it('reviews tax-inclusive and tax-exclusive totals using server paise rounding', async () => {
     render(<CreatePurchasePage />);
-    fireEvent.click(screen.getByRole('button', { name: 'search test product' }));
-    fireEvent.click(screen.getByRole('button', { name: /Salt/ }));
+    await selectSalt();
 
     expect(screen.getByText(/purchases.totalAmount/).textContent).toContain('₹40');
     fireEvent.click(screen.getByRole('radio', { name: 'purchases.pricesExcludeTax' }));
@@ -240,8 +254,7 @@ describe('CreatePurchasePage pending amount', () => {
     fireEvent.change(screen.getByLabelText('purchases.invoiceNumberLabel'), {
       target: { value: 'GEM-101' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'search test product' }));
-    fireEvent.click(screen.getByRole('button', { name: /Salt/ }));
+    await selectSalt();
     fireEvent.change(screen.getByRole('spinbutton', { name: /Salt purchases.gstRate/ }), {
       target: { value: '40' },
     });
@@ -264,15 +277,14 @@ describe('CreatePurchasePage pending amount', () => {
     );
   });
 
-  it('accepts 4, 6 and 8 digit HSN codes but blocks 5 and 7 digits', () => {
+  it('accepts 4, 6 and 8 digit HSN codes but blocks 5 and 7 digits', async () => {
     render(<CreatePurchasePage />);
     fireEvent.click(screen.getByRole('button', { name: 'purchases.selectSupplierButton' }));
     fireEvent.click(screen.getByRole('button', { name: /Gemini Oils/ }));
     fireEvent.change(screen.getByLabelText('purchases.invoiceNumberLabel'), {
       target: { value: 'GEM-102' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'search test product' }));
-    fireEvent.click(screen.getByRole('button', { name: /Salt/ }));
+    await selectSalt();
 
     const hsn = screen.getByLabelText(/Salt purchases.hsnCode/);
     const create = screen.getByRole('button', { name: 'purchases.createPurchaseButton' });

@@ -163,6 +163,12 @@ refresh still updates access.
 3. Create a supplier purchase in sale units and in box/pack units. Confirm the
    preview (`packs x units = base units`), persisted snapshots, stock increase,
    latest cost, supplier balance, dashboard, and purchase reports.
+   Use cost-free search data: an authorized owner must get the previous purchase
+   cost through the separate protected endpoint. Delay that response, select the
+   same variant again, and verify one row/request with the intended quantity.
+   After it loads, switch to Box and verify per-pack conversion; reselecting a
+   manually edited row must preserve its price. Roles lacking either permission
+   or margin policy must not request private costs and retain the editable fallback.
    Repeat with tax-inclusive and tax-exclusive prices. Verify line GST/HSN,
    supplier GSTIN/state/place-of-supply and subtotal/tax/grand total. A supplier
    without a state code must show an incomplete-jurisdiction warning.

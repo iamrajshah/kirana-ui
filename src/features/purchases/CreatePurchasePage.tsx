@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { BillingSearchVariant } from '@core/api/productApi';
 import {
   IonPage,
@@ -30,7 +30,10 @@ import { Navbar } from '@components/Navbar';
 import { useGetSuppliersQuery } from '../../core/api/supplierApi';
 import { useCreatePurchaseMutation } from '../../core/api/purchaseApi';
 import { useGetFirmsQuery } from '../../core/api/firmApi';
-import { useLazySearchVariantsQuery } from '../../core/api/productApi';
+import {
+  useLazyGetProductPurchaseCostsQuery,
+  useLazySearchVariantsQuery,
+} from '../../core/api/productApi';
 import { SearchBar, Input, Button, EmptyState } from '../../components';
 import { formatCurrency, debounce } from '@utils/helpers';
 import notificationService from '@core/services/notificationService';
@@ -44,6 +47,7 @@ import { reconcilePurchaseFirmId, resolvePurchaseFirmId } from './purchaseFirmSe
 import { useAppSelector } from '@core/hooks';
 import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice';
 import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
+import { hasPermission } from '@core/permissions/permissions';
 import { addCalendarDays, canReceiveExpiryDate, kolkataCalendarDate } from './purchaseExpiryDates';
 import { calculatePurchaseTaxTotals } from './purchaseImportCalculation';
 import './CreatePurchasePage.css';
@@ -76,9 +80,19 @@ const CreatePurchasePage: React.FC = () => {
     commercialAccess,
     'EXPIRY_TRACKING'
   );
+  const canReadPurchaseCost =
+    Boolean(commercialAccess) &&
+    hasPermission(currentUser?.roles ?? [], 'PRODUCT_UPDATE') &&
+    canUseCommercialFeature(currentUser?.roles ?? [], commercialAccess, 'LIVE_MARGIN_PREVIEW');
+  const costScope = `${currentUser?.tenant?.id ?? ''}:${currentUser?.id ?? ''}`;
+  const currentCostAccess = useRef({ scope: costScope, allowed: canReadPurchaseCost });
+  currentCostAccess.current = { scope: costScope, allowed: canReadPurchaseCost };
+  const pendingAdditions = useRef(new Map<string, { quantity: number; scope: string }>());
+  const [pendingAdditionCount, setPendingAdditionCount] = useState(0);
 
   const [searchVariants, { data: variantsData, isLoading: searchLoading }] =
     useLazySearchVariantsQuery();
+  const [loadPurchaseCosts] = useLazyGetProductPurchaseCostsQuery();
   const { data: suppliersData } = useGetSuppliersQuery({});
   const { data: firmsData, isLoading: firmsLoading } = useGetFirmsQuery({ active: true });
   const [createPurchase, { isLoading: creating }] = useCreatePurchaseMutation();
@@ -90,6 +104,8 @@ const CreatePurchasePage: React.FC = () => {
   // Form state
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
+  const currentCart = useRef(cart);
+  currentCart.current = cart;
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
   const [selectedFirmId, setSelectedFirmId] = useState('');
   const [firmWasOverridden, setFirmWasOverridden] = useState(false);
@@ -100,6 +116,13 @@ const CreatePurchasePage: React.FC = () => {
   const [pricesIncludeTax, setPricesIncludeTax] = useState(true);
   const [showSupplierModal, setShowSupplierModal] = useState(false);
   const [supplierSearch, setSupplierSearch] = useState('');
+
+  useEffect(() => {
+    const additions = pendingAdditions.current;
+    additions.clear();
+    setPendingAdditionCount(0);
+    return () => additions.clear();
+  }, [costScope]);
 
   useEffect(() => {
     if (!selectedSupplierId || firms.length === 0) return;
@@ -124,31 +147,84 @@ const CreatePurchasePage: React.FC = () => {
     }
   }, 300);
 
-  const addToCart = (variant: BillingSearchVariant) => {
-    const existing = cart.find((item) => item.variant_id === variant.id);
-    if (existing) {
-      updateQuantity(variant.id, existing.quantity + 1);
-    } else {
-      setCart([
-        ...cart,
-        {
-          variant_id: variant.id,
-          quantity: 1,
-          unit_price: variant.purchase_price ?? variant.price ?? 0,
-          product_name: variant.product_name || 'Unknown Product',
-          sku: variant.sku || '',
-          purchase_mode: 'UNIT',
-          purchase_unit_label: 'Box',
-          units_per_purchase_unit: 20,
-          batch_number: '',
-          manufacturing_date: '',
-          expiry_date: '',
-          gst_rate: Number(variant.gst_percent ?? 0),
-          hsn_code: variant.hsn_code ?? '',
-        },
-      ]);
-    }
+  const addToCart = async (variant: BillingSearchVariant) => {
     setSearchTerm('');
+    const existing = currentCart.current.find((item) => item.variant_id === variant.id);
+    if (existing) {
+      setCart((items) =>
+        items.map((item) =>
+          item.variant_id === variant.id ? { ...item, quantity: item.quantity + 1 } : item
+        )
+      );
+      return;
+    }
+    const waiting = pendingAdditions.current.get(variant.id);
+    if (waiting) {
+      waiting.quantity += 1;
+      return;
+    }
+
+    const addition = { quantity: 1, scope: costScope };
+    pendingAdditions.current.set(variant.id, addition);
+    setPendingAdditionCount(pendingAdditions.current.size);
+    let unitPrice = variant.price ?? 0;
+    try {
+      if (canReadPurchaseCost && variant.product_id) {
+        try {
+          const costs = await loadPurchaseCosts(variant.product_id, true).unwrap();
+          const cost = costs.data.find((item) => item.variant_id === variant.id)?.purchase_price;
+          if (
+            cost !== null &&
+            cost !== undefined &&
+            Number.isFinite(cost) &&
+            cost >= 0 &&
+            currentCostAccess.current.allowed
+          )
+            unitPrice = cost;
+        } catch {
+          // Keep the editable existing fallback when private cost is unavailable.
+        }
+      }
+      if (
+        pendingAdditions.current.get(variant.id) !== addition ||
+        currentCostAccess.current.scope !== addition.scope
+      )
+        return;
+
+      // Resolve the private per-unit cost before exposing pack/price controls.
+      // Repeated selections only increase quantity; an existing edited price wins.
+      setCart((items) =>
+        items.some((item) => item.variant_id === variant.id)
+          ? items.map((item) =>
+              item.variant_id === variant.id
+                ? { ...item, quantity: item.quantity + addition.quantity }
+                : item
+            )
+          : [
+              ...items,
+              {
+                variant_id: variant.id,
+                quantity: addition.quantity,
+                unit_price: unitPrice,
+                product_name: variant.product_name || 'Unknown Product',
+                sku: variant.sku || '',
+                purchase_mode: 'UNIT',
+                purchase_unit_label: 'Box',
+                units_per_purchase_unit: 20,
+                batch_number: '',
+                manufacturing_date: '',
+                expiry_date: '',
+                gst_rate: Number(variant.gst_percent ?? 0),
+                hsn_code: variant.hsn_code ?? '',
+              },
+            ]
+      );
+    } finally {
+      if (pendingAdditions.current.get(variant.id) === addition) {
+        pendingAdditions.current.delete(variant.id);
+        setPendingAdditionCount(pendingAdditions.current.size);
+      }
+    }
   };
 
   const updateQuantity = (variantId: string, quantity: number) => {
@@ -373,6 +449,7 @@ const CreatePurchasePage: React.FC = () => {
     selectedFirmId &&
     invoiceNumber.trim() &&
     cart.length > 0 &&
+    pendingAdditionCount === 0 &&
     hasValidPurchaseUnits &&
     hasValidTaxFields;
 
@@ -506,11 +583,16 @@ const CreatePurchasePage: React.FC = () => {
                 <p>{t('purchases.searching')}</p>
               </IonText>
             )}
+            {pendingAdditionCount > 0 && (
+              <IonText color="medium">
+                <p role="status">{t('common.loading')}</p>
+              </IonText>
+            )}
 
             {searchTerm.length >= 2 && variants.length > 0 && (
               <IonList>
                 {variants.map((variant) => (
-                  <IonItem key={variant.id} button onClick={() => addToCart(variant)}>
+                  <IonItem key={variant.id} button onClick={() => void addToCart(variant)}>
                     <IonLabel>
                       <h3>{variant.product_name}</h3>
                       <p>{variant.sku}</p>
