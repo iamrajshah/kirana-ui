@@ -406,6 +406,13 @@ pouches`) so a shopkeeper can catch an entry mistake.
 
 ## Local verification
 
+Dialogs use the raised shop surface in both themes, with Ionic's tonal scale
+providing readable alert labels and selection states. Payment summaries and
+WhatsApp/counter dialogs use theme tokens rather than fixed light fills.
+Overlay aliases must be declared in each theme scope so changing the body theme
+does not inherit a resolved light color from `:root`. Native controls use the
+chosen `color-scheme`; the invoice print stylesheet remains independent.
+
 ```bash
 npm test
 npm run lint

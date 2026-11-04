@@ -42,7 +42,7 @@ export const WhatsAppPastePanel: React.FC<Props> = ({ catalog, onCancel, onConfi
         <p>{t('billing.whatsapp.description')}</p>
         <textarea
           aria-label={t('billing.whatsapp.listLabel')}
-          className="min-h-40 w-full rounded-xl border border-gray-300 bg-white p-3 text-gray-900"
+          className="dialog-field min-h-40 w-full rounded-xl border border-gray-300 p-3"
           value={text}
           onChange={(event) => setText(event.target.value)}
           placeholder={t('billing.whatsapp.placeholder')}
@@ -60,7 +60,10 @@ export const WhatsAppPastePanel: React.FC<Props> = ({ catalog, onCancel, onConfi
         {lines.length > 0 && (
           <section className="mt-4 grid gap-3" aria-label={t('billing.whatsapp.reviewResults')}>
             {lines.map((line) => (
-              <article key={line.id} className="rounded-xl border border-gray-200 bg-white p-3">
+              <article
+                key={line.id}
+                className="dialog-surface rounded-xl border border-gray-200 p-3"
+              >
                 <strong>{line.source}</strong>
                 <div className="mt-2 grid gap-2 sm:grid-cols-[100px_1fr]">
                   <label>
@@ -81,7 +84,7 @@ export const WhatsAppPastePanel: React.FC<Props> = ({ catalog, onCancel, onConfi
                   <label>
                     {t('billing.whatsapp.product')}
                     <select
-                      className="mt-1 min-h-touch w-full rounded-lg border border-gray-300 bg-white px-2"
+                      className="dialog-field mt-1 min-h-touch w-full rounded-lg border border-gray-300 px-2"
                       value={line.selectedVariantId ?? ''}
                       onChange={(event) =>
                         updateLine(line.id, { selectedVariantId: event.target.value || null })

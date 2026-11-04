@@ -211,31 +211,40 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       </IonHeader>
       <IonContent className="ion-padding">
         {/* Invoice Summary */}
-        <div className="mb-4 p-3 bg-gray-100 rounded-lg" style={{ backgroundColor: '#f5f5f5' }}>
+        <div
+          className="mb-4 p-3 rounded-lg"
+          style={{ backgroundColor: 'var(--kirana-surface-soft)' }}
+        >
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span style={{ color: '#666' }}>{t('payment.totalAmount')}</span>
+              <span style={{ color: 'var(--ion-text-color-secondary)' }}>
+                {t('payment.totalAmount')}
+              </span>
               <span className="font-semibold">{formatCurrency(invoiceAmount)}</span>
             </div>
             {paidAmount > 0 && (
               <div className="flex justify-between text-sm">
-                <span style={{ color: '#666' }}>{t('payment.paidAmount')}</span>
-                <span style={{ color: '#22c55e', fontWeight: '500' }}>
+                <span style={{ color: 'var(--ion-text-color-secondary)' }}>
+                  {t('payment.paidAmount')}
+                </span>
+                <span style={{ color: 'var(--kirana-positive-text)', fontWeight: '500' }}>
                   {formatCurrency(paidAmount)}
                 </span>
               </div>
             )}
             <div
               className="flex justify-between font-bold border-t pt-2"
-              style={{ borderColor: '#ddd' }}
+              style={{ borderColor: 'var(--ion-border-color)' }}
             >
               <span>{t('payment.balanceAmount')}</span>
-              <span style={{ color: '#3880ff' }}>{formatCurrency(balanceAmount)}</span>
+              <span style={{ color: 'var(--ion-color-primary-shade)' }}>
+                {formatCurrency(balanceAmount)}
+              </span>
             </div>
             {previousBalance !== 0 && (
               <>
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: '#666' }}>
+                  <span style={{ color: 'var(--ion-text-color-secondary)' }}>
                     {previousBalance < 0
                       ? t('billing.customerAdvance')
                       : t('billing.previousKhata')}
@@ -250,11 +259,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     <span>{formatCurrency(totalCustomerDue)}</span>
                   </div>
                 ) : (
-                  <p className="text-xs" style={{ color: '#666' }}>
+                  <p className="text-xs" style={{ color: 'var(--ion-text-color-secondary)' }}>
                     {t('billing.advanceNotApplied')}
                   </p>
                 )}
-                <p className="text-xs" style={{ color: '#666' }}>
+                <p className="text-xs" style={{ color: 'var(--ion-text-color-secondary)' }}>
                   {t('billing.currentBillPaymentOnly')}
                 </p>
               </>
@@ -291,11 +300,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
         {/* Payment Amount */}
         {effectivePaymentType === 'full' ? (
-          <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: '#e3f2fd' }}>
-            <p className="text-sm mb-1" style={{ color: '#666' }}>
+          <div
+            className="mb-4 p-3 rounded-lg"
+            style={{ backgroundColor: 'var(--kirana-surface-accent)' }}
+          >
+            <p className="text-sm mb-1" style={{ color: 'var(--ion-text-color-secondary)' }}>
               {t('payment.payingFull')}
             </p>
-            <p className="text-2xl font-bold" style={{ color: '#3880ff' }}>
+            <p className="text-2xl font-bold" style={{ color: 'var(--ion-color-primary-shade)' }}>
               {formatCurrency(balanceAmount)}
             </p>
           </div>
@@ -310,7 +322,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               required
             />
             {parseFloat(amount) > balanceAmount && (
-              <p className="text-sm mt-1" style={{ color: '#eb445a' }}>
+              <p className="text-sm mt-1" style={{ color: 'var(--ion-color-danger)' }}>
                 {t('payment.amountExceedsBalance')}
               </p>
             )}
@@ -377,7 +389,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         type="button"
                         onClick={() => removeSplitTender(index)}
                         className="text-sm"
-                        style={{ color: '#eb445a' }}
+                        style={{ color: 'var(--ion-color-danger)' }}
                       >
                         {t('payment.removeTender')}
                       </button>
@@ -414,7 +426,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               );
             })}
             {!splitModesAreUnique && (
-              <p role="alert" className="text-sm" style={{ color: '#eb445a' }}>
+              <p role="alert" className="text-sm" style={{ color: 'var(--ion-color-danger)' }}>
                 {t('payment.splitModesUnique')}
               </p>
             )}
@@ -443,7 +455,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               <button
                 type="button"
                 className="w-full rounded-lg border p-3 font-semibold"
-                style={{ borderColor: '#3880ff', color: '#3880ff' }}
+                style={{
+                  borderColor: 'var(--ion-color-primary)',
+                  color: 'var(--ion-color-primary)',
+                }}
                 onClick={addSplitTender}
               >
                 {t('payment.addTender')}

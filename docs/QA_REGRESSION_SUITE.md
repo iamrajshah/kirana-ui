@@ -3,6 +3,19 @@
 Use a disposable or explicitly approved demo tenant. Never store passwords,
 tokens, OTPs, customer data, or provider keys in this file or a test report.
 
+## Dialog themes — 4 November 2026
+
+In both themes at 390, 820 and 1440 pixels, open Collect Payment, its payment-mode
+alert, the customer picker, counter-name/held-bill dialog, WhatsApp review,
+user/firm forms and the language selector. Verify raised backgrounds, readable
+labels, selected options, amount summaries, focus and cancel actions. Native
+date/select controls must follow the selected app theme. Printing must retain
+the receipt's white page. The dark Ionic tonal scale is required by alert radio
+labels, messages and dividers; mocking Ionic components in unit tests does not
+exercise these CSS surfaces. Theme changes never alter a tender, customer or
+submission action. Use fixture data or cancel forms without saving during the
+visual run.
+
 ## Release evidence — 4 November 2026 candidate
 
 - 99 test files / 454 tests passed after the trial, entitlement, dashboard and
