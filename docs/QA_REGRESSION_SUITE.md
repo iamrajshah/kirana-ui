@@ -51,8 +51,8 @@ grant a staff role a management screen or a write permission it does not have.
 | Area                                           | OWNER               | MANAGER              | CASHIER                                                |
 | ---------------------------------------------- | ------------------- | -------------------- | ------------------------------------------------------ |
 | Billing, customers, invoice/payment collection | Yes                 | Yes                  | Yes                                                    |
-| Dashboard                                      | Shop-wide analysis  | Cashier performance  | Own-counter summary only                              |
-| Products/inventory management screens           | Plan/policy         | Plan/policy          | No                                                     |
+| Dashboard                                      | Shop-wide analysis  | Cashier performance  | Own-counter summary only                               |
+| Products/inventory management screens          | Plan/policy         | Plan/policy          | No                                                     |
 | Suppliers/purchases                            | Yes                 | Manager when allowed | No                                                     |
 | Reports                                        | Plan/policy         | Plan/policy          | No by default                                          |
 | Staff, plan, firms, backup/restore             | Owner only          | No                   | No                                                     |
@@ -150,6 +150,10 @@ refresh still updates access.
    print, PDF, and share.
 8. Receipt/PDF shows shop branding, items, totals, payment position, MRP savings,
    and readable layout; print preview must not be blank.
+   Inspect the actual generated PDF page width: a selected 58 mm/80 mm print
+   must be about 164.41/226.77 points. Ordinary Download PDF remains A4 at
+   595.28 points. Checking only the print iframe's paper attribute or replacing
+   the default PDF adapter in a unit test does not verify the rendered width.
 
 ## Products, stock, and purchases
 
