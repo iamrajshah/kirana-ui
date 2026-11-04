@@ -3,6 +3,21 @@
 Use a disposable or explicitly approved demo tenant. Never store passwords,
 tokens, OTPs, customer data, or provider keys in this file or a test report.
 
+## Purchase input visibility — 4 November 2026
+
+At 390 and 820 pixels in both themes, add a product without submitting the
+purchase. Scroll the price input into view, focus it, and check every quantity,
+cost, GST/HSN and expiry label remains within its Ionic item. Repeat with Box/pack
+and English, Hindi, Marathi and Gujarati. Quantity buttons require 44-pixel touch
+targets. The mobile quantity/price row must wrap; tablet keeps the compact row.
+Inspect `.input-wrapper` inside the `ion-item` shadow root: horizontal offset
+and content overflow must be zero after scrolling and focusing. Resetting only
+the document scroll does not detect this regression. Run the built-page check
+with `node scripts/verify-purchase-responsive.mjs --url=<built-preview>
+--api=<api-base> --state=<private-owner-storage-state> --playwright-root=<qa-tools>`;
+use `--mode=PACK` for pack controls. The check blocks all non-GET business calls,
+records redacted bounds and screenshots, and never submits a purchase.
+
 ## Held-bill editor continuity — 4 November 2026
 
 Keep the same browser tab and Billing page mounted: add an item, Hold it using
