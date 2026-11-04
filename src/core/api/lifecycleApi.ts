@@ -95,7 +95,11 @@ export const lifecycleApi = apiSlice.injectEndpoints({
       query: () => '/auth/session-context',
       transformResponse: (response: { data: SessionContext }) => response.data,
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-        dispatch(setSessionContext((await queryFulfilled).data));
+        try {
+          dispatch(setSessionContext((await queryFulfilled).data));
+        } catch {
+          // The query retains its error; keep the last confirmed session.
+        }
       },
     }),
     selectAccountMembership: builder.mutation<
@@ -104,9 +108,13 @@ export const lifecycleApi = apiSlice.injectEndpoints({
     >({
       query: (body) => ({ url: '/auth/membership/select', method: 'POST', body }),
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-        const credentials = (await queryFulfilled).data.data;
-        dispatch(setCredentials(credentials));
-        dispatch(apiSlice.util.resetApiState());
+        try {
+          const credentials = (await queryFulfilled).data.data;
+          dispatch(setCredentials(credentials));
+          dispatch(apiSlice.util.resetApiState());
+        } catch {
+          // Failed selection stays in the current shop; the mutation exposes its error.
+        }
       },
     }),
   }),

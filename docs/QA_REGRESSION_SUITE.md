@@ -106,6 +106,14 @@ grant removed features. Disable private margin while a GST bill already has a
 quote: its cached profit must disappear immediately while normal billing totals
 remain visible. Repeat after session refresh without reloading the application.
 
+Simulate a temporary failure of `/subscription/access`, `/auth/session-context`
+and membership selection. Each request must retain its error and existing error
+feedback while leaving the last confirmed shop/session/access untouched. Check
+the browser console for unhandled promise rejections as well as the page itself;
+handling the caller's `unwrap()` alone does not handle an async RTK Query
+`onQueryStarted` failure. Restore the service and confirm a later successful
+refresh still updates access.
+
 ## Authentication and lifecycle
 
 1. Password login works for each active role and invalid credentials show one
