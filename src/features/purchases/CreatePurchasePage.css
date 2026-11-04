@@ -130,9 +130,33 @@ body.dark .purchase-pending-notice strong {
 .purchase-price-field {
   display: grid;
   gap: 6px;
+  min-width: 0;
   color: var(--ion-color-step-700, #33413b);
   font-size: 0.82rem;
   font-weight: 600;
+}
+
+.purchase-price-field input {
+  min-width: 0;
+}
+
+.purchase-line-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.purchase-quantity-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.purchase-quantity-controls ion-button {
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .purchase-tax-treatment,
@@ -198,6 +222,20 @@ body.dark .purchase-pending-notice strong {
 }
 
 @media (max-width: 520px) {
+  .purchase-line-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .purchase-quantity-controls {
+    flex-wrap: wrap;
+  }
+
+  .purchase-quantity-label {
+    flex-basis: 100%;
+    white-space: normal;
+  }
+
   .purchase-unit-conversion {
     grid-template-columns: 1fr;
   }

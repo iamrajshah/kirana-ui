@@ -794,15 +794,8 @@ const CreatePurchasePage: React.FC = () => {
                         </label>
                       </div>
 
-                      <div
-                        style={{
-                          display: 'flex',
-                          gap: '12px',
-                          marginTop: '8px',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div className="purchase-line-controls">
+                        <div className="purchase-quantity-controls">
                           <span className="purchase-quantity-label">
                             {item.purchase_mode === 'PACK'
                               ? t('purchases.packQuantity')
