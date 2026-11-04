@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProductDetailPage } from './ProductDetailPage';
 
-const state = vi.hoisted(() => ({ updateVariant: vi.fn() }));
+const state = vi.hoisted(() => ({ updateProduct: vi.fn(), updateVariant: vi.fn() }));
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('react-router', () => ({ useParams: () => ({ id: 'product-1' }) }));
@@ -27,6 +27,7 @@ vi.mock('@core/api/productApi', () => ({
       data: {
         id: 'product-1',
         name: 'Atta',
+        hsn_code: '1001',
         category_id: '1',
         is_active: true,
         variants: [
@@ -48,7 +49,7 @@ vi.mock('@core/api/productApi', () => ({
     error: null,
   }),
   useGetProductPurchaseCostsQuery: () => ({ data: { data: [] } }),
-  useUpdateProductMutation: () => [vi.fn(), { isLoading: false }],
+  useUpdateProductMutation: () => [state.updateProduct, { isLoading: false }],
   useUpdateVariantMutation: () => [state.updateVariant, { isLoading: false }],
   useUpdateVariantPurchaseCostMutation: () => [vi.fn(), { isLoading: false }],
 }));
@@ -93,7 +94,8 @@ vi.mock('@ionic/react', () => {
     IonLabel: Container,
     IonBadge: Container,
     IonIcon: Container,
-    IonToast: Container,
+    IonToast: ({ isOpen, message }: { isOpen?: boolean; message?: string }) =>
+      isOpen ? <div role="alert">{message}</div> : null,
     IonModal: ({ children, isOpen }: PropsWithChildren<{ isOpen?: boolean }>) =>
       isOpen ? <div>{children}</div> : null,
     IonButton: ({
@@ -113,6 +115,8 @@ vi.mock('@ionic/react', () => {
 
 describe('ProductDetailPage UQC quantity factor', () => {
   beforeEach(() => {
+    state.updateProduct.mockReset();
+    state.updateProduct.mockReturnValue({ unwrap: () => Promise.resolve({ data: {} }) });
     state.updateVariant.mockReset();
     state.updateVariant.mockReturnValue({ unwrap: () => Promise.resolve({ data: {} }) });
   });
@@ -133,5 +137,17 @@ describe('ProductDetailPage UQC quantity factor', () => {
       id: 'variant-1',
       data: expect.objectContaining({ uqc_quantity_factor: 0.5 }),
     });
+  });
+
+  it('blocks an invalid HSN before calling the product API', () => {
+    render(<ProductDetailPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'products.editProduct' }));
+    fireEvent.change(screen.getByLabelText('taxFields.hsnCode'), {
+      target: { value: '1234567' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'products.updateProduct' }));
+
+    expect(state.updateProduct).not.toHaveBeenCalled();
+    expect(screen.getByText('taxFields.hsnCodeInvalid')).toBeTruthy();
   });
 });

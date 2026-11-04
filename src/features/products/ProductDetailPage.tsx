@@ -39,7 +39,10 @@ import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice'
 import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
 import { hasPermission } from '@core/permissions/permissions';
 import { APP_NAME } from '@core/constants';
-import { optionalGstRateIsValid } from '@core/constants/gstMasterData';
+import {
+  optionalGstRateIsValid,
+  optionalHsnCodeIsSupported,
+} from '@core/constants/gstMasterData';
 import { ProductBarcodeLabelModal } from './ProductBarcodeLabelModal';
 import { useGetExpiryAlertsQuery } from '@core/api/expiryApi';
 import { parseOptionalUqcQuantityFactor } from './uqcQuantityFactor';
@@ -195,6 +198,11 @@ export const ProductDetailPage: React.FC = () => {
   };
 
   const handleUpdateProduct = async () => {
+    if (!optionalHsnCodeIsSupported(editHsnCode)) {
+      setErrorMessage(t('taxFields.hsnCodeInvalid'));
+      setShowError(true);
+      return;
+    }
     try {
       await updateProduct({
         id,
@@ -306,7 +314,7 @@ export const ProductDetailPage: React.FC = () => {
           </IonButtons>
           <IonTitle>{product.name}</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handleEditClick}>
+            <IonButton onClick={handleEditClick} aria-label={t('products.editProduct')}>
               <IonIcon slot="icon-only" icon={pencil} />
             </IonButton>
           </IonButtons>

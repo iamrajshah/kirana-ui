@@ -89,7 +89,8 @@ vi.mock('@ionic/react', () => {
     IonFabButton: Container,
     IonModal: Container,
     IonButtons: Container,
-    IonToast: Container,
+    IonToast: ({ isOpen, message }: { isOpen?: boolean; message?: string }) =>
+      isOpen ? <div role="alert">{message}</div> : null,
     IonHeader: Container,
     IonToolbar: Container,
     IonTitle: Container,
@@ -297,4 +298,23 @@ it('blocks product creation when the optional UQC quantity factor is not positiv
 
   expect(state.createProduct).not.toHaveBeenCalled();
   expect(state.createVariant).not.toHaveBeenCalled();
+});
+
+it('blocks product creation locally when the HSN length is invalid', () => {
+  render(<ProductsPage />);
+  fireEvent.click(screen.getByRole('button', { name: 'products.addManually' }));
+  fireEvent.change(screen.getByLabelText('products.productNameLabel'), {
+    target: { value: 'Tata Salt' },
+  });
+  fireEvent.change(screen.getByLabelText('products.sellingPriceLabel'), {
+    target: { value: '40' },
+  });
+  fireEvent.change(screen.getByLabelText('taxFields.hsnCode'), {
+    target: { value: '12345' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'products.createProductButton' }));
+
+  expect(state.createProduct).not.toHaveBeenCalled();
+  expect(state.createVariant).not.toHaveBeenCalled();
+  expect(screen.getByText('taxFields.hsnCodeInvalid')).toBeTruthy();
 });

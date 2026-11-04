@@ -1705,6 +1705,7 @@
     "uqcQuantityFactor": "GST quantity per sale unit",
     "uqcQuantityFactorHint": "Enter the GST base quantity represented by one sale unit. Examples: a 5 kg pack with UQC KGS = 5; a 500 g pack with UQC KGS = 0.5 (or UQC GMS = 500); one bottle with UQC BTL = 1. Leave blank if unknown—GST reports will require review.",
     "uqcQuantityFactorInvalid": "Enter a quantity greater than 0, not more than 1,000,000, with up to 3 decimal places.",
+    "hsnCodeInvalid": "Enter a valid 4, 6 or 8 digit HSN code, or leave it blank.",
     "unsupportedGstRate": "Enter a GST rate from 0% to 100% with up to 2 decimal places. Current statutory rates are suggested, and other notified rates remain allowed."
   },
   "documentSettings": {

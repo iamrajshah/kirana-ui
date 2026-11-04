@@ -47,7 +47,8 @@ vi.mock('@ionic/react', () => {
     IonButtons: Container,
     IonBackButton: Container,
     IonIcon: Container,
-    IonToast: Container,
+    IonToast: ({ isOpen, message }: { isOpen?: boolean; message?: string }) =>
+      isOpen ? <div role="alert">{message}</div> : null,
     IonCard: Container,
     IonCardContent: Container,
     IonCardHeader: Container,
@@ -115,5 +116,37 @@ describe('AddProductBarcodePage GST quantity facts', () => {
         variant: expect.objectContaining({ gstPercent: 1.5, uqcQuantityFactor: 5 }),
       })
     );
+  });
+
+  it('blocks an invalid HSN before creating a barcode product', async () => {
+    render(<AddProductBarcodePage />);
+    fireEvent.change(screen.getByLabelText('foundation.barcode.barcode'), {
+      target: { value: '890000000001' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'foundation.barcode.check' }));
+
+    await screen.findByText('foundation.barcode.createNew');
+    fireEvent.change(screen.getByLabelText('foundation.barcode.masterName *'), {
+      target: { value: 'Atta' },
+    });
+    fireEvent.change(screen.getByLabelText('products.productName *'), {
+      target: { value: 'Atta 5 kg' },
+    });
+    fireEvent.change(screen.getByLabelText('foundation.barcode.mrp *'), {
+      target: { value: '300' },
+    });
+    fireEvent.change(screen.getByLabelText('products.sellingPrice *'), {
+      target: { value: '280' },
+    });
+    fireEvent.change(screen.getByLabelText('foundation.barcode.initialQuantity *'), {
+      target: { value: '2' },
+    });
+    fireEvent.change(screen.getByLabelText('taxFields.hsnCode'), {
+      target: { value: '1234567' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'products.createProductButton' }));
+
+    expect(state.createProduct).not.toHaveBeenCalled();
+    expect(screen.getByText('taxFields.hsnCodeInvalid')).toBeTruthy();
   });
 });

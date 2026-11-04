@@ -42,7 +42,10 @@ import {
 } from '@components';
 import { formatCurrency } from '@utils/helpers';
 import { ROUTES } from '@core/constants';
-import { optionalGstRateIsValid } from '@core/constants/gstMasterData';
+import {
+  optionalGstRateIsValid,
+  optionalHsnCodeIsSupported,
+} from '@core/constants/gstMasterData';
 import { filterProducts } from '@utils/localSearch';
 import { useDebouncedValue } from '@hooks/useDebouncedValue';
 import { useRequestSettledInfiniteScroll } from '@hooks/useRequestSettledInfiniteScroll';
@@ -209,6 +212,11 @@ export const ProductsPage: React.FC = () => {
       const parsedGstPercent = gstPercent ? Number(gstPercent) : null;
       if (!optionalGstRateIsValid(parsedGstPercent)) {
         setErrorMessage(t('taxFields.unsupportedGstRate'));
+        setShowError(true);
+        return;
+      }
+      if (!optionalHsnCodeIsSupported(hsnCode)) {
+        setErrorMessage(t('taxFields.hsnCodeInvalid'));
         setShowError(true);
         return;
       }

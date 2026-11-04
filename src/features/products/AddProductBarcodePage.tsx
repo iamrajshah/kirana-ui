@@ -35,7 +35,10 @@ import {
 } from '@components';
 import type { BarcodeLookupData, UqcCode } from '@core/types';
 import { useTranslation } from 'react-i18next';
-import { optionalGstRateIsValid } from '@core/constants/gstMasterData';
+import {
+  optionalGstRateIsValid,
+  optionalHsnCodeIsSupported,
+} from '@core/constants/gstMasterData';
 import { parseOptionalUqcQuantityFactor } from './uqcQuantityFactor';
 import './stock-workspace.css';
 
@@ -172,6 +175,11 @@ export const AddProductBarcodePage: React.FC = () => {
     const parsedGstPercent = gstPercent ? Number(gstPercent) : null;
     if (!optionalGstRateIsValid(parsedGstPercent)) {
       setErrorMessage(t('taxFields.unsupportedGstRate'));
+      setShowError(true);
+      return;
+    }
+    if (!optionalHsnCodeIsSupported(hsnCode)) {
+      setErrorMessage(t('taxFields.hsnCodeInvalid'));
       setShowError(true);
       return;
     }
