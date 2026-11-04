@@ -1967,7 +1967,7 @@ export const BillingPage: React.FC = () => {
               role="dialog"
               aria-modal="true"
               aria-labelledby="counter-dialog-title"
-              className="w-full rounded-2xl bg-white p-5 shadow-xl"
+              className="dialog-surface w-full rounded-2xl p-5 shadow-xl"
             >
               <h2 id="counter-dialog-title" className="text-xl font-bold text-gray-900">
                 {t('billing.heldBills.counterTitle')}

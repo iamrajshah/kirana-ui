@@ -1,5 +1,6 @@
 /* Ionic Variables and Theming */
 :root {
+  color-scheme: light;
   /** primary **/
   --ion-color-primary: #087f5b;
   --ion-color-primary-rgb: 8, 127, 91;
@@ -60,10 +61,13 @@
   --ion-background-color: #edf5f1;
   --ion-background-color-rgb: 237, 245, 241;
   --ion-text-color: #17231f;
-  --ion-text-color-secondary: #64756f;
+  --ion-text-color-secondary: #576b61;
   --ion-card-background: #ffffff;
   --ion-item-background: #ffffff;
   --ion-border-color: #d6e4dd;
+  --ion-overlay-background-color: var(--kirana-surface-raised);
+  --ion-placeholder-color: var(--ion-text-color-secondary);
+  --kirana-positive-text: #166534;
 
   /* Modern Bazaar shell */
   --kirana-shell-background: #edf5f1;
@@ -86,6 +90,9 @@
 
 /* Dark mode */
 body.dark {
+  color-scheme: dark;
+  --ion-overlay-background-color: var(--kirana-surface-raised);
+  --ion-placeholder-color: var(--ion-text-color-secondary);
   --ion-color-primary: #34d399;
   --ion-color-primary-rgb: 52, 211, 153;
   --ion-color-primary-contrast: #052e23;
@@ -135,6 +142,35 @@ body.dark {
   --ion-color-light-shade: #192b25;
   --ion-color-light-tint: #33463f;
 
+  --ion-color-dark: #effaf5;
+  --ion-color-dark-rgb: 239, 250, 245;
+  --ion-color-dark-contrast: #0b1613;
+  --ion-color-dark-contrast-rgb: 11, 22, 19;
+  --ion-color-dark-shade: #d2dcd8;
+  --ion-color-dark-tint: #f1fbf6;
+
+  /* Ionic alerts, selects and action sheets use this scale for their labels,
+     dividers and selected states. Without it they keep the light defaults. */
+  --ion-color-step-50: #13231e;
+  --ion-color-step-100: #1c312a;
+  --ion-color-step-150: #29443b;
+  --ion-color-step-200: #36564a;
+  --ion-color-step-250: #426556;
+  --ion-color-step-300: #4e7463;
+  --ion-color-step-350: #5a836f;
+  --ion-color-step-400: #6a927f;
+  --ion-color-step-450: #7ca28f;
+  --ion-color-step-500: #8cb19f;
+  --ion-color-step-550: #9db4ab;
+  --ion-color-step-600: #acc5bb;
+  --ion-color-step-650: #bad1c6;
+  --ion-color-step-700: #c5dcd0;
+  --ion-color-step-750: #d1e5da;
+  --ion-color-step-800: #dbece3;
+  --ion-color-step-850: #e5f3eb;
+  --ion-color-step-900: #effaf5;
+  --ion-color-step-950: #f7fffb;
+
   /* App-specific dark mode variables */
   --ion-background-color: #0b1613;
   --ion-background-color-rgb: 11, 22, 19;
@@ -142,6 +178,7 @@ body.dark {
   --ion-text-color: #effaf5;
   --ion-text-color-rgb: 239, 250, 245;
   --ion-text-color-secondary: #9db4ab;
+  --kirana-positive-text: #86efac;
 
   --ion-card-background: #13231e;
 

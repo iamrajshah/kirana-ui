@@ -113,38 +113,35 @@ body.dark .border-gray-200,
 body.dark .border-gray-300 {
   border-color: var(--ion-border-color) !important;
 }
-/* Fix IonSelect popover dark mode */
-body.dark .select-popover .popover-content,
-body.dark ion-popover ion-content,
-body.dark ion-popover ion-list,
-body.dark ion-popover ion-item {
-  background-color: var(--ion-background-color);
+/* Overlays are raised surfaces. Set Ionic's public properties on the host so
+   shadow-root content and dynamically mounted overlays share the same theme. */
+ion-modal,
+ion-alert,
+ion-popover,
+ion-action-sheet {
+  --background: var(--ion-overlay-background-color);
   color: var(--ion-text-color);
 }
 
-body.dark ion-popover ion-radio,
-body.dark ion-popover ion-label {
+ion-modal ion-content,
+ion-popover ion-content {
+  --background: var(--ion-overlay-background-color);
+}
+
+ion-popover ion-list,
+ion-popover ion-item {
+  --background: var(--ion-overlay-background-color);
+  --ion-item-background: var(--ion-overlay-background-color);
+}
+
+.dialog-surface {
+  background: var(--kirana-surface-raised);
   color: var(--ion-text-color);
 }
 
-body.dark ion-select-popover ion-list,
-body.dark ion-select-popover ion-item {
-  background-color: var(--ion-background-color);
+.dialog-field {
+  background: var(--ion-item-background);
   color: var(--ion-text-color);
-}
-
-body.dark ion-select-popover ion-radio-group ion-item {
-  --background: var(--ion-background-color);
-  --color: var(--ion-text-color);
-}
-
-body.dark .alert-wrapper {
-  background-color: var(--ion-background-color);
-  color: var(--ion-text-color);
-}
-
-body.dark .alert-button {
-  color: var(--ion-color-primary);
 }
 
 /* Comprehensive dark mode fixes for all components */
@@ -177,14 +174,6 @@ body.dark ion-select {
   --placeholder-color: var(--ion-color-medium);
 }
 
-body.dark ion-modal {
-  --background: var(--ion-background-color);
-}
-
-body.dark ion-modal ion-content {
-  --background: var(--ion-background-color);
-}
-
 body.dark ion-searchbar {
   --background: var(--ion-item-background);
   --color: var(--ion-text-color);
@@ -213,6 +202,9 @@ body.dark input[type='number'],
 body.dark input[type='email'],
 body.dark input[type='password'],
 body.dark input[type='tel'],
+body.dark input[type='date'],
+body.dark input[type='datetime-local'],
+body.dark select,
 body.dark textarea {
   background-color: var(--ion-item-background) !important;
   color: var(--ion-text-color) !important;
@@ -239,7 +231,7 @@ body.dark .active\:bg-gray-100:active {
 
 /* Language Selector Action Sheet Styling */
 .language-selector-sheet .action-sheet-group {
-  background-color: var(--ion-background-color) !important;
+  background-color: var(--ion-overlay-background-color) !important;
 }
 
 .language-selector-sheet .action-sheet-button {
@@ -254,18 +246,6 @@ body.dark .active\:bg-gray-100:active {
 .language-selector-sheet .action-sheet-button.action-sheet-selected {
   color: var(--ion-color-primary) !important;
   font-weight: 600 !important;
-}
-
-body.dark .language-selector-sheet .action-sheet-group {
-  background-color: var(--ion-background-color) !important;
-}
-
-body.dark .language-selector-sheet .action-sheet-button {
-  color: var(--ion-text-color) !important;
-}
-
-body.dark .language-selector-sheet .action-sheet-title {
-  color: var(--ion-text-color) !important;
 }
 
 /* Barcode Scanner Styles */

@@ -406,6 +406,13 @@ pouches`) so a shopkeeper can catch an entry mistake.
 
 ## Local verification
 
+Dialogs use the raised shop surface in both themes, with Ionic's tonal scale
+providing readable alert labels and selection states. Payment summaries and
+WhatsApp/counter dialogs use theme tokens rather than fixed light fills.
+Overlay aliases must be declared in each theme scope so changing the body theme
+does not inherit a resolved light color from `:root`. Native controls use the
+chosen `color-scheme`; the invoice print stylesheet remains independent.
+
 ```bash
 npm test
 npm run lint
@@ -436,11 +443,12 @@ backup retention, secrets rotation, and availability targets.
 ## Deliberately later
 
 Offline billing requires an explicit outbox, conflict, stock, and payment
-reconciliation design and should not be represented as ready. Smart reorder
-suggestions and WhatsApp paste-to-bill are valuable follow-on features. Automated
-WhatsApp delivery or ingestion additionally needs provider, consent, privacy,
-and cost decisions. GST filing, e-invoice/IRN and e-way-bill submission remain
-outside the current CA-preparation reports.
+reconciliation design and should not be represented as ready. WhatsApp
+Paste-to-Bill already supports a staff-pasted list, editable product matches and
+review before adding items to the bill. Automated WhatsApp delivery or inbox
+ingestion additionally needs provider, consent, privacy, and cost decisions.
+GST filing, e-invoice/IRN and e-way-bill submission remain outside the current
+CA-preparation reports.
 
 ## Current release qualification
 
