@@ -58,7 +58,14 @@ The system supports multiple stores (tenants) in a single installation. Each sto
 
 ## User Types & Permissions
 
-The system has three user roles with different access levels:
+The system has three user roles with different access levels. The lists below
+describe role boundaries, not unconditional plan grants. Check the active shop
+lifecycle, resolved feature entitlements, global role policy, dependencies and
+operation permission as described in the [regression suite](QA_REGRESSION_SUITE.md#role-matrix).
+Shop-specific overrides are managed in Platform Admin > Shops > Feature Access;
+they cannot grant an unauthorized role or reactivate an expired shop. Open POS
+sessions refresh commercial access every 60 seconds and on focus/reconnect, so a
+configuration change requires no app deployment.
 
 ### 1. OWNER (Full Access)
 **Who**: Store owner or proprietor
@@ -73,13 +80,13 @@ The system has three user roles with different access levels:
 - ✅ Purchase Entry
 - ✅ Payment Recording
 - ✅ Invoice Management
-- ✅ All Reports
+- ✅ Reports included and enabled for the shop/role
 - ✅ User Management (create/edit MANAGER and CASHIER users)
 - ✅ Import/Export Data
 - ✅ Profile Settings
 
 **Cannot Access**:
-- ❌ Cannot create another OWNER (only one owner per store)
+- ❌ The Staff form creates MANAGER/CASHIER accounts; it does not create OWNER accounts
 
 ---
 
@@ -87,7 +94,7 @@ The system has three user roles with different access levels:
 **Who**: Store manager or supervisor
 
 **Can Access**:
-- ✅ Dashboard (all metrics)
+- ✅ Dashboard (cashier performance and operational summary)
 - ✅ Billing/POS
 - ✅ Customer Management
 - ✅ Supplier Management
@@ -96,12 +103,13 @@ The system has three user roles with different access levels:
 - ✅ Purchase Entry
 - ✅ Payment Recording
 - ✅ Invoice Management
-- ✅ All Reports
+- ✅ Reports included and enabled for the shop/role
+- ✅ Import/Export operations included and enabled for the shop/role
 - ✅ Profile Settings
 
 **Cannot Access**:
 - ❌ User Management (cannot create or modify users)
-- ❌ Import/Export Data
+- ❌ Owner-only settings, firms and backup/restore
 
 ---
 
@@ -109,15 +117,18 @@ The system has three user roles with different access levels:
 **Who**: Counter staff, billing operator
 
 **Can Access**:
+- ✅ Dashboard (own-counter summary only)
 - ✅ Billing/POS (create invoices)
-- ✅ Customer Management (view, limited add)
+- ✅ Customers/khata (view permitted customer records)
+- ✅ Invoice history
 - ✅ Payment Recording
+- ✅ Cash shifts
 - ✅ Profile Settings
+- ✅ Product catalogue/search and permitted stock read APIs used by billing
 
 **Cannot Access**:
-- ❌ Dashboard
-- ❌ Product Management
-- ❌ Inventory Management
+- ❌ Shop-wide dashboard financial analysis and other cashiers' performance
+- ❌ Products/Inventory management screens and product/stock writes
 - ❌ Purchase Entry
 - ❌ Supplier Management
 - ❌ Reports
@@ -886,7 +897,7 @@ Payable Balance = Total Purchases (Credit) - Total Payments (Debit)
 10. View dashboard stats
 
 #### Scenario 2: Daily Operations
-1. CASHIER logs in
+1. CASHIER logs in and checks their own-counter dashboard without shop-wide balances
 2. Create 10 invoices (mix of cash and credit)
 3. Record 3 customer payments
 4. MANAGER logs in
@@ -1008,9 +1019,12 @@ Payable Balance = Total Purchases (Credit) - Total Payments (Debit)
 - [ ] Import/Export functionality
 
 ### Role-Based Testing
-- [ ] OWNER can access all features
+- [ ] OWNER can access features enabled by the shop's lifecycle, entitlements and role policy
 - [ ] MANAGER cannot access user management
-- [ ] CASHIER can only access billing and payments
+- [ ] CASHIER can access own-counter dashboard, billing, customers, invoices, payments and shifts when entitled
+- [ ] CASHIER billing catalogue/stock reads work, while management screens and product/stock writes remain blocked
+- [ ] Shop overrides affect only the selected shop; role/lifecycle/dependency denials remain enforced
+- [ ] Access changes reach an open POS session after refresh/focus/reconnect without app deployment, including LEGACY_COMPAT
 - [ ] Unauthorized access properly blocked
 
 ### Data Integrity

@@ -42,14 +42,17 @@ Tested POS baseline: `b88e7bf` against server `9aeef37`.
 
 ## Role matrix
 
-Effective access always combines the active subscription, plan entitlement,
-global feature switch, and admin-configured role policy.
+Use this matrix for POS screens, then verify the API operation separately.
+Effective access combines the shop lifecycle, server-resolved entitlement,
+global feature/role policy, feature dependencies and the operation's permission.
+The base UI tab boundary still applies; enabling a feature for a shop does not
+grant a staff role a management screen or a write permission it does not have.
 
 | Area                                           | OWNER               | MANAGER              | CASHIER                                                |
 | ---------------------------------------------- | ------------------- | -------------------- | ------------------------------------------------------ |
 | Billing, customers, invoice/payment collection | Yes                 | Yes                  | Yes                                                    |
-| Dashboard and operational exceptions           | Yes                 | Yes                  | No unless policy changes                               |
-| Products/inventory                             | Yes                 | Yes when allowed     | No by default                                          |
+| Dashboard                                      | Shop-wide analysis  | Cashier performance  | Own-counter summary only                              |
+| Products/inventory management screens           | Plan/policy         | Plan/policy          | No                                                     |
 | Suppliers/purchases                            | Yes                 | Manager when allowed | No                                                     |
 | Reports                                        | Plan/policy         | Plan/policy          | No by default                                          |
 | Staff, plan, firms, backup/restore             | Owner only          | No                   | No                                                     |
@@ -57,6 +60,43 @@ global feature switch, and admin-configured role policy.
 | Private bill margin                            | Policy, default yes | Policy, default no   | Policy, default no                                     |
 
 Test server denial, not only hidden navigation.
+
+The source references are `src/core/permissions/rolePermissions.ts` for POS tab
+access, `src/core/commercial/commercialAccess.ts` for feature/role/dependency
+checks, and the server route permission middleware for individual operations.
+CASHIER has `PRODUCT_VIEW`: product catalogue/search and permitted inventory
+read APIs support billing and must not be marked a role bypass merely because
+the Products/Inventory management tabs are absent. Product creation, cost edits,
+stock adjustments and expiry write-off still require their write permissions
+and feature policy. Test these writes are denied separately from allowed reads.
+
+### Shop-specific overrides
+
+In Platform Admin > Shops > selected shop > Feature Access, test Inherit,
+Enabled, Disabled, Restore default, and an optional future expiry. The plan and
+its subscription/add-on entitlements form the base; an active shop override is
+applied afterwards. Global feature/role boundaries, the shop lifecycle,
+dependencies, tenant scope and operation permissions remain required. Enabled
+can add a feature outside the base plan for that shop, but cannot authorize an
+otherwise forbidden role or reactivate an expired/suspended shop. `CORE_POS`
+remains protected so sign-in and recovery stay available.
+
+1. Disable an included feature in shop A and verify shop B is unchanged. Refresh
+   commercial access, then check both the menu/direct route and the classified
+   API. Restore default and verify the inherited decision returns.
+2. Enable an excluded feature only for shop A. Verify it is usable only by an
+   authorized role, with all dependencies present and an operational shop state.
+   Repeat with a missing dependency and an expired shop; both must remain denied.
+3. Verify the change reason, expiry and audit entry. A stale access version must
+   return a conflict, reload the current decision and require review before retry.
+4. After the configured expiry, verify the plan/default decision resumes. A
+   permanent override survives a plan change until restored; unrelated shop
+   records and contracted plan versions remain unchanged.
+5. Keep POS open while changing access. It polls `/subscription/access` every
+   60 seconds and refetches on window focus/reconnect. After the new summary
+   arrives, menus, direct routes and sensitive cached margin content must follow
+   it without logout, cache clearing or a UI deployment. API enforcement applies
+   on the next request even before the browser's background refresh.
 
 For a legacy compatibility shop, disable Reports in Platform Admin and refresh
 the POS session: the menu must disappear and a direct `/reports` visit must be
