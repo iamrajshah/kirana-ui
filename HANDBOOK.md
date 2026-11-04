@@ -443,11 +443,12 @@ backup retention, secrets rotation, and availability targets.
 ## Deliberately later
 
 Offline billing requires an explicit outbox, conflict, stock, and payment
-reconciliation design and should not be represented as ready. Smart reorder
-suggestions and WhatsApp paste-to-bill are valuable follow-on features. Automated
-WhatsApp delivery or ingestion additionally needs provider, consent, privacy,
-and cost decisions. GST filing, e-invoice/IRN and e-way-bill submission remain
-outside the current CA-preparation reports.
+reconciliation design and should not be represented as ready. WhatsApp
+Paste-to-Bill already supports a staff-pasted list, editable product matches and
+review before adding items to the bill. Automated WhatsApp delivery or inbox
+ingestion additionally needs provider, consent, privacy, and cost decisions.
+GST filing, e-invoice/IRN and e-way-bill submission remain outside the current
+CA-preparation reports.
 
 ## Current release qualification
 
