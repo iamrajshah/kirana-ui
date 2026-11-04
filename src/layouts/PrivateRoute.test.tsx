@@ -87,6 +87,33 @@ describe('PrivateRoute', () => {
     expect(screen.queryByText('barcode')).toBeNull();
   });
 
+  it('blocks a direct reports route after the feature is disabled for a legacy shop', () => {
+    useLocation.mockReturnValue({ pathname: ROUTES.REPORTS });
+    useAppSelector
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce({ roles: ['OWNER'] })
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce({
+        planCode: 'LEGACY_COMPAT',
+        state: 'ACTIVE',
+        accessStateVersion: '8',
+        entitlements: ['DASHBOARD', 'BILLING'],
+        limits: { staff: null, firms: null },
+        demoExpiresAt: null,
+        endsAt: null,
+        graceExpiresAt: null,
+      });
+
+    render(
+      <PrivateRoute permission="reports" commercialFeature="REPORTS">
+        <div>shop reports</div>
+      </PrivateRoute>
+    );
+
+    expect(screen.getByTestId('redirect').textContent).toBe(ROUTES.DASHBOARD);
+    expect(screen.queryByText('shop reports')).toBeNull();
+  });
+
   it.each([
     [ROUTES.EXPIRY_ALERTS, 'inventory', 'EXPIRY_TRACKING'],
     [ROUTES.PURCHASE_IMPORT, 'purchases', 'PURCHASE_BILL_IMPORT'],

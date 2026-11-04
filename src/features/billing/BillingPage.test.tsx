@@ -303,6 +303,12 @@ beforeEach(() => {
   mocks.documentError = false;
   mocks.settingsMode = 'SIMPLE_RECEIPT';
   mocks.settingsLoading = false;
+  mocks.commercialAccess = {
+    planCode: 'PRO',
+    state: 'ACTIVE',
+    entitlements: ['LIVE_MARGIN_PREVIEW'],
+    featureRoles: { LIVE_MARGIN_PREVIEW: ['OWNER'] },
+  };
   mocks.customerDetail = null;
   mocks.customerSearchData = { data: [] };
   mocks.invoice = {
@@ -390,8 +396,10 @@ it('waits for two debounced characters before searching customers', async () => 
 });
 
 describe('BillingPage', () => {
-  it('shows only a bill-level private margin estimate returned by the server', async () => {
+  it('shows bill-level margin only while the current shop policy permits it', async () => {
     mocks.user = { ...mocks.user, roles: ['OWNER'] };
+    mocks.settingsMode = 'GST_TAX_INVOICE';
+    mocks.commercialAccess.planCode = 'LEGACY_COMPAT';
     mocks.quoteInvoice.mockResolvedValue({
       data: {
         fingerprint: 'a'.repeat(64),
@@ -417,10 +425,16 @@ describe('BillingPage', () => {
         },
       },
     });
-    render(<BillingPage />);
+    const { rerender } = render(<BillingPage />);
     expect(await screen.findByText('billing.marginPreview.title')).toBeTruthy();
     expect(screen.getByText('₹25')).toBeTruthy();
     expect(screen.queryByText('₹75.00')).toBeNull();
+
+    mocks.commercialAccess.entitlements = [];
+    rerender(<BillingPage />);
+
+    expect(screen.queryByText('billing.marginPreview.title')).toBeNull();
+    expect(screen.queryByText('₹25')).toBeNull();
   });
   it('keeps long bills compact until the cashier chooses to review every item', async () => {
     mocks.invoice = {

@@ -38,12 +38,12 @@ describe('commercial client helpers', () => {
     ).toBe(true);
   });
 
-  it('keeps legacy entitlement compatibility without bypassing lifecycle or role policy', () => {
+  it('uses resolved legacy entitlements without bypassing lifecycle or role policy', () => {
     const legacy = {
       ...summary,
       planCode: 'LEGACY_COMPAT' as const,
       planLabel: 'Kirana',
-      entitlements: [] as const,
+      entitlements: ['CUSTOM_BARCODE'] as const,
     };
 
     expect(canUseCommercialFeature(['OWNER'], legacy, 'CUSTOM_BARCODE')).toBe(true);
@@ -56,20 +56,16 @@ describe('commercial client helpers', () => {
       )
     ).toBe(false);
     expect(
-      canUseCommercialFeature(
-        ['OWNER'],
-        { ...legacy, state: 'READ_ONLY' },
-        'CUSTOM_BARCODE'
-      )
+      canUseCommercialFeature(['OWNER'], { ...legacy, state: 'READ_ONLY' }, 'CUSTOM_BARCODE')
     ).toBe(false);
   });
 
-  it('honors legacy dependency role restrictions while bypassing dependency entitlements', () => {
+  it('honors legacy dependency entitlements and role restrictions', () => {
     const legacy = {
       ...summary,
       planCode: 'LEGACY_COMPAT' as const,
       planLabel: 'Kirana',
-      entitlements: [] as const,
+      entitlements: ['EXPIRY_TRACKING', 'INVENTORY', 'PRODUCTS'] as const,
       featureRoles: {
         EXPIRY_TRACKING: ['OWNER'],
         INVENTORY: [] as readonly string[],
@@ -86,6 +82,28 @@ describe('commercial client helpers', () => {
       featureRoles: { EXPIRY_TRACKING: ['OWNER'], INVENTORY: ['OWNER'] },
     };
     expect(canUseCommercialFeature(['OWNER'], enabled, 'EXPIRY_TRACKING')).toBe(true);
+    expect(
+      canUseCommercialFeature(
+        ['OWNER'],
+        { ...enabled, entitlements: ['EXPIRY_TRACKING', 'PRODUCTS'] },
+        'EXPIRY_TRACKING'
+      )
+    ).toBe(false);
+  });
+
+  it('honors shop-disabled features in legacy plans instead of granting the whole plan', () => {
+    const legacy = {
+      ...summary,
+      planCode: 'LEGACY_COMPAT' as const,
+      entitlements: ['BILLING'] as const,
+    };
+
+    expect(canUseCommercialFeature(['OWNER'], legacy, 'BILLING')).toBe(true);
+    expect(canUseCommercialFeature(['OWNER'], legacy, 'REPORTS')).toBe(false);
+    expect(canUseCommercialFeature(['OWNER'], legacy, 'LIVE_MARGIN_PREVIEW')).toBe(false);
+    expect(canUseCommercialFeature(['OWNER'], { ...legacy, entitlements: [] }, 'BILLING')).toBe(
+      false
+    );
   });
 
   it('keeps GST/CA reports owner-only by fallback while honoring runtime role policy', () => {

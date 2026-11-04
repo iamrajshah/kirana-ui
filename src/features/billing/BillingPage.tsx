@@ -351,7 +351,7 @@ export const BillingPage: React.FC = () => {
   // Keep the last confirmed estimate visible while a new quote is calculated.
   // Clearing it on every quantity click made the card visibly disappear and
   // reappear, which looked like the whole bill was being rebuilt.
-  const marginPreview = activeQuote?.margin_preview;
+  const marginPreview = canViewMarginPreview ? activeQuote?.margin_preview : undefined;
   const marginPreviewUpdating = Boolean(
     marginPreview && activeQuoteKey !== quoteKey && !quoteError
   );
