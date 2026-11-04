@@ -23,8 +23,12 @@ export const subscriptionApi = apiSlice.injectEndpoints({
       query: () => '/subscription/access',
       transformResponse: (response: { data: CommercialAccessSummary }) => response.data,
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
-        const { data } = await queryFulfilled;
-        dispatch(setCommercialAccess(data));
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(setCommercialAccess(data));
+        } catch {
+          // The query retains its error; keep the last confirmed access state.
+        }
       },
     }),
     listRenewals: builder.query<RenewalRequest[], void>({
