@@ -123,3 +123,13 @@ it('keeps default category queries active-only for product selection', async () 
   expect(result.data).toEqual([]);
   expect(new URL(requests[0].url).searchParams.has('includeInactive')).toBe(false);
 });
+
+it('keeps user identity and status controls in separate responsive card regions', async () => {
+  render(<Provider store={makeStore()}><UsersPage /></Provider>);
+  const name = await screen.findByText('Test Manager');
+  const content = name.closest('.user-card__content');
+
+  expect(content).toBeTruthy();
+  expect(name.closest('.user-card__identity')).toBeTruthy();
+  expect(content?.querySelector('.user-card__actions input[type="checkbox"]')).toBeTruthy();
+});
