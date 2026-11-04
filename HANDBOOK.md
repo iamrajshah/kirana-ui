@@ -151,17 +151,33 @@ remain usable. Cashiers continue to see their normal operational dashboard.
 
 ### Runtime feature and plan controls
 
-- A plan version describes the feature ceiling, price and capacity shown to a
+- A plan version describes the base feature package, price and capacity shown to a
   buyer. Existing paid subscriptions stay pinned to their contracted immutable
   version until an explicit plan change.
 - Platform Admin feature-role policy independently decides which OWNER, MANAGER
   or CASHIER roles may use each enabled feature. An empty role list disables it
   for shop users.
-- The effective rule is the intersection of subscription entitlement and role
-  policy. The UI hides navigation and protects direct routes; the server repeats
-  the decision for every classified API route.
+- Platform Admin > Shops > selected shop > Feature Access adds a shop-specific
+  Inherit/Enabled/Disabled decision after the plan and subscription/add-on
+  entitlements. Enabled may add a feature outside the base package for that shop;
+  Disabled removes it. Neither changes the contracted plan or another shop.
+  Overrides may expire or remain until restored, survive plan changes while
+  active, and require a reason, fresh reauthentication and the current access
+  version. Restore default removes the shop override.
+- A shop override does not grant a new staff role, bypass global feature/role
+  policy or operation permissions, satisfy missing dependencies, or reactivate an
+  expired/suspended shop. `CORE_POS` stays protected for sign-in and recovery;
+  suspend a shop through lifecycle controls instead.
+- The UI follows the server-resolved entitlement array and role policy, including
+  an empty array and `LEGACY_COMPAT` shops. It never recreates removed access
+  from a plan name. Base tab permissions still limit management destinations;
+  the server checks tenant, lifecycle, feature, role and operation permission on
+  every classified API request.
 - Public plan catalogue responses are refreshed without a release. Open POS
-  sessions also refresh feature-role access in the background.
+  sessions poll `/subscription/access` every 60 seconds and refetch on window
+  focus or reconnect. After the new access summary arrives, menus, protected
+  routes and private cached margin content update without logout, cache clearing
+  or an app deployment. Server enforcement applies on the next API request.
 
 ### Store barcode labels
 
@@ -307,8 +323,13 @@ remain usable. Cashiers continue to see their normal operational dashboard.
 ## Navigation and role rules
 
 - OWNER and MANAGER may see the Decision Inbox and management destinations.
-- CASHIER gets billing-focused navigation and cannot receive access merely because
-  a menu item was accidentally rendered.
+- CASHIER gets their own-counter dashboard, billing, customers, invoices, payment
+  collection and shifts when entitled. Shop-wide financial analysis and management
+  destinations stay outside that role's tab boundary. An accidentally rendered
+  menu item never grants access.
+- CASHIER's `PRODUCT_VIEW` supports billing catalogue/search and permitted stock
+  reads. Products/Inventory management tabs remain OWNER/MANAGER destinations;
+  product and stock writes require separate permissions and feature access.
 - Route protection is authoritative; hiding a button is only presentation.
 - Platform routes stay outside the tenant application shell, and Platform Admin
   credentials never grant access to shop screens.
