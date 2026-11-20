@@ -673,7 +673,8 @@
     "billRows": "{{total}} में से {{shown}} पंक्तियाँ",
     "productColumn": "उत्पाद",
     "amountColumn": "राशि",
-    "noBillMatches": "इस बिल में कोई मेल नहीं मिला"
+    "noBillMatches": "इस बिल में कोई मेल नहीं मिला",
+    "priceFor": "{{product}} की कीमत"
   },
   "customers": {
     "title": "ग्राहक",
