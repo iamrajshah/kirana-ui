@@ -1744,7 +1744,10 @@
     "templates": {
       "CLASSIC": "Classic",
       "MODERN": "Modern",
-      "COMPACT": "Compact"
+      "COMPACT": "Compact",
+      "LOGO_LEFT": "Logo beside shop",
+      "BRAND_CENTRE": "Centred shop branding",
+      "DETAILED": "Detailed ruled invoice"
     },
     "gstDetails": "GST invoice profile",
     "gstDetailsHint": "These legal details are required before GST invoices can be activated.",
@@ -1775,7 +1778,14 @@
     "saving": "Saving…",
     "saved": "Bill settings saved",
     "saveFailed": "Couldn't save bill settings",
-    "loadFailed": "Couldn't load bill settings"
+    "loadFailed": "Couldn't load bill settings",
+    "previewTitle": "Live sample preview",
+    "previewOnly": "Sample only — not a completed sale",
+    "longSample": "Long bill sample",
+    "previewPdf": "Preview PDF",
+    "sampleProduct": "Sample product",
+    "sampleCustomer": "Sample customer",
+    "previewFailed": "Could not prepare the sample PDF. Check the logo URL and try again."
   },
   "shifts": {
     "title": "Cash shift",

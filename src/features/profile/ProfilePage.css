@@ -197,3 +197,40 @@
     align-items: flex-start;
   }
 }
+
+.document-template__preview--logo_left {
+  background:
+    linear-gradient(var(--ion-color-primary) 0 0) 8px 8px / 18px 18px no-repeat,
+    linear-gradient(var(--ion-color-medium) 0 0) 32px 10px / 45% 5px no-repeat,
+    repeating-linear-gradient(to bottom, var(--ion-color-light-shade) 0 3px, transparent 3px 8px);
+}
+.document-template__preview--brand_centre {
+  background:
+    linear-gradient(var(--ion-color-primary) 0 0) center 6px / 18px 18px no-repeat,
+    linear-gradient(var(--ion-color-medium) 0 0) center 29px / 55% 5px no-repeat;
+}
+.document-template__preview--detailed {
+  border: 2px solid var(--ion-color-medium);
+  background:
+    repeating-linear-gradient(to right, transparent 0 24%, var(--ion-color-light-shade) 24% 25%),
+    repeating-linear-gradient(to bottom, transparent 0 10px, var(--ion-color-light-shade) 10px 11px);
+}
+.receipt-settings-preview {
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding: 1rem 0;
+  border-top: 1px solid var(--ion-color-step-200);
+}
+.receipt-settings-preview > label {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  min-height: 44px;
+  margin-right: 1rem;
+}
+.receipt-settings-preview > button {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--ion-color-primary);
+  color: var(--ion-color-primary-shade);
+  border-radius: 0.4rem;
+}

@@ -130,7 +130,13 @@ export interface VariantPurchaseCost {
 
 export type DocumentMode = 'SIMPLE_RECEIPT' | 'GST_TAX_INVOICE';
 export type ReceiptPaperWidth = 'MM58' | 'MM80';
-export type ReceiptTemplate = 'CLASSIC' | 'MODERN' | 'COMPACT';
+export type ReceiptTemplate =
+  | 'CLASSIC'
+  | 'MODERN'
+  | 'COMPACT'
+  | 'LOGO_LEFT'
+  | 'BRAND_CENTRE'
+  | 'DETAILED';
 export type UqcCode =
   | 'BAG'
   | 'BAL'
