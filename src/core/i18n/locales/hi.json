@@ -17,7 +17,10 @@
     "thisDevice": "यह डिवाइस",
     "noDevices": "कोई सक्रिय डिवाइस नहीं",
     "lastSeen": "अंतिम उपयोग {{date}}",
-    "platform": { "web": "वेब", "android": "एंड्रॉइड" },
+    "platform": {
+      "web": "वेब",
+      "android": "एंड्रॉइड"
+    },
     "revokeDevice": "डिवाइस हटाएँ",
     "deviceRevoked": "डिवाइस की पहुँच हटा दी गई",
     "revokeFailed": "डिवाइस नहीं हटाया जा सका",
@@ -199,7 +202,11 @@
     "half_yearly": "छमाही",
     "yearly": "वार्षिक · अनुशंसित",
     "year": "वर्ष",
-    "term": { "quarterly": "तिमाही", "half_yearly": "छमाही", "yearly": "वर्ष" },
+    "term": {
+      "quarterly": "तिमाही",
+      "half_yearly": "छमाही",
+      "yearly": "वर्ष"
+    },
     "demoTitle": "7 दिन सभी ज़रूरी काम मुफ़्त आज़माएँ",
     "demoDescription": "प्लान चुनने से पहले निजी डेमो दुकान देखें। कार्ड की आवश्यकता नहीं।",
     "startDemo": "मुफ़्त डेमो शुरू करें",
@@ -655,7 +662,13 @@
         "active": "उपयोग में",
         "expired": "समय समाप्त"
       }
-    }
+    },
+    "counterScanReady": "स्कैनर तैयार · USB / Bluetooth",
+    "counterScanPaused": "स्कैनर रुका हुआ है",
+    "scansPending": "{{count}} स्कैन बाकी हैं",
+    "lastScanned": "पिछला: {{product}}",
+    "pauseScanner": "स्कैनर रोकें",
+    "resumeScanner": "स्कैनर चालू करें"
   },
   "customers": {
     "title": "ग्राहक",
@@ -1176,7 +1189,7 @@
     "purchasesLabel": "खरीदारी",
     "averageLabel": "औसत:",
     "loadFailed": "यह रिपोर्ट लोड नहीं हो सकी।",
-    "noLedgerData": "खाते का डेटा नहीं मिला",
+    "noLedgerData": "कोई खाता डेटा नहीं मिला",
     "noTrendData": "रुझान का डेटा उपलब्ध नहीं है",
     "noProfitLossData": "लाभ-हानि का डेटा उपलब्ध नहीं है",
     "selectReport": "रिपोर्ट चुनें",
@@ -1240,7 +1253,6 @@
     "lowStockAlertCount": "कम स्टॉक अलर्ट",
     "totalTransactions": "कुल लेनदेन:",
     "totalCollection": "कुल संग्रह",
-    "noLedgerData": "कोई खाता डेटा नहीं मिला",
     "noPurchaseTrend": "कोई रुझान डेटा उपलब्ध नहीं",
     "totalPurchases": "कुल खरीद:",
     "totalPurchasesCount": "कुल खरीद",
@@ -1593,7 +1605,7 @@
     "partial": "आंशिक"
   },
   "invoiceDetail": {
-    "openHeldBill": "\u0930\u094b\u0915\u093e \u0939\u0941\u0906 \u092c\u093f\u0932 \u0916\u094b\u0932\u0947\u0902",
+    "openHeldBill": "रोका हुआ बिल खोलें",
     "title": "चालान विवरण",
     "customerInformation": "ग्राहक जानकारी",
     "items": "वस्तुएं",
@@ -1715,13 +1727,20 @@
     "simpleReceipt": "साधारण रसीद",
     "gstTaxInvoice": "GST टैक्स इनवॉइस",
     "paperWidth": "डिफ़ॉल्ट थर्मल पेपर",
-    "paper": { "MM58": "58 मिमी (कॉम्पैक्ट)", "MM80": "80 मिमी (अनुशंसित)" },
+    "paper": {
+      "MM58": "58 मिमी (कॉम्पैक्ट)",
+      "MM80": "80 मिमी (अनुशंसित)"
+    },
     "footer": "रसीद फुटर (वैकल्पिक)",
     "branding": "रसीद ब्रांडिंग",
     "brandingHint": "आने वाली रसीदों की शैली चुनें। पुरानी रसीद नहीं बदलेगी।",
     "brandColor": "ब्रांड रंग (#RRGGBB)",
     "logoUrl": "HTTPS लोगो URL (वैकल्पिक)",
-    "templates": { "CLASSIC": "क्लासिक", "MODERN": "मॉडर्न", "COMPACT": "कॉम्पैक्ट" },
+    "templates": {
+      "CLASSIC": "क्लासिक",
+      "MODERN": "मॉडर्न",
+      "COMPACT": "कॉम्पैक्ट"
+    },
     "gstDetails": "GST इनवॉइस प्रोफ़ाइल",
     "gstDetailsHint": "GST इनवॉइस सक्रिय करने से पहले ये कानूनी विवरण आवश्यक हैं।",
     "supplierName": "दुकान का कानूनी नाम",
@@ -1800,9 +1819,18 @@
         "title": "उत्पाद और स्टॉक",
         "description": "कीमत, बारकोड और शुरुआती स्टॉक जोड़ें।"
       },
-      "staff": { "title": "स्टाफ जोड़ें", "description": "केवल जरूरी लोगों को पहुँच दें।" },
-      "shift": { "title": "कैश काउंटर खोलें", "description": "शुरुआती कैश दर्ज करें।" },
-      "sale": { "title": "अभ्यास बिक्री", "description": "ग्राहक से पहले एक बिल बनाकर साझा करें।" }
+      "staff": {
+        "title": "स्टाफ जोड़ें",
+        "description": "केवल जरूरी लोगों को पहुँच दें।"
+      },
+      "shift": {
+        "title": "कैश काउंटर खोलें",
+        "description": "शुरुआती कैश दर्ज करें।"
+      },
+      "sale": {
+        "title": "अभ्यास बिक्री",
+        "description": "ग्राहक से पहले एक बिल बनाकर साझा करें।"
+      }
     },
     "helpTitle": "मदद चाहिए?",
     "helpDescription": "स्क्रीन और समस्या के साथ सहायता अनुरोध भेजें।",
@@ -2042,7 +2070,12 @@
     "materialMismatch": "राशियां मेल नहीं खातीं",
     "materialMismatchHint": "सप्लायर कुल {{bill}} है, जबकि समीक्षा की गई लाइनें {{calculated}} बनती हैं।",
     "confirmMismatch": "मैंने यह अंतर जांचा है और समीक्षा किए गए मूल्यों के साथ आगे बढ़ना चाहता/चाहती हूं।",
-    "paymentMode": { "CASH": "नकद", "UPI": "UPI", "CARD": "कार्ड", "BANK": "बैंक ट्रांसफर" },
+    "paymentMode": {
+      "CASH": "नकद",
+      "UPI": "UPI",
+      "CARD": "कार्ड",
+      "BANK": "बैंक ट्रांसफर"
+    },
     "confirmReview": "मैंने सप्लायर, फर्म, तारीख, उत्पाद, मात्रा, कीमत, टैक्स और बैच विवरण जांच लिए हैं।",
     "mappingRequired": "पुष्टि से पहले हर लाइन मिलाएं और सही मात्रा, कीमत, GST/HSN व तारीख भरें।",
     "paymentExceedsTotal": "भुगतान समीक्षा किए गए खरीद कुल से अधिक नहीं हो सकता।",
@@ -2154,7 +2187,10 @@
       "publish": "प्रकाशित करें",
       "unpublish": "रोकें"
     },
-    "fulfillment": { "PICKUP": "दुकान से पिकअप", "DELIVERY": "होम डिलीवरी" },
+    "fulfillment": {
+      "PICKUP": "दुकान से पिकअप",
+      "DELIVERY": "होम डिलीवरी"
+    },
     "status": {
       "PLACED": "नया",
       "ACCEPTED": "स्वीकृत",

@@ -101,6 +101,18 @@ behaviour.
 
 ### Fast billing
 
+- USB and Bluetooth scanners in keyboard/HID mode work continuously on Billing,
+  without opening camera tools for each product. Use an Enter or Tab suffix.
+  A permanent barcode field also accepts slower/manual entry. Global capture
+  recognizes rapid bursts only outside editable fields and active dialogs.
+- Scan processing is ordered; repeated codes deliberately increment quantity.
+  Checkout waits for pending reads, while barcode reads do not cover the page
+  with a blocking loader. Unknown codes pause the queue until their dialog closes;
+  already queued later products are retained. Errors and stock limits preserve
+  the bill. Capturing stops on other routes, checkout or explicit Pause scanner.
+- Hardware acceptance still requires the actual Honeywell/other HID scanner;
+  simulated keyboard bursts prove software handling, not a physical USB driver.
+
 - A walk-in cash or UPI sale does not require customer creation.
 - Product search and barcode scanning lead into the same cart.
 - When a barcode is unknown, an owner or manager can save a minimal product with

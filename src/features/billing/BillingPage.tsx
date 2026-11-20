@@ -74,6 +74,7 @@ import {
   loadPendingBillingCheckout,
   persistPendingBillingCheckout,
 } from './billing.logic';
+import { useCounterScanner } from './useCounterScanner';
 import { HeldBillsPanel } from './HeldBillsPanel';
 import { SaleCompletionSheet } from './SaleCompletionSheet';
 import { WhatsAppPastePanel } from './WhatsAppPastePanel';
@@ -175,9 +176,9 @@ export const BillingPage: React.FC = () => {
   });
   const invoiceUnavailable = Boolean(
     editInvoiceId &&
-      (!invoiceData?.data ||
-        String(invoiceData.data.id) !== editInvoiceId ||
-        (claimedVersion !== undefined && invoiceData.data.version < claimedVersion))
+    (!invoiceData?.data ||
+      String(invoiceData.data.id) !== editInvoiceId ||
+      (claimedVersion !== undefined && invoiceData.data.version < claimedVersion))
   );
   const invoiceLoading = invoiceQueryLoading || (invoiceUnavailable && !invoiceError);
   const { data: heldBillsData } = useGetHeldBillsQuery({ take: 50 });
@@ -187,6 +188,8 @@ export const BillingPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [barcodeInput, setBarcodeInput] = useState('');
   const [showBarcodeTools, setShowBarcodeTools] = useState(false);
+  const [lastScannedProduct, setLastScannedProduct] = useState('');
+  const [counterScannerEnabled, setCounterScannerEnabled] = useState(true);
   const [unknownBarcode, setUnknownBarcode] = useState<string | null>(null);
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const debouncedCustomerSearchTerm = useDebouncedValue(customerSearchTerm.trim(), 300);
@@ -213,6 +216,7 @@ export const BillingPage: React.FC = () => {
   const initializedInvoiceId = useRef<string | null>(null);
   const barcodeQueueRef = useRef<Array<{ barcode: string; billGeneration: number }>>([]);
   const barcodeProcessingRef = useRef(false);
+  const barcodePausedRef = useRef(false);
   const barcodeWorkPendingRef = useRef(0);
   const billGenerationRef = useRef(0);
   const billingMountedRef = useRef(true);
@@ -438,11 +442,7 @@ export const BillingPage: React.FC = () => {
       initializedInvoiceId.current = null;
       return;
     }
-    if (
-      !invoiceData?.data ||
-      invoiceLoading ||
-      initializedInvoiceId.current === editInvoiceId
-    )
+    if (!invoiceData?.data || invoiceLoading || initializedInvoiceId.current === editInvoiceId)
       return;
 
     const invoice = invoiceData.data;
@@ -617,8 +617,9 @@ export const BillingPage: React.FC = () => {
   const processBarcodeQueue = async () => {
     if (barcodeProcessingRef.current) return;
     barcodeProcessingRef.current = true;
+    let processed = 0;
 
-    while (barcodeQueueRef.current.length > 0) {
+    while (barcodeQueueRef.current.length > 0 && !barcodePausedRef.current) {
       const queuedBarcode = barcodeQueueRef.current.shift();
       if (!queuedBarcode) continue;
 
@@ -629,8 +630,7 @@ export const BillingPage: React.FC = () => {
         if (!isCurrentBill) continue;
 
         if (!result.found || !result.data) {
-          barcodeQueueRef.current = [];
-          barcodeWorkPendingRef.current = 1;
+          barcodePausedRef.current = true;
           setUnknownBarcode(queuedBarcode.barcode);
           setShowBarcodeTools(false);
           continue;
@@ -649,9 +649,8 @@ export const BillingPage: React.FC = () => {
           sku: variant.sku || '',
           available_quantity: inventory?.saleable_quantity ?? inventory?.quantity ?? 0,
         });
-        setShowBarcodeTools(false);
         if (outcome === 'added' || outcome === 'incremented') {
-          notificationService.success(t('billing.barcodeAdded'));
+          setLastScannedProduct(product.name);
         } else {
           notificationService.error(
             t(outcome === 'out-of-stock' ? 'billing.outOfStock' : 'billing.stockLimit', {
@@ -672,6 +671,10 @@ export const BillingPage: React.FC = () => {
           setPendingBarcodeCount(barcodeWorkPendingRef.current);
         }
       }
+      // Cached lookups can resolve in the same turn. Yield between small batches
+      // so long bursts cannot starve painting or exhaust React's update depth.
+      processed += 1;
+      if (processed % 10 === 0) await new Promise((resolve) => setTimeout(resolve, 0));
     }
 
     barcodeProcessingRef.current = false;
@@ -690,6 +693,35 @@ export const BillingPage: React.FC = () => {
     setBarcodeInput('');
     void processBarcodeQueue();
   };
+
+  const dismissUnknownBarcode = () => {
+    setUnknownBarcode(null);
+  };
+  const resumeBarcodeQueue = () => {
+    barcodePausedRef.current = false;
+    void processBarcodeQueue();
+  };
+
+  const counterScannerReady =
+    counterScannerEnabled &&
+    location.pathname === ROUTES.BILLING &&
+    !invoiceUnavailable &&
+    !heldConflict &&
+    !creating &&
+    !updating &&
+    !finalizing &&
+    !paying &&
+    !splittingPayment &&
+    !cancelling &&
+    !creatingBarcodeProduct &&
+    !showPaymentModal &&
+    !completionInvoiceId &&
+    !unknownBarcode &&
+    !showCounterDialog &&
+    !showHeldBills &&
+    !showWhatsAppPaste &&
+    !showCustomerSearch;
+  useCounterScanner(counterScannerReady, addScannedBarcode);
 
   const updateQuantity = (variantId: string, quantity: number) => {
     replaceCartItems((current) => {
@@ -733,7 +765,7 @@ export const BillingPage: React.FC = () => {
         sku: created.variant.sku || '',
         available_quantity: created.inventory.quantity,
       });
-      setUnknownBarcode(null);
+      dismissUnknownBarcode();
       notificationService.success(
         t(
           outcome === 'added' || outcome === 'incremented'
@@ -765,6 +797,8 @@ export const BillingPage: React.FC = () => {
     setBillDiscount(0);
     setSearchTerm('');
     setBarcodeInput('');
+    setLastScannedProduct('');
+    barcodePausedRef.current = false;
     setShowBarcodeTools(false);
     setUnknownBarcode(null);
     setCustomerSearchTerm('');
@@ -1247,7 +1281,17 @@ export const BillingPage: React.FC = () => {
       />
       <IonContent>
         <Loading
-          isOpen={!completionInvoiceId && (invoiceLoading || (!invoiceError && isBusy))}
+          isOpen={
+            !completionInvoiceId &&
+            (invoiceLoading ||
+              (!invoiceError &&
+                (creating ||
+                  updating ||
+                  finalizing ||
+                  paying ||
+                  cancelling ||
+                  creatingBarcodeProduct)))
+          }
           message={invoiceLoading ? t('billing.loadingInvoice') : t('billing.processingBill')}
         />
 
@@ -1438,30 +1482,55 @@ export const BillingPage: React.FC = () => {
                         onScan={(barcode) => void addScannedBarcode(barcode)}
                         onError={(message) => notificationService.error(message)}
                       />
-                      <form
-                        className="mt-2 flex gap-2"
-                        onSubmit={(event) => {
-                          event.preventDefault();
-                          void addScannedBarcode(barcodeInput);
-                        }}
-                      >
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          autoComplete="off"
-                          autoFocus
-                          value={barcodeInput}
-                          onChange={(event) => setBarcodeInput(event.target.value)}
-                          aria-label={t('foundation.barcode.barcode')}
-                          placeholder={t('billing.barcodeEntryPlaceholder')}
-                          className="min-h-touch min-w-0 flex-1 rounded-xl border border-sky-200 bg-white px-3 text-base outline-none focus:border-sky-500"
-                        />
-                        <IonButton type="submit" disabled={barcodeLoading || !barcodeInput.trim()}>
-                          {barcodeLoading ? t('common.loading') : t('common.add')}
-                        </IonButton>
-                      </form>
                     </div>
                   )}
+                  <form
+                    className="mt-2 flex gap-2"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void addScannedBarcode(barcodeInput);
+                    }}
+                  >
+                    <input
+                      type="text"
+                      inputMode="none"
+                      autoComplete="off"
+                      disabled={!counterScannerReady}
+                      value={barcodeInput}
+                      onChange={(event) => setBarcodeInput(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Tab' && barcodeInput.trim()) {
+                          event.preventDefault();
+                          addScannedBarcode(barcodeInput);
+                        }
+                      }}
+                      aria-label={t('foundation.barcode.barcode')}
+                      placeholder={t('billing.barcodeEntryPlaceholder')}
+                      className="min-h-touch min-w-0 flex-1 rounded-xl border border-sky-200 bg-white px-3 text-base outline-none focus:border-sky-500"
+                    />
+                    <IonButton
+                      type="submit"
+                      disabled={!counterScannerReady || !barcodeInput.trim()}
+                    >
+                      {barcodeLoading ? t('common.loading') : t('common.add')}
+                    </IonButton>
+                  </form>
+                  <button
+                    type="button"
+                    className="min-h-touch text-sm font-semibold text-sky-700"
+                    onClick={() => setCounterScannerEnabled((value) => !value)}
+                  >
+                    {t(counterScannerEnabled ? 'billing.pauseScanner' : 'billing.resumeScanner')}
+                  </button>
+                  <p className="mt-1 text-xs text-gray-600" role="status" aria-live="polite">
+                    {t(
+                      counterScannerReady ? 'billing.counterScanReady' : 'billing.counterScanPaused'
+                    )}
+                    {pendingBarcodeCount > 0 &&
+                      ` · ${t('billing.scansPending', { count: pendingBarcodeCount })}`}
+                    {lastScannedProduct &&
+                      ` · ${t('billing.lastScanned', { product: lastScannedProduct })}`}
+                  </p>
                   {searchLoading && (
                     <p className="p-3 text-center text-sm text-gray-500">{t('common.loading')}</p>
                   )}
@@ -2039,7 +2108,10 @@ export const BillingPage: React.FC = () => {
         <IonModal
           isOpen={Boolean(unknownBarcode)}
           aria-labelledby="unknown-barcode-title"
-          onDidDismiss={() => setUnknownBarcode(null)}
+          onDidDismiss={() => {
+            setUnknownBarcode(null);
+            resumeBarcodeQueue();
+          }}
         >
           {unknownBarcode && (
             <UnknownBarcodeResolution
@@ -2048,7 +2120,7 @@ export const BillingPage: React.FC = () => {
               canCreate={canCreateBarcodeProduct}
               isCreating={creatingBarcodeProduct}
               onCreate={createUnknownBarcodeProduct}
-              onDismiss={() => setUnknownBarcode(null)}
+              onDismiss={dismissUnknownBarcode}
             />
           )}
         </IonModal>
