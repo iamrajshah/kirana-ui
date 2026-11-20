@@ -668,7 +668,12 @@
     "scansPending": "{{count}} scans pending",
     "lastScanned": "Last: {{product}}",
     "pauseScanner": "Pause scanner",
-    "resumeScanner": "Resume scanner"
+    "resumeScanner": "Resume scanner",
+    "findInBill": "Find in this bill",
+    "billRows": "{{shown}} of {{total}} rows",
+    "productColumn": "Product",
+    "amountColumn": "Amount",
+    "noBillMatches": "No matching item in this bill"
   },
   "customers": {
     "title": "Customers",

@@ -668,7 +668,12 @@
     "scansPending": "{{count}} સ્કેન બાકી છે",
     "lastScanned": "છેલ્લું: {{product}}",
     "pauseScanner": "સ્કેનર થોભાવો",
-    "resumeScanner": "સ્કેનર ફરી ચાલુ કરો"
+    "resumeScanner": "સ્કેનર ફરી ચાલુ કરો",
+    "findInBill": "આ બિલમાં શોધો",
+    "billRows": "{{total}} માંથી {{shown}} પંક્તિઓ",
+    "productColumn": "ઉત્પાદન",
+    "amountColumn": "રકમ",
+    "noBillMatches": "આ બિલમાં મેળ ખાતી વસ્તુ નથી"
   },
   "customers": {
     "title": "ગ્રાહકો",

@@ -668,7 +668,12 @@
     "scansPending": "{{count}} स्कॅन बाकी आहेत",
     "lastScanned": "शेवटचे: {{product}}",
     "pauseScanner": "स्कॅनर थांबवा",
-    "resumeScanner": "स्कॅनर पुन्हा सुरू करा"
+    "resumeScanner": "स्कॅनर पुन्हा सुरू करा",
+    "findInBill": "या बिलात शोधा",
+    "billRows": "{{total}} पैकी {{shown}} ओळी",
+    "productColumn": "उत्पादन",
+    "amountColumn": "रक्कम",
+    "noBillMatches": "या बिलात जुळणारी वस्तू नाही"
   },
   "customers": {
     "title": "ग्राहक",
