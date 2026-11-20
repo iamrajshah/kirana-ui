@@ -1786,7 +1786,8 @@
     "previewPdf": "PDF પૂર્વદર્શન",
     "sampleProduct": "નમૂના ઉત્પાદન",
     "sampleCustomer": "નમૂના ગ્રાહક",
-    "previewFailed": "નમૂના PDF તૈયાર થયું નહીં. લોગોની લિંક તપાસો અને ફરી પ્રયાસ કરો."
+    "previewFailed": "નમૂના PDF તૈયાર થયું નહીં. લોગોની લિંક તપાસો અને ફરી પ્રયાસ કરો.",
+    "previewA4": "A4"
   },
   "shifts": {
     "title": "કેશ શિફ્ટ",

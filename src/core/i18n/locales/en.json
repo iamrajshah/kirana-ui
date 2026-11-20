@@ -1786,7 +1786,8 @@
     "previewPdf": "Preview PDF",
     "sampleProduct": "Sample product",
     "sampleCustomer": "Sample customer",
-    "previewFailed": "Could not prepare the sample PDF. Check the logo URL and try again."
+    "previewFailed": "Could not prepare the sample PDF. Check the logo URL and try again.",
+    "previewA4": "A4"
   },
   "shifts": {
     "title": "Cash shift",

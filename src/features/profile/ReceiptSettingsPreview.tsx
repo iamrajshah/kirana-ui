@@ -66,7 +66,8 @@ export const ReceiptSettingsPreview: React.FC<{ form: UpdateTenantDocumentSettin
         {t('documentSettings.longSample')}
       </label>
       <label>
-        <input type="checkbox" checked={a4} onChange={(e) => setA4(e.target.checked)} /> A4
+        <input type="checkbox" checked={a4} onChange={(e) => setA4(e.target.checked)} />{' '}
+        {t('documentSettings.previewA4')}
       </label>
       <button
         type="button"

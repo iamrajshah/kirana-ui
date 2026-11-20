@@ -1786,7 +1786,8 @@
     "previewPdf": "PDF पूर्वावलोकन",
     "sampleProduct": "नमुना उत्पादन",
     "sampleCustomer": "नमुना ग्राहक",
-    "previewFailed": "नमुना PDF तयार झाला नाही. लोगोची लिंक तपासून पुन्हा प्रयत्न करा."
+    "previewFailed": "नमुना PDF तयार झाला नाही. लोगोची लिंक तपासून पुन्हा प्रयत्न करा.",
+    "previewA4": "A4"
   },
   "shifts": {
     "title": "कॅश शिफ्ट",
