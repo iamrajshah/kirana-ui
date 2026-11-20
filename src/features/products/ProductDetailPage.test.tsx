@@ -3,7 +3,11 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProductDetailPage } from './ProductDetailPage';
 
-const state = vi.hoisted(() => ({ updateProduct: vi.fn(), updateVariant: vi.fn() }));
+const state = vi.hoisted(() => ({
+  updateProduct: vi.fn(),
+  updateVariant: vi.fn(),
+  gstPercent: null as number | null,
+}));
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('react-router', () => ({ useParams: () => ({ id: 'product-1' }) }));
@@ -38,6 +42,7 @@ vi.mock('@core/api/productApi', () => ({
             price: 280,
             selling_price: 280,
             mrp_price: 300,
+            gst_percent: state.gstPercent,
             uqc_code: 'KGS',
             uqc_quantity_factor: 5,
             is_active: true,
@@ -115,6 +120,7 @@ vi.mock('@ionic/react', () => {
 
 describe('ProductDetailPage UQC quantity factor', () => {
   beforeEach(() => {
+    state.gstPercent = null;
     state.updateProduct.mockReset();
     state.updateProduct.mockReturnValue({ unwrap: () => Promise.resolve({ data: {} }) });
     state.updateVariant.mockReset();
@@ -122,6 +128,16 @@ describe('ProductDetailPage UQC quantity factor', () => {
   });
 
   afterEach(cleanup);
+
+  it('shows the GST label for explicit zero and shows unknown separately', () => {
+    state.gstPercent = 0;
+    const view = render(<ProductDetailPage />);
+    expect(screen.getByText('products.gstLabel')).toBeTruthy();
+    expect(screen.getByText('0%')).toBeTruthy();
+    state.gstPercent = null;
+    view.rerender(<ProductDetailPage />);
+    expect(screen.getByText('taxWorkspace.notSet')).toBeTruthy();
+  });
 
   it('prefills and updates the explicit factor instead of deriving it from size', async () => {
     render(<ProductDetailPage />);

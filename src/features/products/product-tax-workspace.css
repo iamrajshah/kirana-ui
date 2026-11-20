@@ -1,0 +1,91 @@
+.product-tax-modal {
+  --width: min(1280px, calc(100vw - 32px));
+  --height: min(900px, calc(100vh - 32px));
+}
+.tax-workspace {
+  padding: 1rem;
+  color: var(--ion-text-color);
+  background: var(--ion-background-color);
+}
+.tax-workspace header,
+.tax-workspace form,
+.tax-workspace fieldset,
+.tax-workspace nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-block: 0.75rem;
+}
+.tax-workspace header {
+  justify-content: space-between;
+}
+.tax-workspace label {
+  display: grid;
+  gap: 0.25rem;
+}
+.tax-workspace input,
+.tax-workspace select,
+.tax-workspace button {
+  min-height: 44px;
+  padding: 0.45rem;
+  border: 1px solid var(--ion-color-step-300, #aab5b1);
+  border-radius: 0.3rem;
+  color: inherit;
+  background: var(--ion-item-background, var(--ion-background-color));
+}
+.tax-workspace input[type='checkbox'] {
+  width: 24px;
+  min-height: 24px;
+}
+.tax-workspace button:disabled {
+  opacity: 0.5;
+}
+.tax-workspace button:not(:disabled):hover {
+  border-color: var(--ion-color-primary);
+}
+.tax-workspace :is(button, input, select):focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+.tax-workspace input[type='checkbox'] {
+  accent-color: var(--ion-color-primary);
+}
+.tax-table-scroll {
+  overflow: auto;
+  max-height: 55vh;
+}
+.tax-workspace table {
+  border-collapse: collapse;
+  min-width: 980px;
+  width: 100%;
+  font-size: 0.85rem;
+}
+.tax-workspace td,
+.tax-workspace th {
+  text-align: start;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--ion-color-step-200, #ddd);
+}
+.tax-workspace thead th {
+  position: sticky;
+  top: 0;
+  background: var(--ion-item-background, var(--ion-background-color));
+}
+.tax-workspace td input,
+.tax-workspace td select {
+  width: 110px;
+}
+.tax-workspace small {
+  display: block;
+  font-weight: normal;
+}
+.tax-workspace [role='alert'] {
+  color: var(--ion-color-danger);
+}
+@media (max-width: 680px) {
+  .product-tax-modal {
+    --width: 100%;
+    --height: 100%;
+  }
+}

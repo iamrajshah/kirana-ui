@@ -2238,5 +2238,9 @@
       "COMPLETED": "पूर्ण करें",
       "CANCELLED": "रद्द करें"
     }
+  },
+  "taxWorkspace": {
+    "title": "GST और HSN उत्पाद समीक्षा",
+    "notSet": "दर्ज नहीं"
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react';
 import type { Category } from '@core/api/categoryApi';
 import type { Product, UqcCode } from '@core/types';
 import type { Packaging } from '@core/api/productApi';
@@ -42,10 +42,7 @@ import {
 } from '@components';
 import { formatCurrency } from '@utils/helpers';
 import { ROUTES } from '@core/constants';
-import {
-  optionalGstRateIsValid,
-  optionalHsnCodeIsSupported,
-} from '@core/constants/gstMasterData';
+import { optionalGstRateIsValid, optionalHsnCodeIsSupported } from '@core/constants/gstMasterData';
 import { filterProducts } from '@utils/localSearch';
 import { useDebouncedValue } from '@hooks/useDebouncedValue';
 import { useRequestSettledInfiniteScroll } from '@hooks/useRequestSettledInfiniteScroll';
@@ -53,6 +50,7 @@ import { parseOptionalUqcQuantityFactor } from './uqcQuantityFactor';
 import './stock-workspace.css';
 
 const PAGE_SIZE = 50;
+const ProductTaxWorkspace = lazy(() => import('./ProductTaxWorkspace'));
 
 export const ProductsPage: React.FC = () => {
   const { t } = useTranslation();
@@ -120,6 +118,8 @@ export const ProductsPage: React.FC = () => {
   }, [pageData, skip]);
 
   const [showModal, setShowModal] = useState(false);
+  const [showTaxWorkspace, setShowTaxWorkspace] = useState(false);
+  const taxModal = useRef<HTMLIonModalElement>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -275,6 +275,9 @@ export const ProductsPage: React.FC = () => {
           <div className="workspace-header">
             <h1>{t('products.title')}</h1>
             <div className="workspace-actions stock-primary-actions">
+              <IonButton fill="outline" onClick={() => setShowTaxWorkspace(true)}>
+                {t('taxWorkspace.title')}
+              </IonButton>
               <IonButton fill="outline" onClick={() => history.push(ROUTES.PRODUCT_BARCODE)}>
                 <IonIcon slot="start" icon={barcodeOutline} />
                 {t('products.scanBarcode')}
@@ -526,7 +529,7 @@ export const ProductsPage: React.FC = () => {
                   placeholder={t('products.enterSKUCode')}
                 />
 
-                <details className="product-tax-details">
+                <details className="product-tax-details" open>
                   <summary>{t('taxFields.productDetails')}</summary>
                   <p>{t('taxFields.productDetailsHint')}</p>
                   <Input
@@ -611,6 +614,26 @@ export const ProductsPage: React.FC = () => {
           </IonModal>
         )}
 
+        {showTaxWorkspace && (
+          <IonModal
+            ref={taxModal}
+            className="product-tax-modal"
+            isOpen
+            backdropDismiss={false}
+            canDismiss={(_data, role) => Promise.resolve(role === 'confirmed')}
+            onDidDismiss={() => setShowTaxWorkspace(false)}
+          >
+            <IonContent>
+              <Suspense fallback={<p>{t('common.loading')}</p>}>
+                <ProductTaxWorkspace
+                  onClose={() => {
+                    void taxModal.current?.dismiss(undefined, 'confirmed');
+                  }}
+                />
+              </Suspense>
+            </IonContent>
+          </IonModal>
+        )}
         {/* Add Category Modal */}
         <AddCategoryModal
           isOpen={showCategoryModal}

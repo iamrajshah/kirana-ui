@@ -2238,5 +2238,9 @@
       "COMPLETED": "પૂર્ણ કરો",
       "CANCELLED": "રદ કરો"
     }
+  },
+  "taxWorkspace": {
+    "title": "GST અને HSN ઉત્પાદન સમીક્ષા",
+    "notSet": "નોંધ નથી"
   }
 }

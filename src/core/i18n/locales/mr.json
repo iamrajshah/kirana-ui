@@ -2238,5 +2238,9 @@
       "COMPLETED": "पूर्ण करा",
       "CANCELLED": "रद्द करा"
     }
+  },
+  "taxWorkspace": {
+    "title": "GST आणि HSN उत्पादन आढावा",
+    "notSet": "नोंद नाही"
   }
 }
