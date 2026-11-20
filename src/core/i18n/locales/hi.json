@@ -852,7 +852,21 @@
     "barcodeAriaLabel": "बारकोड {{value}}",
     "mrpShort": "एमआरपी",
     "storePackedItem": "दुकान में पैक किया गया",
-    "generateBarcodeHint": "बारकोड एक बार बनाएं, फिर इसे दूसरे पैक उत्पाद की तरह प्रिंट और स्कैन करें।"
+    "generateBarcodeHint": "बारकोड एक बार बनाएं, फिर इसे दूसरे पैक उत्पाद की तरह प्रिंट और स्कैन करें।",
+    "labelPreset": "लेबल प्रारूप",
+    "presetStandard": "सामान्य खुदरा",
+    "presetLoose": "खुला सामान",
+    "presetPacked": "दुकान में पैक",
+    "labelNetWeight": "शुद्ध मात्रा",
+    "labelBatch": "बैच / लॉट",
+    "labelQrLink": "QR लिंक (वैकल्पिक, HTTPS)",
+    "labelQr": "उत्पाद या दुकान का QR",
+    "labelQrInvalid": "बिना लॉगिन जानकारी वाला HTTPS लिंक दें, अधिकतम 180 अक्षर।",
+    "labelSizeInfo": "{{width}} × {{height}} मिमी · प्रति A4 पृष्ठ {{count}} लेबल",
+    "presetCustom": "कस्टम विकल्प",
+    "saveLabelDefaults": "इस डिवाइस पर लेआउट सहेजें",
+    "labelDefaultsSaved": "लेआउट सहेजा गया। तारीखें, बैच और QR लिंक उत्पाद के अनुसार रहेंगे।",
+    "labelDefaultsFailed": "इस डिवाइस पर लेआउट नहीं सहेजा गया।"
   },
   "inventory": {
     "onHand": "उपलब्ध स्टॉक",

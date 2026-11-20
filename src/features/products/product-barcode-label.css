@@ -324,3 +324,55 @@
     border: 0.2mm solid #777;
   }
 }
+
+.barcode-extra-fields {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.8rem 0;
+}
+.barcode-extra-fields label {
+  display: grid;
+  gap: 0.3rem;
+  font-weight: 600;
+}
+.barcode-extra-fields input,
+.barcode-extra-fields select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.5rem;
+  color: var(--ion-text-color);
+  background: var(--ion-background-color);
+  border: 1px solid var(--ion-color-step-200);
+  border-radius: 0.35rem;
+}
+.product-barcode-label--extended {
+  height: 50mm;
+}
+.product-barcode-label--qr {
+  height: 65mm;
+}
+.product-barcode-label--extended .product-barcode-details,
+.product-barcode-label--qr .product-barcode-details {
+  grid-template-columns: 1fr;
+}
+.product-label-qr {
+  grid-column: 1 / -1;
+  grid-row: 6;
+  width: 24mm;
+  height: 24mm;
+  justify-self: center;
+}
+@media print {
+  .barcode-print-page--extended {
+    grid-template-rows: repeat(5, 50mm) !important;
+    grid-auto-rows: 50mm !important;
+  }
+  .barcode-print-page--qr {
+    grid-template-rows: repeat(4, 65mm) !important;
+    grid-auto-rows: 65mm !important;
+  }
+}
+/* Preserve the 35mm stock while leaving room for native font rounding. */
+.product-barcode-label--standard {
+  padding-block: 2mm;
+}

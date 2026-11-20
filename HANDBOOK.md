@@ -536,3 +536,19 @@ Deploy the matching server enum migration before saving the three new presets.
 Existing invoice snapshots remain unchanged. New presets adapt to thermal
 widths; verify both screen layouts and actual PDF pages, including a logo and a
 long bill, rather than testing only template-selector values.
+
+## Barcode label presets — 20 November 2026
+
+Standard, Loose Goods and Store Packed presets combine existing display toggles.
+Optional net quantity and batch/lot are label text only; they never create an
+inventory batch or change saleable quantity. A product/shop HTTPS QR link is
+optional and rendered locally as vector modules with its quiet zone. It does
+not replace the stable EAN-13 checkout barcode and is not a payment QR.
+
+The preview reports physical size and page capacity: 58×35mm / 21 per A4 for
+standard labels, 58×50mm / 15 for extra details, and 58×65mm / 12 for QR labels.
+Print pagination uses the same frozen format as the preview and preserves the
+requested copy count. Label layout defaults can be saved on the device, but
+product-specific text, dates, batch values and QR links are never saved as global
+defaults or carried into another variant. Validate the physical stock/printer
+and a real scanner before printing a large production batch.

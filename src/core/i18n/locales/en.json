@@ -852,7 +852,21 @@
     "barcodeAriaLabel": "Barcode {{value}}",
     "mrpShort": "MRP",
     "storePackedItem": "Store packed item",
-    "generateBarcodeHint": "Generate a barcode once, then print and scan it like any packaged product."
+    "generateBarcodeHint": "Generate a barcode once, then print and scan it like any packaged product.",
+    "labelPreset": "Label preset",
+    "presetStandard": "Standard retail",
+    "presetLoose": "Loose goods",
+    "presetPacked": "Store packed",
+    "labelNetWeight": "Net quantity",
+    "labelBatch": "Batch / lot",
+    "labelQrLink": "QR link (optional, HTTPS)",
+    "labelQr": "Product or shop QR",
+    "labelQrInvalid": "Use an HTTPS link without login credentials, up to 180 characters.",
+    "labelSizeInfo": "{{width}} × {{height}} mm · {{count}} labels per A4 page",
+    "presetCustom": "Custom choices",
+    "saveLabelDefaults": "Save layout defaults on this device",
+    "labelDefaultsSaved": "Layout saved. Dates, batch and QR links stay product-specific.",
+    "labelDefaultsFailed": "Could not save label defaults on this device."
   },
   "inventory": {
     "onHand": "On hand",

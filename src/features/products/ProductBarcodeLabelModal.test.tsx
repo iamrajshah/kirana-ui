@@ -122,9 +122,90 @@ const variant: ProductVariant = {
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  localStorage.removeItem('kirana_barcode_label_defaults_v1');
 });
 
 describe('ProductBarcodeLabelModal', () => {
+  it('prints all 50 QR labels over five larger sheets and preserves EAN identity', () => {
+    vi.spyOn(window, 'print').mockImplementation(() => undefined);
+    render(
+      <ProductBarcodeLabelModal
+        isOpen
+        shopName="Shop"
+        productName="Rice"
+        variant={variant}
+        onDismiss={vi.fn()}
+      />
+    );
+    fireEvent.change(screen.getByLabelText('products.labelQrLink'), {
+      target: { value: 'https://shop.example/shop/my-shop/products/1' },
+    });
+    fireEvent.change(screen.getByLabelText('products.labelCopies'), { target: { value: '50' } });
+    expect(screen.getByRole('img', { name: 'products.labelQr' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /products.printBarcodeLabels:50/ }));
+    expect(document.querySelectorAll('.barcode-print-page--qr')).toHaveLength(5);
+    expect(document.querySelectorAll('.barcode-print-sheet .product-label-qr')).toHaveLength(50);
+    expect(
+      document.querySelectorAll('.barcode-print-sheet [data-barcode-number="2001173897723"]')
+    ).toHaveLength(50);
+  });
+  it('blocks an invalid QR link and keeps QR empty on another variant', () => {
+    const { rerender } = render(
+      <ProductBarcodeLabelModal
+        isOpen
+        shopName="Shop"
+        productName="Rice"
+        variant={variant}
+        onDismiss={vi.fn()}
+      />
+    );
+    fireEvent.change(screen.getByLabelText('products.labelQrLink'), {
+      target: { value: 'http://example.com' },
+    });
+    expect(screen.getByRole('alert').textContent).toBe('products.labelQrInvalid');
+    expect(
+      (screen.getByRole('button', { name: /products.printBarcodeLabels:1/ }) as HTMLButtonElement)
+        .disabled
+    ).toBe(true);
+    rerender(
+      <ProductBarcodeLabelModal
+        isOpen
+        shopName="Other shop"
+        productName="Tea"
+        variant={{ ...variant, id: 'other' }}
+        onDismiss={vi.fn()}
+      />
+    );
+    expect((screen.getByLabelText('products.labelQrLink') as HTMLInputElement).value).toBe('');
+    expect(screen.queryByRole('img', { name: 'products.labelQr' })).toBeNull();
+  });
+  it('saves only layout switches, never batch, dates or a shop URL', () => {
+    render(
+      <ProductBarcodeLabelModal
+        isOpen
+        shopName="Shop"
+        productName="Rice"
+        variant={variant}
+        onDismiss={vi.fn()}
+      />
+    );
+    fireEvent.change(screen.getByLabelText('products.labelBatch'), {
+      target: { value: 'BATCH-1' },
+    });
+    fireEvent.change(screen.getByLabelText('products.labelNetWeight'), {
+      target: { value: '5 kg' },
+    });
+    fireEvent.change(screen.getByLabelText('products.labelQrLink'), {
+      target: { value: 'https://shop.example' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'products.saveLabelDefaults' }));
+    const saved = JSON.parse(localStorage.getItem('kirana_barcode_label_defaults_v1') || '{}');
+    expect(saved.showPrice).toBe(true);
+    expect(saved).not.toHaveProperty('batchNumber');
+    expect(saved).not.toHaveProperty('netWeight');
+    expect(saved).not.toHaveProperty('qrUrl');
+    expect(saved).not.toHaveProperty('expiryDate');
+  });
   it('marks every demo barcode label as a non-business document', () => {
     render(
       <ProductBarcodeLabelModal
