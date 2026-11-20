@@ -673,7 +673,8 @@
     "billRows": "{{shown}} of {{total}} rows",
     "productColumn": "Product",
     "amountColumn": "Amount",
-    "noBillMatches": "No matching item in this bill"
+    "noBillMatches": "No matching item in this bill",
+    "priceFor": "Price for {{product}}"
   },
   "customers": {
     "title": "Customers",

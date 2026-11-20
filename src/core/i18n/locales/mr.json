@@ -673,7 +673,8 @@
     "billRows": "{{total}} पैकी {{shown}} ओळी",
     "productColumn": "उत्पादन",
     "amountColumn": "रक्कम",
-    "noBillMatches": "या बिलात जुळणारी वस्तू नाही"
+    "noBillMatches": "या बिलात जुळणारी वस्तू नाही",
+    "priceFor": "{{product}} ची किंमत"
   },
   "customers": {
     "title": "ग्राहक",
