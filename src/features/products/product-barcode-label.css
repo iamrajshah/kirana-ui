@@ -350,6 +350,7 @@
 }
 .product-barcode-label--qr {
   height: 65mm;
+  padding-block: 1.5mm;
 }
 .product-barcode-label--extended .product-barcode-details,
 .product-barcode-label--qr .product-barcode-details {
@@ -358,8 +359,8 @@
 .product-label-qr {
   grid-column: 1 / -1;
   grid-row: 6;
-  width: 24mm;
-  height: 24mm;
+  width: 22mm;
+  height: 22mm;
   justify-self: center;
 }
 @media print {

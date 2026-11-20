@@ -28,12 +28,27 @@ try {
       );
       const preview = page.locator('.barcode-label-preview .product-barcode-label');
       await preview.waitFor();
-      for (const format of ['standard', 'extended', 'qr']) {
+      for (const format of ['standard', 'extended', 'qr', 'packed-qr']) {
         if (format === 'extended') {
           await page.getByLabel('Net quantity', { exact: true }).fill('5 kg');
           await page.getByLabel('Batch / lot', { exact: true }).fill('BATCH-2026-001');
         }
         if (format === 'qr') {
+          await page
+            .getByLabel('QR link (optional, HTTPS)', { exact: true })
+            .fill('https://shop.example/shop/my-shop/products/1');
+          await page.locator('.product-label-qr').waitFor();
+        }
+        if (format === 'packed-qr') {
+          await page.getByRole('combobox', { name: /Label preset/ }).selectOption('PACKED');
+          await page.locator('input[type="date"]').nth(1).fill('2027-12-31');
+          await page
+            .locator('ion-toggle')
+            .filter({ hasText: 'Show SKU on label' })
+            .locator('label.toggle-wrapper')
+            .click();
+          await page.getByLabel('Net quantity', { exact: true }).fill('5 kg');
+          await page.getByLabel('Batch / lot', { exact: true }).fill('BATCH-2026-001');
           await page
             .getByLabel('QR link (optional, HTTPS)', { exact: true })
             .fill('https://shop.example/shop/my-shop/products/1');
