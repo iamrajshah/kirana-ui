@@ -523,3 +523,16 @@ client deliberately spaces resume calls, displays a localized retry message for
 429 responses, and treats non-JSON failure bodies as an API failure rather than
 showing the browser's JSON parser text. Retry must preserve the provisioning
 token and resume the same tenant; it must never start a duplicate shop.
+
+## Receipt gallery — 20 November 2026
+
+Six persisted presets are available: Classic, Modern, Compact, Logo beside shop,
+Centred shop branding and Detailed ruled invoice. The profile form renders a
+local sample with the current shop/header/logo/footer and a 30-line option.
+Preview PDF calls the same renderer as actual output at the configured 58/80 mm
+width, with an A4 alternative. Samples are marked PREVIEW/not a completed sale;
+previewing performs no API mutations. Logo URLs retain the HTTPS restriction.
+Deploy the matching server enum migration before saving the three new presets.
+Existing invoice snapshots remain unchanged. New presets adapt to thermal
+widths; verify both screen layouts and actual PDF pages, including a logo and a
+long bill, rather than testing only template-selector values.

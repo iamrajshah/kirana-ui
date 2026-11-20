@@ -11,20 +11,27 @@ import {
 import { receiptOutline, save } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import { Input, Select } from '@components';
-import type {
-  TenantDocumentSettings,
-  UpdateTenantDocumentSettings,
-} from '@core/types';
+import type { TenantDocumentSettings, UpdateTenantDocumentSettings } from '@core/types';
 import {
   useGetTenantSettingsQuery,
   useUpdateTenantSettingsMutation,
 } from '@core/api/tenantSettingsApi';
 import { apiErrorMessage } from '@core/services/notificationService';
+import { ReceiptSettingsPreview } from './ReceiptSettingsPreview';
 import { getGstActivationBlockers } from './documentSettingsValidation';
 
 const textFields = [
-  'supplier_name', 'address_line1', 'address_line2', 'city', 'state', 'state_code',
-  'postal_code', 'gstin', 'phone', 'footer', 'authorized_signatory',
+  'supplier_name',
+  'address_line1',
+  'address_line2',
+  'city',
+  'state',
+  'state_code',
+  'postal_code',
+  'gstin',
+  'phone',
+  'footer',
+  'authorized_signatory',
 ] as const;
 
 const toForm = (settings: TenantDocumentSettings): UpdateTenantDocumentSettings =>
@@ -104,15 +111,24 @@ export const DocumentSettingsCard: React.FC = () => {
         {isError && (
           <div role="alert" className="document-settings-notice document-settings-error">
             <p>{t('documentSettings.loadFailed')}</p>
-            <IonButton fill="outline" onClick={() => refetch()}>{t('common.retry')}</IonButton>
+            <IonButton fill="outline" onClick={() => refetch()}>
+              {t('common.retry')}
+            </IonButton>
           </div>
         )}
         {form && data?.data && (
-          <form onSubmit={(event) => { event.preventDefault(); void handleSave(); }}>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handleSave();
+            }}
+          >
             <Select
               label={t('documentSettings.documentMode')}
               value={form.document_mode || 'SIMPLE_RECEIPT'}
-              onChange={(value) => setField('document_mode', value as TenantDocumentSettings['document_mode'])}
+              onChange={(value) =>
+                setField('document_mode', value as TenantDocumentSettings['document_mode'])
+              }
               options={[
                 { value: 'SIMPLE_RECEIPT', label: t('documentSettings.simpleReceipt') },
                 { value: 'GST_TAX_INVOICE', label: t('documentSettings.gstTaxInvoice') },
@@ -122,68 +138,170 @@ export const DocumentSettingsCard: React.FC = () => {
               <legend>{t('documentSettings.branding')}</legend>
               <p>{t('documentSettings.brandingHint')}</p>
               <div className="document-settings-template-grid">
-                {(['CLASSIC', 'MODERN', 'COMPACT'] as const).map((template) => (
+                {(
+                  ['CLASSIC', 'MODERN', 'COMPACT', 'LOGO_LEFT', 'BRAND_CENTRE', 'DETAILED'] as const
+                ).map((template) => (
                   <button
                     key={template}
                     type="button"
-                    className={form.receipt_template === template ? 'document-template document-template--active' : 'document-template'}
+                    className={
+                      form.receipt_template === template
+                        ? 'document-template document-template--active'
+                        : 'document-template'
+                    }
                     onClick={() => setField('receipt_template', template)}
                   >
-                    <span className={`document-template__preview document-template__preview--${template.toLowerCase()}`} />
+                    <span
+                      className={`document-template__preview document-template__preview--${template.toLowerCase()}`}
+                    />
                     <strong>{t(`documentSettings.templates.${template}`)}</strong>
                   </button>
                 ))}
               </div>
               <div className="document-settings-grid">
-                <Input label={t('documentSettings.brandColor')} value={form.brand_color || '#087F5B'} onChange={(value) => setField('brand_color', value.toUpperCase())} maxLength={7} />
-                <Input label={t('documentSettings.logoUrl')} value={form.logo_url || ''} onChange={(value) => setField('logo_url', value)} type="text" />
+                <Input
+                  label={t('documentSettings.brandColor')}
+                  value={form.brand_color || '#087F5B'}
+                  onChange={(value) => setField('brand_color', value.toUpperCase())}
+                  maxLength={7}
+                />
+                <Input
+                  label={t('documentSettings.logoUrl')}
+                  value={form.logo_url || ''}
+                  onChange={(value) => setField('logo_url', value)}
+                  type="text"
+                />
               </div>
             </fieldset>
             <Select
               label={t('documentSettings.paperWidth')}
               value={form.default_paper_width || 'MM80'}
-              onChange={(value) => setField('default_paper_width', value as TenantDocumentSettings['default_paper_width'])}
+              onChange={(value) =>
+                setField(
+                  'default_paper_width',
+                  value as TenantDocumentSettings['default_paper_width']
+                )
+              }
               options={data.data.capabilities.supported_paper_widths.map((width) => ({
                 value: width,
                 label: t(`documentSettings.paper.${width}`),
               }))}
             />
-            <Input label={t('documentSettings.footer')} value={form.footer || ''} onChange={(value) => setField('footer', value)} maxLength={500} />
+            <Input
+              label={t('documentSettings.footer')}
+              value={form.footer || ''}
+              onChange={(value) => setField('footer', value)}
+              maxLength={500}
+            />
 
             {form.document_mode === 'GST_TAX_INVOICE' && (
               <fieldset className="document-settings-gst">
                 <legend>{t('documentSettings.gstDetails')}</legend>
                 <p>{t('documentSettings.gstDetailsHint')}</p>
                 <div className="document-settings-grid">
-                  <Input label={t('documentSettings.supplierName')} value={form.supplier_name || ''} onChange={(value) => setField('supplier_name', value)} error={fieldError('supplier_name')} required />
-                  <Input label={t('documentSettings.gstin')} value={form.gstin || ''} onChange={(value) => setField('gstin', value.toUpperCase())} error={fieldError(blockers.includes('gstin_state_mismatch') ? 'gstin_state_mismatch' : 'gstin')} maxLength={15} required />
-                  <Input label={t('documentSettings.addressLine1')} value={form.address_line1 || ''} onChange={(value) => setField('address_line1', value)} error={fieldError('address_line1')} required />
-                  <Input label={t('documentSettings.addressLine2')} value={form.address_line2 || ''} onChange={(value) => setField('address_line2', value)} />
-                  <Input label={t('documentSettings.city')} value={form.city || ''} onChange={(value) => setField('city', value)} error={fieldError('city')} required />
-                  <Input label={t('documentSettings.state')} value={form.state || ''} onChange={(value) => setField('state', value)} error={fieldError('state')} required />
-                  <Input label={t('documentSettings.stateCode')} value={form.state_code || ''} onChange={(value) => setField('state_code', value)} error={fieldError('state_code')} maxLength={2} inputMode="numeric" required />
-                  <Input label={t('documentSettings.postalCode')} value={form.postal_code || ''} onChange={(value) => setField('postal_code', value)} error={fieldError('postal_code')} maxLength={6} inputMode="numeric" required />
-                  <Input label={t('documentSettings.phone')} value={form.phone || ''} onChange={(value) => setField('phone', value)} type="tel" />
-                  <Input label={t('documentSettings.authorizedSignatory')} value={form.authorized_signatory || ''} onChange={(value) => setField('authorized_signatory', value)} error={fieldError('authorized_signatory')} required />
+                  <Input
+                    label={t('documentSettings.supplierName')}
+                    value={form.supplier_name || ''}
+                    onChange={(value) => setField('supplier_name', value)}
+                    error={fieldError('supplier_name')}
+                    required
+                  />
+                  <Input
+                    label={t('documentSettings.gstin')}
+                    value={form.gstin || ''}
+                    onChange={(value) => setField('gstin', value.toUpperCase())}
+                    error={fieldError(
+                      blockers.includes('gstin_state_mismatch') ? 'gstin_state_mismatch' : 'gstin'
+                    )}
+                    maxLength={15}
+                    required
+                  />
+                  <Input
+                    label={t('documentSettings.addressLine1')}
+                    value={form.address_line1 || ''}
+                    onChange={(value) => setField('address_line1', value)}
+                    error={fieldError('address_line1')}
+                    required
+                  />
+                  <Input
+                    label={t('documentSettings.addressLine2')}
+                    value={form.address_line2 || ''}
+                    onChange={(value) => setField('address_line2', value)}
+                  />
+                  <Input
+                    label={t('documentSettings.city')}
+                    value={form.city || ''}
+                    onChange={(value) => setField('city', value)}
+                    error={fieldError('city')}
+                    required
+                  />
+                  <Input
+                    label={t('documentSettings.state')}
+                    value={form.state || ''}
+                    onChange={(value) => setField('state', value)}
+                    error={fieldError('state')}
+                    required
+                  />
+                  <Input
+                    label={t('documentSettings.stateCode')}
+                    value={form.state_code || ''}
+                    onChange={(value) => setField('state_code', value)}
+                    error={fieldError('state_code')}
+                    maxLength={2}
+                    inputMode="numeric"
+                    required
+                  />
+                  <Input
+                    label={t('documentSettings.postalCode')}
+                    value={form.postal_code || ''}
+                    onChange={(value) => setField('postal_code', value)}
+                    error={fieldError('postal_code')}
+                    maxLength={6}
+                    inputMode="numeric"
+                    required
+                  />
+                  <Input
+                    label={t('documentSettings.phone')}
+                    value={form.phone || ''}
+                    onChange={(value) => setField('phone', value)}
+                    type="tel"
+                  />
+                  <Input
+                    label={t('documentSettings.authorizedSignatory')}
+                    value={form.authorized_signatory || ''}
+                    onChange={(value) => setField('authorized_signatory', value)}
+                    error={fieldError('authorized_signatory')}
+                    required
+                  />
                 </div>
                 {(blockers.length > 0 || capabilityBlocked) && (
                   <div role="alert" className="document-settings-notice document-settings-error">
                     <strong>{t('documentSettings.activationBlocked')}</strong>
                     <ul>
                       {capabilityBlocked && <li>{t('documentSettings.blockers.capability')}</li>}
-                      {blockers.map((blocker) => <li key={blocker}>{t(`documentSettings.blockers.${blocker}`)}</li>)}
+                      {blockers.map((blocker) => (
+                        <li key={blocker}>{t(`documentSettings.blockers.${blocker}`)}</li>
+                      ))}
                     </ul>
                   </div>
                 )}
               </fieldset>
             )}
 
+            <ReceiptSettingsPreview form={form} />
             {notice && (
-              <p role={notice.kind === 'error' ? 'alert' : 'status'} className={`document-settings-notice document-settings-${notice.kind}`}>
+              <p
+                role={notice.kind === 'error' ? 'alert' : 'status'}
+                className={`document-settings-notice document-settings-${notice.kind}`}
+              >
                 {notice.message}
               </p>
             )}
-            <IonButton type="submit" expand="block" disabled={isSaving || blockers.length > 0 || capabilityBlocked}>
+            <IonButton
+              type="submit"
+              expand="block"
+              disabled={isSaving || blockers.length > 0 || capabilityBlocked}
+            >
               <IonIcon icon={save} slot="start" />
               {isSaving ? t('documentSettings.saving') : t('documentSettings.save')}
             </IonButton>

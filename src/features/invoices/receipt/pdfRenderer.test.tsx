@@ -114,3 +114,34 @@ describe('renderReceiptPdf', () => {
     20_000
   );
 });
+
+describe('six receipt layouts on real PDF pages', () => {
+  it.each(['CLASSIC', 'MODERN', 'COMPACT', 'LOGO_LEFT', 'BRAND_CENTRE', 'DETAILED'] as const)(
+    'renders %s at 58mm, 80mm and A4 without losing document output',
+    async (template) => {
+      for (const [paper, width] of [
+        ['58mm', 164.41],
+        ['80mm', 226.77],
+        [undefined, 595.28],
+      ] as const) {
+        const receipt = receiptFor('Shop with a long business name', 'Thank you');
+        receipt.branding.template = template;
+        const blob = await renderReceiptPdf(receipt, paper);
+        expect(blob.size).toBeGreaterThan(1000);
+        const bytes =
+          typeof blob.arrayBuffer === 'function'
+            ? await blob.arrayBuffer()
+            : await new Promise<ArrayBuffer>((resolve, reject) => {
+                const r = new FileReader();
+                r.onload = () => resolve(r.result as ArrayBuffer);
+                r.onerror = reject;
+                r.readAsArrayBuffer(blob);
+              });
+        const source = Array.from(new Uint8Array(bytes), (v) => String.fromCharCode(v)).join('');
+        const match = source.match(/\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)/);
+        expect(Number(match?.[1])).toBeCloseTo(width, 1);
+      }
+    },
+    30000
+  );
+});

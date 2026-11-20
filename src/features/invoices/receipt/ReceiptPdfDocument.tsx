@@ -252,6 +252,9 @@ export const ReceiptPdfDocument: React.FC<{
             ? { borderTop: `6 solid ${receipt.branding.brandColor}` }
             : {},
           receipt.branding.template === 'COMPACT' ? { padding: 22 } : {},
+          receipt.branding.template === 'DETAILED'
+            ? { borderWidth: 1, borderColor: '#94a3b8' }
+            : {},
           thermal ? styles.thermalPage : {},
         ]}
       >
@@ -266,10 +269,37 @@ export const ReceiptPdfDocument: React.FC<{
         {receipt.cancellationMarker && (
           <Text style={styles.cancellation}>{receipt.cancellationMarker}</Text>
         )}
-        <View style={[styles.header, thermal ? styles.thermalHeader : {}]}>
-          <View style={[styles.storeBlock, thermal ? styles.thermalStoreBlock : {}]}>
+        <View
+          style={[
+            styles.header,
+            thermal ? styles.thermalHeader : {},
+            receipt.branding.template === 'BRAND_CENTRE'
+              ? { flexDirection: 'column', alignItems: 'center' }
+              : {},
+          ]}
+        >
+          <View
+            style={[
+              styles.storeBlock,
+              thermal ? styles.thermalStoreBlock : {},
+              receipt.branding.template === 'BRAND_CENTRE'
+                ? { width: '100%', textAlign: 'center', alignItems: 'center' }
+                : {},
+              receipt.branding.template === 'LOGO_LEFT' && !thermal && receipt.branding.logoUrl
+                ? { paddingLeft: 62, minHeight: 60 }
+                : {},
+            ]}
+          >
             {receipt.branding.logoUrl && (
-              <Image src={receipt.branding.logoUrl} style={styles.logo} />
+              <Image
+                src={receipt.branding.logoUrl}
+                style={[
+                  styles.logo,
+                  receipt.branding.template === 'LOGO_LEFT' && !thermal
+                    ? { position: 'absolute', left: 0, top: 0, width: 50, height: 50 }
+                    : {},
+                ]}
+              />
             )}
             <Text
               style={[
@@ -290,7 +320,15 @@ export const ReceiptPdfDocument: React.FC<{
               </Text>
             )}
           </View>
-          <View style={[styles.right, thermal ? styles.thermalMetadata : {}]}>
+          <View
+            style={[
+              styles.right,
+              thermal ? styles.thermalMetadata : {},
+              receipt.branding.template === 'BRAND_CENTRE'
+                ? { textAlign: 'center', alignItems: 'center' }
+                : {},
+            ]}
+          >
             <Text style={[styles.title, thermal ? styles.thermalTitle : {}]}>{receipt.title}</Text>
             <Text style={styles.metadata}>
               {labels.invoice}: {receipt.invoiceNumber}
@@ -326,36 +364,89 @@ export const ReceiptPdfDocument: React.FC<{
           )}
         </View>
 
-        <View style={[styles.row, styles.head, thermal ? styles.thermalRow : {}]}>
-          <Text style={[styles.item, thermal ? styles.thermalItem : {}]}>{labels.item}</Text>
-          {!thermal && gst && <Text style={[styles.cell, styles.hsn]}>{labels.hsn}</Text>}
-          <Text style={[styles.cell, thermal ? styles.thermalCell : {}]}>{labels.qty}</Text>
-          <Text style={[styles.cell, thermal ? styles.thermalCell : {}]}>{labels.rate}</Text>
-          {!thermal && gst && <Text style={styles.cell}>{labels.tax}</Text>}
-          <Text style={[styles.cell, thermal ? styles.thermalCell : {}]}>{labels.amount}</Text>
-        </View>
-        {receipt.items.map((item) => (
-          <View style={[styles.row, thermal ? styles.thermalRow : {}]} key={item.key} wrap={false}>
-            <View style={[styles.item, thermal ? styles.thermalItem : {}]}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              {item.sku && <Text style={styles.sku}>{item.sku}</Text>}
+        {paperWidth === '58mm' ? (
+          <View>
+            <View style={[styles.row, styles.head, styles.thermalRow]}>
+              <Text style={{ width: '65%' }}>{labels.item}</Text>
+              <Text style={{ width: '35%', textAlign: 'right' }}>{labels.amount}</Text>
             </View>
-            {!thermal && gst && (
-              <Text style={[styles.cell, styles.hsn]}>{item.hsnCode ?? '—'}</Text>
-            )}
-            <Text style={[styles.cell, thermal ? styles.thermalCell : {}]}>
-              {item.quantity}
-              {item.unitLabel || item.uqcCode ? ` ${item.unitLabel || item.uqcCode}` : ''}
-            </Text>
-            <Text style={[styles.cell, thermal ? styles.thermalCell : {}]}>
-              {money(item.unitPrice)}
-            </Text>
-            {!thermal && gst && <Text style={styles.cell}>{item.gstRate ?? '0.00'}%</Text>}
-            <Text style={[styles.cell, thermal ? styles.thermalCell : {}]}>
-              {money(item.lineTotal)}
-            </Text>
+            {receipt.items.map((item) => (
+              <View
+                key={item.key}
+                wrap={false}
+                style={[
+                  styles.row,
+                  styles.thermalRow,
+                  { flexDirection: 'column' },
+                  receipt.branding.template === 'DETAILED'
+                    ? { borderBottomColor: '#94a3b8', backgroundColor: '#f8fafc' }
+                    : {},
+                ]}
+              >
+                <Text style={{ fontWeight: 700, marginBottom: 2 }}>{item.name}</Text>
+                {item.sku && <Text style={styles.sku}>{item.sku}</Text>}
+                <View
+                  style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 }}
+                >
+                  <Text style={{ width: '65%' }}>
+                    {item.quantity}
+                    {item.unitLabel || item.uqcCode
+                      ? ` ${item.unitLabel || item.uqcCode}`
+                      : ''} × {money(item.unitPrice)}
+                  </Text>
+                  <Text style={{ width: '35%', textAlign: 'right' }}>{money(item.lineTotal)}</Text>
+                </View>
+              </View>
+            ))}
           </View>
-        ))}
+        ) : (
+          <View>
+            <View style={[styles.row, styles.head, thermal ? styles.thermalRow : {}]}>
+              <Text style={[styles.item, thermal ? styles.thermalItem : {}]}>{labels.item}</Text>
+              {!thermal && gst && <Text style={[styles.cell, styles.hsn]}>{labels.hsn}</Text>}
+              <Text style={[styles.cell, thermal ? styles.thermalCell : {}]}>{labels.qty}</Text>
+              <Text style={[styles.cell, thermal ? styles.thermalCell : {}]}>{labels.rate}</Text>
+              {!thermal && gst && <Text style={styles.cell}>{labels.tax}</Text>}
+              <Text style={[styles.cell, thermal ? styles.thermalCell : {}]}>{labels.amount}</Text>
+            </View>
+            {receipt.items.map((item) => (
+              <View
+                style={[
+                  styles.row,
+                  thermal ? styles.thermalRow : {},
+                  receipt.branding.template === 'DETAILED'
+                    ? {
+                        borderBottomWidth: 1,
+                        borderBottomColor: '#94a3b8',
+                        backgroundColor: '#f8fafc',
+                      }
+                    : {},
+                ]}
+                key={item.key}
+                wrap={false}
+              >
+                <View style={[styles.item, thermal ? styles.thermalItem : {}]}>
+                  <Text style={styles.itemName}>{item.name}</Text>
+                  {item.sku && <Text style={styles.sku}>{item.sku}</Text>}
+                </View>
+                {!thermal && gst && (
+                  <Text style={[styles.cell, styles.hsn]}>{item.hsnCode ?? '—'}</Text>
+                )}
+                <Text style={[styles.cell, thermal ? styles.thermalCell : {}]}>
+                  {item.quantity}
+                  {item.unitLabel || item.uqcCode ? ` ${item.unitLabel || item.uqcCode}` : ''}
+                </Text>
+                <Text style={[styles.cell, thermal ? styles.thermalCell : {}]}>
+                  {money(item.unitPrice)}
+                </Text>
+                {!thermal && gst && <Text style={styles.cell}>{item.gstRate ?? '0.00'}%</Text>}
+                <Text style={[styles.cell, thermal ? styles.thermalCell : {}]}>
+                  {money(item.lineTotal)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         <View style={[styles.totals, thermal ? styles.thermalTotals : {}]} wrap={false}>
           <View style={styles.totalRow}>

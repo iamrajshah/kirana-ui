@@ -44,7 +44,7 @@ export interface ReceiptViewModel {
   title: 'Receipt' | 'Tax Invoice';
   mode: ReceiptDocumentMode;
   branding: {
-    template: 'CLASSIC' | 'MODERN' | 'COMPACT';
+    template: 'CLASSIC' | 'MODERN' | 'COMPACT' | 'LOGO_LEFT' | 'BRAND_CENTRE' | 'DETAILED';
     brandColor: string;
     logoUrl: string | null;
   };
