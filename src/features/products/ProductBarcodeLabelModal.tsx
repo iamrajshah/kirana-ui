@@ -22,7 +22,13 @@ import type { ProductVariant, StoreBarcodeInfo } from '@core/types';
 import { formatCurrency } from '@utils/helpers';
 import { apiErrorMessage } from '@core/services/notificationService';
 import { Ean13Barcode } from './Ean13Barcode';
-import { BARCODE_LABELS_PER_PAGE, paginateBarcodeCopies } from './barcodePrintLayout';
+import { createLabelQr, type LabelQr } from './barcodeLabelQr';
+import {
+  BARCODE_LABELS_PER_PAGE,
+  EXTENDED_LABELS_PER_PAGE,
+  QR_LABELS_PER_PAGE,
+  paginateBarcodeCopies,
+} from './barcodePrintLayout';
 import './product-barcode-label.css';
 
 interface Props {
@@ -73,20 +79,52 @@ interface BarcodeLabelOptions {
   showBarcodeNumber: boolean;
   packedOnDate: string;
   expiryDate: string;
+  netWeight: string;
+  batchNumber: string;
+  qrUrl: string;
 }
 
-const createDefaultLabelOptions = (): BarcodeLabelOptions => ({
-  showPrice: true,
-  showShopName: true,
-  showMrp: true,
-  showVariant: true,
-  showSku: false,
-  showPackedOn: false,
-  showExpiry: false,
-  showBarcodeNumber: true,
-  packedOnDate: todayInputValue(),
-  expiryDate: '',
-});
+const LABEL_DEFAULTS_KEY = 'kirana_barcode_label_defaults_v1';
+const savedToggleKeys = [
+  'showPrice',
+  'showShopName',
+  'showMrp',
+  'showVariant',
+  'showSku',
+  'showPackedOn',
+  'showExpiry',
+  'showBarcodeNumber',
+] as const;
+const createDefaultLabelOptions = (useSaved = true): BarcodeLabelOptions => {
+  const defaults: BarcodeLabelOptions = {
+    showPrice: true,
+    showShopName: true,
+    showMrp: true,
+    showVariant: true,
+    showSku: false,
+    showPackedOn: false,
+    showExpiry: false,
+    showBarcodeNumber: true,
+    packedOnDate: todayInputValue(),
+    expiryDate: '',
+    netWeight: '',
+    batchNumber: '',
+    qrUrl: '',
+  };
+  if (!useSaved) return defaults;
+  try {
+    const saved: unknown = JSON.parse(localStorage.getItem(LABEL_DEFAULTS_KEY) || 'null');
+    if (saved && typeof saved === 'object') {
+      for (const key of savedToggleKeys) {
+        const value = (saved as Record<string, unknown>)[key];
+        if (typeof value === 'boolean') defaults[key] = value;
+      }
+    }
+  } catch {
+    /* A damaged device preference must not prevent printing. */
+  }
+  return defaults;
+};
 
 const getDateValidationKey = ({
   showPackedOn,
@@ -108,10 +146,7 @@ interface BarcodeLabelProps {
   barcode: string;
   productName: string;
   shopName: string;
-  options: Pick<
-    BarcodeLabelOptions,
-    'showPrice' | 'showShopName' | 'showBarcodeNumber'
-  >;
+  options: Pick<BarcodeLabelOptions, 'showPrice' | 'showShopName' | 'showBarcodeNumber'>;
   sellingPriceLabel: string;
   mrpPriceLabel: string;
   showMrp: boolean;
@@ -121,6 +156,9 @@ interface BarcodeLabelProps {
   mrpLabel: string;
   barcodeAriaLabel: string;
   demoMarker?: string | null;
+  qr?: LabelQr | null;
+  format?: 'standard' | 'extended' | 'qr';
+  qrLabel?: string;
 }
 
 const BarcodeLabel: React.FC<BarcodeLabelProps> = ({
@@ -137,9 +175,14 @@ const BarcodeLabel: React.FC<BarcodeLabelProps> = ({
   mrpLabel,
   barcodeAriaLabel,
   demoMarker,
+  qr,
+  format = 'standard',
+  qrLabel,
 }) => {
   return (
-    <div className={`product-barcode-label${details.length ? ' product-barcode-label--with-details' : ''}`}>
+    <div
+      className={`product-barcode-label product-barcode-label--${format}${details.length ? ' product-barcode-label--with-details' : ''}`}
+    >
       {demoMarker && <b className="product-barcode-demo-marker">{demoMarker}</b>}
       <div className="product-barcode-label-header">
         <small className={showShopName ? 'product-barcode-shop-name' : 'product-barcode-kind'}>
@@ -165,11 +208,19 @@ const BarcodeLabel: React.FC<BarcodeLabelProps> = ({
           ))}
         </div>
       )}
-      <Ean13Barcode
-        value={barcode}
-        ariaLabel={barcodeAriaLabel}
-        showText={showBarcodeNumber}
-      />
+      <Ean13Barcode value={barcode} ariaLabel={barcodeAriaLabel} showText={showBarcodeNumber} />
+      {qr && (
+        <svg
+          className="product-label-qr"
+          role="img"
+          aria-label={qrLabel}
+          viewBox={`0 0 ${qr.size} ${qr.size}`}
+          shapeRendering="crispEdges"
+        >
+          <rect width={qr.size} height={qr.size} fill="white" />
+          <path d={qr.path} fill="black" />
+        </svg>
+      )}
     </div>
   );
 };
@@ -188,6 +239,8 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
   );
   const [generated, setGenerated] = useState<StoreBarcodeInfo | null>(null);
   const [copiesInput, setCopiesInput] = useState('1');
+  const [labelPreset, setLabelPreset] = useState('CUSTOM');
+  const [defaultsSaved, setDefaultsSaved] = useState(false);
   const [labelOptions, setLabelOptions] = useState(createDefaultLabelOptions);
   const [printJob, setPrintJob] = useState<{
     copies: number;
@@ -211,7 +264,32 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
   const updateLabelOption = <Key extends keyof BarcodeLabelOptions>(
     key: Key,
     value: BarcodeLabelOptions[Key]
-  ) => setLabelOptions((current) => ({ ...current, [key]: value }));
+  ) => {
+    setLabelPreset('CUSTOM');
+    setDefaultsSaved(false);
+    setLabelOptions((current) => ({ ...current, [key]: value }));
+  };
+  const labelQr = useMemo(() => createLabelQr(labelOptions.qrUrl), [labelOptions.qrUrl]);
+  const qrInvalid = Boolean(labelOptions.qrUrl.trim()) && !labelQr;
+  const labelFormat = labelOptions.qrUrl.trim()
+    ? 'qr'
+    : labelOptions.netWeight.trim() || labelOptions.batchNumber.trim()
+      ? 'extended'
+      : 'standard';
+  const labelsPerPage =
+    labelFormat === 'qr'
+      ? QR_LABELS_PER_PAGE
+      : labelFormat === 'extended'
+        ? EXTENDED_LABELS_PER_PAGE
+        : BARCODE_LABELS_PER_PAGE;
+  const applyPreset = (preset: string) =>
+    setLabelOptions({
+      ...createDefaultLabelOptions(false),
+      ...(preset === 'LOOSE'
+        ? { showVariant: false, showMrp: false, showSku: true, netWeight: variant?.size || '' }
+        : {}),
+      ...(preset === 'PACKED' ? { showPackedOn: true, showExpiry: true } : {}),
+    });
   const sellingPrice = Number(variant?.selling_price ?? variant?.price ?? 0);
   const hasMrp = variant?.mrp_price != null;
   const mrpPrice = Number(variant?.mrp_price ?? 0);
@@ -229,7 +307,7 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
     parsedCopies >= 1 &&
     parsedCopies <= MAX_LABEL_COPIES;
   const copies = copiesAreValid ? parsedCopies : 0;
-  const pageCount = copiesAreValid ? Math.ceil(copies / BARCODE_LABELS_PER_PAGE) : 0;
+  const pageCount = copiesAreValid ? Math.ceil(copies / labelsPerPage) : 0;
   const language = i18n.resolvedLanguage || i18n.language || 'en';
   const locale = language === 'en' ? 'en-IN' : language;
   const dateFormatter = useMemo(
@@ -259,7 +337,14 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
         })
       : '',
   ].filter(Boolean);
+  if (labelOptions.netWeight.trim())
+    details.push(`${t('products.labelNetWeight')}: ${labelOptions.netWeight.trim()}`);
+  if (labelOptions.batchNumber.trim())
+    details.push(`${t('products.labelBatch')}: ${labelOptions.batchNumber.trim()}`);
   const labelProps: BarcodeLabelProps = {
+    qr: labelQr,
+    format: labelFormat,
+    qrLabel: t('products.labelQr'),
     barcode,
     productName,
     shopName,
@@ -274,11 +359,22 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
     barcodeAriaLabel: t('products.barcodeAriaLabel', { value: barcode }),
     demoMarker: isDemo ? 'DEMO — NOT A VALID BUSINESS DOCUMENT' : null,
   };
-  const printPages = printJob ? paginateBarcodeCopies(printJob.copies) : [];
+  const printPages = printJob
+    ? paginateBarcodeCopies(
+        printJob.copies,
+        printJob.labelProps.format === 'qr'
+          ? QR_LABELS_PER_PAGE
+          : printJob.labelProps.format === 'extended'
+            ? EXTENDED_LABELS_PER_PAGE
+            : BARCODE_LABELS_PER_PAGE
+      )
+    : [];
 
   useEffect(() => {
     setGenerated(null);
     setCopiesInput('1');
+    setLabelPreset('CUSTOM');
+    setDefaultsSaved(false);
     setLabelOptions(createDefaultLabelOptions());
     setPrintJob(null);
     setError('');
@@ -314,7 +410,7 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
   };
 
   const handlePrint = () => {
-    if (!copiesAreValid || !datesAreValid) return;
+    if (!copiesAreValid || !datesAreValid || qrInvalid) return;
     setPrintJob({ copies, labelProps });
   };
 
@@ -369,9 +465,7 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
               <IonNote color="warning">{t('products.barcodeLargePrintWarning')}</IonNote>
             )}
 
-            <strong className="barcode-label-section-title">
-              {t('products.labelContent')}
-            </strong>
+            <strong className="barcode-label-section-title">{t('products.labelContent')}</strong>
             <IonItem lines="full">
               <IonToggle
                 checked={showShopName}
@@ -463,9 +557,7 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
                   min={showPackedOn ? packedOnDate : undefined}
                   max={MAX_LABEL_DATE}
                   value={expiryDate}
-                  onIonInput={(event) =>
-                    updateLabelOption('expiryDate', event.detail.value ?? '')
-                  }
+                  onIonInput={(event) => updateLabelOption('expiryDate', event.detail.value ?? '')}
                 />
               </IonItem>
             )}
@@ -474,6 +566,78 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
                 {dateError}
               </p>
             )}
+            <div className="barcode-extra-fields">
+              <label>
+                {t('products.labelPreset')}
+                <select
+                  value={labelPreset}
+                  onChange={(event) => {
+                    setLabelPreset(event.target.value);
+                    applyPreset(event.target.value);
+                  }}
+                >
+                  <option value="CUSTOM" disabled>
+                    {t('products.presetCustom')}
+                  </option>
+                  <option value="STANDARD">{t('products.presetStandard')}</option>
+                  <option value="LOOSE">{t('products.presetLoose')}</option>
+                  <option value="PACKED">{t('products.presetPacked')}</option>
+                </select>
+              </label>
+              <label>
+                {t('products.labelNetWeight')}
+                <input
+                  maxLength={16}
+                  value={labelOptions.netWeight}
+                  onChange={(event) => updateLabelOption('netWeight', event.target.value)}
+                />
+              </label>
+              <label>
+                {t('products.labelBatch')}
+                <input
+                  maxLength={24}
+                  value={labelOptions.batchNumber}
+                  onChange={(event) => updateLabelOption('batchNumber', event.target.value)}
+                />
+              </label>
+              <label>
+                {t('products.labelQrLink')}
+                <input
+                  type="url"
+                  maxLength={180}
+                  value={labelOptions.qrUrl}
+                  onChange={(event) => updateLabelOption('qrUrl', event.target.value)}
+                />
+              </label>
+              <button
+                type="button"
+                className="barcode-save-defaults"
+                onClick={() => {
+                  try {
+                    localStorage.setItem(
+                      LABEL_DEFAULTS_KEY,
+                      JSON.stringify(
+                        Object.fromEntries(savedToggleKeys.map((key) => [key, labelOptions[key]]))
+                      )
+                    );
+                    setDefaultsSaved(true);
+                  } catch {
+                    setError(t('products.labelDefaultsFailed'));
+                  }
+                }}
+              >
+                {t('products.saveLabelDefaults')}
+              </button>
+              {defaultsSaved && <p role="status">{t('products.labelDefaultsSaved')}</p>}
+              <p>
+                {t('products.labelSizeInfo', {
+                  width: 58,
+                  height: labelFormat === 'qr' ? 65 : labelFormat === 'extended' ? 50 : 35,
+                  count: labelsPerPage,
+                })}
+              </p>
+              {qrInvalid && <p role="alert">{t('products.labelQrInvalid')}</p>}
+            </div>
             <IonNote>{t('products.barcodePriceNote')}</IonNote>
 
             {error && (
@@ -491,7 +655,7 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
               <IonButton
                 expand="block"
                 onClick={handlePrint}
-                disabled={!copiesAreValid || !datesAreValid}
+                disabled={!copiesAreValid || !datesAreValid || qrInvalid}
               >
                 <IonIcon slot="start" icon={printOutline} />
                 {t('products.printBarcodeLabels', { count: copies })}
@@ -517,7 +681,10 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
         createPortal(
           <div className="barcode-print-sheet" aria-hidden="true">
             {printPages.map((page, pageIndex) => (
-              <section className="barcode-print-page" key={pageIndex}>
+              <section
+                className={`barcode-print-page barcode-print-page--${printJob.labelProps.format || 'standard'}`}
+                key={pageIndex}
+              >
                 {page.map((index) => (
                   <BarcodeLabel key={index} {...printJob.labelProps} />
                 ))}

@@ -24,3 +24,9 @@ describe('barcode print layout', () => {
     expect(pages.flat()).toHaveLength(566);
   });
 });
+
+it.each([12, 15])('paginates larger %s-up labels without losing copies', (pageSize) => {
+  const pages = paginateBarcodeCopies(50, pageSize);
+  expect(pages.flat()).toEqual(Array.from({ length: 50 }, (_, i) => i));
+  expect(pages.every((page) => page.length <= pageSize)).toBe(true);
+});

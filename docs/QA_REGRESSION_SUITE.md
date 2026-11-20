@@ -391,3 +391,17 @@ renderer tests and `scripts/verify-receipt-gallery-browser.mjs` against the loca
 options as the counter fixture. Backend migration must precede release. Do not
 roll a backend that has written new template values back to an enum-unaware
 Prisma client; keep data/schema and runtime compatibility during recovery.
+
+## Barcode presets and vector QR (20 November 2026)
+
+Verify standard/extended/QR formats in the real Ionic modal at phone, tablet and
+desktop sizes in both themes. Add net quantity/batch and a short HTTPS product
+or shop link; reject unsafe/credential URLs. Verify SVG and text bounds, not only
+the presence of a QR element. Print 50 QR labels: expect 5 A4 pages and exactly
+50 readable QR and EAN labels, including the final partial page. Ordinary labels
+remain 21 per page; extra-detail labels use 15 and QR labels use 12. Test packed
+preset required dates. Switch variant and verify batch, net quantity, dates and
+QR links clear; saved device defaults must contain display booleans only.
+Use `scripts/verify-label-gallery-browser.mjs` with the same runtime/URL/output
+options as the other browser fixtures. A vector-render pass is not a physical
+scanner/printer acceptance test. Do a one-label test on the actual label stock.

@@ -853,7 +853,21 @@
     "barcodeAriaLabel": "બારકોડ {{value}}",
     "mrpShort": "એમઆરપી",
     "storePackedItem": "દુકાનમાં પેક કરેલું",
-    "generateBarcodeHint": "બારકોડ એક વાર બનાવો, પછી બીજા પેક પ્રોડક્ટની જેમ પ્રિન્ટ અને સ્કેન કરો."
+    "generateBarcodeHint": "બારકોડ એક વાર બનાવો, પછી બીજા પેક પ્રોડક્ટની જેમ પ્રિન્ટ અને સ્કેન કરો.",
+    "labelPreset": "લેબલ પ્રકાર",
+    "presetStandard": "સામાન્ય છૂટક",
+    "presetLoose": "છૂટો માલ",
+    "presetPacked": "દુકાનમાં પેક કરેલ",
+    "labelNetWeight": "ચોખ્ખો જથ્થો",
+    "labelBatch": "બેચ / લોટ",
+    "labelQrLink": "QR લિંક (વૈકલ્પિક, HTTPS)",
+    "labelQr": "ઉત્પાદન અથવા દુકાનનો QR",
+    "labelQrInvalid": "લોગિન માહિતી વગરની HTTPS લિંક આપો, વધુમાં વધુ 180 અક્ષરો.",
+    "labelSizeInfo": "{{width}} × {{height}} મિમી · દરેક A4 પાને {{count}} લેબલ",
+    "presetCustom": "પસંદ કરેલા વિકલ્પો",
+    "saveLabelDefaults": "આ ઉપકરણ પર ગોઠવણી સાચવો",
+    "labelDefaultsSaved": "ગોઠવણી સાચવી. તારીખો, બેચ અને QR લિંક દરેક ઉત્પાદન માટે અલગ રહેશે.",
+    "labelDefaultsFailed": "આ ઉપકરણ પર ગોઠવણી સાચવી શકાઈ નહીં."
   },
   "inventory": {
     "onHand": "હાથ પરનો સ્ટોક",
