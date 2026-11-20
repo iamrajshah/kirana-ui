@@ -18,9 +18,7 @@ import {
   cash,
   logoWhatsapp,
   personAdd,
-  remove,
   scan,
-  trash,
 } from 'ionicons/icons';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -74,6 +72,7 @@ import {
   loadPendingBillingCheckout,
   persistPendingBillingCheckout,
 } from './billing.logic';
+import { CounterBillTable } from './CounterBillTable';
 import { useCounterScanner } from './useCounterScanner';
 import { HeldBillsPanel } from './HeldBillsPanel';
 import { SaleCompletionSheet } from './SaleCompletionSheet';
@@ -90,7 +89,6 @@ import {
 } from '../invoices/receipt';
 
 const COUNTER_LABEL_STORAGE_KEY = 'kirana_counter_label';
-const LONG_BILL_PREVIEW_ITEMS = 5;
 
 const isConflictError = (error: unknown) =>
   typeof error === 'object' && error !== null && 'status' in error && error.status === 409;
@@ -195,7 +193,6 @@ export const BillingPage: React.FC = () => {
   const debouncedCustomerSearchTerm = useDebouncedValue(customerSearchTerm.trim(), 300);
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
   const [cartItems, setCartItems] = useState<BillingCartItem[]>([]);
-  const [showAllCartItems, setShowAllCartItems] = useState(false);
   const cartItemsRef = useRef<BillingCartItem[]>([]);
   const replaceCartItems = useCallback(
     (next: BillingCartItem[] | ((current: BillingCartItem[]) => BillingCartItem[])) => {
@@ -206,9 +203,6 @@ export const BillingPage: React.FC = () => {
     },
     []
   );
-  const hasLongBill = cartItems.length > LONG_BILL_PREVIEW_ITEMS;
-  const visibleCartItems =
-    hasLongBill && !showAllCartItems ? cartItems.slice(-LONG_BILL_PREVIEW_ITEMS) : cartItems;
   const [selectedCustomer, setSelectedCustomer] = useState<Pick<
     Customer,
     'id' | 'name' | 'phone' | 'state_code' | 'credit_balance'
@@ -471,7 +465,6 @@ export const BillingPage: React.FC = () => {
     }));
     setBillDiscount(nextDiscount);
     replaceCartItems(nextCartItems);
-    setShowAllCartItems(false);
     updateActiveHeldVersion(invoice.held_at ? invoice.version : undefined);
     setHeldConflict(false);
     loadedInvoiceSnapshotRef.current = JSON.stringify({
@@ -793,7 +786,6 @@ export const BillingPage: React.FC = () => {
   const resetForm = () => {
     billGenerationRef.current += 1;
     replaceCartItems([]);
-    setShowAllCartItems(false);
     setBillDiscount(0);
     setSearchTerm('');
     setBarcodeInput('');
@@ -1453,7 +1445,7 @@ export const BillingPage: React.FC = () => {
               )}
             </section>
 
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)]">
+            <div className="counter-billing-layout grid gap-4">
               <section className="min-w-0">
                 <div className="rounded-2xl border border-gray-200 bg-white p-2 shadow-sm sm:p-3">
                   <div className="flex items-center gap-2">
@@ -1591,40 +1583,12 @@ export const BillingPage: React.FC = () => {
                       onClick={() => {
                         billGenerationRef.current += 1;
                         replaceCartItems([]);
-                        setShowAllCartItems(false);
                       }}
                     >
                       {t('billing.clearCart')}
                     </button>
                   )}
                 </div>
-
-                {hasLongBill && (
-                  <div className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-sky-100 bg-sky-50 px-3 py-2">
-                    <p className="text-xs font-semibold text-sky-900">
-                      {showAllCartItems
-                        ? t('billing.allItemsShown', { count: cartItems.length })
-                        : t('billing.showingRecentItems', {
-                            shown: LONG_BILL_PREVIEW_ITEMS,
-                            total: cartItems.length,
-                          })}
-                    </p>
-                    <button
-                      type="button"
-                      className="min-h-touch shrink-0 rounded-lg px-2 text-xs font-bold text-sky-700 underline"
-                      aria-label={
-                        showAllCartItems
-                          ? t('billing.showRecentItems')
-                          : t('billing.reviewAllItems', { count: cartItems.length })
-                      }
-                      onClick={() => setShowAllCartItems((current) => !current)}
-                    >
-                      {showAllCartItems
-                        ? t('billing.showRecentItems')
-                        : t('billing.reviewAllItems', { count: cartItems.length })}
-                    </button>
-                  </div>
-                )}
 
                 {cartItems.length === 0 ? (
                   <div className="mt-2 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 py-12 text-center">
@@ -1633,138 +1597,20 @@ export const BillingPage: React.FC = () => {
                     <p className="mt-1 text-sm text-gray-500">{t('billing.emptyCartHint')}</p>
                   </div>
                 ) : (
-                  <div
-                    className={`mt-2 space-y-2 ${
-                      hasLongBill && showAllCartItems
-                        ? 'max-h-[65vh] overflow-y-auto overscroll-contain pr-1'
-                        : ''
-                    }`}
-                  >
-                    {visibleCartItems.map((item) => {
-                      const availableQuantity =
-                        availableStockByVariant.get(item.variant_id) ?? item.available_quantity;
-                      const stockKnown = availableQuantity !== undefined;
-                      const exceedsStock = stockKnown && item.quantity > Number(availableQuantity);
-                      const atStockLimit = stockKnown && item.quantity >= Number(availableQuantity);
-                      return (
-                        <IonCard key={item.variant_id} className="m-0 rounded-2xl shadow-sm">
-                          <IonCardContent className="p-3">
-                            <div className="flex items-start gap-3">
-                              <div className="min-w-0 flex-1">
-                                <h3 className="truncate text-sm font-bold text-gray-900 sm:text-base">
-                                  {item.product_name}
-                                </h3>
-                                <p className="text-xs text-gray-500">{item.sku}</p>
-                              </div>
-                              <strong className="text-base text-sky-700">
-                                {formatCurrency(item.unit_price * item.quantity)}
-                              </strong>
-                              <button
-                                type="button"
-                                aria-label={t('billing.removeFromCart')}
-                                className="flex min-h-touch min-w-touch items-center justify-center rounded-xl text-red-600"
-                                onClick={() => updateQuantity(item.variant_id, 0)}
-                              >
-                                <IonIcon icon={trash} />
-                              </button>
-                            </div>
-                            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                              <div>
-                                <label className="mb-1 block text-xs font-semibold text-gray-600">
-                                  {t('billing.qty')}
-                                </label>
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    type="button"
-                                    aria-label={t('billing.decreaseQuantity', {
-                                      product: item.product_name,
-                                    })}
-                                    className="flex min-h-touch min-w-touch items-center justify-center rounded-xl border border-gray-300 bg-white"
-                                    onClick={() =>
-                                      updateQuantity(item.variant_id, item.quantity - 1)
-                                    }
-                                  >
-                                    <IonIcon icon={remove} />
-                                  </button>
-                                  <input
-                                    type="number"
-                                    min="1"
-                                    max={availableQuantity}
-                                    aria-label={t('billing.quantityFor', {
-                                      product: item.product_name,
-                                    })}
-                                    value={item.quantity}
-                                    className="min-h-touch w-20 rounded-xl border border-gray-300 px-2 text-center text-base font-bold"
-                                    onChange={(event) =>
-                                      updateQuantity(
-                                        item.variant_id,
-                                        Math.max(1, Number(event.target.value) || 1)
-                                      )
-                                    }
-                                  />
-                                  <button
-                                    type="button"
-                                    aria-label={t('billing.increaseQuantity', {
-                                      product: item.product_name,
-                                    })}
-                                    disabled={atStockLimit}
-                                    className="flex min-h-touch min-w-touch items-center justify-center rounded-xl border border-gray-300 bg-white disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
-                                    onClick={() =>
-                                      updateQuantity(item.variant_id, item.quantity + 1)
-                                    }
-                                  >
-                                    <IonIcon icon={add} />
-                                  </button>
-                                </div>
-                                {stockKnown && (
-                                  <p
-                                    className={`mt-1 text-xs font-semibold ${
-                                      atStockLimit ? 'text-red-600' : 'text-gray-500'
-                                    }`}
-                                    role={atStockLimit ? 'status' : undefined}
-                                  >
-                                    {atStockLimit
-                                      ? t('billing.stockLimit', {
-                                          count: availableQuantity,
-                                        })
-                                      : t('billing.availableStock', {
-                                          count: availableQuantity,
-                                        })}
-                                  </p>
-                                )}
-                                {exceedsStock && (
-                                  <p
-                                    role="alert"
-                                    className="mt-1 text-xs font-semibold text-red-600"
-                                  >
-                                    {t('billing.reduceQuantityToAvailable', {
-                                      count: availableQuantity,
-                                    })}
-                                  </p>
-                                )}
-                              </div>
-                              <label className="block text-xs font-semibold text-gray-600">
-                                {t('billing.priceLabel')}
-                                <div className="mt-1 flex min-h-touch items-center rounded-xl border border-gray-300 px-3">
-                                  <span className="mr-1">₹</span>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={item.unit_price}
-                                    className="w-full border-0 bg-transparent text-base font-semibold outline-none"
-                                    onChange={(event) =>
-                                      updatePrice(item.variant_id, Number(event.target.value) || 0)
-                                    }
-                                  />
-                                </div>
-                              </label>
-                            </div>
-                          </IonCardContent>
-                        </IonCard>
-                      );
-                    })}
-                  </div>
+                  <CounterBillTable
+                    items={cartItems}
+                    stock={availableStockByVariant}
+                    disabled={
+                      creating ||
+                      updating ||
+                      finalizing ||
+                      paying ||
+                      cancelling ||
+                      Boolean(completionInvoiceId)
+                    }
+                    onQuantity={updateQuantity}
+                    onPrice={updatePrice}
+                  />
                 )}
               </section>
 

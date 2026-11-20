@@ -112,6 +112,11 @@ behaviour.
   the bill. Capturing stops on other routes, checkout or explicit Pause scanner.
 - Hardware acceptance still requires the actual Honeywell/other HID scanner;
   simulated keyboard bursts prove software handling, not a physical USB driver.
+- Large bills use one compact, scrollable counter table with sticky headings;
+  there is no cart pagination or hidden recent-items subset. Find in this bill
+  searches all loaded bill rows and never changes totals or checkout contents.
+  Desktop uses inline rows; phones keep labelled, finger-sized quantity/rate
+  controls. Enter after an edit returns to the permanent scanner field.
 
 - A walk-in cash or UPI sale does not require customer creation.
 - Product search and barcode scanning lead into the same cart.

@@ -668,7 +668,13 @@
     "scansPending": "{{count}} स्कैन बाकी हैं",
     "lastScanned": "पिछला: {{product}}",
     "pauseScanner": "स्कैनर रोकें",
-    "resumeScanner": "स्कैनर चालू करें"
+    "resumeScanner": "स्कैनर चालू करें",
+    "findInBill": "इस बिल में खोजें",
+    "billRows": "{{total}} में से {{shown}} पंक्तियाँ",
+    "productColumn": "उत्पाद",
+    "amountColumn": "राशि",
+    "noBillMatches": "इस बिल में कोई मेल नहीं मिला",
+    "priceFor": "{{product}} की कीमत"
   },
   "customers": {
     "title": "ग्राहक",

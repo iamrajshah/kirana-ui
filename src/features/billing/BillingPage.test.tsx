@@ -460,7 +460,7 @@ describe('BillingPage', () => {
     expect(screen.queryByText('billing.marginPreview.title')).toBeNull();
     expect(screen.queryByText('₹25')).toBeNull();
   });
-  it('keeps long bills compact until the cashier chooses to review every item', async () => {
+  it('shows every long-bill row in the compact scrollable table without pagination', async () => {
     mocks.invoice = {
       ...mocks.invoice,
       items: Array.from({ length: 12 }, (_, index) => ({
@@ -478,13 +478,9 @@ describe('BillingPage', () => {
     render(<BillingPage />);
 
     expect(await screen.findByText('Product 12')).toBeTruthy();
-    expect(screen.getByText('billing.showingRecentItems')).toBeTruthy();
-    expect(screen.queryByText('Product 1')).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'billing.reviewAllItems' }));
-
-    expect(await screen.findByText('Product 1')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'billing.showRecentItems' })).toBeTruthy();
+    expect(screen.getByText('Product 1')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'billing.reviewAllItems' })).toBeNull();
+    expect(screen.getByRole('table')).toBeTruthy();
   });
 
   describe('quote refresh', () => {
