@@ -276,6 +276,19 @@ remain usable. Cashiers continue to see their normal operational dashboard.
 
 ### GST preparation for the CA
 
+Products > GST & HSN product review provides a paginated edit/review workspace.
+The add-product tax section is open by default; Product Detail explicitly shows
+missing HSN/GST and preserves a visible 0% rate. Edit 25 variants at a time, or
+apply HSN/GST to selected rows, preview old/new values and confirm once. HSN is
+shared by every variant of a product, including other pages; a clear notice
+explains this before editing. Pending edits block paging/filter changes and
+require explicit discard before closing. Failed saves preserve the form. Backend
+ownership, commercial and PRODUCT_UPDATE permission checks remain authoritative.
+No classification is guessed from a name or barcode and old invoice snapshots
+do not change. This is phase 1 of the approved retail-completion programme;
+returns/exchanges, stocktake/purchase orders, expenses/pricing/reordering and
+loyalty/promotions still have separate implementation gates.
+
 - `GST_CA_REPORTS` adds a protected GST & CA workspace with OWNER as the default
   role policy; Platform Admin may widen its runtime role policy without a deploy.
   It prepares one selected legal firm at a time and shows outward tax,

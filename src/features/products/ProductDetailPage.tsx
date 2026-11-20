@@ -39,10 +39,7 @@ import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice'
 import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
 import { hasPermission } from '@core/permissions/permissions';
 import { APP_NAME } from '@core/constants';
-import {
-  optionalGstRateIsValid,
-  optionalHsnCodeIsSupported,
-} from '@core/constants/gstMasterData';
+import { optionalGstRateIsValid, optionalHsnCodeIsSupported } from '@core/constants/gstMasterData';
 import { ProductBarcodeLabelModal } from './ProductBarcodeLabelModal';
 import { useGetExpiryAlertsQuery } from '@core/api/expiryApi';
 import { parseOptionalUqcQuantityFactor } from './uqcQuantityFactor';
@@ -338,12 +335,12 @@ export const ProductDetailPage: React.FC = () => {
                     </p>
                   </IonLabel>
                 </IonItem>
-                {product.hsn_code && (
+                {
                   <IonItem>
                     <IonLabel>{t('taxFields.hsnCode')}</IonLabel>
-                    <IonLabel slot="end">{product.hsn_code}</IonLabel>
+                    <IonLabel slot="end">{product.hsn_code || t('taxWorkspace.notSet')}</IonLabel>
                   </IonItem>
-                )}
+                }
                 <IonItem>
                   <IonLabel style={{ color: 'var(--ion-text-color)' }}>
                     {t('common.status')}
@@ -500,16 +497,18 @@ export const ProductDetailPage: React.FC = () => {
                             </IonLabel>
                           </IonItem>
                         )}
-                        {variant.gst_percent && (
+                        {
                           <IonItem>
                             <IonLabel style={{ color: 'var(--ion-text-color)' }}>
                               {t('products.gstLabel')}
                             </IonLabel>
                             <IonLabel slot="end" style={{ color: 'var(--ion-text-color)' }}>
-                              {variant.gst_percent}%
+                              {variant.gst_percent == null
+                                ? t('taxWorkspace.notSet')
+                                : `${variant.gst_percent}%`}
                             </IonLabel>
                           </IonItem>
-                        )}
+                        }
                         {(variant.uqc_code || variant.unit_label) && (
                           <IonItem>
                             <IonLabel>{t('taxFields.unitOfQuantity')}</IonLabel>

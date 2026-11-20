@@ -405,3 +405,26 @@ QR links clear; saved device defaults must contain display booleans only.
 Use `scripts/verify-label-gallery-browser.mjs` with the same runtime/URL/output
 options as the other browser fixtures. A vector-render pass is not a physical
 scanner/printer acceptance test. Do a one-label test on the actual label stock.
+
+## Product GST/HSN review — 20 November 2026
+
+Open Products > GST & HSN product review as OWNER and MANAGER. A catalogue-only
+CASHIER must fail direct list, preview and apply access. Check unknown versus
+explicit 0%, HSN shared by sibling variants (including other pages), nullable
+unit data, decimal base quantity, selected-row bulk edits, search, incomplete
+filter and pagination. Invalid HSN/rates/quantities must fail before posting.
+Preview must not write; save must preserve original invoice tax/identity facts.
+
+Keep edits open while another device changes the same facts: saving must conflict
+instead of overwriting. Fail the save, retry, and verify form preservation.
+Check Escape/backdrop, explicit discard, close and reopen so no overlay leaves
+the page unclickable. Verify at phone/tablet/desktop widths, both themes and all
+four languages, including lazy-loaded workspace translations.
+
+Run `scripts/verify-product-tax-browser.mjs` against
+`tests/browser/product-tax.html`. This fixture intercepts synthetic API requests;
+it does not write to Railway or prove production DB integration. The companion
+server disposable-MySQL suite verifies commit, rollback on audit failure, stale
+concurrent saves, cross-tenant IDs and historical snapshot preservation.
+GST invoice issuance must reject an unset rate or malformed HSN; explicit zero
+remains valid, and provisional drafts/Simple Receipts remain compatible.

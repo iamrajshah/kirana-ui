@@ -2238,5 +2238,9 @@
       "COMPLETED": "Complete",
       "CANCELLED": "Reject / cancel"
     }
+  },
+  "taxWorkspace": {
+    "title": "GST & HSN product review",
+    "notSet": "Not set"
   }
 }

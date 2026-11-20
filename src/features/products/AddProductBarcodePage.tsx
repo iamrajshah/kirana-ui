@@ -35,10 +35,7 @@ import {
 } from '@components';
 import type { BarcodeLookupData, UqcCode } from '@core/types';
 import { useTranslation } from 'react-i18next';
-import {
-  optionalGstRateIsValid,
-  optionalHsnCodeIsSupported,
-} from '@core/constants/gstMasterData';
+import { optionalGstRateIsValid, optionalHsnCodeIsSupported } from '@core/constants/gstMasterData';
 import { parseOptionalUqcQuantityFactor } from './uqcQuantityFactor';
 import './stock-workspace.css';
 
@@ -490,7 +487,7 @@ export const AddProductBarcodePage: React.FC = () => {
                           type="number"
                         />
                       </div>
-                      <details className="product-tax-details">
+                      <details className="product-tax-details" open>
                         <summary>{t('taxFields.productDetails')}</summary>
                         <p>{t('taxFields.productDetailsHint')}</p>
                         <Input

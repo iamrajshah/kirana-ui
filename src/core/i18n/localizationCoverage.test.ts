@@ -6,6 +6,10 @@ import en from './locales/en.json';
 import gu from './locales/gu.json';
 import hi from './locales/hi.json';
 import mr from './locales/mr.json';
+import taxEn from '../../features/products/tax-locales/en.json';
+import taxHi from '../../features/products/tax-locales/hi.json';
+import taxMr from '../../features/products/tax-locales/mr.json';
+import taxGu from '../../features/products/tax-locales/gu.json';
 
 type LocaleTree = Record<string, unknown>;
 
@@ -17,7 +21,7 @@ const flattenKeys = (value: LocaleTree, prefix = ''): string[] =>
       : [fullKey];
   });
 
-const englishKeys = new Set(flattenKeys(en));
+const englishKeys = new Set([...flattenKeys(en), ...flattenKeys({ taxWorkspace: taxEn })]);
 
 const sourceFiles = (directory: string): string[] =>
   fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -32,7 +36,13 @@ const hardCodedCopy = () => {
 
   sourceFiles(path.resolve(process.cwd(), 'src')).forEach((file) => {
     const contents = fs.readFileSync(file, 'utf8');
-    const source = ts.createSourceFile(file, contents, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    const source = ts.createSourceFile(
+      file,
+      contents,
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TSX
+    );
 
     const record = (node: ts.Node, value: string) => {
       if (!/[A-Za-z]/.test(value) || value === 'Rajesh Shah (@iamrajshah)') return;
@@ -43,7 +53,10 @@ const hardCodedCopy = () => {
     const recordLiteral = (node: ts.Node) => {
       if (ts.isStringLiteralLike(node)) record(node, node.text);
       if (ts.isTemplateExpression(node)) {
-        record(node, [node.head.text, ...node.templateSpans.map((span) => span.literal.text)].join('…'));
+        record(
+          node,
+          [node.head.text, ...node.templateSpans.map((span) => span.literal.text)].join('…')
+        );
       }
     };
 
@@ -63,9 +76,11 @@ const hardCodedCopy = () => {
       }
       if (
         ts.isBinaryExpression(node) &&
-        [ts.SyntaxKind.BarBarToken, ts.SyntaxKind.QuestionQuestionToken, ts.SyntaxKind.PlusToken].includes(
-          node.operatorToken.kind,
-        )
+        [
+          ts.SyntaxKind.BarBarToken,
+          ts.SyntaxKind.QuestionQuestionToken,
+          ts.SyntaxKind.PlusToken,
+        ].includes(node.operatorToken.kind)
       ) {
         recordUserExpression(node.left);
         recordUserExpression(node.right);
@@ -78,7 +93,15 @@ const hardCodedCopy = () => {
       if (
         ts.isJsxAttribute(node) &&
         ts.isIdentifier(node.name) &&
-        ['placeholder', 'title', 'aria-label', 'label', 'header', 'message', 'loadingText'].includes(node.name.text) &&
+        [
+          'placeholder',
+          'title',
+          'aria-label',
+          'label',
+          'header',
+          'message',
+          'loadingText',
+        ].includes(node.name.text) &&
         node.initializer
       ) {
         if (ts.isStringLiteral(node.initializer)) record(node, node.initializer.text);
@@ -135,8 +158,11 @@ const hardCodedCopy = () => {
 
 describe('localization coverage', () => {
   it('keeps every supported locale aligned with English', () => {
-    const expectedKeys = [...englishKeys].sort();
+    const expectedKeys = flattenKeys(en).sort();
     [hi, mr, gu].forEach((locale) => expect(flattenKeys(locale).sort()).toEqual(expectedKeys));
+    [taxHi, taxMr, taxGu].forEach((locale) =>
+      expect(flattenKeys(locale).sort()).toEqual(flattenKeys(taxEn).sort())
+    );
   });
 
   it('does not introduce untranslated user-facing copy in TSX files', () => {
