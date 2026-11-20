@@ -361,3 +361,19 @@ failure and verify the same demo resumes without duplicate data. Simulate a
 plain-text 429 and a malformed server response: both must show a localized,
 actionable message, and neither may expose `Unexpected token` or raw response
 text. Repeat at desktop, tablet, and mobile widths.
+
+## Counter HID and dense bill regression (20 November 2026)
+
+Check an Enter- or Tab-suffixed USB/Bluetooth HID scanner on Billing without
+opening camera tools. Repeat one code, scan 100 products, exceed stock, scan an
+unknown code with a known code queued behind it, and retry a failed lookup.
+Open payment/held/customer dialogs and edit quantity/rate: ordinary form input
+must remain intact and checkout must wait for pending scans. Compare every
+quantity and total, not only the number of requests.
+
+Review 120 rows, search a SKU outside the initial viewport, edit that line, clear
+the filter and verify the full bill is preserved. Use both themes and all four
+languages at 360/390/820/1440 pixels. The development-only synthetic fixture is
+`tests/browser/counter-billing.html`; `scripts/verify-counter-billing-browser.mjs`
+uses Playwright and accepts PLAYWRIGHT_RUNTIME_ROOT, CHROME_PATH, QA_URL and
+QA_OUTPUT. A browser keyboard burst does not certify the physical scanner.
