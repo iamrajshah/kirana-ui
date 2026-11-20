@@ -7,6 +7,10 @@ import { apiSlice } from './apiSlice';
 
 const probeApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
+    foodLicenceCacheProbe: builder.query<{ label: string }, void>({
+      query: () => '/food-licences',
+      providesTags: ['FoodLicence'],
+    }),
     commercialWriteProbe: builder.mutation<void, void>({
       query: () => ({ url: '/products/barcode/generate', method: 'POST', body: {} }),
     }),
@@ -132,6 +136,14 @@ describe('commercial API denial recovery', () => {
       },
     });
 
+    await store.dispatch(
+      probeApi.util.upsertQueryData('foodLicenceCacheProbe', undefined, {
+        label: 'Old access licence',
+      })
+    );
+    expect(probeApi.endpoints.foodLicenceCacheProbe.select()(store.getState()).data).toEqual({
+      label: 'Old access licence',
+    });
     await expect(
       store.dispatch(probeApi.endpoints.commercialWriteProbe.initiate()).unwrap()
     ).rejects.toMatchObject({ status: 403 });
@@ -140,6 +152,11 @@ describe('commercial API denial recovery', () => {
         state: 'READ_ONLY',
         accessStateVersion: 'new',
       })
+    );
+    await vi.waitFor(() =>
+      expect(
+        probeApi.endpoints.foodLicenceCacheProbe.select()(store.getState()).data
+      ).toBeUndefined()
     );
     expect(notificationService.error).toHaveBeenCalledWith(expect.stringMatching(/renew/i));
   });
