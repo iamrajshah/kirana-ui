@@ -83,7 +83,6 @@ try {
         await setup(page, calls);
         await page.goto(`${base}/tests/browser/product-tax.html?theme=${theme}&lang=${lang}`);
         await page.locator('tbody tr').last().waitFor();
-        await page.locator('body[data-qa-tax-modal="ready"]').waitFor({ state: 'attached' });
         const geometry = await page.evaluate(() => {
           const workspace = document.querySelector('.tax-workspace');
           const header = workspace.querySelector('header');
@@ -99,7 +98,7 @@ try {
         });
         const count = await page.locator('tbody tr').count();
         const zero = await page.locator('tbody tr').nth(1).locator('td input').nth(2).inputValue();
-        await page.screenshot({ path: `${out}/${width}-${theme}-${lang}.png` });
+        await page.screenshot({ path: `${out}/${width}-${theme}-${lang}.png`, animations: 'disabled' });
         results.push({
           width,
           theme,

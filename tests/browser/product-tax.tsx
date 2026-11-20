@@ -27,11 +27,7 @@ function Fixture() {
           isOpen
           backdropDismiss={false}
           canDismiss={(_data, role) => Promise.resolve(role === 'confirmed')}
-          onDidPresent={() => {
-            document.body.dataset.qaTaxModal = 'ready';
-          }}
           onDidDismiss={() => {
-            delete document.body.dataset.qaTaxModal;
             setOpen(false);
           }}
         >
