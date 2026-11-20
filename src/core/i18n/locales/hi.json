@@ -673,7 +673,8 @@
     "billRows": "{{total}} में से {{shown}} पंक्तियाँ",
     "productColumn": "उत्पाद",
     "amountColumn": "राशि",
-    "noBillMatches": "इस बिल में कोई मेल नहीं मिला"
+    "noBillMatches": "इस बिल में कोई मेल नहीं मिला",
+    "priceFor": "{{product}} की कीमत"
   },
   "customers": {
     "title": "ग्राहक",
@@ -1799,7 +1800,8 @@
     "previewPdf": "PDF पूर्वावलोकन",
     "sampleProduct": "नमूना उत्पाद",
     "sampleCustomer": "नमूना ग्राहक",
-    "previewFailed": "नमूना PDF तैयार नहीं हुआ। लोगो का लिंक जाँचें और फिर कोशिश करें।"
+    "previewFailed": "नमूना PDF तैयार नहीं हुआ। लोगो का लिंक जाँचें और फिर कोशिश करें।",
+    "previewA4": "A4"
   },
   "shifts": {
     "title": "कैश शिफ्ट",
