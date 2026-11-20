@@ -297,8 +297,18 @@ vi.mock('@ionic/react', () => {
     IonCardContent: Container,
     IonLabel: Container,
     IonList: Container,
-    IonModal: ({ children, isOpen }: PropsWithChildren<{ isOpen: boolean }>) =>
-      isOpen ? <div>{children}</div> : null,
+    IonModal: ({
+      children,
+      isOpen,
+      onDidDismiss,
+    }: PropsWithChildren<{ isOpen: boolean; onDidDismiss?: () => void }>) => {
+      const wasOpen = React.useRef(isOpen);
+      React.useEffect(() => {
+        if (wasOpen.current && !isOpen) onDidDismiss?.();
+        wasOpen.current = isOpen;
+      }, [isOpen, onDidDismiss]);
+      return isOpen ? <div>{children}</div> : null;
+    },
   };
 });
 
@@ -948,6 +958,63 @@ describe('BillingPage', () => {
       expect(mocks.notifySuccess).toHaveBeenCalledWith('billing.unknownBarcode.createdAndAdded');
     });
 
+    it('processes 100 scanner reads into one quantity without losing queued scans', async () => {
+      mocks.scanBarcode.mockResolvedValue({
+        ...matchedBarcode,
+        data: {
+          ...matchedBarcode.data,
+          inventory: { ...matchedBarcode.data.inventory, quantity: 200 },
+        },
+      });
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+      for (let i = 0; i < 100; i++) {
+        for (const key of '8901234567890') fireEvent.keyDown(document, { key });
+        fireEvent.keyDown(document, { key: 'Enter' });
+      }
+      await waitFor(() => expect(mocks.scanBarcode).toHaveBeenCalledTimes(100), { timeout: 5000 });
+      await waitFor(() =>
+        expect(
+          screen
+            .getAllByRole('spinbutton', { name: 'billing.quantityFor Tea' })
+            .some((input) => (input as HTMLInputElement).value === '100')
+        ).toBe(true)
+      );
+    });
+
+    it('pauses for an unknown code without discarding the remaining queued product', async () => {
+      let resolveFirst: (value: { success: boolean; found: boolean }) => void = () => undefined;
+      mocks.scanBarcode.mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveFirst = resolve;
+        })
+      );
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+      for (const code of ['UNKNOWN1', '8901234567890']) {
+        for (const key of code) fireEvent.keyDown(document, { key });
+        fireEvent.keyDown(document, { key: 'Enter' });
+      }
+      resolveFirst({ success: true, found: false });
+      await screen.findByText('billing.unknownBarcode.managerRequired');
+      expect(mocks.scanBarcode).toHaveBeenCalledTimes(1);
+      fireEvent.click(screen.getByRole('button', { name: 'billing.unknownBarcode.backToBill' }));
+      await waitFor(() => expect(mocks.scanBarcode).toHaveBeenCalledTimes(2));
+      expect(await screen.findByText('Tea')).toBeTruthy();
+    });
+
+    it('receives repeated hardware scans without opening scanner tools', async () => {
+      render(<BillingPage />);
+      await screen.findByText('Rice');
+      for (let i = 0; i < 3; i++) {
+        for (const key of '8901234567890') fireEvent.keyDown(document, { key });
+        fireEvent.keyDown(document, { key: 'Enter' });
+      }
+      await waitFor(() => expect(mocks.scanBarcode).toHaveBeenCalledTimes(3));
+      await waitFor(() => expect(screen.getByDisplayValue(3)).toBeTruthy());
+      expect(screen.getByRole('textbox', { name: 'foundation.barcode.barcode' })).toBeTruthy();
+    });
+
     it('accepts barcode input from a desktop counter scanner', async () => {
       render(<BillingPage />);
       await screen.findByText('Rice');
@@ -1064,7 +1131,10 @@ describe('BillingPage', () => {
       fireEvent.click(screen.getByRole('button', { name: 'billing.payCash' }));
 
       await waitFor(() =>
-        expect(screen.queryByRole('textbox', { name: 'foundation.barcode.barcode' })).toBeNull()
+        expect(
+          (screen.getByRole('textbox', { name: 'foundation.barcode.barcode' }) as HTMLInputElement)
+            .value
+        ).toBe('')
       );
     });
   });

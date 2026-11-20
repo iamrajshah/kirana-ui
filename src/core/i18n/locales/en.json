@@ -17,7 +17,10 @@
     "thisDevice": "This device",
     "noDevices": "No active devices",
     "lastSeen": "Last seen {{date}}",
-    "platform": { "web": "Web", "android": "Android" },
+    "platform": {
+      "web": "Web",
+      "android": "Android"
+    },
     "revokeDevice": "Remove device",
     "deviceRevoked": "Device access removed",
     "revokeFailed": "Could not remove this device",
@@ -199,7 +202,11 @@
     "half_yearly": "Half-yearly",
     "yearly": "Yearly · recommended",
     "year": "year",
-    "term": { "quarterly": "quarter", "half_yearly": "half-year", "yearly": "year" },
+    "term": {
+      "quarterly": "quarter",
+      "half_yearly": "half-year",
+      "yearly": "year"
+    },
     "demoTitle": "Try every essential workflow free for 7 days",
     "demoDescription": "Explore a private demo shop before choosing a paid plan. No card required.",
     "startDemo": "Start free demo",
@@ -655,7 +662,13 @@
         "active": "In use",
         "expired": "Lease expired"
       }
-    }
+    },
+    "counterScanReady": "Scanner ready · USB / Bluetooth",
+    "counterScanPaused": "Scanner paused",
+    "scansPending": "{{count}} scans pending",
+    "lastScanned": "Last: {{product}}",
+    "pauseScanner": "Pause scanner",
+    "resumeScanner": "Resume scanner"
   },
   "customers": {
     "title": "Customers",
@@ -1240,7 +1253,6 @@
     "lowStockAlertCount": "Low Stock Alert",
     "totalTransactions": "Total Transactions:",
     "totalCollection": "Total Collection",
-    "noLedgerData": "No ledger data found",
     "noPurchaseTrend": "No trend data available",
     "totalPurchases": "Total Purchases:",
     "totalPurchasesCount": "Total Purchases",
@@ -1715,13 +1727,20 @@
     "simpleReceipt": "Simple receipt",
     "gstTaxInvoice": "GST tax invoice",
     "paperWidth": "Default thermal paper",
-    "paper": { "MM58": "58 mm (compact)", "MM80": "80 mm (recommended)" },
+    "paper": {
+      "MM58": "58 mm (compact)",
+      "MM80": "80 mm (recommended)"
+    },
     "footer": "Receipt footer (optional)",
     "branding": "Receipt branding",
     "brandingHint": "Choose a style for future receipts. Issued bills keep their original branding.",
     "brandColor": "Brand colour (#RRGGBB)",
     "logoUrl": "HTTPS logo URL (optional)",
-    "templates": { "CLASSIC": "Classic", "MODERN": "Modern", "COMPACT": "Compact" },
+    "templates": {
+      "CLASSIC": "Classic",
+      "MODERN": "Modern",
+      "COMPACT": "Compact"
+    },
     "gstDetails": "GST invoice profile",
     "gstDetailsHint": "These legal details are required before GST invoices can be activated.",
     "supplierName": "Legal shop name",
@@ -2051,7 +2070,12 @@
     "materialMismatch": "Amounts do not match",
     "materialMismatchHint": "Supplier total is {{bill}}, while reviewed lines calculate to {{calculated}}.",
     "confirmMismatch": "I checked this difference and want to continue with the reviewed values.",
-    "paymentMode": { "CASH": "Cash", "UPI": "UPI", "CARD": "Card", "BANK": "Bank transfer" },
+    "paymentMode": {
+      "CASH": "Cash",
+      "UPI": "UPI",
+      "CARD": "Card",
+      "BANK": "Bank transfer"
+    },
     "confirmReview": "I reviewed supplier, firm, dates, product mapping, quantity, price, tax and batch details.",
     "mappingRequired": "Map every line and enter valid quantity, price, GST/HSN and dates before confirming.",
     "paymentExceedsTotal": "Payment cannot exceed the reviewed purchase total.",
@@ -2163,7 +2187,10 @@
       "publish": "Publish",
       "unpublish": "Pause"
     },
-    "fulfillment": { "PICKUP": "Shop pickup", "DELIVERY": "Home delivery" },
+    "fulfillment": {
+      "PICKUP": "Shop pickup",
+      "DELIVERY": "Home delivery"
+    },
     "status": {
       "PLACED": "New",
       "ACCEPTED": "Accepted",
