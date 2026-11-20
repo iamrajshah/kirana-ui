@@ -69,6 +69,7 @@ const SESSION_SENSITIVE_TAGS = [
   'TenantSettings',
   'Firm',
   'Report',
+  'FoodLicence',
 ] as const;
 
 const readAuthSnapshot = (api: QueryApi): AuthSnapshot | null => {
@@ -352,6 +353,7 @@ export const apiSlice = createApi({
     'Purchase',
     'TenantSettings',
     'Firm',
+    'FoodLicence',
     'Report',
     'Account',
     'Renewal',

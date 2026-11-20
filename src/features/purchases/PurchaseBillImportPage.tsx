@@ -1,3 +1,4 @@
+import { FoodLicenceSelector } from '../food-licences/FoodLicenceSelector';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   IonBadge,
@@ -57,6 +58,7 @@ interface PurchaseImportRecoveryState {
   draft: EditableDraft;
   selectedSupplierId: string;
   selectedFirmId: string;
+  foodLicenceId?: string;
   firmWasOverridden: boolean;
   pricesIncludeTax: boolean;
   paymentAmount: string;
@@ -160,6 +162,15 @@ const PurchaseBillImportPage: React.FC = () => {
   const [draft, setDraft] = useState<EditableDraft | null>(null);
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
   const [selectedFirmId, setSelectedFirmId] = useState('');
+  const [foodLicenceId, setFoodLicenceId] = useState('');
+  const recoveredLicenceFirm = useRef<string | null>(null);
+  useEffect(() => {
+    if (recoveredLicenceFirm.current === selectedFirmId) {
+      recoveredLicenceFirm.current = null;
+      return;
+    }
+    setFoodLicenceId('');
+  }, [selectedFirmId]);
   const [firmWasOverridden, setFirmWasOverridden] = useState(false);
   const [pricesIncludeTax, setPricesIncludeTax] = useState(true);
   const [confirmedMismatch, setConfirmedMismatch] = useState(false);
@@ -203,7 +214,9 @@ const PurchaseBillImportPage: React.FC = () => {
       ),
     });
     setSelectedSupplierId(saved?.selectedSupplierId || recoveredDraft.supplier?.id || '');
+    recoveredLicenceFirm.current = saved?.selectedFirmId ?? null;
     setSelectedFirmId(saved?.selectedFirmId ?? '');
+    setFoodLicenceId(saved?.foodLicenceId ?? '');
     setFirmWasOverridden(saved?.firmWasOverridden ?? false);
     setPricesIncludeTax(saved?.pricesIncludeTax ?? true);
     setPaymentAmount(saved?.paymentAmount ?? '0');
@@ -228,6 +241,7 @@ const PurchaseBillImportPage: React.FC = () => {
       draft,
       selectedSupplierId,
       selectedFirmId,
+      foodLicenceId,
       firmWasOverridden,
       pricesIncludeTax,
       paymentAmount,
@@ -242,6 +256,7 @@ const PurchaseBillImportPage: React.FC = () => {
     pricesIncludeTax,
     recoveryStorageKey,
     selectedFirmId,
+    foodLicenceId,
     selectedSupplierId,
   ]);
 
@@ -256,6 +271,7 @@ const PurchaseBillImportPage: React.FC = () => {
   const clearRecovery = () => {
     removeRecoveryState(recoveryStorageKey);
     setDraft(null);
+    setFoodLicenceId('');
     setRecoveryDraftId('');
     setShouldHydrateRecovery(false);
     setRecoveryNotice(null);
@@ -388,6 +404,7 @@ const PurchaseBillImportPage: React.FC = () => {
         warnings: localWarning ? [localWarning, ...extracted.warnings] : extracted.warnings,
       });
       setDraft(editableDraft);
+      setFoodLicenceId('');
       setRecoveryDraftId(extracted.draftId);
       setShouldHydrateRecovery(false);
       setRecoveryNotice(null);
@@ -458,6 +475,7 @@ const PurchaseBillImportPage: React.FC = () => {
         draftId: draft.draftId,
         supplier_id: Number(selectedSupplierId),
         firm_id: Number(selectedFirmId),
+        food_licence_id: foodLicenceId || undefined,
         invoice_number: draft.invoiceNumber?.trim() ?? '',
         invoice_date: draft.invoiceDate ?? '',
         items: draft.items.map((item) => ({
@@ -700,6 +718,12 @@ const PurchaseBillImportPage: React.FC = () => {
                 </label>
               </section>
 
+              <FoodLicenceSelector
+                firmId={selectedFirmId}
+                invoiceDate={draft.invoiceDate ?? ''}
+                value={foodLicenceId}
+                onChange={setFoodLicenceId}
+              />
               <section className="purchase-import-lines">
                 <div className="purchase-import-lines__toolbar">
                   <div>

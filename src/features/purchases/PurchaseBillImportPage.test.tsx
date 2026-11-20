@@ -533,6 +533,7 @@ it('restores tenant-scoped reviewed edits after refresh and safely retries a los
       draft: storedDraft,
       selectedSupplierId: '7',
       selectedFirmId: '3',
+      foodLicenceId: '11',
       firmWasOverridden: false,
       pricesIncludeTax: true,
       paymentAmount: '0',
@@ -569,6 +570,7 @@ it('restores tenant-scoped reviewed edits after refresh and safely retries a los
   expect(state.confirm).toHaveBeenCalledWith(
     expect.objectContaining({
       draftId: 'draft-retry',
+      food_licence_id: '11',
       items: [expect.objectContaining({ variant_id: 19, unit_price: 125 })],
     })
   );
@@ -621,3 +623,29 @@ it('keeps the recovery draft after an uncertain confirmation failure', async () 
     expect(JSON.parse(saved ?? '{}').draft.draftId).toBe('draft-uncertain');
   });
 });
+
+vi.mock('@core/api/foodLicenceApi', () => ({
+  useGetFoodLicencesQuery: () => ({
+    data: {
+      data: {
+        licences: [
+          {
+            id: '11',
+            firm_id: '3',
+            label: 'Food licence',
+            licence_number: '11526000000001',
+            is_active: true,
+            valid_from: '2026-01-01',
+            expiry_date: '2026-12-31',
+          },
+        ],
+        max_active: 3,
+      },
+    },
+    isFetching: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
+  useCreateFoodLicenceMutation: () => [vi.fn(), { isLoading: false }],
+  useUpdateFoodLicenceMutation: () => [vi.fn(), { isLoading: false }],
+}));

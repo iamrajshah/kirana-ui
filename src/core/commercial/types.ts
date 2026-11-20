@@ -39,6 +39,7 @@ export type CommercialFeatureCode =
   | 'CUSTOMER_STOREFRONT'
   | 'EXPIRY_TRACKING'
   | 'PURCHASE_BILL_IMPORT'
+  | 'FOOD_LICENCES'
   | 'GST_CA_REPORTS';
 export type CommercialDenialCode =
   | 'COMMERCIAL_SUSPENDED'

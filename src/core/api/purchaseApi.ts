@@ -26,6 +26,14 @@ export interface Purchase {
   created_at: string;
   firm_id: string;
   firm?: FirmSummary;
+  food_licence?: {
+    id: string;
+    licence_number: string | null;
+    label: string | null;
+    holder_name: string | null;
+    premises_address: string | null;
+    expiry_date: string | null;
+  } | null;
   suppliers?: {
     id: string;
     name: string;
@@ -60,6 +68,7 @@ export const purchaseApi = apiSlice.injectEndpoints({
         limit?: number;
         supplier_id?: string;
         firm_id?: string;
+        food_licence_id?: string;
         status?: 'PAID' | 'UNPAID' | 'PARTIAL';
       } | void
     >({
@@ -78,6 +87,7 @@ export const purchaseApi = apiSlice.injectEndpoints({
       {
         supplier_id: number;
         firm_id: number;
+        food_licence_id?: string;
         invoice_number?: string;
         invoice_date: string;
         items: PurchaseItem[];

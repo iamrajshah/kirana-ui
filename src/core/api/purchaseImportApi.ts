@@ -45,6 +45,7 @@ export interface ConfirmPurchaseImportInput {
   draftId: string;
   supplier_id: number;
   firm_id: number;
+  food_licence_id?: string;
   invoice_number: string;
   invoice_date: string;
   items: Array<{

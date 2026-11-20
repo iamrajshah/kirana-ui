@@ -272,3 +272,14 @@ describe('purchase prefill with the real product API hooks', () => {
     }
   );
 });
+
+vi.mock('@core/api/foodLicenceApi', () => ({
+  useGetFoodLicencesQuery: () => ({
+    data: { data: { licences: [], max_active: 3 } },
+    isFetching: false,
+    isError: false,
+    refetch: vi.fn(),
+  }),
+  useCreateFoodLicenceMutation: () => [vi.fn(), { isLoading: false }],
+  useUpdateFoodLicenceMutation: () => [vi.fn(), { isLoading: false }],
+}));

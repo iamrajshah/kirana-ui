@@ -1,3 +1,4 @@
+import '../food-licences/translations';
 import React, { useState } from 'react';
 import {
   IonPage,
@@ -182,6 +183,12 @@ const PurchasesPage: React.FC = () => {
                       </p>
                     )}
 
+                    {purchase.food_licence && (
+                      <p>
+                        {t('foodLicences.purchaseLabel')}: {purchase.food_licence.label} ·{' '}
+                        {purchase.food_licence.licence_number}
+                      </p>
+                    )}
                     <div className="stock-purchase-summary">
                       <div>
                         <IonText color="medium">
