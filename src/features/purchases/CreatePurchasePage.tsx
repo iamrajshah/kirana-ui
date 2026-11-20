@@ -1,3 +1,4 @@
+import { FoodLicenceSelector } from '../food-licences/FoodLicenceSelector';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { BillingSearchVariant } from '@core/api/productApi';
 import {
@@ -108,6 +109,10 @@ const CreatePurchasePage: React.FC = () => {
   currentCart.current = cart;
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
   const [selectedFirmId, setSelectedFirmId] = useState('');
+  const [foodLicenceId, setFoodLicenceId] = useState('');
+  useEffect(() => {
+    setFoodLicenceId('');
+  }, [selectedFirmId]);
   const [firmWasOverridden, setFirmWasOverridden] = useState(false);
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState(kolkataCalendarDate());
@@ -398,6 +403,7 @@ const CreatePurchasePage: React.FC = () => {
       await createPurchase({
         supplier_id: parseInt(selectedSupplierId),
         firm_id: parseInt(selectedFirmId),
+        food_licence_id: foodLicenceId || undefined,
         invoice_number: invoiceNumber.trim(),
         invoice_date: invoiceDate,
         items,
@@ -556,6 +562,12 @@ const CreatePurchasePage: React.FC = () => {
                 )}
             </div>
 
+            <FoodLicenceSelector
+              firmId={selectedFirmId}
+              invoiceDate={invoiceDate}
+              value={foodLicenceId}
+              onChange={setFoodLicenceId}
+            />
             <Input
               label={t('purchases.invoiceDateLabel')}
               value={invoiceDate}

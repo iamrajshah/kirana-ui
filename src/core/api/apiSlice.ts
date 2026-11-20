@@ -352,6 +352,7 @@ export const apiSlice = createApi({
     'Purchase',
     'TenantSettings',
     'Firm',
+    'FoodLicence',
     'Report',
     'Account',
     'Renewal',

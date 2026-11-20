@@ -28,6 +28,7 @@ import { useAppSelector } from '@core/hooks';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/useTheme';
 import { DocumentSettingsCard } from './DocumentSettingsCard';
+import { FoodLicenceSettingsCard } from '../food-licences/FoodLicenceSettingsCard';
 import { FirmSettingsCard } from './FirmSettingsCard';
 import { canEditTenantDocumentSettings } from './documentSettingsAccess';
 import './ProfilePage.css';
@@ -172,6 +173,9 @@ export const ProfilePage: React.FC = () => {
 
         {canManageTenantSettings && <DocumentSettingsCard />}
         {canManageFirms && <FirmSettingsCard />}
+        {canManageFirms && canUseCommercialFeature(roles, commercialAccess, 'FOOD_LICENCES') && (
+          <FoodLicenceSettingsCard />
+        )}
         {canManageStorefront && <StorefrontSettingsCard />}
 
         <IonCard>

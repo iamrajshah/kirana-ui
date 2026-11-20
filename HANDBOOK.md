@@ -565,3 +565,60 @@ requested copy count. Label layout defaults can be saved on the device, but
 product-specific text, dates, batch values and QR links are never saved as global
 defaults or carried into another variant. Validate the physical stock/printer
 and a real scanner before printing a large production batch.
+
+## Food licences (FSSAI) — 20 November 2026
+
+Food licences are separate from legal firms and GST. Owners use **Profile → Food
+licences (FSSAI)** to add up to three active licences per shop, each with its own
+registered holder and premises. One legal firm can have multiple recorded
+licences. Firm/GST limits and tax calculations do not change. Existing Jayesh,
+Jitendra and Kantilal firm records are not automatically converted or moved.
+
+### Workflow and access
+
+1. Platform Admin enables `FOOD_LICENCES` for the shop/plan and appropriate roles.
+   `PURCHASES` is required. Owner management also requires `FIRMS_SETTINGS`.
+   New catalogue version 7 includes the feature in standard plans; older paid
+   assignments need an entitlement grant or an explicit plan-version change.
+2. Owner adds the actual legal firm, trade label, 14-digit FSSAI number, registered
+   holder and premises. Validity dates are optional; missing dates show a warning.
+3. In **Create purchase**, select the firm and invoice date, then an optional food
+   licence. Only active licences for that firm and date appear. Changing the firm
+   or an incompatible date clears the selection. No licence is selected silently.
+4. **Purchase bill import** has the same selector before confirmation. Recovery
+   keeps the review's licence choice, subject to a fresh validity check.
+5. Purchase list/detail show the licence details saved at posting time. Later
+   master edits or archiving do not change those records. The existing supplier
+   ledger and GST calculations continue to use the firm.
+
+Licence number and firm cannot be edited after creation. Archive an incorrect
+record and add its replacement. Edit is versioned to prevent overwriting another
+owner's changes. Licence management uses a dedicated form, not the multi-firm
+subscription limit. This records licence information; it does not verify FSSAI
+registration or claim tax relief. Food-licence printing on sales receipts and
+moving historical transactions between firms are outside this change.
+
+### Regression / acceptance checklist
+
+- Owner adds two licences for different holders under one firm; firm count/GST
+  stay unchanged. Third active succeeds; fourth active is rejected even when two
+  devices submit together. Archive one, then reuse the available active slot.
+- Reject malformed numbers, impossible or reversed dates, foreign shop/firm IDs
+  and stale edit versions. Confirm the register retains input after a save error.
+- Manager can select/read but cannot manage licences; cashier cannot access the
+  register. Disable the shop feature and confirm new use is rejected by the API,
+  while ordinary purchases and historical evidence remain usable.
+- Create a purchase with a licence and one without it. Check stock, supplier
+  outstanding, tax and amount; edit/archive the master and reopen the purchase.
+- Check backdated invoice dates and inclusive validity boundaries; expired or
+  inactive licences must not be accepted for an invalid purchase date.
+- Import a supplier bill, choose a licence, reload the review and confirm once;
+  repeated confirmation must not duplicate stock or supplier ledger entries.
+- Check English/Hindi/Marathi/Gujarati, light/dark themes and 390/820/1440 widths.
+  Browser fixture: `scripts/verify-food-licences-browser.mjs`, served by Vite at
+  `/tests/browser/food-licences.html`. Fixtures intercept API calls; they do not
+  write production data. Use real-DB backend tests for transaction integrity.
+
+Developer pointers: `core/api/foodLicenceApi.ts`, `features/food-licences/`,
+`CreatePurchasePage`, `PurchaseBillImportPage`, `PurchaseDetailPage`. New text is
+loaded with the feature bundle to preserve the production entry-size budget.

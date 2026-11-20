@@ -1,3 +1,4 @@
+import '../food-licences/translations';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -105,6 +106,20 @@ const PurchaseDetailPage: React.FC = () => {
           </IonCard>
         )}
 
+        {purchase.food_licence && (
+          <IonCard>
+            <IonCardHeader>
+              <IonCardTitle>{t('foodLicences.purchaseLabel')}</IonCardTitle>
+            </IonCardHeader>
+            <IonCardContent>
+              <strong>{purchase.food_licence.label}</strong>
+              <p>{purchase.food_licence.licence_number}</p>
+              <p>{purchase.food_licence.holder_name}</p>
+              <p>{purchase.food_licence.premises_address}</p>
+              <small>{t('foodLicences.snapshotHint')}</small>
+            </IonCardContent>
+          </IonCard>
+        )}
         {/* Supplier Information */}
         {purchase.supplier && (
           <IonCard>

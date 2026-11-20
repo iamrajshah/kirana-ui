@@ -11,6 +11,11 @@ import taxHi from '../../features/products/tax-locales/hi.json';
 import taxMr from '../../features/products/tax-locales/mr.json';
 import taxGu from '../../features/products/tax-locales/gu.json';
 
+import foodEn from '../../features/food-licences/locales/en.json';
+import foodHi from '../../features/food-licences/locales/hi.json';
+import foodMr from '../../features/food-licences/locales/mr.json';
+import foodGu from '../../features/food-licences/locales/gu.json';
+
 type LocaleTree = Record<string, unknown>;
 
 const flattenKeys = (value: LocaleTree, prefix = ''): string[] =>
@@ -21,7 +26,10 @@ const flattenKeys = (value: LocaleTree, prefix = ''): string[] =>
       : [fullKey];
   });
 
-const englishKeys = new Set([...flattenKeys(en), ...flattenKeys({ taxWorkspace: taxEn })]);
+const englishKeys = new Set([
+  ...flattenKeys(en),
+  ...flattenKeys({ taxWorkspace: taxEn, foodLicences: foodEn }),
+]);
 
 const sourceFiles = (directory: string): string[] =>
   fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -167,5 +175,11 @@ describe('localization coverage', () => {
 
   it('does not introduce untranslated user-facing copy in TSX files', () => {
     expect(hardCodedCopy()).toEqual([]);
+  });
+});
+
+describe('Food licence translations', () => {
+  it.each([foodHi, foodMr, foodGu])('has all licence keys', (locale) => {
+    expect(flattenKeys(locale).sort()).toEqual(flattenKeys(foodEn).sort());
   });
 });
