@@ -214,6 +214,13 @@ export const BillingPage: React.FC = () => {
   const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(
     restoredPendingCheckout?.invoiceId ?? null
   );
+  // A persisted checkout can have been settled through Payments on another visit.
+  // Read its authoritative state before presenting an actionable payment retry.
+  const { currentData: recoveredCheckoutData, isFetching: reconcilingCheckout } =
+    useGetInvoiceByIdQuery(pendingInvoiceId || '', {
+      skip: !pendingInvoiceId || pendingInvoiceId !== restoredPendingCheckout?.invoiceId,
+      refetchOnMountOrArgChange: true,
+    });
   const [pendingPayable, setPendingPayable] = useState<number | null>(
     restoredPendingCheckout?.payable ?? null
   );
@@ -946,6 +953,19 @@ export const BillingPage: React.FC = () => {
     resetForm();
     history.replace(ROUTES.BILLING);
   };
+
+  const recoveredCheckout = recoveredCheckoutData?.data;
+  useEffect(() => {
+    if (
+      pendingInvoiceId &&
+      recoveredCheckout &&
+      String(recoveredCheckout.id) === pendingInvoiceId &&
+      (recoveredCheckout.status === 'CANCELLED' ||
+        (recoveredCheckout.status === 'PAID' && Number(recoveredCheckout.balance_amount) === 0))
+    ) {
+      finishSaleAndStartNext();
+    }
+  }, [pendingInvoiceId, recoveredCheckout]);
 
   const completePayment = () => {
     notificationService.success(t('billing.paymentRecordedSuccessfully'));
@@ -1891,7 +1911,7 @@ export const BillingPage: React.FC = () => {
             invoiceAmount={pendingPayable ?? displayedTotals.total}
             previousBalance={pendingPreviousBalance}
             paidAmount={0}
-            isLoading={paying || splittingPayment}
+            isLoading={paying || splittingPayment || reconcilingCheckout}
             allowPartial={Boolean(pendingCustomerId || customerId)}
           />
         )}
