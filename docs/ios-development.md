@@ -33,7 +33,10 @@ archive. Do not use local-QA origins in a device package for a shop owner.
   allowed session keys in app-scoped Keychain, device-only and accessible while
   unlocked. The explicit Keychain entitlement is scoped to this app identifier.
   Sign simulator builds as well; unsigned builds can fail secure-store reads.
-  No plaintext token fallback is permitted.
+  No plaintext token fallback is permitted. A failed vault read shows an
+  unlock/retry screen. Native login waits for the durable session bundle before
+  authenticating/navigating; writes are serialized and pending login cannot
+  authenticate after logout.
 - Google sign-in uses Google's native iOS SDK and an external authentication
   session. `GIDClientID`, reversed-client URL scheme and `GIDServerClientID` are
   set in Info.plist; AppDelegate routes the callback to GIDSignIn before Capacitor.
@@ -72,6 +75,21 @@ Mutating billing/khata/payment journeys must first verify a disposable demo
 shop; do not use another tenant's live books. Keep local screenshots/XCResults
 private and commit only sanitized scenario results. A simulator or successful
 archive is not a completed physical-device business-flow pass.
+
+The mutating tests require `KIRANA_QA_EMAIL`, `KIRANA_QA_PASSWORD`,
+`KIRANA_QA_SHOP`, `KIRANA_QA_PRODUCT` and `KIRANA_QA_CUSTOMER` in the test runner's
+environment. Put them in a private generated `.xctestrun` EnvironmentVariables
+map or a local Xcode test plan; never commit credentials. Missing configuration
+skips the journeys and must not be reported as a business-flow pass. The expected
+shop name is checked before writing bills. Cross-check database invoices,
+payment allocations, signed ledger amounts and stock after every run. Wait for
+visible Dashboard content after payment, not merely its navigation tab.
+
+Do not nest `IonPage` inside inline `IonModal` content. It inherits the router
+context and can replace the active route-page registration, leaving navigation
+labels updated while old content stays visible. Use the modal delegate or a
+plain `div.ion-page` for layout. The SDK registration regression and source
+contract guard this across payment, category, inventory and user modals.
 
 The button's Google G artwork comes from the official GoogleSignIn 9.0.0 SDK
 (`GoogleSignIn/Sources/Resources/google@2x.png`); use it only with Google's sign-in
