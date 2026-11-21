@@ -158,4 +158,49 @@ final class KiranaFlowUITests: XCTestCase {
         }
     }
 
+    /// Account selection, privacy acceptance and MFA stay with the phone owner.
+    func test04RealGoogleSignInOnPhone() throws {
+        guard ProcessInfo.processInfo.environment["KIRANA_QA_REAL_GOOGLE"] == "1" else {
+            throw XCTSkip("Requires the phone owner and an explicitly enabled real Google run")
+        }
+        app.launch()
+        let dashboard = app.staticTexts["Your shop at a glance"].firstMatch
+        let login = app.secureTextFields.firstMatch
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in dashboard.exists || login.exists }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 45), .completed)
+        if dashboard.exists {
+            tapVisible("Account menu"); tapVisible("Logout")
+            XCTAssertTrue(login.waitForExistence(timeout: 30))
+        }
+        capture("physical-google-login-ready")
+        print("KIRANA_GOOGLE_LOGIN_READY")
+        let google = app.buttons["Continue with Google"].firstMatch
+        // The owner accepts Privacy/Terms on the device before this is rendered.
+        XCTAssertTrue(google.waitForExistence(timeout: 180), "Waiting for the phone owner's privacy acceptance")
+        google.tap()
+        capture("physical-google-native-sheet")
+        print("KIRANA_GOOGLE_ACCOUNT_ACTION_REQUIRED")
+        let authenticated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in dashboard.exists && dashboard.isHittable }, object: nil)
+        let outcome = XCTWaiter.wait(for: [authenticated], timeout: 300)
+        capture("physical-google-result")
+        print("KIRANA_GOOGLE_RESULT_AX_BEGIN\n\(app.debugDescription)\nKIRANA_GOOGLE_RESULT_AX_END")
+        XCTAssertEqual(outcome, .completed, "Real Google sign-in did not reach visible Dashboard content")
+    }
+
+    func test05InspectInstalledAuthenticatedApp() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard env["KIRANA_QA_REAL_GOOGLE"] == "1" || env["KIRANA_QA_AUTH_INSPECTION"] == "1" || env["KIRANA_QA_SHOP"] != nil else {
+            throw XCTSkip("Requires an explicitly configured authenticated inspection")
+        }
+        app.activate()
+        let dashboard = app.staticTexts["Your shop at a glance"].firstMatch
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in dashboard.exists && dashboard.isHittable }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 45), .completed)
+        capture("physical-google-authenticated-dashboard")
+        tapVisible("menu")
+        capture("physical-authenticated-shop-menu")
+        print("KIRANA_PHYSICAL_AUTH_AX_BEGIN\n\(app.debugDescription)\nKIRANA_PHYSICAL_AUTH_AX_END")
+        tapVisible("Dashboard")
+    }
+
 }

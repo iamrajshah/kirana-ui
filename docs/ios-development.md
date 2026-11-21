@@ -94,3 +94,24 @@ contract guard this across payment, category, inventory and user modals.
 The button's Google G artwork comes from the official GoogleSignIn 9.0.0 SDK
 (`GoogleSignIn/Sources/Resources/google@2x.png`); use it only with Google's sign-in
 branding. SDK sources are installed through CocoaPods, pinned in Podfile.lock.
+
+
+For a real Google check, explicitly set `KIRANA_QA_REAL_GOOGLE=1` in the private
+runner environment and select `test04RealGoogleSignInOnPhone`. The phone owner
+accepts Privacy/Terms and handles account selection/MFA. Never put Google account
+passwords in the runner. `test05InspectInstalledAuthenticatedApp` requires this
+flag, `KIRANA_QA_AUTH_INSPECTION=1`, or an explicit QA shop fixture; an unconfigured
+inspection skips rather than treating a missing login as a product failure.
+
+Keep the iPhone unlocked and awake during the run. Auto-lock can cause debugger
+launch/PID errors or `kAXErrorServerNotFound`; retry after unlocking before
+classifying these as app defects. Use an explicit `arch=arm64` destination when
+Xcode reports multiple arm64/arm64e matches.
+
+To verify a signed release app, copy the generated `.xctestrun` beside the original
+so `__TESTROOT__` still resolves, then set `UITargetAppPath` to the absolute
+archive's `Products/Applications/App.app` and update its dependent app path.
+Keep the signed test-runner paths intact. This prevents a test run from silently
+replacing the release app with the Debug build. The release-path run, Google
+sign-in and cold session restoration passed on the connected iPhone; see the
+handbook's physical-iPhone record for exact evidence.
