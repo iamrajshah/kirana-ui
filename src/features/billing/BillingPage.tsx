@@ -965,7 +965,7 @@ export const BillingPage: React.FC = () => {
     ) {
       finishSaleAndStartNext();
     }
-  }, [pendingInvoiceId, recoveredCheckout]);
+  });
 
   const completePayment = () => {
     notificationService.success(t('billing.paymentRecordedSuccessfully'));
