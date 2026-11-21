@@ -1,3 +1,4 @@
+import { browserWorkspace } from '@core/workspace/browserWorkspace';
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { API_BASE_URL, STORAGE_KEYS } from '../constants';
@@ -286,54 +287,63 @@ const baseQueryWithReauth: BaseQueryFn<ApiRequestArgs, unknown, FetchBaseQueryEr
   api,
   extraOptions
 ) => {
-  const requestsSilentInitialFailure = typeof args === 'object' && args.suppressErrorToast === true;
-  const suppressErrorToast = requestsSilentInitialFailure && api.forced !== true;
-  const skipReauth = typeof args === 'object' && args.skipReauth === true;
-  const hasRequestPolicy =
-    typeof args === 'object' && ('suppressErrorToast' in args || 'skipReauth' in args);
-  const requestArgs = hasRequestPolicy ? { ...args } : args;
-  if (hasRequestPolicy && typeof requestArgs === 'object') {
-    delete requestArgs.suppressErrorToast;
-    delete requestArgs.skipReauth;
-  }
-  let result = await baseQuery(requestArgs, api, extraOptions);
+  const lease = browserWorkspace?.isStarted() ? browserWorkspace : null;
+  const finish = lease?.beginRequest();
+  if (lease && !finish)
+    return { error: { status: 'CUSTOM_ERROR', error: 'This POS tab is inactive.' } };
+  try {
+    const requestsSilentInitialFailure =
+      typeof args === 'object' && args.suppressErrorToast === true;
+    const suppressErrorToast = requestsSilentInitialFailure && api.forced !== true;
+    const skipReauth = typeof args === 'object' && args.skipReauth === true;
+    const hasRequestPolicy =
+      typeof args === 'object' && ('suppressErrorToast' in args || 'skipReauth' in args);
+    const requestArgs = hasRequestPolicy ? { ...args } : args;
+    if (hasRequestPolicy && typeof requestArgs === 'object') {
+      delete requestArgs.suppressErrorToast;
+      delete requestArgs.skipReauth;
+    }
+    let result = await baseQuery(requestArgs, api, extraOptions);
 
-  if (result.error) {
-    const errorData = result.error.data;
-    const commercialDenial =
-      errorData && typeof errorData === 'object' && 'commercial' in errorData
-        ? errorData.commercial
-        : null;
-    if (isCommercialDenial(commercialDenial)) {
-      const snapshot = readAuthSnapshot(api);
-      const previousVersion = (
-        (api.getState() as { auth?: { sessionContext?: SessionContext } }).auth?.sessionContext
-          ?.commercialAccess as CommercialAccessSummary | undefined
-      )?.accessStateVersion;
-      if (
-        snapshot &&
-        (!commercialDenial.accessStateVersion ||
-          commercialDenial.accessStateVersion !== previousVersion)
-      ) {
-        void synchronizeSessionState(
-          api,
-          extraOptions,
-          snapshot,
-          commercialDenial.accessStateVersion
-        );
+    if (result.error) {
+      const errorData = result.error.data;
+      const commercialDenial =
+        errorData && typeof errorData === 'object' && 'commercial' in errorData
+          ? errorData.commercial
+          : null;
+      if (isCommercialDenial(commercialDenial)) {
+        const snapshot = readAuthSnapshot(api);
+        const previousVersion = (
+          (api.getState() as { auth?: { sessionContext?: SessionContext } }).auth?.sessionContext
+            ?.commercialAccess as CommercialAccessSummary | undefined
+        )?.accessStateVersion;
+        if (
+          snapshot &&
+          (!commercialDenial.accessStateVersion ||
+            commercialDenial.accessStateVersion !== previousVersion)
+        ) {
+          void synchronizeSessionState(
+            api,
+            extraOptions,
+            snapshot,
+            commercialDenial.accessStateVersion
+          );
+        }
+      }
+      // Handle different error types
+      if (result.error.status === 401 && !skipReauth) {
+        if (await refreshSession(api, extraOptions)) {
+          result = await baseQuery(requestArgs, api, extraOptions);
+        }
+      } else if (!suppressErrorToast && !(skipReauth && result.error.status === 401)) {
+        notifyApiError(result.error);
       }
     }
-    // Handle different error types
-    if (result.error.status === 401 && !skipReauth) {
-      if (await refreshSession(api, extraOptions)) {
-        result = await baseQuery(requestArgs, api, extraOptions);
-      }
-    } else if (!suppressErrorToast && !(skipReauth && result.error.status === 401)) {
-      notifyApiError(result.error);
-    }
-  }
 
-  return result;
+    return result;
+  } finally {
+    finish?.();
+  }
 };
 
 export const apiSlice = createApi({

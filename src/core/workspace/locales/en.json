@@ -1,0 +1,9 @@
+{
+  "title": "Kirana POS is open in another tab",
+  "description": "Use the active tab, or take over here. Unsaved work stays in its original tab.",
+  "finishing": "Finishing the current request before switching tabs. Please wait.",
+  "takeOver": "Take over here",
+  "sessionChanged": "The signed-in shop or user has changed",
+  "reload": "Reload this tab",
+  "unsupported": "This browser cannot safely coordinate POS tabs. Use an updated Chrome, Edge, Safari or Firefox browser."
+}
