@@ -31,7 +31,9 @@ archive. Do not use local-QA origins in a device package for a shop owner.
   `capacitor://localhost` origin. Device caps are unchanged.
 - `KiranaBridgeViewController` registers the secure auth plugin. It stores only
   allowed session keys in app-scoped Keychain, device-only and accessible while
-  unlocked. No plaintext token fallback is permitted.
+  unlocked. The explicit Keychain entitlement is scoped to this app identifier.
+  Sign simulator builds as well; unsigned builds can fail secure-store reads.
+  No plaintext token fallback is permitted.
 - Google sign-in uses Google's native iOS SDK and an external authentication
   session. `GIDClientID`, reversed-client URL scheme and `GIDServerClientID` are
   set in Info.plist; AppDelegate routes the callback to GIDSignIn before Capacitor.
