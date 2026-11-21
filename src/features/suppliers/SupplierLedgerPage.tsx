@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { createIdempotentAttempt } from '@utils/idempotentAttempt';
 import type {
   SupplierFirmBalance,
   SupplierLedgerEntry,
@@ -105,6 +106,7 @@ const SupplierLedgerPage: React.FC = () => {
   const { data: firmsData } = useGetFirmsQuery();
   const { data: bankAccountsData } = useGetBankAccountsQuery(id!);
   const [makePayment, { isLoading: processingPayment }] = useMakeSupplierPaymentMutation();
+  const paymentAttempt = useRef(createIdempotentAttempt());
   const [createBankAccount, { isLoading: creatingBankAccount }] = useCreateBankAccountMutation();
   const [updateBankAccount, { isLoading: updatingBankAccount }] = useUpdateBankAccountMutation();
   const [deleteBankAccount] = useDeleteBankAccountMutation();
@@ -217,16 +219,20 @@ const SupplierLedgerPage: React.FC = () => {
       return;
     }
 
+    const payload = paymentAttempt.current.begin(
+      buildSupplierPaymentPayload(
+        id!,
+        paymentFirmId,
+        parseFloat(amount),
+        paymentMode,
+        notes
+      )
+    );
+    if (!payload) return;
+    let succeeded = false;
     try {
-      await makePayment(
-        buildSupplierPaymentPayload(
-          id!,
-          paymentFirmId,
-          parseFloat(amount),
-          paymentMode,
-          notes
-        )
-      ).unwrap();
+      await makePayment(payload).unwrap();
+      succeeded = true;
 
       // Reset form
       setAmount('');
@@ -237,6 +243,8 @@ const SupplierLedgerPage: React.FC = () => {
       refetch();
     } catch (error) {
       notificationService.handleApiError(error);
+    } finally {
+      paymentAttempt.current.finish(succeeded);
     }
   };
 
