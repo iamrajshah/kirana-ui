@@ -600,7 +600,7 @@ export const AddProductBarcodePage: React.FC = () => {
         </div>
 
         {/* Loading Overlay */}
-        <Loading isOpen={scanning || creating} />
+        <Loading overlay isOpen={scanning || creating} />
 
         {/* Success Toast */}
         <IonToast

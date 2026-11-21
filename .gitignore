@@ -40,6 +40,8 @@ ios/**/*.xcuserstate
 ios/**/xcuserdata/
 ios/**/*.ipa
 ios/**/*.xcarchive
+ios/**/*.xcresult
+ios/**/*.mobileprovision
 android/app/google-services.json
 android/*.jks
 android/*.keystore

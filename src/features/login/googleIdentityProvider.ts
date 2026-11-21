@@ -1,4 +1,4 @@
-export type IdentityCredential = { credential: string; source: 'web' | 'android' };
+export type IdentityCredential = { credential: string; source: 'web' | 'android' | 'ios' };
 
 export interface IdentityCredentialProvider {
   render(
@@ -143,20 +143,37 @@ export class WebGoogleIdentityProvider implements IdentityCredentialProvider {
   }
 }
 
-export class AndroidCredentialProvider implements IdentityCredentialProvider {
-  constructor(private readonly requestCredential: () => Promise<string | null>) {}
+export class NativeGoogleCredentialProvider implements IdentityCredentialProvider {
+  constructor(
+    private readonly requestCredential: () => Promise<string | null>,
+    private readonly source: 'android' | 'ios' = 'android'
+  ) {}
   render(target: HTMLElement, callbacks: Parameters<IdentityCredentialProvider['render']>[1]) {
+    let active = true;
+    let pending = false;
     const button = document.createElement('button');
     button.type = 'button';
-    button.textContent = 'Continue with Google';
+    button.className =
+      'flex min-h-[44px] items-center justify-center gap-3 rounded-md border border-gray-400 bg-white px-4 py-2 text-gray-900 shadow-sm disabled:opacity-60';
+    const logo = document.createElement('img');
+    logo.src = '/brand/google-g.png';
+    logo.alt = '';
+    logo.width = 20;
+    logo.height = 20;
+    logo.setAttribute('aria-hidden', 'true');
+    button.append(logo, document.createTextNode('Continue with Google'));
     button.addEventListener('click', () => {
+      if (!active || pending) return;
+      pending = true;
+      button.disabled = true;
       void this.requestCredential()
-        .then((credential) =>
-          credential
-            ? callbacks.onCredential({ credential, source: 'android' })
-            : callbacks.onCancel()
-        )
+        .then((credential) => {
+          if (!active) return;
+          if (credential) callbacks.onCredential({ credential, source: this.source });
+          else callbacks.onCancel();
+        })
         .catch((error: unknown) => {
+          if (!active) return;
           const code =
             error && typeof error === 'object' && 'code' in error
               ? (error as { code?: unknown }).code
@@ -166,9 +183,16 @@ export class AndroidCredentialProvider implements IdentityCredentialProvider {
             return;
           }
           callbacks.onError('Google sign-in unavailable');
+        })
+        .finally(() => {
+          pending = false;
+          if (active) button.disabled = false;
         });
     });
     target.replaceChildren(button);
-    return () => button.remove();
+    return () => {
+      active = false;
+      button.remove();
+    };
   }
 }

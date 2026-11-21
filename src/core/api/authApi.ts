@@ -22,7 +22,7 @@ export interface GoogleExchangeResponse {
 export interface ActiveDevice {
   id: string;
   name: string;
-  platform: 'WEB' | 'ANDROID';
+  platform: 'WEB' | 'ANDROID' | 'IOS';
   lastSeenAt: string;
   current?: boolean;
   userId?: string;
@@ -53,7 +53,7 @@ export const authApi = apiSlice.injectEndpoints({
       GoogleExchangeResponse,
       {
         credential: string;
-        source: 'web' | 'android';
+        source: 'web' | 'android' | 'ios';
         requestedUserId?: string;
         device: DeviceDescriptor;
         replaceDeviceId?: string;
@@ -70,7 +70,7 @@ export const authApi = apiSlice.injectEndpoints({
     }),
     linkGoogle: builder.mutation<
       { success: boolean; data: { auth: AuthResponse['data'] } },
-      { credential: string; source: 'web' | 'android'; device: DeviceDescriptor }
+      { credential: string; source: 'web' | 'android' | 'ios'; device: DeviceDescriptor }
     >({
       query: (body) => ({ url: '/auth/google/link', method: 'POST', body }),
     }),
@@ -78,7 +78,7 @@ export const authApi = apiSlice.injectEndpoints({
       GoogleExchangeResponse,
       {
         credential: string;
-        source: 'web' | 'android';
+        source: 'web' | 'android' | 'ios';
         userId: string;
         device: DeviceDescriptor;
         replaceDeviceId?: string;

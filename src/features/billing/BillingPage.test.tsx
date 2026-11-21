@@ -48,6 +48,7 @@ const mocks = vi.hoisted(() => ({
   locationState: null as { claimedVersion?: number } | null,
   currentInvoice: undefined as Record<string, unknown> | null | undefined,
   invoiceError: false,
+  recoveredCheckout: null as Record<string, unknown> | null,
   refetchInvoice: vi.fn(),
 }));
 
@@ -193,14 +194,22 @@ vi.mock('@core/api/invoiceApi', () => ({
   useFinalizeInvoiceMutation: () => [apiTrigger(mocks.finalizeInvoice), { isLoading: false }],
   useRenewHeldBillMutation: () => [apiTrigger(mocks.renewHeldBill), { isLoading: false }],
   useGetHeldBillsQuery: () => ({ data: { success: true, data: [] } }),
-  useGetInvoiceByIdQuery: () => ({
-    data: { data: mocks.invoice },
-    currentData:
-      mocks.currentInvoice === null ? undefined : { data: mocks.currentInvoice ?? mocks.invoice },
-    isLoading: false,
-    isError: mocks.invoiceError,
-    refetch: mocks.refetchInvoice,
-  }),
+  useGetInvoiceByIdQuery: (id: string) =>
+    id === 'recovered-42'
+      ? {
+          currentData: mocks.recoveredCheckout ? { data: mocks.recoveredCheckout } : undefined,
+          isFetching: false,
+        }
+      : {
+          data: { data: mocks.invoice },
+          currentData:
+            mocks.currentInvoice === null
+              ? undefined
+              : { data: mocks.currentInvoice ?? mocks.invoice },
+          isLoading: false,
+          isError: mocks.invoiceError,
+          refetch: mocks.refetchInvoice,
+        },
   useLazyGetInvoiceByIdQuery: () => [apiTrigger(mocks.getInvoiceForSplitRecovery), {}],
   useGetFinalizedDocumentQuery: () => ({
     data: mocks.document ? { success: true, data: mocks.document } : undefined,
@@ -1261,6 +1270,35 @@ describe('BillingPage', () => {
       expect(mocks.createInvoice).not.toHaveBeenCalled();
       expect(mocks.createPayment).not.toHaveBeenCalled();
     });
+
+    it.each(['PAID', 'CANCELLED'])(
+      'discards a recovered checkout confirmed %s without another financial write',
+      async (status) => {
+        mocks.search = '';
+        mocks.recoveredCheckout = { id: 'recovered-42', status, balance_amount: 0 };
+        localStorage.setItem(
+          'kirana_billing_pending_checkout',
+          JSON.stringify({
+            version: 1,
+            invoiceId: 'recovered-42',
+            payable: 100,
+            customerId: null,
+            paymentIdempotencyKey: 'original-key',
+            userId: '7',
+            tenantId: '1',
+          })
+        );
+        render(<BillingPage />);
+        await waitFor(() =>
+          expect(localStorage.getItem('kirana_billing_pending_checkout')).toBeNull()
+        );
+        expect(screen.queryByLabelText('payment-recovery')).toBeNull();
+        expect(mocks.createPayment).not.toHaveBeenCalled();
+        expect(mocks.cancelInvoice).not.toHaveBeenCalled();
+        expect(mocks.createInvoice).not.toHaveBeenCalled();
+        mocks.recoveredCheckout = null;
+      }
+    );
 
     it('clears a recovered checkout and returns to fresh billing after payment', async () => {
       mocks.search = '';

@@ -147,12 +147,12 @@ describe('WebGoogleIdentityProvider', () => {
   });
 });
 
-describe('AndroidCredentialProvider', () => {
+describe('NativeGoogleCredentialProvider', () => {
   it('returns a native credential with the Android source', async () => {
-    const { AndroidCredentialProvider } = await import('./googleIdentityProvider');
+    const { NativeGoogleCredentialProvider } = await import('./googleIdentityProvider');
     const target = document.createElement('div');
     const onCredential = vi.fn();
-    new AndroidCredentialProvider(() => Promise.resolve('android-id-token')).render(target, {
+    new NativeGoogleCredentialProvider(() => Promise.resolve('android-id-token')).render(target, {
       onCredential,
       onCancel: vi.fn(),
       onError: vi.fn(),
@@ -169,11 +169,11 @@ describe('AndroidCredentialProvider', () => {
   });
 
   it('treats an explicit native cancellation as cancellation', async () => {
-    const { AndroidCredentialProvider } = await import('./googleIdentityProvider');
+    const { NativeGoogleCredentialProvider } = await import('./googleIdentityProvider');
     const target = document.createElement('div');
     const onCancel = vi.fn();
     const onError = vi.fn();
-    new AndroidCredentialProvider(() =>
+    new NativeGoogleCredentialProvider(() =>
       Promise.reject({ code: 'GOOGLE_SIGN_IN_CANCELLED' })
     ).render(target, {
       onCredential: vi.fn(),
@@ -188,22 +188,50 @@ describe('AndroidCredentialProvider', () => {
   });
 
   it('keeps missing credentials and provider errors as failures', async () => {
-    const { AndroidCredentialProvider } = await import('./googleIdentityProvider');
+    const { NativeGoogleCredentialProvider } = await import('./googleIdentityProvider');
     const target = document.createElement('div');
     const onCancel = vi.fn();
     const onError = vi.fn();
-    new AndroidCredentialProvider(() => Promise.reject({ code: 'GOOGLE_SIGN_IN_FAILED' })).render(
-      target,
-      {
-        onCredential: vi.fn(),
-        onCancel,
-        onError,
-      }
-    );
+    new NativeGoogleCredentialProvider(() =>
+      Promise.reject({ code: 'GOOGLE_SIGN_IN_FAILED' })
+    ).render(target, {
+      onCredential: vi.fn(),
+      onCancel,
+      onError,
+    });
 
     target.querySelector('button')?.click();
 
     await vi.waitFor(() => expect(onError).toHaveBeenCalledWith('Google sign-in unavailable'));
     expect(onCancel).not.toHaveBeenCalled();
+  });
+});
+
+describe('native iOS sign-in lifecycle', () => {
+  it('prevents repeated taps and ignores completion after unmount', async () => {
+    const { NativeGoogleCredentialProvider } = await import('./googleIdentityProvider');
+    const target = document.createElement('div');
+    let finish!: (value: string) => void;
+    const request = vi.fn(
+      () =>
+        new Promise<string>((resolve) => {
+          finish = resolve;
+        })
+    );
+    const onCredential = vi.fn();
+    const cleanup = new NativeGoogleCredentialProvider(request, 'ios').render(target, {
+      onCredential,
+      onCancel: vi.fn(),
+      onError: vi.fn(),
+    });
+    const button = target.querySelector('button')!;
+    button.click();
+    button.click();
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(button.disabled).toBe(true);
+    cleanup();
+    finish('ios-token');
+    await Promise.resolve();
+    expect(onCredential).not.toHaveBeenCalled();
   });
 });

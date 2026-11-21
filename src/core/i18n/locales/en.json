@@ -173,7 +173,8 @@
     "demoNext": "Next: {{stage}}",
     "demoRetry": "Retry demo setup",
     "demoRateLimited": "Demo setup is temporarily busy. Please wait a moment and retry.",
-    "demoRequestFailed": "Demo setup could not continue. Please retry."
+    "demoRequestFailed": "Demo setup could not continue. Please retry.",
+    "secureSessionUnavailable": "Your secure session could not be restored. Unlock your device and try again."
   },
   "legal": {
     "backToLogin": "Back to sign in",
@@ -1949,7 +1950,8 @@
       "pointCamera": "Point the camera at the barcode",
       "emulatorNote": "Emulators may not show the camera. Use a real device for best results.",
       "cancelScan": "Cancel scan",
-      "cameraPermissionRequired": "Camera permission required"
+      "cameraPermissionRequired": "Camera permission required",
+      "startCamera": "Start camera scan"
     },
     "bank": {
       "manageAccounts": "Manage bank accounts",

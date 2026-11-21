@@ -54,7 +54,7 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const [googleCredential, setGoogleCredential] = useState<{
     credential: string;
-    source: 'web' | 'android';
+    source: 'web' | 'android' | 'ios';
   } | null>(null);
   const [memberships, setMemberships] = useState<SessionMembership[]>([]);
   const [identityOutcome, setIdentityOutcome] = useState<string>('');
@@ -108,15 +108,15 @@ export const LoginPage: React.FC = () => {
 
       if (response.success && response.data) {
         if (linkRequired && googleCredential) {
-          dispatch(setCredentials(response.data));
+          await dispatch(setCredentials(response.data));
           const linked = await linkGoogle({ ...googleCredential, device }).unwrap();
-          dispatch(setCredentials(linked.data.auth));
+          await dispatch(setCredentials(linked.data.auth));
           history.replace(
             linked.data.auth.isFirstLogin ? ROUTES.CHANGE_PASSWORD : ROUTES.DASHBOARD
           );
           return;
         }
-        dispatch(setCredentials(response.data));
+        await dispatch(setCredentials(response.data));
         history.replace(response.data.isFirstLogin ? ROUTES.CHANGE_PASSWORD : ROUTES.DASHBOARD);
       } else {
         setError(response.message || t('auth.loginError'));
@@ -151,8 +151,8 @@ export const LoginPage: React.FC = () => {
   };
 
   const finishAuthentication = useCallback(
-    (auth: Parameters<typeof setCredentials>[0]) => {
-      dispatch(setCredentials(auth));
+    async (auth: Parameters<typeof setCredentials>[0]) => {
+      await dispatch(setCredentials(auth));
       history.replace(auth.isFirstLogin ? ROUTES.CHANGE_PASSWORD : ROUTES.DASHBOARD);
     },
     [dispatch, history]
@@ -161,7 +161,7 @@ export const LoginPage: React.FC = () => {
   const handleGoogleCredential = useCallback(
     async (
       credential: string,
-      source: 'web' | 'android' = 'web',
+      source: 'web' | 'android' | 'ios' = 'web',
       replaceDeviceId?: string
     ) => {
       if (!productInformation) {
@@ -191,7 +191,7 @@ export const LoginPage: React.FC = () => {
           ],
         }).unwrap();
         if (response.data.outcome === 'AUTHENTICATED' && response.data.auth) {
-          finishAuthentication(response.data.auth);
+          await finishAuthentication(response.data.auth);
         } else if (response.data.outcome === 'MEMBERSHIP_SELECTION_REQUIRED') {
           setMemberships(
             (response.data.memberships ?? []).filter((membership) => membership.active)
@@ -205,9 +205,7 @@ export const LoginPage: React.FC = () => {
         }
       } catch (err: unknown) {
         if (
-          handleDeviceLimit(err, (deviceId) =>
-            handleGoogleCredential(credential, source, deviceId)
-          )
+          handleDeviceLimit(err, (deviceId) => handleGoogleCredential(credential, source, deviceId))
         )
           return;
         setError(
@@ -232,7 +230,7 @@ export const LoginPage: React.FC = () => {
         device: await getDeviceDescriptor(),
         replaceDeviceId,
       }).unwrap();
-      if (response.data.auth) finishAuthentication(response.data.auth);
+      if (response.data.auth) await finishAuthentication(response.data.auth);
       else setError(t('auth.googleError'));
     } catch (err: unknown) {
       if (handleDeviceLimit(err, (deviceId) => handleMembership(membership, deviceId))) return;
@@ -370,9 +368,7 @@ export const LoginPage: React.FC = () => {
               ) : (
                 <div
                   role={
-                    isProductInformationLoading || isProductInformationFetching
-                      ? 'status'
-                      : 'alert'
+                    isProductInformationLoading || isProductInformationFetching ? 'status' : 'alert'
                   }
                   className="rounded border p-3 text-sm"
                 >
