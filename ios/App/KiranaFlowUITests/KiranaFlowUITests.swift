@@ -122,10 +122,10 @@ final class KiranaFlowUITests: XCTestCase {
         XCTContext.runActivity(named: "Collect khata payment and navigate to Dashboard") { _ in
             tapVisible("Payments")
             tapVisible("Record Payment")
-            let search = app.searchFields["Search customers by name or phone"].firstMatch
+            let search = app.textFields["Search customers by name or phone"].firstMatch
             XCTAssertTrue(search.waitForExistence(timeout: 15))
             search.tap(); search.typeText(customer)
-            let match = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", customer)).firstMatch
+            let match = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH[c] %@", customer)).firstMatch
             XCTAssertTrue(match.waitForExistence(timeout: 25)); match.tap()
             let amount = app.textFields["Enter amount"].firstMatch
             XCTAssertTrue(amount.waitForExistence(timeout: 15))
