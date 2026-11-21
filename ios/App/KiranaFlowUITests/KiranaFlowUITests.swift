@@ -256,6 +256,18 @@ final class KiranaFlowUITests: XCTestCase {
             print("KIRANA_LANGUAGE_AX_BEGIN\n\(app.debugDescription)\nKIRANA_LANGUAGE_AX_END")
             tapVisible("Cancel")
         } else { print("KIRANA_CONTROL_UNAVAILABLE: Select Language") }
+        for (selectLabel, choice, expectedTitle) in [
+            ("Select Language", "हिंदी", "मेरी प्रोफ़ाइल"),
+            ("भाषा चुनें", "मराठी", "माझे प्रोफाइल"),
+            ("भाषा निवडा", "ગુજરાતી", "મારી પ્રોફાઇલ"),
+            ("ભાષા પસંદ કરો", "English", "My Profile")
+        ] {
+            let selector = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", selectLabel)).firstMatch
+            XCTAssertTrue(selector.waitForExistence(timeout: 10)); selector.tap()
+            tapVisible(choice)
+            XCTAssertTrue(app.staticTexts[expectedTitle].firstMatch.waitForExistence(timeout: 15))
+            capture("profile-language-" + choice)
+        }
         let theme = app.switches.matching(NSPredicate(format: "label CONTAINS[c] %@", "Mode")).firstMatch
         if theme.exists {
             theme.tap(); Thread.sleep(forTimeInterval: 1); capture("profile-dark-mode")
