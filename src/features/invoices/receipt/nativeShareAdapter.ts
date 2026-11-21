@@ -1,17 +1,7 @@
 import { Directory, Filesystem } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 
-const blobToBase64 = async (blob: Blob) => {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(reader.error ?? new Error('Unable to read export file'));
-    reader.onload = () => {
-      const result = String(reader.result ?? '');
-      resolve(result.slice(result.indexOf(',') + 1));
-    };
-    reader.readAsDataURL(blob);
-  });
-};
+import { blobToBase64 } from './nativeFileData';
 
 export const shareNativeFile = async (
   blob: Blob,
@@ -28,6 +18,17 @@ export const shareNativeFile = async (
       recursive: true,
     });
     await Share.share({ title, url: written.uri, dialogTitle: title });
+  } catch (error) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'message' in error &&
+      typeof error.message === 'string' &&
+      /^Share cancel(?:l)?ed$/i.test(error.message)
+    ) {
+      throw new DOMException('Share cancelled', 'AbortError');
+    }
+    throw error;
   } finally {
     await Filesystem.deleteFile({ path, directory: Directory.Cache }).catch(() => undefined);
   }

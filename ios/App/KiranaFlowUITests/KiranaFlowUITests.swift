@@ -204,7 +204,6 @@ final class KiranaFlowUITests: XCTestCase {
     }
 
     func test10OwnerRouteAudit() throws {
-        continueAfterFailure = true
         guard let shop = ProcessInfo.processInfo.environment["KIRANA_QA_SHOP"] else {
             throw XCTSkip("Requires disposable QA shop")
         }
@@ -214,6 +213,7 @@ final class KiranaFlowUITests: XCTestCase {
         tapVisible("menu")
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", shop)).firstMatch.waitForExistence(timeout: 10), "Wrong shop: audit stopped")
         tapVisible("Dashboard")
+        continueAfterFailure = true
         let routes = ["Customers", "Invoices", "Online orders", "Payments", "Products", "Inventory", "Categories", "Suppliers", "Purchases", "Reports", "Users", "Import/Export", "Plan & account", "Cash shift", "Getting started", "About"]
         for (index, route) in routes.enumerated() {
             XCTContext.runActivity(named: "NAV-\(index + 1) \(route)") { _ in
@@ -247,9 +247,10 @@ final class KiranaFlowUITests: XCTestCase {
         guard ProcessInfo.processInfo.environment["KIRANA_QA_SHOP"] != nil else { throw XCTSkip("QA session required") }
         app.terminate(); app.launch()
         tapVisible("Account menu"); tapVisible("My Profile")
+        XCTAssertTrue(app.staticTexts["My Profile"].firstMatch.waitForExistence(timeout: 20))
         capture("profile-top")
         print("KIRANA_PROFILE_AX_BEGIN\n\(app.debugDescription)\nKIRANA_PROFILE_AX_END")
-        let language = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Select Language")).firstMatch
+        let language = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS[c] %@", "Select Language")).firstMatch
         if language.waitForExistence(timeout: 15) {
             language.tap(); capture("profile-language-options")
             print("KIRANA_LANGUAGE_AX_BEGIN\n\(app.debugDescription)\nKIRANA_LANGUAGE_AX_END")
@@ -269,10 +270,12 @@ final class KiranaFlowUITests: XCTestCase {
         tapVisible("menu"); tapVisible("Invoices")
         let record = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", invoice)).firstMatch
         XCTAssertTrue(record.waitForExistence(timeout: 25)); record.tap()
-        XCTAssertTrue(app.buttons["Download PDF"].firstMatch.waitForExistence(timeout: 30))
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Download PDF")).firstMatch.waitForExistence(timeout: 30))
         capture("invoice-preview")
         print("KIRANA_INVOICE_AX_BEGIN\n\(app.debugDescription)\nKIRANA_INVOICE_AX_END")
         tapVisible("Share")
+        let dismissSheet = app.buttons.matching(NSPredicate(format: "label ==[c] %@ OR label ==[c] %@", "Close", "Cancel")).firstMatch
+        XCTAssertTrue(dismissSheet.waitForExistence(timeout: 20), "Native share sheet did not open")
         capture("invoice-native-share")
         print("KIRANA_SHARE_AX_BEGIN\n\(app.debugDescription)\nKIRANA_SHARE_AX_END")
         let close = app.buttons["Close"].firstMatch
@@ -310,8 +313,48 @@ final class KiranaFlowUITests: XCTestCase {
         let sheet = cancel.waitForExistence(timeout: 15)
         capture("invoice-print-controls")
         print("KIRANA_PRINT_AX_BEGIN\n\(app.debugDescription)\nKIRANA_PRINT_AX_END")
-        if sheet { cancel.tap() } else { print("KIRANA_PRINT_NO_CANCEL_SHEET") }
+        XCTAssertTrue(sheet, "Native print sheet did not open")
+        if sheet { cancel.tap() }
         app.terminate(); app.launch()
+    }
+
+    private func attachQACustomer(_ customer: String) {
+        tapVisible("Attach customer")
+        let search = app.searchFields["Search customer by name or phone"].firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 15)); enterSearch(customer, in: search)
+        let match = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", customer)).firstMatch
+        XCTAssertTrue(match.waitForExistence(timeout: 20)); match.tap()
+    }
+
+    func test15PreviousBalancePartialPaymentAndSettlement() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let shop = env["KIRANA_QA_SHOP"], let product = env["KIRANA_QA_PRODUCT"], let customer = env["KIRANA_QA_CUSTOMER"] else { throw XCTSkip("QA fixtures required") }
+        app.terminate(); app.launch()
+        XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 40))
+        tapVisible("menu")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", shop)).firstMatch.waitForExistence(timeout: 10), "Wrong shop: refusing writes")
+        tapVisible("Dashboard"); tapVisible("Billing")
+        attachQACustomer(customer); addProduct(product); tapVisible("Khata")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Attach customer")).firstMatch.waitForExistence(timeout: 30))
+        attachQACustomer(customer); addProduct(product); tapVisible("Card / Other")
+        tapVisible("Partial Payment")
+        let amount = app.textFields["0.00"].firstMatch
+        XCTAssertTrue(amount.waitForExistence(timeout: 15)); enterSearch("150", in: amount)
+        let collect = app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Collect Payment")).firstMatch
+        XCTAssertFalse(collect.isEnabled, "Overpayment of the new invoice must be rejected")
+        enterSearch("50", in: amount); capture("partial-bill-with-previous-balance")
+        tapVisible("Collect Payment")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Attach customer")).firstMatch.waitForExistence(timeout: 30))
+        tapVisible("Payments"); tapVisible("Record Payment")
+        let search = app.textFields["Search customers by name or phone"].firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 15)); enterSearch(customer, in: search)
+        let match = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH[c] %@", customer)).firstMatch
+        XCTAssertTrue(match.waitForExistence(timeout: 20)); match.tap()
+        let settlement = app.textFields["Enter amount"].firstMatch
+        XCTAssertTrue(settlement.waitForExistence(timeout: 15)); settlement.tap(); settlement.typeText("150")
+        tapVisible("Save"); tapVisible("Dashboard")
+        XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 30))
+        capture("partial-and-old-balance-settled")
     }
 
 }

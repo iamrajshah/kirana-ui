@@ -6,6 +6,7 @@ import UIKit
 final class KiranaBridgeViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         bridge?.registerPluginInstance(KiranaNativeAuthPlugin())
+        bridge?.registerPluginInstance(KiranaDocumentsPlugin())
     }
 }
 
@@ -116,6 +117,60 @@ final class KiranaNativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
                 }
                 // Only the ID token crosses the bridge. Google access/refresh tokens stay in its SDK.
                 call.resolve(["credential": credential])
+            }
+        }
+    }
+}
+
+/// Native receipt printing uses the system preview; no printer or destination is selected automatically.
+@objc(KiranaDocumentsPlugin)
+final class KiranaDocumentsPlugin: CAPPlugin, CAPBridgedPlugin {
+    let identifier = "KiranaDocumentsPlugin"
+    let jsName = "KiranaDocuments"
+    let pluginMethods = [CAPPluginMethod(name: "printPdf", returnType: CAPPluginReturnPromise)]
+    private var printing = false
+
+    @objc func printPdf(_ call: CAPPluginCall) {
+        guard let encoded = call.getString("base64"), encoded.utf8.count <= 28_000_000,
+              let data = Data(base64Encoded: encoded), data.starts(with: Data("%PDF-".utf8)) else {
+            call.reject("Invalid receipt PDF", "PRINT_INVALID_PDF")
+            return
+        }
+        DispatchQueue.main.async {
+            guard !self.printing, let presenter = self.bridge?.viewController,
+                  presenter.presentedViewController == nil else {
+                call.reject("Another system window is open", "PRINT_BUSY")
+                return
+            }
+            guard UIPrintInteractionController.isPrintingAvailable,
+                  UIPrintInteractionController.canPrint(data) else {
+                call.reject("Printing is unavailable on this device", "PRINT_UNAVAILABLE")
+                return
+            }
+            self.printing = true
+            let controller = UIPrintInteractionController.shared
+            let info = UIPrintInfo(dictionary: nil)
+            info.jobName = String((call.getString("jobName") ?? "Kirana receipt").prefix(100))
+            info.outputType = .general
+            controller.printInfo = info
+            controller.printingItem = data
+            let completion: (UIPrintInteractionController, Bool, Error?) -> Void = { _, completed, error in
+                self.printing = false
+                controller.printingItem = nil
+                if error != nil { call.reject("Unable to print receipt", "PRINT_FAILED") }
+                else { call.resolve(["completed": completed]) }
+            }
+            let shown: Bool
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                shown = controller.present(from: presenter.view.bounds, in: presenter.view,
+                                           animated: true, completionHandler: completion)
+            } else {
+                shown = controller.present(animated: true, completionHandler: completion)
+            }
+            if !shown {
+                self.printing = false
+                controller.printingItem = nil
+                call.reject("Unable to open print preview", "PRINT_UNAVAILABLE")
             }
         }
     }

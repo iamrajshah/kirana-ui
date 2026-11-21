@@ -25,20 +25,33 @@ describe('shareNativePdf', () => {
   it('writes to cache, opens native share, and deletes the temporary file', async () => {
     await shareNativePdf(new Blob(['pdf']), 'INV-42.pdf', 'Receipt INV-42');
 
-    expect(mocks.writeFile).toHaveBeenCalledWith(expect.objectContaining({
-      path: expect.stringMatching(/kirana-receipts\/\d+-INV-42\.pdf/),
-      directory: 'CACHE',
-      recursive: true,
-    }));
-    expect(mocks.share).toHaveBeenCalledWith(expect.objectContaining({ url: 'file://receipt.pdf' }));
+    expect(mocks.writeFile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: expect.stringMatching(/kirana-receipts\/\d+-INV-42\.pdf/),
+        directory: 'CACHE',
+        recursive: true,
+      })
+    );
+    expect(mocks.share).toHaveBeenCalledWith(
+      expect.objectContaining({ url: 'file://receipt.pdf' })
+    );
     expect(mocks.deleteFile).toHaveBeenCalledOnce();
   });
 
   it('cleans up best-effort when the native share sheet is cancelled', async () => {
     mocks.share.mockRejectedValue(new DOMException('Cancelled', 'AbortError'));
 
-    await expect(shareNativePdf(new Blob(['pdf']), 'INV-42.pdf', 'Receipt INV-42')).rejects.toMatchObject({ name: 'AbortError' });
+    await expect(
+      shareNativePdf(new Blob(['pdf']), 'INV-42.pdf', 'Receipt INV-42')
+    ).rejects.toMatchObject({ name: 'AbortError' });
     expect(mocks.deleteFile).toHaveBeenCalledOnce();
   });
 });
 
+it('normalizes the installed iOS Share plugin cancellation response', async () => {
+  mocks.share.mockRejectedValue(new Error('Share canceled'));
+  await expect(shareNativePdf(new Blob(['pdf']), 'INV-42.pdf', 'Receipt')).rejects.toMatchObject({
+    name: 'AbortError',
+  });
+  expect(mocks.deleteFile).toHaveBeenCalled();
+});
