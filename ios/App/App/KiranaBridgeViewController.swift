@@ -127,7 +127,7 @@ final class KiranaNativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
 final class KiranaDocumentsPlugin: CAPPlugin, CAPBridgedPlugin {
     let identifier = "KiranaDocumentsPlugin"
     let jsName = "KiranaDocuments"
-    let pluginMethods = [CAPPluginMethod(name: "printPdf", returnType: CAPPluginReturnPromise)]
+    let pluginMethods: [CAPPluginMethod] = [CAPPluginMethod(name: "printPdf", returnType: CAPPluginReturnPromise)]
     private var printing = false
 
     @objc func printPdf(_ call: CAPPluginCall) {
