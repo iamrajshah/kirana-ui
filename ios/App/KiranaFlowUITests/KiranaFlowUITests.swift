@@ -77,10 +77,27 @@ final class KiranaFlowUITests: XCTestCase {
         control.tap()
     }
 
+    private func enterSearch(_ text: String, in field: XCUIElement) {
+        field.tap()
+        let previous = field.value as? String ?? ""
+        if !previous.isEmpty && previous != field.placeholderValue {
+            field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: previous.count))
+        }
+        field.typeText(text)
+        if field.value as? String != text {
+            // Synthetic WKWebView typing can drop a key under compiler load.
+            // Verify the actual input and retry deliberately before querying results.
+            let entered = field.value as? String ?? ""
+            field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: entered.count))
+            for character in text { field.typeText(String(character)) }
+        }
+        XCTAssertEqual(field.value as? String, text, "Search input did not receive the intended text")
+    }
+
     private func addProduct(_ name: String) {
         let search = app.searchFields["Search product by name or SKU"].firstMatch
         XCTAssertTrue(search.waitForExistence(timeout: 25))
-        search.tap(); search.typeText(name)
+        enterSearch(name, in: search)
         let product = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", name)).firstMatch
         XCTAssertTrue(product.waitForExistence(timeout: 25), "Product result missing")
         product.tap()
@@ -110,7 +127,7 @@ final class KiranaFlowUITests: XCTestCase {
             tapVisible("Attach customer")
             let search = app.searchFields["Search customer by name or phone"].firstMatch
             XCTAssertTrue(search.waitForExistence(timeout: 15))
-            search.tap(); search.typeText(customer)
+            enterSearch(customer, in: search)
             let match = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", customer)).firstMatch
             XCTAssertTrue(match.waitForExistence(timeout: 25)); match.tap()
             addProduct(product)
@@ -124,7 +141,7 @@ final class KiranaFlowUITests: XCTestCase {
             tapVisible("Record Payment")
             let search = app.textFields["Search customers by name or phone"].firstMatch
             XCTAssertTrue(search.waitForExistence(timeout: 15))
-            search.tap(); search.typeText(customer)
+            enterSearch(customer, in: search)
             let match = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH[c] %@", customer)).firstMatch
             XCTAssertTrue(match.waitForExistence(timeout: 25)); match.tap()
             let amount = app.textFields["Enter amount"].firstMatch
