@@ -1,3 +1,4 @@
+import { createIdempotentAttempt } from '@utils/idempotentAttempt';
 import React, { useState, useMemo, useRef } from 'react';
 import { Navbar } from '@components/Navbar';
 import {
@@ -25,7 +26,7 @@ import { useGetPaymentsQuery, useCreatePaymentMutation } from '@core/api/payment
 import { useLazySearchCustomersQuery } from '@core/api/customerApi';
 import { useLazyGetPendingInvoicesByCustomerQuery } from '@core/api/invoiceApi';
 import { Input, Select, Button, EmptyState, SearchBar } from '@components';
-import { formatCurrency, generateIdempotencyKey } from '@utils/helpers';
+import { formatCurrency } from '@utils/helpers';
 import { PAYMENT_MODES } from '@core/constants';
 import type { Customer, PaymentMode } from '@core/types';
 import { useDebouncedValue } from '@hooks/useDebouncedValue';
@@ -54,6 +55,7 @@ export const PaymentsPage: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const paymentAttempt = useRef(createIdempotentAttempt());
   const paymentModalRef = useRef<HTMLIonModalElement | null>(null);
   const customerSearchReady = debouncedCustomerSearch.length >= 2;
 
@@ -101,15 +103,18 @@ export const PaymentsPage: React.FC = () => {
       return;
     }
 
+    const request = paymentAttempt.current.begin({
+      customer_id: customerId,
+      invoice_id: invoiceId || undefined,
+      amount: Number(amount),
+      payment_mode: paymentMode as PaymentMode,
+      reference_note: referenceNote || undefined,
+    });
+    if (!request) return;
+    let succeeded = false;
     try {
-      await createPayment({
-        customer_id: customerId,
-        invoice_id: invoiceId || undefined,
-        amount: Number(amount),
-        payment_mode: paymentMode as PaymentMode,
-        reference_note: referenceNote || undefined,
-        idempotency_key: generateIdempotencyKey(),
-      }).unwrap();
+      await createPayment(request).unwrap();
+      succeeded = true;
 
       try {
         await paymentModalRef.current?.dismiss();
@@ -123,6 +128,8 @@ export const PaymentsPage: React.FC = () => {
       const errMsg = error?.data?.message || error?.message || t('payments.saveError');
       setErrorMessage(errMsg);
       setShowError(true);
+    } finally {
+      paymentAttempt.current.finish(succeeded);
     }
   };
 
