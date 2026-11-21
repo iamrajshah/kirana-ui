@@ -11,15 +11,7 @@ import {
   IonModal,
   IonPage,
 } from '@ionic/react';
-import {
-  add,
-  bookmark,
-  card,
-  cash,
-  logoWhatsapp,
-  personAdd,
-  scan,
-} from 'ionicons/icons';
+import { add, bookmark, card, cash, logoWhatsapp, personAdd, scan } from 'ionicons/icons';
 import { useHistory, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BarcodeScannerComponent, Loading, SearchBar } from '@components';
@@ -1273,6 +1265,7 @@ export const BillingPage: React.FC = () => {
       />
       <IonContent>
         <Loading
+          overlay
           isOpen={
             !completionInvoiceId &&
             (invoiceLoading ||
