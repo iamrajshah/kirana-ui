@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { createIdempotentAttempt } from '@utils/idempotentAttempt';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonContent,
   IonPage,
@@ -21,7 +22,7 @@ import { Select, Input } from '@components';
 import { useGetCustomersQuery } from '@core/api/customerApi';
 import { useLazyGetPendingInvoicesByCustomerQuery } from '@core/api/invoiceApi';
 import { useCreatePaymentMutation } from '@core/api/paymentApi';
-import { formatCurrency, formatDateTime, generateIdempotencyKey } from '@utils/helpers';
+import { formatCurrency, formatDateTime } from '@utils/helpers';
 import type { PaymentMode, Invoice } from '@core/types';
 import { useTranslation } from 'react-i18next';
 
@@ -34,12 +35,13 @@ interface InvoiceAllocation {
 }
 
 export const PaymentPage: React.FC = () => {
-   const { t } = useTranslation();
+  const { t } = useTranslation();
   const { data: customersData } = useGetCustomersQuery({ skip: 0, take: 1000 });
   const [getPendingInvoices, { data: pendingInvoicesData, isLoading: loadingInvoices }] =
     useLazyGetPendingInvoicesByCustomerQuery();
   const [createPayment, { isLoading: creating }] = useCreatePaymentMutation();
 
+  const paymentAttempt = useRef(createIdempotentAttempt());
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('CASH');
   const [totalPaymentAmount, setTotalPaymentAmount] = useState('');
@@ -49,10 +51,11 @@ export const PaymentPage: React.FC = () => {
   const [showErrorToast, setShowErrorToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
-  const customers = customersData?.data?.map((c) => ({
-    value: c.id,
-    label: `${c.name} (${c.phone})`,
-  })) || [];
+  const customers =
+    customersData?.data?.map((c) => ({
+      value: c.id,
+      label: `${c.name} (${c.phone})`,
+    })) || [];
 
   const paymentModeOptions = [
     { value: 'CASH' as PaymentMode, label: t('payment.cash') },
@@ -92,9 +95,7 @@ export const PaymentPage: React.FC = () => {
   const handleAllocationChange = (invoice_id: string, amount: string) => {
     const numAmount = parseFloat(amount) || 0;
     setAllocations((prev) =>
-      prev.map((a) =>
-        a.invoice_id === invoice_id ? { ...a, allocated_amount: numAmount } : a
-      )
+      prev.map((a) => (a.invoice_id === invoice_id ? { ...a, allocated_amount: numAmount } : a))
     );
   };
 
@@ -142,31 +143,33 @@ export const PaymentPage: React.FC = () => {
       return;
     }
 
+    const payload: {
+      customer_id: string;
+      amount: number;
+      payment_mode: PaymentMode;
+      reference_note?: string;
+      invoice_allocations?: Array<{ invoice_id: string; amount: number }>;
+    } = {
+      customer_id: selectedCustomerId,
+      amount: paymentAmount,
+      payment_mode: paymentMode,
+      reference_note: reference || undefined,
+    };
+
+    // Add invoice allocations if any
+    if (allocations.length > 0) {
+      payload.invoice_allocations = allocations.map((a) => ({
+        invoice_id: a.invoice_id,
+        amount: a.allocated_amount,
+      }));
+    }
+
+    const request = paymentAttempt.current.begin(payload);
+    if (!request) return;
+    let succeeded = false;
     try {
-      const payload: {
-        customer_id: string;
-        amount: number;
-        payment_mode: PaymentMode;
-        reference_note?: string;
-        idempotency_key: string;
-        invoice_allocations?: Array<{ invoice_id: string; amount: number }>;
-      } = {
-        customer_id: selectedCustomerId,
-        amount: paymentAmount,
-        payment_mode: paymentMode,
-        reference_note: reference || undefined,
-        idempotency_key: generateIdempotencyKey(),
-      };
-
-      // Add invoice allocations if any
-      if (allocations.length > 0) {
-        payload.invoice_allocations = allocations.map((a) => ({
-          invoice_id: a.invoice_id,
-          amount: a.allocated_amount,
-        }));
-      }
-
-      await createPayment(payload).unwrap();
+      await createPayment(request).unwrap();
+      succeeded = true;
 
       setToastMessage(t('payments.paymentRecorded'));
       setShowSuccessToast(true);
@@ -181,6 +184,8 @@ export const PaymentPage: React.FC = () => {
       const err = error as { data?: { message?: string } };
       setToastMessage(err?.data?.message || t('payments.saveError'));
       setShowErrorToast(true);
+    } finally {
+      paymentAttempt.current.finish(succeeded);
     }
   };
 
@@ -231,9 +236,7 @@ export const PaymentPage: React.FC = () => {
                         <IonCheckbox
                           slot="start"
                           checked={selectedInvoiceIds.has(invoice.id)}
-                          onIonChange={(e) =>
-                            handleSelectInvoice(invoice, e.detail.checked)
-                          }
+                          onIonChange={(e) => handleSelectInvoice(invoice, e.detail.checked)}
                         />
                         <IonLabel>
                           <h3>{invoice.invoice_number}</h3>
@@ -241,7 +244,8 @@ export const PaymentPage: React.FC = () => {
                             {formatDateTime(invoice.created_at)}
                           </p>
                           <p className="text-sm mt-1">
-                            {t('foundation.payments.balance')} {formatCurrency(invoice.balance_amount || 0)}
+                            {t('foundation.payments.balance')}{' '}
+                            {formatCurrency(invoice.balance_amount || 0)}
                           </p>
                         </IonLabel>
                         <IonBadge
@@ -281,9 +285,7 @@ export const PaymentPage: React.FC = () => {
                   options={paymentModeOptions}
                 />
 
-                {(paymentMode === 'UPI' ||
-                  paymentMode === 'CARD' ||
-                  paymentMode === 'BANK') && (
+                {(paymentMode === 'UPI' || paymentMode === 'CARD' || paymentMode === 'BANK') && (
                   <Input
                     label={t('payments.referenceNumberLabel')}
                     value={reference}
@@ -292,8 +294,8 @@ export const PaymentPage: React.FC = () => {
                       paymentMode === 'UPI'
                         ? t('payment.upiTransactionId')
                         : paymentMode === 'CARD'
-                        ? t('payment.last4DigitsOrApproval')
-                        : t('payment.bankReferenceNumber')
+                          ? t('payment.last4DigitsOrApproval')
+                          : t('payment.bankReferenceNumber')
                     }
                   />
                 )}
@@ -321,20 +323,17 @@ export const PaymentPage: React.FC = () => {
                       style={{ borderColor: '#ddd' }}
                     >
                       <div className="flex justify-between items-center mb-2">
-                        <span className="font-medium text-sm">
-                          {allocation.invoice_number}
-                        </span>
+                        <span className="font-medium text-sm">{allocation.invoice_number}</span>
                         <span className="text-xs text-gray-500">
-                          {t('foundation.payments.balance')} {formatCurrency(allocation.balance_amount)}
+                          {t('foundation.payments.balance')}{' '}
+                          {formatCurrency(allocation.balance_amount)}
                         </span>
                       </div>
                       <Input
                         label={t('payments.allocatedAmountLabel')}
                         type="number"
                         value={allocation.allocated_amount.toString()}
-                        onChange={(val) =>
-                          handleAllocationChange(allocation.invoice_id, val)
-                        }
+                        onChange={(val) => handleAllocationChange(allocation.invoice_id, val)}
                         placeholder="0.00"
                       />
                     </div>
@@ -349,7 +348,15 @@ export const PaymentPage: React.FC = () => {
                       <span>{t('foundation.payments.paymentAmount')}</span>
                       <span>{formatCurrency(parseFloat(totalPaymentAmount) || 0)}</span>
                     </div>
-                    <div className="flex justify-between text-sm mt-1 font-medium" style={{ color: getTotalAllocated() > (parseFloat(totalPaymentAmount) || 0) ? '#eb445a' : '#2dd36f' }}>
+                    <div
+                      className="flex justify-between text-sm mt-1 font-medium"
+                      style={{
+                        color:
+                          getTotalAllocated() > (parseFloat(totalPaymentAmount) || 0)
+                            ? '#eb445a'
+                            : '#2dd36f',
+                      }}
+                    >
                       <span>{t('foundation.payments.remaining')}</span>
                       <span>
                         {formatCurrency(

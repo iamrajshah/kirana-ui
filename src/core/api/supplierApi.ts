@@ -160,6 +160,7 @@ export const supplierApi = apiSlice.injectEndpoints({
         amount: number;
         payment_mode: SupplierPaymentMode;
         description?: string;
+        idempotency_key?: string;
       }
     >({
       query: ({ id, ...body }) => ({

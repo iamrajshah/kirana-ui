@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createIdempotentAttempt } from '@utils/idempotentAttempt';
 import type { Supplier, SupplierPaymentMode } from '../../core/api/supplierApi';
 import {
   IonPage,
@@ -94,6 +95,7 @@ const SuppliersPage: React.FC = () => {
   const [createSupplier, { isLoading: creating }] = useCreateSupplierMutation();
   const [updateSupplier, { isLoading: updating }] = useUpdateSupplierMutation();
   const [makePayment, { isLoading: processingPayment }] = useMakeSupplierPaymentMutation();
+  const paymentAttempt = useRef(createIdempotentAttempt());
   const { data: firmsData } = useGetFirmsQuery({ active: true });
   const firms = firmsData?.data.firms || [];
 
@@ -260,16 +262,20 @@ const SuppliersPage: React.FC = () => {
       return;
     }
 
+    const payload = paymentAttempt.current.begin(
+      buildSupplierPaymentPayload(
+        paymentSupplier.id,
+        paymentFirmId,
+        parseFloat(paymentAmount),
+        paymentMode,
+        paymentNotes
+      )
+    );
+    if (!payload) return;
+    let succeeded = false;
     try {
-      await makePayment(
-        buildSupplierPaymentPayload(
-          paymentSupplier.id,
-          paymentFirmId,
-          parseFloat(paymentAmount),
-          paymentMode,
-          paymentNotes
-        )
-      ).unwrap();
+      await makePayment(payload).unwrap();
+      succeeded = true;
 
       notificationService.success(t('suppliers.paymentRecordedSuccess'));
       resetPaymentForm();
@@ -277,6 +283,8 @@ const SuppliersPage: React.FC = () => {
       refetch();
     } catch (error) {
       notificationService.handleApiError(error);
+    } finally {
+      paymentAttempt.current.finish(succeeded);
     }
   };
 

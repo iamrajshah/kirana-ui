@@ -286,3 +286,43 @@ it('explains that an unassigned collection settles oldest bills first', async ()
   expect(screen.getByText('payments.oldestFirstHint')).toBeTruthy();
   expect(screen.getByRole('option', { name: 'payments.generalPayment' })).toBeTruthy();
 });
+
+it('coalesces pending submits, reuses a lost-response key, and rotates it for edited intent', async () => {
+  customersQuery.data = { data: [{ id: '1', name: 'Amit Patel', phone: '9000000201' }] };
+  let rejectFirst: ((reason: Error) => void) | undefined;
+  const first = new Promise<never>((_resolve, reject) => {
+    rejectFirst = reject;
+  });
+  createPayment
+    .mockReturnValueOnce({ unwrap: () => first })
+    .mockReturnValueOnce({ unwrap: () => Promise.reject(new Error('Lost response')) })
+    .mockReturnValueOnce({ unwrap: () => Promise.resolve({ data: { id: '1' } }) });
+  render(<PaymentsPage />);
+  fireEvent.click(screen.getAllByRole('button', { name: 'payments.recordPayment' })[0]);
+  fireEvent.change(screen.getByLabelText('payments.searchCustomers'), {
+    target: { value: 'Amit' },
+  });
+  fireEvent.click(await screen.findByRole('option', { name: 'Amit Patel 9000000201' }));
+  fireEvent.change(screen.getByLabelText('common.amount'), { target: { value: '100' } });
+  const save = screen.getByRole('button', { name: 'common.save' });
+  fireEvent.click(save);
+  fireEvent.click(save);
+  expect(createPayment).toHaveBeenCalledTimes(1);
+  rejectFirst?.(new Error('Lost response'));
+  await screen.findByText('Lost response');
+  fireEvent.click(save);
+  await waitFor(() => expect(createPayment).toHaveBeenCalledTimes(2));
+  expect(createPayment.mock.calls[1][0].idempotency_key).toBe(
+    createPayment.mock.calls[0][0].idempotency_key
+  );
+  await waitFor(() => expect(screen.getByText('Lost response')).toBeTruthy());
+  // Allow the rejected mutation's finally block to release its submit guard.
+  await Promise.resolve();
+  fireEvent.change(screen.getByLabelText('common.amount'), { target: { value: '50' } });
+  fireEvent.click(save);
+  await waitFor(() => expect(createPayment).toHaveBeenCalledTimes(3));
+  expect(createPayment.mock.calls[2][0].idempotency_key).not.toBe(
+    createPayment.mock.calls[0][0].idempotency_key
+  );
+  await waitFor(() => expect(dismissPaymentModal).toHaveBeenCalledOnce());
+});
