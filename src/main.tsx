@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import { isNativeMobile } from '@core/auth/deviceIdentity';
+import i18n from '@core/i18n';
 
 const WorkspaceGate = lazy(() =>
   import('@core/workspace/WorkspaceGate').then((module) => ({ default: module.WorkspaceGate }))
@@ -15,7 +16,7 @@ root.render(
     <Suspense
       fallback={
         <div className="workspace-state" role="status">
-          Kirana POS…
+          {i18n.t('common.loading')}
         </div>
       }
     >
