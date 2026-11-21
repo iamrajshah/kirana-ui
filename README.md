@@ -185,3 +185,11 @@ remain release gates rather than completed claims.
 ## License
 
 Proprietary — all rights reserved.
+
+
+## Native development packages
+
+Android APK and iOS IPA builds are independent of Cloudflare publishing. See
+[the iOS build and security guide](docs/ios-development.md) for setup, signing,
+installation and current iOS login limits. Development-signed packages are for
+registered test devices; store distribution requires a separate release review.

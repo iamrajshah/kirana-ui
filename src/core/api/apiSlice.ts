@@ -14,7 +14,7 @@ import {
   type CommercialAccessSummary,
 } from '@core/commercial';
 import type { SessionContext } from '@core/types';
-import { getDeviceDescriptor, isNativeAndroid } from '@core/auth/deviceIdentity';
+import { getDeviceDescriptor, isNativeMobile } from '@core/auth/deviceIdentity';
 import { persistTokens } from '@core/auth/tokenVault';
 
 export type ApiRequestArgs =
@@ -84,7 +84,7 @@ const readAuthSnapshot = (api: QueryApi): AuthSnapshot | null => {
   ).auth;
   const refreshToken =
     auth?.refreshToken ??
-    (isNativeAndroid() ? null : localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN));
+    (isNativeMobile() ? null : localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN));
   if (!auth?.user?.id || typeof auth.sessionVersion !== 'number' || !refreshToken) return null;
   return { userId: auth.user.id, sessionVersion: auth.sessionVersion, refreshToken };
 };
@@ -96,8 +96,7 @@ const isCurrentSession = (api: QueryApi, expected: AuthSnapshot): boolean => {
     current.userId === expected.userId &&
     current.sessionVersion === expected.sessionVersion &&
     current.refreshToken === expected.refreshToken &&
-    (isNativeAndroid() ||
-      localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) === expected.refreshToken)
+    (isNativeMobile() || localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) === expected.refreshToken)
   );
 };
 
@@ -214,9 +213,9 @@ const refreshSession = (api: QueryApi, extraOptions: QueryExtraOptions): Promise
     }
     if (!isCurrentSession(api, snapshot)) return false;
 
-    // A rotated native refresh token must be durable before Redux accepts it; otherwise an
-    // Android process kill between those steps can strand the installation on the old token.
-    if (isNativeAndroid()) {
+    // A rotated native refresh token must be durable before Redux accepts it; otherwise a
+    // native process kill between those steps can strand the installation on the old token.
+    if (isNativeMobile()) {
       await persistTokens({
         accessToken: payload.data.accessToken,
         refreshToken: payload.data.refreshToken,

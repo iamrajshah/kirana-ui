@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const platform = vi.hoisted(() => ({ native: true }));
+const platform = vi.hoisted(() => ({ native: true, name: 'android' }));
 const secureSet = vi.hoisted(() => vi.fn());
 const secureGet = vi.hoisted(() => vi.fn());
 const secureRemove = vi.hoisted(() => vi.fn());
@@ -8,7 +8,7 @@ const secureRemove = vi.hoisted(() => vi.fn());
 vi.mock('@capacitor/core', () => ({
   Capacitor: {
     isNativePlatform: () => platform.native,
-    getPlatform: () => (platform.native ? 'android' : 'web'),
+    getPlatform: () => (platform.native ? platform.name : 'web'),
   },
   registerPlugin: () => ({
     setSecureValue: secureSet,
@@ -17,17 +17,18 @@ vi.mock('@capacitor/core', () => ({
   }),
 }));
 
-describe('tokenVault', () => {
+describe.each(['android', 'ios'])('tokenVault on %s', (name) => {
   beforeEach(() => {
     localStorage.clear();
     secureSet.mockReset();
     secureGet.mockReset();
     secureRemove.mockReset();
     platform.native = true;
+    platform.name = name;
     vi.resetModules();
   });
 
-  it('never writes Android access or refresh tokens to localStorage', async () => {
+  it('never writes native access or refresh tokens to localStorage', async () => {
     const { persistTokens } = await import('./tokenVault');
     await persistTokens({ accessToken: 'native-access', refreshToken: 'native-refresh' });
 
@@ -52,6 +53,20 @@ describe('tokenVault', () => {
       accessToken: 'secure-access',
       refreshToken: 'secure-refresh',
     });
+    expect(localStorage.getItem('access_token')).toBeNull();
+    expect(localStorage.getItem('refresh_token')).toBeNull();
+  });
+
+  it('clears the native session and all secure migration keys on logout', async () => {
+    const { persistTokens, clearTokens, peekTokens } = await import('./tokenVault');
+    await persistTokens({ accessToken: 'native-access', refreshToken: 'native-refresh' });
+    secureRemove.mockClear();
+    await clearTokens();
+    expect(peekTokens()).toBeNull();
+    expect(secureRemove).toHaveBeenCalledTimes(3);
+    expect(secureRemove).toHaveBeenCalledWith({ key: 'session_bundle' });
+    expect(secureRemove).toHaveBeenCalledWith({ key: 'access_token' });
+    expect(secureRemove).toHaveBeenCalledWith({ key: 'refresh_token' });
     expect(localStorage.getItem('access_token')).toBeNull();
     expect(localStorage.getItem('refresh_token')).toBeNull();
   });

@@ -6,7 +6,7 @@ const DEVICE_NAME_KEY = 'kirana_device_name';
 
 export type DeviceDescriptor = {
   installationId: string;
-  platform: 'WEB' | 'ANDROID';
+  platform: 'WEB' | 'ANDROID' | 'IOS';
   name: string;
 };
 
@@ -39,20 +39,26 @@ const webDeviceName = () => {
 export const isNativeAndroid = () =>
   Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
 
+export const isNativeIOS = () => Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios';
+
+export const isNativeMobile = () => isNativeAndroid() || isNativeIOS();
+
 export const getDeviceDescriptor = async (): Promise<DeviceDescriptor> => {
-  if (!isNativeAndroid()) {
+  if (!isNativeMobile()) {
     return { installationId: installationId(), platform: 'WEB', name: webDeviceName() };
   }
 
+  const platform = isNativeIOS() ? 'IOS' : 'ANDROID';
+  const fallbackName = isNativeIOS() ? 'iPhone / iPad' : 'Android device';
   let name = localStorage.getItem(DEVICE_NAME_KEY);
   if (!name) {
     try {
       const info = await KiranaNativeAuth.getDeviceInfo();
-      name = [info.manufacturer, info.model].filter(Boolean).join(' ') || 'Android device';
+      name = [info.manufacturer, info.model].filter(Boolean).join(' ') || fallbackName;
     } catch {
-      name = 'Android device';
+      name = fallbackName;
     }
     localStorage.setItem(DEVICE_NAME_KEY, name);
   }
-  return { installationId: installationId(), platform: 'ANDROID', name };
+  return { installationId: installationId(), platform, name };
 };
