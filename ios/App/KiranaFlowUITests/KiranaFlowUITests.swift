@@ -203,4 +203,115 @@ final class KiranaFlowUITests: XCTestCase {
         tapVisible("Dashboard")
     }
 
+    func test10OwnerRouteAudit() throws {
+        continueAfterFailure = true
+        guard let shop = ProcessInfo.processInfo.environment["KIRANA_QA_SHOP"] else {
+            throw XCTSkip("Requires disposable QA shop")
+        }
+        app.launch()
+        let dashboardReady = app.staticTexts["Your shop at a glance"].firstMatch
+        XCTAssertTrue(dashboardReady.waitForExistence(timeout: 40), "Dashboard must finish loading before route audit")
+        tapVisible("menu")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", shop)).firstMatch.waitForExistence(timeout: 10), "Wrong shop: audit stopped")
+        tapVisible("Dashboard")
+        let routes = ["Customers", "Invoices", "Online orders", "Payments", "Products", "Inventory", "Categories", "Suppliers", "Purchases", "Reports", "Users", "Import/Export", "Plan & account", "Cash shift", "Getting started", "About"]
+        for (index, route) in routes.enumerated() {
+            XCTContext.runActivity(named: "NAV-\(index + 1) \(route)") { _ in
+                tapVisible("menu")
+                let entry = app.buttons.matching(NSPredicate(format: "label ==[c] %@", route)).firstMatch
+                guard entry.waitForExistence(timeout: 8) else {
+                    print("KIRANA_ROUTE_UNAVAILABLE: \(route)")
+                    capture("nav-\(index + 1)-unavailable")
+                    tapVisible("Dashboard")
+                    return
+                }
+                entry.tap()
+                let header = app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", route)).firstMatch
+                XCTAssertTrue(header.waitForExistence(timeout: 15), "Expected route header missing: \(route)")
+                capture("nav-\(index + 1)")
+                print("KIRANA_ROUTE_AX_BEGIN: \(route)\n\(app.debugDescription)\nKIRANA_ROUTE_AX_END")
+                XCTAssertFalse(app.staticTexts["This section could not be loaded"].exists, "Route boundary failure: \(route)")
+                tapVisible("Dashboard")
+                let returned = app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 15)
+                capture("nav-\(index + 1)-returned")
+                if !returned {
+                    print("KIRANA_ROUTE_RECOVERY_REQUIRED: \(route)")
+                    app.terminate(); app.launch()
+                    XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 35))
+                }
+            }
+        }
+    }
+
+    func test11ProfileAndNativeControlInspection() throws {
+        guard ProcessInfo.processInfo.environment["KIRANA_QA_SHOP"] != nil else { throw XCTSkip("QA session required") }
+        app.terminate(); app.launch()
+        tapVisible("Account menu"); tapVisible("My Profile")
+        capture("profile-top")
+        print("KIRANA_PROFILE_AX_BEGIN\n\(app.debugDescription)\nKIRANA_PROFILE_AX_END")
+        let language = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Select Language")).firstMatch
+        if language.waitForExistence(timeout: 15) {
+            language.tap(); capture("profile-language-options")
+            print("KIRANA_LANGUAGE_AX_BEGIN\n\(app.debugDescription)\nKIRANA_LANGUAGE_AX_END")
+            tapVisible("Cancel")
+        } else { print("KIRANA_CONTROL_UNAVAILABLE: Select Language") }
+        let theme = app.switches.matching(NSPredicate(format: "label CONTAINS[c] %@", "Mode")).firstMatch
+        if theme.exists {
+            theme.tap(); capture("profile-dark-mode")
+            theme.tap(); capture("profile-restored-light-mode")
+        } else { print("KIRANA_CONTROL_UNAVAILABLE: Theme switch") }
+        tapVisible("Dashboard")
+    }
+
+    func test12InvoiceOutputControls() throws {
+        guard let invoice = ProcessInfo.processInfo.environment["KIRANA_QA_INVOICE"] else { throw XCTSkip("QA invoice required") }
+        app.terminate(); app.launch()
+        tapVisible("menu"); tapVisible("Invoices")
+        let record = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", invoice)).firstMatch
+        XCTAssertTrue(record.waitForExistence(timeout: 25)); record.tap()
+        XCTAssertTrue(app.buttons["Download PDF"].firstMatch.waitForExistence(timeout: 30))
+        capture("invoice-preview")
+        print("KIRANA_INVOICE_AX_BEGIN\n\(app.debugDescription)\nKIRANA_INVOICE_AX_END")
+        tapVisible("Share")
+        capture("invoice-native-share")
+        print("KIRANA_SHARE_AX_BEGIN\n\(app.debugDescription)\nKIRANA_SHARE_AX_END")
+        let close = app.buttons["Close"].firstMatch
+        if close.waitForExistence(timeout: 10) { close.tap() }
+        else if app.buttons["Cancel"].firstMatch.exists { app.buttons["Cancel"].firstMatch.tap() }
+        app.terminate(); app.launch()
+    }
+
+    func test13CameraOpenAndCancel() throws {
+        guard ProcessInfo.processInfo.environment["KIRANA_QA_SHOP"] != nil else { throw XCTSkip("QA session required") }
+        app.terminate(); app.launch(); tapVisible("Billing"); tapVisible("Scan barcode")
+        tapVisible("Start camera scan")
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let allow = springboard.buttons["Allow"].firstMatch
+        if allow.waitForExistence(timeout: 5) { allow.tap() }
+        let cancel = app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Cancel scan")).firstMatch
+        let opened = cancel.waitForExistence(timeout: 15)
+        capture("camera-scan-controls")
+        print("KIRANA_CAMERA_AX_BEGIN\n\(app.debugDescription)\nKIRANA_CAMERA_AX_END")
+        XCTAssertTrue(opened, "Camera scanner did not expose its cancel control")
+        if opened { cancel.tap() }
+        capture("camera-cancelled")
+        tapVisible("Dashboard")
+    }
+
+    func test14NativePrintControl() throws {
+        guard let invoice = ProcessInfo.processInfo.environment["KIRANA_QA_INVOICE"] else { throw XCTSkip("QA invoice required") }
+        app.terminate(); app.launch()
+        XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 40))
+        tapVisible("menu"); tapVisible("Invoices")
+        let record = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", invoice)).firstMatch
+        XCTAssertTrue(record.waitForExistence(timeout: 25)); record.tap()
+        tapVisible("Print")
+        let cancel = app.buttons["Cancel"].firstMatch
+        let sheet = cancel.waitForExistence(timeout: 15)
+        capture("invoice-print-controls")
+        print("KIRANA_PRINT_AX_BEGIN\n\(app.debugDescription)\nKIRANA_PRINT_AX_END")
+        if sheet { cancel.tap() } else { print("KIRANA_PRINT_NO_CANCEL_SHEET") }
+        app.terminate(); app.launch()
+    }
+
 }
