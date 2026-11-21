@@ -134,7 +134,9 @@ final class KiranaFlowUITests: XCTestCase {
             let closed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in !self.app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Save")).firstMatch.exists }, object: nil)
             XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 30), .completed)
             tapVisible("Dashboard")
-            XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Dashboard")).firstMatch.waitForExistence(timeout: 20))
+            let content = app.staticTexts["Your shop at a glance"].firstMatch
+            let navigated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in content.exists && content.isHittable }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [navigated], timeout: 20), .completed, "Dashboard content did not become visible after payment")
             capture("payment-dashboard-navigation")
         }
     }
