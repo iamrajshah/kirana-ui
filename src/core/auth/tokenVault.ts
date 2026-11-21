@@ -1,5 +1,5 @@
 import { STORAGE_KEYS } from '@core/constants';
-import { isNativeAndroid } from './deviceIdentity';
+import { isNativeMobile } from './deviceIdentity';
 import { KiranaNativeAuth } from './nativeAuthPlugin';
 
 export type StoredTokens = { accessToken: string; refreshToken: string };
@@ -15,14 +15,14 @@ const clearPlaintextTokens = () => {
 };
 
 export const peekTokens = (): StoredTokens | null => {
-  if (isNativeAndroid()) return nativeTokens;
+  if (isNativeMobile()) return nativeTokens;
   const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
   const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
   return accessToken && refreshToken ? { accessToken, refreshToken } : null;
 };
 
 export const persistTokens = async (tokens: StoredTokens): Promise<void> => {
-  if (!isNativeAndroid()) {
+  if (!isNativeMobile()) {
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.accessToken);
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
     return;
@@ -38,7 +38,7 @@ export const persistTokens = async (tokens: StoredTokens): Promise<void> => {
 };
 
 export const hydrateTokens = async (): Promise<StoredTokens | null> => {
-  if (!isNativeAndroid()) return peekTokens();
+  if (!isNativeMobile()) return peekTokens();
   clearPlaintextTokens();
   const bundle = await KiranaNativeAuth.getSecureValue({ key: BUNDLE_KEY });
   if (bundle.value) {
@@ -69,7 +69,7 @@ export const hydrateTokens = async (): Promise<StoredTokens | null> => {
 export const clearTokens = async (): Promise<void> => {
   nativeTokens = null;
   clearPlaintextTokens();
-  if (isNativeAndroid()) {
+  if (isNativeMobile()) {
     await Promise.all([
       KiranaNativeAuth.removeSecureValue({ key: BUNDLE_KEY }),
       KiranaNativeAuth.removeSecureValue({ key: ACCESS_KEY }),

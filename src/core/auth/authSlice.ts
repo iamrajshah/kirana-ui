@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { STORAGE_KEYS } from '../constants';
 import type { SessionContext, User } from '../types';
 import type { CommercialAccessSummary } from '@core/commercial';
-import { isNativeAndroid } from './deviceIdentity';
+import { isNativeMobile } from './deviceIdentity';
 
 interface AuthState {
   user: User | null;
@@ -58,11 +58,11 @@ interface TokenRefreshPayload extends SessionBoundPayload {
 
 const storedUser: User | null = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER) || 'null');
 const storeWebToken = (key: string, value: string) => {
-  if (!isNativeAndroid()) localStorage.setItem(key, value);
+  if (!isNativeMobile()) localStorage.setItem(key, value);
 };
-const webToken = (key: string) => (isNativeAndroid() ? null : localStorage.getItem(key));
+const webToken = (key: string) => (isNativeMobile() ? null : localStorage.getItem(key));
 const isPersistedTokenCurrent = (key: string, expected: string | null) =>
-  isNativeAndroid() || localStorage.getItem(key) === expected;
+  isNativeMobile() || localStorage.getItem(key) === expected;
 
 const initialState: AuthState = {
   user: storedUser,

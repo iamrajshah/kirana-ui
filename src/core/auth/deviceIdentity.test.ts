@@ -27,11 +27,14 @@ describe('device identity', () => {
     expect(first.name).toContain('Web');
   });
 
-  it('labels a native Android installation separately', async () => {
+  it.each([
+    ['android', 'ANDROID'],
+    ['ios', 'IOS'],
+  ])('labels a native %s installation separately', async (name, expected) => {
     platform.native = true;
-    platform.name = 'android';
+    platform.name = name;
     const { getDeviceDescriptor } = await import('./deviceIdentity');
 
-    expect((await getDeviceDescriptor()).platform).toBe('ANDROID');
+    expect((await getDeviceDescriptor()).platform).toBe(expected);
   });
 });

@@ -32,9 +32,14 @@ public/ocr/
 !.env.production
 
 # Capacitor
-# Android is a reviewed release artifact. iOS stays gated until Apple sign-in
-# and account-deletion obligations are satisfied.
-ios/
+# Native development packages are reviewed source; signing/build output stays local.
+ios/App/Pods/
+ios/App/build/
+ios/DerivedData/
+ios/**/*.xcuserstate
+ios/**/xcuserdata/
+ios/**/*.ipa
+ios/**/*.xcarchive
 android/app/google-services.json
 android/*.jks
 android/*.keystore

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { AndroidCredentialProvider, WebGoogleIdentityProvider } from './googleIdentityProvider';
 import { useTranslation } from 'react-i18next';
-import { isNativeAndroid } from '@core/auth/deviceIdentity';
+import { isNativeAndroid, isNativeIOS } from '@core/auth/deviceIdentity';
 import { KiranaNativeAuth } from '@core/auth/nativeAuthPlugin';
 
 export const GoogleSignInButton: React.FC<{
@@ -15,7 +15,7 @@ export const GoogleSignInButton: React.FC<{
   const entryEnabled = import.meta.env.VITE_GOOGLE_ENTRY_ENABLED === 'true';
 
   useEffect(() => {
-    if (!entryEnabled || !target.current || !clientId) return;
+    if (isNativeIOS() || !entryEnabled || !target.current || !clientId) return;
     const provider = isNativeAndroid()
       ? new AndroidCredentialProvider(async () => {
           const result = await KiranaNativeAuth.signInWithGoogle({ serverClientId: clientId });
@@ -29,6 +29,6 @@ export const GoogleSignInButton: React.FC<{
     });
   }, [clientId, entryEnabled, onCancel, onCredential, onError]);
 
-  if (!entryEnabled || !clientId) return null;
+  if (isNativeIOS() || !entryEnabled || !clientId) return null;
   return <div ref={target} aria-label={t('auth.googleSignIn')} className="flex justify-center" />;
 };
