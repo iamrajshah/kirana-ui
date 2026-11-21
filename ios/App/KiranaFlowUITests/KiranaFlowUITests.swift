@@ -258,8 +258,8 @@ final class KiranaFlowUITests: XCTestCase {
         } else { print("KIRANA_CONTROL_UNAVAILABLE: Select Language") }
         let theme = app.switches.matching(NSPredicate(format: "label CONTAINS[c] %@", "Mode")).firstMatch
         if theme.exists {
-            theme.tap(); capture("profile-dark-mode")
-            theme.tap(); capture("profile-restored-light-mode")
+            theme.tap(); Thread.sleep(forTimeInterval: 1); capture("profile-dark-mode")
+            theme.tap(); Thread.sleep(forTimeInterval: 1); capture("profile-restored-light-mode")
         } else { print("KIRANA_CONTROL_UNAVAILABLE: Theme switch") }
         tapVisible("Dashboard")
     }
@@ -274,14 +274,23 @@ final class KiranaFlowUITests: XCTestCase {
         capture("invoice-preview")
         print("KIRANA_INVOICE_AX_BEGIN\n\(app.debugDescription)\nKIRANA_INVOICE_AX_END")
         tapVisible("Share")
-        let dismissSheet = app.buttons.matching(NSPredicate(format: "label ==[c] %@ OR label ==[c] %@", "Close", "Cancel")).firstMatch
-        XCTAssertTrue(dismissSheet.waitForExistence(timeout: 20), "Native share sheet did not open")
-        capture("invoice-native-share")
-        print("KIRANA_SHARE_AX_BEGIN\n\(app.debugDescription)\nKIRANA_SHARE_AX_END")
-        let close = app.buttons["Close"].firstMatch
-        if close.waitForExistence(timeout: 10) { close.tap() }
-        else if app.buttons["Cancel"].firstMatch.exists { app.buttons["Cancel"].firstMatch.tap() }
-        app.terminate(); app.launch()
+        dismissNativeShareSheet("invoice-native-share")
+        tapVisible("Download PDF")
+        dismissNativeShareSheet("invoice-native-download")
+        tapVisible("Dashboard")
+        XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 25))
+    }
+
+    private func dismissNativeShareSheet(_ screenshot: String) {
+        let copy = app.cells.matching(NSPredicate(format: "identifier == %@ AND label == %@", "actionGroupCell", "Copy")).firstMatch
+        XCTAssertTrue(copy.waitForExistence(timeout: 20), "Native activity sheet did not open")
+        capture(screenshot)
+        // iOS presents a popover on this device, without a Close/Cancel button.
+        // Tap its dimmed background, never a recipient or action that sends data.
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15)).tap()
+        let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in !copy.exists }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 15), .completed)
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Print")).firstMatch.isEnabled)
     }
 
     func test13CameraOpenAndCancel() throws {
@@ -342,7 +351,7 @@ final class KiranaFlowUITests: XCTestCase {
         XCTAssertTrue(amount.waitForExistence(timeout: 15)); enterSearch("150", in: amount)
         let collect = app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Collect Payment")).firstMatch
         XCTAssertFalse(collect.isEnabled, "Overpayment of the new invoice must be rejected")
-        enterSearch("50", in: amount); capture("partial-bill-with-previous-balance")
+        replaceNumber("50", in: amount); capture("partial-bill-with-previous-balance")
         tapVisible("Collect Payment")
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Attach customer")).firstMatch.waitForExistence(timeout: 30))
         tapVisible("Payments"); tapVisible("Record Payment")
@@ -357,4 +366,89 @@ final class KiranaFlowUITests: XCTestCase {
         capture("partial-and-old-balance-settled")
     }
 
+
+    private func replaceNumber(_ text: String, in field: XCUIElement) {
+        // A centre tap can place the numeric caret before the existing digits.
+        // Position at the trailing edge before deleting, and verify before submit.
+        let old = field.value as? String ?? ""
+        field.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: old.count))
+        XCTAssertTrue((field.value as? String ?? "").isEmpty || field.value as? String == field.placeholderValue, "Amount was not cleared; refusing to submit")
+        field.typeText(text)
+        XCTAssertEqual(field.value as? String, text)
+    }
+
+    func test16RecoverInterruptedQABalance() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard env["KIRANA_QA_RECOVER_200"] == "1", let shop = env["KIRANA_QA_SHOP"], let customer = env["KIRANA_QA_CUSTOMER"] else { throw XCTSkip("Explicit interrupted-balance recovery required") }
+        app.launch(); tapVisible("menu")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", shop)).firstMatch.waitForExistence(timeout: 10), "Wrong shop: refusing writes")
+        tapVisible("Dashboard"); tapVisible("Payments"); tapVisible("Record Payment")
+        let search = app.textFields["Search customers by name or phone"].firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 15)); enterSearch(customer, in: search)
+        let match = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH[c] %@", customer)).firstMatch
+        XCTAssertTrue(match.waitForExistence(timeout: 20)); match.tap()
+        let amount = app.textFields["Enter amount"].firstMatch
+        XCTAssertTrue(amount.waitForExistence(timeout: 15)); amount.tap(); amount.typeText("200")
+        capture("recover-two-unpaid-qa-bills")
+        tapVisible("Save"); tapVisible("Dashboard")
+        XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 30))
+    }
+
+    func test17RoleMenuPermissions() throws {
+        guard let role = ProcessInfo.processInfo.environment["KIRANA_QA_ROLE"] else { throw XCTSkip("Role required") }
+        app.launch(); tapVisible("menu")
+        XCTAssertFalse(app.buttons["Users"].firstMatch.exists, "Staff must not manage users")
+        if role == "CASHIER" {
+            for label in ["Reports", "Inventory", "Suppliers", "Purchases"] {
+                XCTAssertFalse(app.buttons[label].firstMatch.exists, "Cashier must not see \(label)")
+            }
+        } else {
+            XCTAssertTrue(app.buttons["Reports"].firstMatch.exists)
+            XCTAssertTrue(app.buttons["Purchases"].firstMatch.exists)
+        }
+        capture("role-menu-" + role.lowercased())
+        tapVisible("Dashboard")
+        tapVisible("Billing"); XCTAssertTrue(app.searchFields["Search product by name or SKU"].firstMatch.waitForExistence(timeout: 25))
+        tapVisible("Payments"); XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Record Payment")).firstMatch.waitForExistence(timeout: 25))
+        tapVisible("Dashboard")
+    }
+
+    func test18ExistingStaffRoleSessions() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let shop = env["KIRANA_QA_SHOP"], let owner = env["KIRANA_QA_EMAIL"], let ownerPassword = env["KIRANA_QA_PASSWORD"] else { throw XCTSkip("QA fixture required") }
+        for role in ["MANAGER", "CASHIER"] {
+            guard let email = env["KIRANA_QA_" + role + "_EMAIL"], let password = env["KIRANA_QA_" + role + "_PASSWORD"] else { throw XCTSkip("Existing staff fixture required") }
+            loginExistingQAAccount(email, password, shop)
+            tapVisible("menu")
+            XCTAssertFalse(app.buttons["Users"].firstMatch.exists)
+            if role == "CASHIER" {
+                for label in ["Reports", "Inventory", "Suppliers", "Purchases"] { XCTAssertFalse(app.buttons[label].firstMatch.exists, "Unexpected cashier access: " + label) }
+            } else {
+                XCTAssertTrue(app.buttons["Reports"].firstMatch.exists)
+                XCTAssertTrue(app.buttons["Purchases"].firstMatch.exists)
+            }
+            capture("staff-menu-" + role.lowercased())
+            tapVisible("Dashboard"); tapVisible("Billing")
+            XCTAssertTrue(app.searchFields["Search product by name or SKU"].firstMatch.waitForExistence(timeout: 25))
+            tapVisible("Payments")
+            XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Record Payment")).firstMatch.waitForExistence(timeout: 25))
+            tapVisible("Dashboard")
+        }
+        loginExistingQAAccount(owner, ownerPassword, shop)
+    }
+
+    private func loginExistingQAAccount(_ email: String, _ password: String, _ shop: String) {
+        tapVisible("Account menu"); tapVisible("Logout")
+        let secret = app.secureTextFields.firstMatch
+        XCTAssertTrue(secret.waitForExistence(timeout: 25))
+        let emailField = app.textFields.firstMatch
+        emailField.tap(); emailField.typeText(email)
+        secret.tap(); secret.typeText(password)
+        tapVisible("Sign In")
+        XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 40))
+        tapVisible("menu")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", shop)).firstMatch.waitForExistence(timeout: 10))
+        tapVisible("Dashboard")
+    }
 }
