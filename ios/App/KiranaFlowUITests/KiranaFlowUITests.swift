@@ -19,7 +19,13 @@ final class KiranaFlowUITests: XCTestCase {
     func test01LaunchAndInspect() {
         app.launch()
         XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 30))
+        let signIn = app.buttons.matching(NSPredicate(format: "label MATCHES[c] %@", "sign in")).firstMatch
+        let dashboard = app.staticTexts["Dashboard"].firstMatch
+        let ready = NSPredicate { _, _ in signIn.exists || dashboard.exists }
+        let loaded = XCTNSPredicateExpectation(predicate: ready, object: nil)
+        let outcome = XCTWaiter.wait(for: [loaded], timeout: 40)
         capture("iphone-entry")
+        XCTAssertEqual(outcome, .completed, "WebView exists but the actual login/dashboard UI did not become ready")
         print("KIRANA_AX_BEGIN\n\(app.debugDescription)\nKIRANA_AX_END")
     }
 }
