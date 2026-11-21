@@ -1,4 +1,5 @@
 import Capacitor
+import GoogleSignIn
 import Security
 import UIKit
 
@@ -20,6 +21,7 @@ final class KiranaNativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "removeSecureValue", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "signInWithGoogle", returnType: CAPPluginReturnPromise)
     ]
+    private var googleSignInPending = false
     private let allowedKeys: Set<String> = ["session_bundle", "access_token", "refresh_token"]
 
     private func query(_ call: CAPPluginCall) -> [String: Any]? {
@@ -86,6 +88,35 @@ final class KiranaNativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func signInWithGoogle(_ call: CAPPluginCall) {
-        call.reject("Use password login for this iOS development build", "IOS_GOOGLE_NOT_CONFIGURED")
+        DispatchQueue.main.async {
+            guard !self.googleSignInPending else {
+                call.reject("Google sign-in is already in progress", "GOOGLE_SIGN_IN_PENDING")
+                return
+            }
+            guard let clientID = Bundle.main.object(forInfoDictionaryKey: "GIDClientID") as? String,
+                  let serverClientID = Bundle.main.object(forInfoDictionaryKey: "GIDServerClientID") as? String,
+                  call.getString("serverClientId") == serverClientID,
+                  let controller = self.bridge?.viewController else {
+                call.reject("Google sign-in is not configured", "GOOGLE_SIGN_IN_NOT_CONFIGURED")
+                return
+            }
+            self.googleSignInPending = true
+            GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID, serverClientID: serverClientID)
+            GIDSignIn.sharedInstance.signIn(withPresenting: controller) { result, error in
+                self.googleSignInPending = false
+                if let error = error as NSError? {
+                    let cancelled = error.domain == kGIDSignInErrorDomain && error.code == GIDSignInError.canceled.rawValue
+                    call.reject(cancelled ? "Google sign-in cancelled" : "Google sign-in unavailable",
+                                cancelled ? "GOOGLE_SIGN_IN_CANCELLED" : "GOOGLE_SIGN_IN_FAILED")
+                    return
+                }
+                guard let credential = result?.user.idToken?.tokenString, !credential.isEmpty else {
+                    call.reject("Google did not return an ID token", "GOOGLE_SIGN_IN_FAILED")
+                    return
+                }
+                // Only the ID token crosses the bridge. Google access/refresh tokens stay in its SDK.
+                call.resolve(["credential": credential])
+            }
+        }
     }
 }

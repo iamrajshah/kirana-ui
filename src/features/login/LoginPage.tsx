@@ -54,7 +54,7 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const [googleCredential, setGoogleCredential] = useState<{
     credential: string;
-    source: 'web' | 'android';
+    source: 'web' | 'android' | 'ios';
   } | null>(null);
   const [memberships, setMemberships] = useState<SessionMembership[]>([]);
   const [identityOutcome, setIdentityOutcome] = useState<string>('');
@@ -161,7 +161,7 @@ export const LoginPage: React.FC = () => {
   const handleGoogleCredential = useCallback(
     async (
       credential: string,
-      source: 'web' | 'android' = 'web',
+      source: 'web' | 'android' | 'ios' = 'web',
       replaceDeviceId?: string
     ) => {
       if (!productInformation) {
