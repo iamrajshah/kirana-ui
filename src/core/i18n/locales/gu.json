@@ -1950,7 +1950,8 @@
       "pointCamera": "કેમેરો બારકોડ તરફ રાખો",
       "emulatorNote": "એમ્યુલેટરમાં કેમેરો દેખાય નહીં. સારા પરિણામ માટે સાચું ઉપકરણ વાપરો.",
       "cancelScan": "સ્કેન રદ કરો",
-      "cameraPermissionRequired": "કેમેરાની પરવાનગી જરૂરી છે"
+      "cameraPermissionRequired": "કેમેરાની પરવાનગી જરૂરી છે",
+      "startCamera": "કૅમેરાથી સ્કૅન શરૂ કરો"
     },
     "bank": {
       "manageAccounts": "બેંક ખાતાં સંચાલિત કરો",

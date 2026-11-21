@@ -1950,7 +1950,8 @@
       "pointCamera": "कॅमेरा बारकोडकडे धरा",
       "emulatorNote": "एम्युलेटरमध्ये कॅमेरा दिसणार नाही. उत्तम परिणामासाठी प्रत्यक्ष डिवाइस वापरा.",
       "cancelScan": "स्कॅन रद्द करा",
-      "cameraPermissionRequired": "कॅमेरा परवानगी आवश्यक आहे"
+      "cameraPermissionRequired": "कॅमेरा परवानगी आवश्यक आहे",
+      "startCamera": "कॅमेऱ्याने स्कॅन सुरू करा"
     },
     "bank": {
       "manageAccounts": "बँक खाती व्यवस्थापित करा",

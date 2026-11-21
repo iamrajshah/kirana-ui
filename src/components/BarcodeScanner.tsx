@@ -152,7 +152,12 @@ export const BarcodeScannerComponent: React.FC<BarcodeScannerComponentProps> = (
   }
 
   return (
-    <IonButton expand="block" onClick={startScan} disabled={permissionBlocked}>
+    <IonButton
+      expand="block"
+      onClick={startScan}
+      disabled={permissionBlocked}
+      aria-label={t('foundation.barcode.startCamera')}
+    >
       <IonIcon slot="start" icon={camera} />
       {permissionBlocked
         ? t('foundation.barcode.cameraPermissionRequired')

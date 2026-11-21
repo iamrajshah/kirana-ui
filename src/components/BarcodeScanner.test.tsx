@@ -26,8 +26,9 @@ vi.mock('@ionic/react', () => ({
     onClick,
     disabled,
     type,
+    'aria-label': ariaLabel,
   }: PropsWithChildren<ButtonHTMLAttributes<HTMLButtonElement>>) => (
-    <button onClick={onClick} disabled={disabled} type={type}>
+    <button onClick={onClick} disabled={disabled} type={type} aria-label={ariaLabel}>
       {children}
     </button>
   ),
@@ -59,7 +60,9 @@ describe('BarcodeScannerComponent', () => {
 
     render(<BarcodeScannerComponent onScan={vi.fn()} />);
 
-    const scanButton = await screen.findByRole('button', { name: 'products.scanBarcode' });
+    const scanButton = await screen.findByRole('button', {
+      name: 'foundation.barcode.startCamera',
+    });
     expect((scanButton as HTMLButtonElement).disabled).toBe(false);
 
     fireEvent.click(scanButton);
@@ -74,7 +77,7 @@ describe('BarcodeScannerComponent', () => {
     scannerMocks.startScan.mockReturnValue(new Promise(() => undefined));
 
     const view = render(<BarcodeScannerComponent onScan={vi.fn()} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'products.scanBarcode' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'foundation.barcode.startCamera' }));
 
     await waitFor(() => expect(scannerMocks.startScan).toHaveBeenCalledTimes(1));
     expect(document.body.classList.contains('scanner-active')).toBe(true);
