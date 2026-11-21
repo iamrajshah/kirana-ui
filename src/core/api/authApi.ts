@@ -22,7 +22,7 @@ export interface GoogleExchangeResponse {
 export interface ActiveDevice {
   id: string;
   name: string;
-  platform: 'WEB' | 'ANDROID';
+  platform: 'WEB' | 'ANDROID' | 'IOS';
   lastSeenAt: string;
   current?: boolean;
   userId?: string;
