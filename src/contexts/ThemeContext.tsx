@@ -14,7 +14,8 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     document.body.classList.add(theme);
     localStorage.setItem('kirana-ui-theme', theme);
     if (Capacitor.isNativePlatform()) {
-      void StatusBar.setStyle({ style: theme === 'dark' ? Style.Light : Style.Dark }).catch(
+      // Capacitor names the background style: Dark renders light status-bar text.
+      void StatusBar.setStyle({ style: theme === 'dark' ? Style.Dark : Style.Light }).catch(
         () => undefined
       );
     }
