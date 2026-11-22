@@ -18,6 +18,7 @@
     "noDevices": "કોઈ સક્રિય ડિવાઇસ નથી",
     "lastSeen": "છેલ્લે વપરાયેલ {{date}}",
     "platform": {
+      "ios": "iOS",
       "web": "વેબ",
       "android": "એન્ડ્રોઇડ"
     },
@@ -798,6 +799,7 @@
     "createProductTitle": "ઉત્પાદન બનાવો",
     "createProductButton": "ઉત્પાદન બનાવો",
     "basePriceCostPrice": "મૂળ કિમત (ખર્ચ કિમત)",
+    "barcodePrintFailed": "લેબલ પ્રિન્ટ થઈ શક્યાં નથી. કૃપા કરીને ફરી પ્રયત્ન કરો.",
     "barcodeLabelTitle": "પ્રોડક્ટ બારકોડ લેબલ",
     "manageBarcodeLabel": "બારકોડ લેબલ બનાવો અથવા પ્રિન્ટ કરો",
     "latestPurchaseCost": "તાજેતરની ખરીદી કિંમત",
