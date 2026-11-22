@@ -307,7 +307,8 @@ export const PaymentsPage: React.FC = () => {
             resetForm();
           }}
         >
-          <IonPage>
+          {/* Modal content must not register as another page in the Payments route stack. */}
+          <div className="ion-page">
             <IonHeader>
               <IonToolbar>
                 <IonTitle>{t('payments.recordPayment')}</IonTitle>
@@ -448,7 +449,7 @@ export const PaymentsPage: React.FC = () => {
                 {t('common.save')}
               </Button>
             </IonContent>
-          </IonPage>
+          </div>
         </IonModal>
 
         <IonToast

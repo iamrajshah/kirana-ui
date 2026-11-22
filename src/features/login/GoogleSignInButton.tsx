@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react';
-import { AndroidCredentialProvider, WebGoogleIdentityProvider } from './googleIdentityProvider';
+import { NativeGoogleCredentialProvider, WebGoogleIdentityProvider } from './googleIdentityProvider';
 import { useTranslation } from 'react-i18next';
 import { isNativeAndroid, isNativeIOS } from '@core/auth/deviceIdentity';
 import { KiranaNativeAuth } from '@core/auth/nativeAuthPlugin';
 
 export const GoogleSignInButton: React.FC<{
-  onCredential: (credential: string, source: 'web' | 'android') => void;
+  onCredential: (credential: string, source: 'web' | 'android' | 'ios') => void;
   onCancel: () => void;
   onError: (message: string) => void;
 }> = ({ onCredential, onCancel, onError }) => {
@@ -15,13 +15,17 @@ export const GoogleSignInButton: React.FC<{
   const entryEnabled = import.meta.env.VITE_GOOGLE_ENTRY_ENABLED === 'true';
 
   useEffect(() => {
-    if (isNativeIOS() || !entryEnabled || !target.current || !clientId) return;
-    const provider = isNativeAndroid()
-      ? new AndroidCredentialProvider(async () => {
-          const result = await KiranaNativeAuth.signInWithGoogle({ serverClientId: clientId });
-          return result.credential;
-        })
-      : new WebGoogleIdentityProvider(clientId);
+    if (!entryEnabled || !target.current || !clientId) return;
+    const provider =
+      isNativeAndroid() || isNativeIOS()
+        ? new NativeGoogleCredentialProvider(
+            async () => {
+              const result = await KiranaNativeAuth.signInWithGoogle({ serverClientId: clientId });
+              return result.credential;
+            },
+            isNativeIOS() ? 'ios' : 'android'
+          )
+        : new WebGoogleIdentityProvider(clientId);
     return provider.render(target.current, {
       onCredential: (identity) => onCredential(identity.credential, identity.source),
       onCancel,
@@ -29,6 +33,6 @@ export const GoogleSignInButton: React.FC<{
     });
   }, [clientId, entryEnabled, onCancel, onCredential, onError]);
 
-  if (isNativeIOS() || !entryEnabled || !clientId) return null;
+  if (!entryEnabled || !clientId) return null;
   return <div ref={target} aria-label={t('auth.googleSignIn')} className="flex justify-center" />;
 };

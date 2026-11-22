@@ -298,7 +298,7 @@ export const InventoryPage: React.FC = () => {
 
         {showModal && selectedItem && (
           <IonModal isOpen={true} onDidDismiss={() => setShowModal(false)}>
-            <IonPage>
+            <div className="ion-page">
               <IonHeader>
                 <IonToolbar>
                   <IonTitle>{t('inventory.updateInventoryTitle')}</IonTitle>
@@ -357,7 +357,7 @@ export const InventoryPage: React.FC = () => {
                   </div>
                 </div>
               </IonContent>
-            </IonPage>
+            </div>
           </IonModal>
         )}
 

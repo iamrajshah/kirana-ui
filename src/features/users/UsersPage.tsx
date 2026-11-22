@@ -194,7 +194,7 @@ export const UsersPage: React.FC = () => {
 
           {showModal && (
             <IonModal isOpen={true} onDidDismiss={() => setShowModal(false)}>
-              <IonPage>
+              <div className="ion-page">
                 <IonHeader>
                   <IonToolbar>
                     <IonTitle>{t('users.createNewUser')}</IonTitle>
@@ -261,7 +261,7 @@ export const UsersPage: React.FC = () => {
                     {creating ? t('common.creating') : t('users.createUser')}
                   </IonButton>
                 </IonContent>
-              </IonPage>
+              </div>
             </IonModal>
           )}
 

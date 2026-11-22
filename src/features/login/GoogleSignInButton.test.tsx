@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GoogleSignInButton } from './GoogleSignInButton';
 
@@ -15,6 +15,7 @@ vi.mock('@core/auth/nativeAuthPlugin', () => ({
 
 describe('GoogleSignInButton rollout gate', () => {
   afterEach(() => {
+    cleanup();
     vi.unstubAllEnvs();
     native.enabled = false;
     native.ios = false;
@@ -30,13 +31,17 @@ describe('GoogleSignInButton rollout gate', () => {
     expect(screen.queryByLabelText('auth.googleSignIn')).toBeNull();
   });
 
-  it('does not mount browser Google sign-in inside an iOS webview', () => {
+  it('uses the native plugin on iOS and reports its platform', async () => {
     vi.stubEnv('VITE_GOOGLE_WEB_CLIENT_ID', 'server-client');
     vi.stubEnv('VITE_GOOGLE_ENTRY_ENABLED', 'true');
     native.ios = true;
-    render(<GoogleSignInButton onCredential={vi.fn()} onCancel={vi.fn()} onError={vi.fn()} />);
-    expect(screen.queryByLabelText('auth.googleSignIn')).toBeNull();
-    expect(nativeSignIn).not.toHaveBeenCalled();
+    nativeSignIn.mockResolvedValueOnce({ credential: 'ios-id-token' });
+    const onCredential = vi.fn();
+    render(<GoogleSignInButton onCredential={onCredential} onCancel={vi.fn()} onError={vi.fn()} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Continue with Google' }));
+    await waitFor(() => expect(onCredential).toHaveBeenCalledWith('ios-id-token', 'ios'));
+    expect(nativeSignIn).toHaveBeenCalledWith({ serverClientId: 'server-client' });
+    expect(document.querySelector('script[data-kirana-google-identity]')).toBeNull();
   });
 
   it('uses Android Credential Manager through the native plugin on Android', async () => {

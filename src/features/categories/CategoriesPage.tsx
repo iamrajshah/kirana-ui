@@ -155,7 +155,7 @@ export const CategoriesPage: React.FC = () => {
           {/* Add Category Modal */}
           {showModal && (
             <IonModal isOpen={true} onDidDismiss={() => setShowModal(false)}>
-              <IonPage>
+              <div className="ion-page">
                 <IonHeader>
                   <IonToolbar>
                     <IonTitle>{t('categories.add')}</IonTitle>
@@ -189,7 +189,7 @@ export const CategoriesPage: React.FC = () => {
                     {creating ? t('common.creating') : t('categories.create')}
                   </IonButton>
                 </IonContent>
-              </IonPage>
+              </div>
             </IonModal>
           )}
 
