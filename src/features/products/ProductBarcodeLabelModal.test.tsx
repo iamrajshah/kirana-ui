@@ -4,6 +4,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ProductVariant } from '@core/types';
 import { ProductBarcodeLabelModal } from './ProductBarcodeLabelModal';
 
+const native = vi.hoisted(() => ({ enabled: false, pdf: vi.fn(), print: vi.fn() }));
+vi.mock('@capacitor/core', () => ({
+  Capacitor: {
+    isNativePlatform: () => native.enabled,
+    getPlatform: () => (native.enabled ? 'ios' : 'web'),
+  },
+}));
+vi.mock('./barcodeLabelPdf', () => ({ renderBarcodeLabelPdf: native.pdf }));
+vi.mock('../invoices/receipt/nativePrintAdapter', () => ({ printNativePdf: native.print }));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, values?: { count?: number; value?: string; max?: number }) => {
@@ -121,6 +131,9 @@ const variant: ProductVariant = {
 
 afterEach(() => {
   cleanup();
+  native.enabled = false;
+  native.pdf.mockReset();
+  native.print.mockReset();
   vi.restoreAllMocks();
   localStorage.removeItem('kirana_barcode_label_defaults_v1');
 });
@@ -506,4 +519,29 @@ describe('ProductBarcodeLabelModal', () => {
     fireEvent.click(screen.getByRole('button', { name: 'dismiss modal early' }));
     expect(cancelAnimationFrame).toHaveBeenCalledWith(42);
   });
+});
+
+it('opens native label printing once and permits retry after cancellation', async () => {
+  native.enabled = true;
+  const blob = new Blob(['%PDF-1.4 label']);
+  native.pdf.mockResolvedValue(blob);
+  native.print.mockResolvedValue(false);
+  const web = vi.spyOn(window, 'print').mockImplementation(() => undefined);
+  render(
+    <ProductBarcodeLabelModal
+      isOpen
+      shopName="Shop"
+      productName="Rice"
+      variant={variant}
+      onDismiss={vi.fn()}
+    />
+  );
+  const print = screen.getByRole('button', { name: 'products.printBarcodeLabels:1' });
+  fireEvent.click(print);
+  await waitFor(() =>
+    expect(native.print).toHaveBeenCalledWith(blob, 'products.barcodeLabelTitle')
+  );
+  expect(web).not.toHaveBeenCalled();
+  await waitFor(() => expect((print as HTMLButtonElement).disabled).toBe(false));
+  expect(native.print).toHaveBeenCalledOnce();
 });

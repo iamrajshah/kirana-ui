@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Capacitor } from '@capacitor/core';
 import {
   IonButton,
   IonButtons,
@@ -142,7 +143,7 @@ const getDateValidationKey = ({
   return '';
 };
 
-interface BarcodeLabelProps {
+export interface BarcodeLabelProps {
   barcode: string;
   productName: string;
   shopName: string;
@@ -383,15 +384,33 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
   useEffect(() => {
     if (!printJob) return;
 
+    let disposed = false;
     const clearPrintJob = () => setPrintJob(null);
-    const frame = window.requestAnimationFrame(() => window.print());
+    const frame = window.requestAnimationFrame(() => {
+      if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios') {
+        void (async () => {
+          try {
+            const { renderBarcodeLabelPdf } = await import('./barcodeLabelPdf');
+            const blob = await renderBarcodeLabelPdf(printJob.labelProps, printJob.copies);
+            if (disposed) return;
+            const { printNativePdf } = await import('../invoices/receipt/nativePrintAdapter');
+            await printNativePdf(blob, t('products.barcodeLabelTitle'));
+          } catch {
+            if (!disposed) setError(t('products.barcodePrintFailed'));
+          } finally {
+            if (!disposed) clearPrintJob();
+          }
+        })();
+      } else window.print();
+    });
     window.addEventListener('afterprint', clearPrintJob, { once: true });
 
     return () => {
+      disposed = true;
       window.cancelAnimationFrame(frame);
       window.removeEventListener('afterprint', clearPrintJob);
     };
-  }, [printJob]);
+  }, [printJob, t]);
 
   const handleGenerate = async () => {
     if (!variant) return;
