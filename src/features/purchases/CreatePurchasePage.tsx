@@ -816,6 +816,9 @@ const CreatePurchasePage: React.FC = () => {
                           <IonButton
                             size="small"
                             fill="clear"
+                            aria-label={t('billing.decreaseQuantity', {
+                              product: item.product_name,
+                            })}
                             onClick={() => updateQuantity(item.variant_id, item.quantity - 1)}
                           >
                             <IonIcon icon={remove} />
@@ -826,6 +829,9 @@ const CreatePurchasePage: React.FC = () => {
                           <IonButton
                             size="small"
                             fill="clear"
+                            aria-label={t('billing.increaseQuantity', {
+                              product: item.product_name,
+                            })}
                             onClick={() => updateQuantity(item.variant_id, item.quantity + 1)}
                           >
                             <IonIcon icon={add} />
@@ -880,6 +886,7 @@ const CreatePurchasePage: React.FC = () => {
                     <IonButton
                       fill="clear"
                       slot="end"
+                      aria-label={`${t('billing.removeFromCart')} ${item.product_name}`}
                       onClick={() => removeFromCart(item.variant_id)}
                     >
                       <IonIcon icon={trash} color="danger" />
