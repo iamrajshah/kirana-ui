@@ -7,6 +7,10 @@ final class KiranaFlowUITests: XCTestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
+        addUIInterruptionMonitor(withDescription: "Dismiss notification banners") { element in
+            if element.identifier == "NotificationShortLookView" { element.swipeUp(); return true }
+            return false
+        }
     }
 
     override func tearDownWithError() throws {
@@ -71,7 +75,14 @@ final class KiranaFlowUITests: XCTestCase {
         capture("iphone-secure-relaunch")
     }
 
+    private func dismissNotificationBanner() {
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let banner = springboard.descendants(matching: .any).matching(NSPredicate(format: "identifier == %@", "NotificationShortLookView")).firstMatch
+        if banner.exists { banner.swipeUp() }
+    }
+
     private func tapVisible(_ label: String) {
+        app.activate(); dismissNotificationBanner()
         let controls = app.buttons.matching(NSPredicate(format: "label ==[c] %@", label))
         let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in controls.allElementsBoundByIndex.contains { $0.exists && $0.isEnabled } }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 25), .completed, "Button not ready: \(label)")
@@ -84,6 +95,7 @@ final class KiranaFlowUITests: XCTestCase {
     }
 
     private func enterSearch(_ text: String, in field: XCUIElement) {
+        app.activate(); dismissNotificationBanner()
         field.tap()
         if !app.keyboards.firstMatch.waitForExistence(timeout: 3) {
             field.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.5)).tap()
@@ -214,41 +226,21 @@ final class KiranaFlowUITests: XCTestCase {
     }
 
     func test10OwnerRouteAudit() throws {
-        guard let shop = ProcessInfo.processInfo.environment["KIRANA_QA_SHOP"] else {
-            throw XCTSkip("Requires disposable QA shop")
-        }
-        app.launch()
-        let dashboardReady = app.staticTexts["Your shop at a glance"].firstMatch
-        XCTAssertTrue(dashboardReady.waitForExistence(timeout: 40), "Dashboard must finish loading before route audit")
-        tapVisible("menu")
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", shop)).firstMatch.waitForExistence(timeout: 10), "Wrong shop: audit stopped")
-        tapVisible("Dashboard")
-        continueAfterFailure = true
+        try requireQAShop()
         let routes = ["Customers", "Invoices", "Online orders", "Payments", "Products", "Inventory", "Categories", "Suppliers", "Purchases", "Reports", "Users", "Import/Export", "Plan & account", "Cash shift", "Getting started", "About"]
         for (index, route) in routes.enumerated() {
             XCTContext.runActivity(named: "NAV-\(index + 1) \(route)") { _ in
-                tapVisible("menu")
-                let entry = app.buttons.matching(NSPredicate(format: "label ==[c] %@", route)).firstMatch
-                guard entry.waitForExistence(timeout: 8) else {
-                    print("KIRANA_ROUTE_UNAVAILABLE: \(route)")
-                    capture("nav-\(index + 1)-unavailable")
-                    tapVisible("Dashboard")
-                    return
-                }
-                entry.tap()
+                businessRoute(route)
                 let header = app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", route)).firstMatch
-                XCTAssertTrue(header.waitForExistence(timeout: 15), "Expected route header missing: \(route)")
+                let visible = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in header.exists && header.isHittable }, object: nil)
+                XCTAssertEqual(XCTWaiter.wait(for: [visible], timeout: 20), .completed, "Route header not visible: \(route)")
                 capture("nav-\(index + 1)")
                 print("KIRANA_ROUTE_AX_BEGIN: \(route)\n\(app.debugDescription)\nKIRANA_ROUTE_AX_END")
-                XCTAssertFalse(app.staticTexts["This section could not be loaded"].exists, "Route boundary failure: \(route)")
+                XCTAssertFalse(app.staticTexts["This section could not be loaded"].exists)
                 tapVisible("Dashboard")
-                let returned = app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 15)
-                capture("nav-\(index + 1)-returned")
-                if !returned {
-                    print("KIRANA_ROUTE_RECOVERY_REQUIRED: \(route)")
-                    app.terminate(); app.launch()
-                    XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 35))
-                }
+                let dashboard = app.staticTexts["Your shop at a glance"].firstMatch
+                let returned = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in dashboard.exists && dashboard.isHittable }, object: nil)
+                XCTAssertEqual(XCTWaiter.wait(for: [returned], timeout: 20), .completed)
             }
         }
     }
@@ -265,7 +257,7 @@ final class KiranaFlowUITests: XCTestCase {
             language.tap(); capture("profile-language-options")
             print("KIRANA_LANGUAGE_AX_BEGIN\n\(app.debugDescription)\nKIRANA_LANGUAGE_AX_END")
             tapVisible("Cancel")
-        } else { print("KIRANA_CONTROL_UNAVAILABLE: Select Language") }
+        } else { XCTFail("Select Language control is unavailable") }
         for (selectLabel, choice, expectedTitle) in [
             ("Select Language", "हिंदी", "मेरी प्रोफ़ाइल"),
             ("भाषा चुनें", "मराठी", "माझे प्रोफाइल"),
@@ -282,7 +274,7 @@ final class KiranaFlowUITests: XCTestCase {
         if theme.exists {
             theme.tap(); Thread.sleep(forTimeInterval: 1); capture("profile-dark-mode")
             theme.tap(); Thread.sleep(forTimeInterval: 1); capture("profile-restored-light-mode")
-        } else { print("KIRANA_CONTROL_UNAVAILABLE: Theme switch") }
+        } else { XCTFail("Theme switch is unavailable") }
         tapVisible("Dashboard")
     }
 
@@ -309,6 +301,7 @@ final class KiranaFlowUITests: XCTestCase {
         capture(screenshot)
         // iOS presents a popover on this device, without a Close/Cancel button.
         // Tap its dimmed background, never a recipient or action that sends data.
+        dismissNotificationBanner()
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15)).tap()
         let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in !copy.exists }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 15), .completed)
@@ -692,6 +685,7 @@ final class KiranaFlowUITests: XCTestCase {
     }
 
     private func selectWebOption(_ label: String, value: String) {
+        dismissNotificationBanner()
         let popup = app.popUpButtons[label].firstMatch
         let control = popup.exists ? popup : app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
         XCTAssertTrue(control.waitForExistence(timeout: 15)); control.tap()
