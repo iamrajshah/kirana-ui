@@ -944,26 +944,28 @@ export const BillingPage: React.FC = () => {
     setPendingSplitTenders(undefined);
   };
 
-  const finishSaleAndStartNext = () => {
+  const finishSaleAndStartNext = (navigate = true) => {
     clearPendingBillingCheckout();
     clearBillingCompletion();
     setCompletionInvoiceId(null);
     setShowPaymentModal(false);
     receiptOutput.reset();
     resetForm();
-    history.replace(ROUTES.BILLING);
+    if (navigate) history.replace(ROUTES.BILLING);
   };
 
   const recoveredCheckout = recoveredCheckoutData?.data;
+  const recoveredCheckoutSettled = Boolean(
+    pendingInvoiceId &&
+    recoveredCheckout &&
+    String(recoveredCheckout.id) === pendingInvoiceId &&
+    (recoveredCheckout.status === 'CANCELLED' ||
+      (recoveredCheckout.status === 'PAID' && Number(recoveredCheckout.balance_amount) === 0))
+  );
   useEffect(() => {
-    if (
-      pendingInvoiceId &&
-      recoveredCheckout &&
-      String(recoveredCheckout.id) === pendingInvoiceId &&
-      (recoveredCheckout.status === 'CANCELLED' ||
-        (recoveredCheckout.status === 'PAID' && Number(recoveredCheckout.balance_amount) === 0))
-    ) {
-      finishSaleAndStartNext();
+    if (recoveredCheckoutSettled) {
+      // Do not replace the active route during its initial Ionic transition.
+      finishSaleAndStartNext(Boolean(editInvoiceId) || location.pathname !== ROUTES.BILLING);
     }
   });
 
@@ -1903,7 +1905,7 @@ export const BillingPage: React.FC = () => {
 
         {pendingInvoiceId && (
           <PaymentModal
-            isOpen={showPaymentModal}
+            isOpen={showPaymentModal && !reconcilingCheckout && !recoveredCheckoutSettled}
             onClose={cancelPendingCheckout}
             onPayment={handleModalPayment}
             onSplitPayment={handleModalSplitPayment}

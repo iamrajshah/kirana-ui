@@ -49,6 +49,7 @@ const mocks = vi.hoisted(() => ({
   currentInvoice: undefined as Record<string, unknown> | null | undefined,
   invoiceError: false,
   recoveredCheckout: null as Record<string, unknown> | null,
+  recoveryModalOpened: false,
   refetchInvoice: vi.fn(),
 }));
 
@@ -168,8 +169,9 @@ vi.mock('@components/PaymentModal', () => ({
     }>;
     invoiceAmount: number;
     previousBalance?: number;
-  }) =>
-    isOpen ? (
+  }) => {
+    if (isOpen) mocks.recoveryModalOpened = true;
+    return isOpen ? (
       <div
         aria-label="payment-recovery"
         data-invoice-amount={invoiceAmount}
@@ -183,7 +185,8 @@ vi.mock('@components/PaymentModal', () => ({
         )}
         <button onClick={() => void onClose()}>cancel checkout</button>
       </div>
-    ) : null,
+    ) : null;
+  },
 }));
 
 vi.mock('@core/api/invoiceApi', () => ({
@@ -1275,6 +1278,7 @@ describe('BillingPage', () => {
       'discards a recovered checkout confirmed %s without another financial write',
       async (status) => {
         mocks.search = '';
+        mocks.recoveryModalOpened = false;
         mocks.recoveredCheckout = { id: 'recovered-42', status, balance_amount: 0 };
         localStorage.setItem(
           'kirana_billing_pending_checkout',
@@ -1296,6 +1300,8 @@ describe('BillingPage', () => {
         expect(mocks.createPayment).not.toHaveBeenCalled();
         expect(mocks.cancelInvoice).not.toHaveBeenCalled();
         expect(mocks.createInvoice).not.toHaveBeenCalled();
+        expect(mocks.recoveryModalOpened).toBe(false);
+        expect(mocks.historyReplace).not.toHaveBeenCalled();
         mocks.recoveredCheckout = null;
       }
     );
