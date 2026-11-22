@@ -110,6 +110,8 @@ const GstReportsPage: React.FC = () => {
         t('gstReports.exportTitle', { report: t(`gstReports.tabs.${view}`) })
       );
     } catch (cause) {
+      if (cause && typeof cause === 'object' && 'name' in cause && cause.name === 'AbortError')
+        return;
       setDownloadError(apiErrorMessage(cause, t('gstReports.downloadFailed'), true));
     }
   };

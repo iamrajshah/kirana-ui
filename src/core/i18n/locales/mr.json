@@ -18,6 +18,7 @@
     "noDevices": "सक्रिय डिव्हाइस नाही",
     "lastSeen": "शेवटचा वापर {{date}}",
     "platform": {
+      "ios": "iOS",
       "web": "वेब",
       "android": "अँड्रॉइड"
     },
@@ -798,6 +799,7 @@
     "createProductTitle": "उत्पादन तयार करा",
     "createProductButton": "उत्पादन तयार करा",
     "basePriceCostPrice": "मूळ किंमत (खर्च किंमत)",
+    "barcodePrintFailed": "लेबले प्रिंट करता आली नाहीत. कृपया पुन्हा प्रयत्न करा.",
     "barcodeLabelTitle": "उत्पादन बारकोड लेबल",
     "manageBarcodeLabel": "बारकोड लेबल तयार करा किंवा प्रिंट करा",
     "latestPurchaseCost": "नवीनतम खरेदी खर्च",

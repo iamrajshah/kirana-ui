@@ -1,75 +1,9 @@
 import React from 'react';
-import {
-  Document,
-  Font,
-  Image,
-  Page,
-  StyleSheet,
-  Text as ReactPdfText,
-  View,
-  type TextProps,
-} from '@react-pdf/renderer';
-import latinRegular from '@fontsource/noto-sans/files/noto-sans-latin-400-normal.woff?url';
-import latinBold from '@fontsource/noto-sans/files/noto-sans-latin-700-normal.woff?url';
-import devanagariRegular from '@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-400-normal.woff?url';
-import devanagariBold from '@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-700-normal.woff?url';
-import gujaratiRegular from '@fontsource/noto-sans-gujarati/files/noto-sans-gujarati-gujarati-400-normal.woff?url';
-import gujaratiBold from '@fontsource/noto-sans-gujarati/files/noto-sans-gujarati-gujarati-700-normal.woff?url';
+import { Document, Image, Page, StyleSheet, View } from '@react-pdf/renderer';
 import type { ReceiptPaperWidth, ReceiptViewModel } from './types';
 import { defaultReceiptLabels } from './receiptLabels';
-
-let fontsRegistered = false;
-
-const fontSource = (source: string) => {
-  if (import.meta.env.MODE !== 'test') return source;
-  if (source.startsWith('/@fs/')) return source.slice('/@fs'.length);
-  if (source.startsWith('/node_modules/')) return `${process.cwd()}${source}`;
-  return source;
-};
-
-const registerFonts = () => {
-  if (fontsRegistered) return;
-  Font.register({
-    family: 'Receipt Latin',
-    fonts: [{ src: fontSource(latinRegular) }, { src: fontSource(latinBold), fontWeight: 700 }],
-  });
-  Font.register({
-    family: 'Receipt Devanagari',
-    fonts: [
-      { src: fontSource(devanagariRegular) },
-      { src: fontSource(devanagariBold), fontWeight: 700 },
-    ],
-  });
-  Font.register({
-    family: 'Receipt Gujarati',
-    fonts: [
-      { src: fontSource(gujaratiRegular) },
-      { src: fontSource(gujaratiBold), fontWeight: 700 },
-    ],
-  });
-  fontsRegistered = true;
-};
-
-const fontRuns = (value: string) => value.match(/[ऀ-ॿ]+|[઀-૿]+|[^ऀ-ॿ઀-૿]+/gu) ?? [];
-
-const familyForRun = (value: string) => {
-  if (/^[઀-૿]/u.test(value)) return 'Receipt Gujarati';
-  if (/^[ऀ-ॿ]/u.test(value)) return 'Receipt Devanagari';
-  return 'Receipt Latin';
-};
-
-const Text: React.FC<React.PropsWithChildren<TextProps>> = ({ children, ...props }) => {
-  const value = React.Children.toArray(children).join('');
-  return (
-    <ReactPdfText {...props}>
-      {fontRuns(value).map((run, index) => (
-        <ReactPdfText style={{ fontFamily: familyForRun(run) }} key={`${index}-${run}`}>
-          {run}
-        </ReactPdfText>
-      ))}
-    </ReactPdfText>
-  );
-};
+import { registerReceiptFonts } from './pdfFonts';
+import { PdfText as Text } from './PdfText';
 
 const styles = StyleSheet.create({
   page: { padding: 34, color: '#17211d', fontSize: 9, lineHeight: 1.4, backgroundColor: '#ffffff' },
@@ -230,7 +164,7 @@ export const ReceiptPdfDocument: React.FC<{
   receipt: ReceiptViewModel;
   paperWidth?: ReceiptPaperWidth;
 }> = ({ receipt, paperWidth }) => {
-  registerFonts();
+  registerReceiptFonts();
   const gst = receipt.mode === 'GST_TAX_INVOICE';
   const thermal = paperWidth !== undefined;
   const pageSize =

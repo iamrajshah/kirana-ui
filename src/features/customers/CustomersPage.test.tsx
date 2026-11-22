@@ -73,13 +73,20 @@ vi.mock('@ionic/react', () => {
     IonItem: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
       <div onClick={onClick}>{children}</div>
     ),
-    IonButton: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
-      <button onClick={onClick}>{children}</button>
+    IonButton: ({
+      children,
+      onClick,
+      ...props
+    }: PropsWithChildren<{ onClick?: () => void; 'aria-label'?: string }>) => (
+      <button onClick={onClick} aria-label={props['aria-label']}>
+        {children}
+      </button>
     ),
     IonIcon: Container,
     IonFab: Container,
     IonFabButton: Container,
-    IonModal: Container,
+    IonModal: ({ children, isOpen }: PropsWithChildren<{ isOpen: boolean }>) =>
+      isOpen ? <div>{children}</div> : null,
     IonButtons: Container,
     IonToast: Container,
     IonHeader: Container,
@@ -230,4 +237,11 @@ it('distinguishes a failed fetch from an empty customer search and offers retry'
   expect(screen.getByText('customers.loadError')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'common.retry' }));
   expect(query.refetch).toHaveBeenCalledTimes(1);
+});
+
+it('provides a named close control that dismisses the customer form', () => {
+  render(<CustomersPage />);
+  fireEvent.click(screen.getAllByRole('button', { name: 'customers.addCustomer' })[0]);
+  fireEvent.click(screen.getByRole('button', { name: 'common.close' }));
+  expect(screen.queryByRole('button', { name: 'common.close' })).toBeNull();
 });

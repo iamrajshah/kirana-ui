@@ -70,10 +70,9 @@ vi.mock('@core/auth/authSlice', () => ({
 }));
 vi.mock('@ionic/react', () => {
   const Box = ({ children }: PropsWithChildren) => <div>{children}</div>;
-  const Button = ({
-    children,
-    onClick,
-  }: PropsWithChildren<{ onClick?: () => void }>) => <button onClick={onClick}>{children}</button>;
+  const Button = ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
+    <button onClick={onClick}>{children}</button>
+  );
   return {
     IonButton: Button,
     IonCard: Box,
@@ -119,4 +118,17 @@ describe('DeviceSecurityCard', () => {
     await waitFor(() => expect(mocks.revoke).toHaveBeenCalledWith('device-1'));
     expect(mocks.dispatch).toHaveBeenCalledWith({ type: 'auth/logout' });
   });
+});
+
+it('provides a device-platform label for every supported platform in all four languages', async () => {
+  const locales = await Promise.all([
+    import('@core/i18n/locales/en.json'),
+    import('@core/i18n/locales/hi.json'),
+    import('@core/i18n/locales/mr.json'),
+    import('@core/i18n/locales/gu.json'),
+  ]);
+  for (const locale of locales)
+    for (const platform of ['web', 'android', 'ios'] as const) {
+      expect(locale.default.security.platform[platform]).toMatch(/\S/);
+    }
 });

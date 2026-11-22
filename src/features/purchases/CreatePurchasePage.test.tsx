@@ -158,11 +158,18 @@ vi.mock('@ionic/react', () => {
     IonText: Container,
     IonSelect: Container,
     IonSelectOption: Container,
-    IonModal: Container,
+    IonModal: ({ children, isOpen }: PropsWithChildren<{ isOpen: boolean }>) =>
+      isOpen ? <div>{children}</div> : null,
     IonBadge: Container,
     IonIcon: () => null,
-    IonButton: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
-      <button onClick={onClick}>{children}</button>
+    IonButton: ({
+      children,
+      onClick,
+      ...props
+    }: PropsWithChildren<{ onClick?: () => void; 'aria-label'?: string }>) => (
+      <button onClick={onClick} aria-label={props['aria-label']}>
+        {children}
+      </button>
     ),
     IonItem: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
       <div role="button" tabIndex={0} onClick={onClick}>
@@ -331,3 +338,14 @@ vi.mock('@core/api/foodLicenceApi', () => ({
   useCreateFoodLicenceMutation: () => [vi.fn(), { isLoading: false }],
   useUpdateFoodLicenceMutation: () => [vi.fn(), { isLoading: false }],
 }));
+
+it('names each purchase quantity control and updates or removes the intended line', async () => {
+  render(<CreatePurchasePage />);
+  await selectSalt();
+  fireEvent.click(screen.getByRole('button', { name: 'billing.increaseQuantity' }));
+  expect(screen.getByText(/purchases.lineTotal/).textContent).toContain('₹80');
+  fireEvent.click(screen.getByRole('button', { name: 'billing.decreaseQuantity' }));
+  expect(screen.getByText(/purchases.lineTotal/).textContent).toContain('₹40');
+  fireEvent.click(screen.getByRole('button', { name: 'billing.removeFromCart Salt' }));
+  expect(screen.queryByRole('spinbutton', { name: /Salt purchases.unitPrice/ })).toBeNull();
+});
