@@ -82,10 +82,11 @@ vi.mock('@ionic/react', () => {
         'IonText',
         'IonSelect',
         'IonSelectOption',
-        'IonModal',
         'IonBadge',
       ].map((name) => [name, Container])
     ),
+    IonModal: ({ children, isOpen }: PropsWithChildren<{ isOpen: boolean }>) =>
+      isOpen ? <div>{children}</div> : null,
     IonIcon: () => null,
     IonButton: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
       <button onClick={onClick}>{children}</button>

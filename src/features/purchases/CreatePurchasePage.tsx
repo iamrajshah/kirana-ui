@@ -997,56 +997,54 @@ const CreatePurchasePage: React.FC = () => {
         {cart.length === 0 && (
           <EmptyState message={t('purchases.addProductsMessage')} icon="cart" />
         )}
-
-        {/* Supplier Selection Modal */}
-        {showSupplierModal && (
-          <IonModal isOpen={true} onDidDismiss={() => setShowSupplierModal(false)}>
-            <IonHeader>
-              <IonToolbar>
-                <IonTitle>{t('purchases.selectSupplierTitle')}</IonTitle>
-                <IonButtons slot="end">
-                  <IonButton onClick={() => setShowSupplierModal(false)}>
-                    {t('purchases.close')}
-                  </IonButton>
-                </IonButtons>
-              </IonToolbar>
-            </IonHeader>
-            <IonContent>
-              <div className="ion-padding-horizontal ion-padding-top">
-                <SearchBar
-                  value={supplierSearch}
-                  onChange={setSupplierSearch}
-                  placeholder={t('suppliers.searchSuppliers')}
-                />
-              </div>
-              <IonList>
-                {filteredSuppliers.map((supplier) => (
-                  <IonItem
-                    key={supplier.id}
-                    button
-                    onClick={() => {
-                      setSelectedSupplierId(supplier.id);
-                      setFirmWasOverridden(false);
-                      const defaultFirmId = resolvePurchaseFirmId(supplier, firms);
-                      setSelectedFirmId(defaultFirmId);
-                      setShowSupplierModal(false);
-                    }}
-                    color={selectedSupplierId === supplier.id ? 'light' : undefined}
-                  >
-                    <IonLabel>
-                      <h2>{supplier.name}</h2>
-                      <p>{supplier.phone}</p>
-                    </IonLabel>
-                    {selectedSupplierId === supplier.id && (
-                      <IonIcon icon={checkmarkCircle} slot="end" color="success" />
-                    )}
-                  </IonItem>
-                ))}
-              </IonList>
-            </IonContent>
-          </IonModal>
-        )}
       </IonContent>
+
+      {/* Keep the overlay mounted until Ionic completes its dismissal. */}
+      <IonModal isOpen={showSupplierModal} onDidDismiss={() => setShowSupplierModal(false)}>
+        <IonHeader>
+          <IonToolbar>
+            <IonTitle>{t('purchases.selectSupplierTitle')}</IonTitle>
+            <IonButtons slot="end">
+              <IonButton onClick={() => setShowSupplierModal(false)}>
+                {t('purchases.close')}
+              </IonButton>
+            </IonButtons>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent>
+          <div className="ion-padding-horizontal ion-padding-top">
+            <SearchBar
+              value={supplierSearch}
+              onChange={setSupplierSearch}
+              placeholder={t('suppliers.searchSuppliers')}
+            />
+          </div>
+          <IonList>
+            {filteredSuppliers.map((supplier) => (
+              <IonItem
+                key={supplier.id}
+                button
+                onClick={() => {
+                  setSelectedSupplierId(supplier.id);
+                  setFirmWasOverridden(false);
+                  const defaultFirmId = resolvePurchaseFirmId(supplier, firms);
+                  setSelectedFirmId(defaultFirmId);
+                  setShowSupplierModal(false);
+                }}
+                color={selectedSupplierId === supplier.id ? 'light' : undefined}
+              >
+                <IonLabel>
+                  <h2>{supplier.name}</h2>
+                  <p>{supplier.phone}</p>
+                </IonLabel>
+                {selectedSupplierId === supplier.id && (
+                  <IonIcon icon={checkmarkCircle} slot="end" color="success" />
+                )}
+              </IonItem>
+            ))}
+          </IonList>
+        </IonContent>
+      </IonModal>
     </IonPage>
   );
 };
