@@ -386,118 +386,121 @@ export const CustomersPage: React.FC = () => {
             </IonFabButton>
           </IonFab>
         )}
-
-        {/* Add Customer Modal */}
-        {showModal && (
-          <IonModal isOpen={showModal} onDidDismiss={() => setShowModal(false)}>
-            <IonHeader>
-              <IonToolbar>
-                <IonTitle>
-                  {editingCustomer ? t('customers.editCustomer') : t('customers.addCustomer')}
-                </IonTitle>
-                <IonButtons slot="end">
-                  <IonButton
-                    aria-label={t('common.close')}
-                    onClick={() => {
-                      setShowModal(false);
-                      resetForm();
-                    }}
-                  >
-                    <IonIcon icon={close} />
-                  </IonButton>
-                </IonButtons>
-              </IonToolbar>
-            </IonHeader>
-            <IonContent className="ion-padding">
-              <Input
-                label={t('customers.customerName')}
-                value={name}
-                onChange={setName}
-                error={formErrors.name}
-                maxLength={150}
-                required
-              />
-              <Input
-                label={t('customers.customerPhone')}
-                value={phone}
-                onChange={setPhone}
-                type="tel"
-                error={formErrors.phone}
-                maxLength={10}
-                inputMode="numeric"
-                required
-              />
-              <Input
-                label={t('customers.customerEmail')}
-                value={email}
-                onChange={setEmail}
-                type="email"
-                error={formErrors.email}
-                maxLength={254}
-              />
-              {!editingCustomer && (
-                <Input
-                  label={t('customers.creditBalance')}
-                  value={creditBalance}
-                  onChange={setCreditBalance}
-                  type="number"
-                  error={formErrors.openingBalance}
-                  min={0}
-                  inputMode="decimal"
-                />
-              )}
-              <details
-                className="customer-tax-details"
-                open={showTaxDetails}
-                onToggle={(event) => setShowTaxDetails(event.currentTarget.open)}
-              >
-                <summary>{t('taxFields.customerDetails')}</summary>
-                <p>{t('taxFields.customerDetailsHint')}</p>
-                <Input
-                  label={t('taxFields.gstin')}
-                  value={gstin}
-                  onChange={(value) => setGstin(value.toUpperCase())}
-                  maxLength={15}
-                />
-                <Input
-                  label={t('taxFields.addressLine1')}
-                  value={addressLine1}
-                  onChange={setAddressLine1}
-                />
-                <Input
-                  label={t('taxFields.addressLine2')}
-                  value={addressLine2}
-                  onChange={setAddressLine2}
-                />
-                <Input label={t('taxFields.city')} value={city} onChange={setCity} />
-                <Input label={t('taxFields.state')} value={stateName} onChange={setStateName} />
-                <Input
-                  label={t('taxFields.stateCode')}
-                  value={stateCode}
-                  onChange={setStateCode}
-                  maxLength={2}
-                  inputMode="numeric"
-                />
-                <Input
-                  label={t('taxFields.postalCode')}
-                  value={postalCode}
-                  onChange={setPostalCode}
-                  maxLength={6}
-                  inputMode="numeric"
-                />
-              </details>
-              <Button
-                onClick={handleCreateCustomer}
-                loading={creating || updating}
-                fullWidth
-                size="large"
-              >
-                {t('common.save')}
-              </Button>
-            </IonContent>
-          </IonModal>
-        )}
       </IonContent>
+      {/* Keep the form mounted through Ionic dismissal and focus restoration. */}
+      <IonModal
+        isOpen={showModal}
+        onDidDismiss={() => {
+          setShowModal(false);
+          resetForm();
+        }}
+      >
+        <IonHeader>
+          <IonToolbar>
+            <IonTitle>
+              {editingCustomer ? t('customers.editCustomer') : t('customers.addCustomer')}
+            </IonTitle>
+            <IonButtons slot="end">
+              <IonButton
+                aria-label={t('common.close')}
+                onClick={() => {
+                  setShowModal(false);
+                  resetForm();
+                }}
+              >
+                <IonIcon icon={close} />
+              </IonButton>
+            </IonButtons>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent className="ion-padding">
+          <Input
+            label={t('customers.customerName')}
+            value={name}
+            onChange={setName}
+            error={formErrors.name}
+            maxLength={150}
+            required
+          />
+          <Input
+            label={t('customers.customerPhone')}
+            value={phone}
+            onChange={setPhone}
+            type="tel"
+            error={formErrors.phone}
+            maxLength={10}
+            inputMode="numeric"
+            required
+          />
+          <Input
+            label={t('customers.customerEmail')}
+            value={email}
+            onChange={setEmail}
+            type="email"
+            error={formErrors.email}
+            maxLength={254}
+          />
+          {!editingCustomer && (
+            <Input
+              label={t('customers.creditBalance')}
+              value={creditBalance}
+              onChange={setCreditBalance}
+              type="number"
+              error={formErrors.openingBalance}
+              min={0}
+              inputMode="decimal"
+            />
+          )}
+          <details
+            className="customer-tax-details"
+            open={showTaxDetails}
+            onToggle={(event) => setShowTaxDetails(event.currentTarget.open)}
+          >
+            <summary>{t('taxFields.customerDetails')}</summary>
+            <p>{t('taxFields.customerDetailsHint')}</p>
+            <Input
+              label={t('taxFields.gstin')}
+              value={gstin}
+              onChange={(value) => setGstin(value.toUpperCase())}
+              maxLength={15}
+            />
+            <Input
+              label={t('taxFields.addressLine1')}
+              value={addressLine1}
+              onChange={setAddressLine1}
+            />
+            <Input
+              label={t('taxFields.addressLine2')}
+              value={addressLine2}
+              onChange={setAddressLine2}
+            />
+            <Input label={t('taxFields.city')} value={city} onChange={setCity} />
+            <Input label={t('taxFields.state')} value={stateName} onChange={setStateName} />
+            <Input
+              label={t('taxFields.stateCode')}
+              value={stateCode}
+              onChange={setStateCode}
+              maxLength={2}
+              inputMode="numeric"
+            />
+            <Input
+              label={t('taxFields.postalCode')}
+              value={postalCode}
+              onChange={setPostalCode}
+              maxLength={6}
+              inputMode="numeric"
+            />
+          </details>
+          <Button
+            onClick={handleCreateCustomer}
+            loading={creating || updating}
+            fullWidth
+            size="large"
+          >
+            {t('common.save')}
+          </Button>
+        </IonContent>
+      </IonModal>
     </IonPage>
   );
 };

@@ -257,7 +257,13 @@ const SuppliersPage: React.FC = () => {
       notificationService.warning(t('suppliers.selectPaymentFirm'));
       return;
     }
-    if (!paymentFitsFirmBalance(paymentSupplier.balances_by_firm, paymentFirmId, parseFloat(paymentAmount))) {
+    if (
+      !paymentFitsFirmBalance(
+        paymentSupplier.balances_by_firm,
+        paymentFirmId,
+        parseFloat(paymentAmount)
+      )
+    ) {
       notificationService.warning(t('suppliers.paymentExceedsFirmBalance'));
       return;
     }
@@ -278,7 +284,6 @@ const SuppliersPage: React.FC = () => {
       succeeded = true;
 
       notificationService.success(t('suppliers.paymentRecordedSuccess'));
-      resetPaymentForm();
       setShowPaymentModal(false);
       refetch();
     } catch (error) {
@@ -352,15 +357,23 @@ const SuppliersPage: React.FC = () => {
                           <h2>{supplier.name}</h2>
                           <p>{supplier.phone}</p>
                           {supplier.email && <p>{supplier.email}</p>}
-                          {supplier.gstin && <p>{t('suppliers.gstin')}: {supplier.gstin}</p>}
+                          {supplier.gstin && (
+                            <p>
+                              {t('suppliers.gstin')}: {supplier.gstin}
+                            </p>
+                          )}
                           {(supplier.state || supplier.state_code) && (
                             <p>
-                              {t('suppliers.supplierState')}: {supplier.state || t('common.notAvailable')}
+                              {t('suppliers.supplierState')}:{' '}
+                              {supplier.state || t('common.notAvailable')}
                               {supplier.state_code ? ` (${supplier.state_code})` : ''}
                             </p>
                           )}
                           {supplier.default_purchase_firm && (
-                            <p>{t('suppliers.defaultPurchaseFirm')}: {supplier.default_purchase_firm.display_name}</p>
+                            <p>
+                              {t('suppliers.defaultPurchaseFirm')}:{' '}
+                              {supplier.default_purchase_firm.display_name}
+                            </p>
                           )}
                           {supplier.balance !== 0 && (
                             <p className={supplier.balance > 0 ? 'stock-warning' : undefined}>
@@ -372,7 +385,7 @@ const SuppliersPage: React.FC = () => {
                           {(supplier.balances_by_firm || []).map((item) => (
                             <p key={item.firm_id}>
                               {item.firm.display_name}
-                              {!item.firm.is_active ? ` (${t('firms.inactive')})` : ''}: {' '}
+                              {!item.firm.is_active ? ` (${t('firms.inactive')})` : ''}:{' '}
                               {item.balance > 0
                                 ? `${t('suppliers.amountOwed')} ${formatCurrency(item.balance)}`
                                 : `${t('suppliers.advance')} ${formatCurrency(Math.abs(item.balance))}`}
@@ -443,140 +456,149 @@ const SuppliersPage: React.FC = () => {
             </IonFabButton>
           </IonFab>
         )}
-
-        {/* Add/Edit Supplier Modal */}
-        {showModal && (
-          <IonModal isOpen={showModal} onDidDismiss={() => setShowModal(false)}>
-            <IonHeader>
-              <IonToolbar>
-                <IonTitle>
-                  {editingSupplier ? t('suppliers.editSupplier') : t('suppliers.addSupplier')}
-                </IonTitle>
-                <IonButtons slot="end">
-                  <IonButton
-                    aria-label={t('common.close')}
-                    onClick={() => {
-                      setShowModal(false);
-                      resetForm();
-                    }}
-                  >
-                    <IonIcon icon={close} />
-                  </IonButton>
-                </IonButtons>
-              </IonToolbar>
-            </IonHeader>
-            <IonContent className="ion-padding">
-              <Input
-                label={t('suppliers.supplierName')}
-                value={name}
-                onChange={setName}
-                error={formErrors.name}
-                maxLength={150}
-                required
-              />
-              <Input
-                label={t('suppliers.supplierPhone')}
-                value={phone}
-                onChange={setPhone}
-                type="tel"
-                error={formErrors.phone}
-                maxLength={10}
-                inputMode="numeric"
-                required
-              />
-              <Input
-                label={t('suppliers.supplierEmail')}
-                value={email}
-                onChange={setEmail}
-                type="email"
-                error={formErrors.email}
-                maxLength={254}
-              />
-              <Input
-                label={t('suppliers.supplierAddress')}
-                value={address}
-                onChange={setAddress}
-                maxLength={500}
-              />
-              <Input
-                label={t('suppliers.gstin')}
-                value={gstin}
-                onChange={(value) => {
-                  const normalized = value.toUpperCase();
-                  setGstin(normalized);
-                  if (!stateCode && /^\d{2}/.test(normalized)) setStateCode(normalized.slice(0, 2));
-                  setTaxIdentityError('');
+      </IonContent>
+      {/* Keep overlays mounted until Ionic restores the page focus. */}
+      <IonModal
+        isOpen={showModal}
+        onDidDismiss={() => {
+          setShowModal(false);
+          resetForm();
+        }}
+      >
+        <IonHeader>
+          <IonToolbar>
+            <IonTitle>
+              {editingSupplier ? t('suppliers.editSupplier') : t('suppliers.addSupplier')}
+            </IonTitle>
+            <IonButtons slot="end">
+              <IonButton
+                aria-label={t('common.close')}
+                onClick={() => {
+                  setShowModal(false);
+                  resetForm();
                 }}
-                maxLength={15}
-                placeholder={t('suppliers.gstinPlaceholder')}
-              />
-              <Input
-                label={t('suppliers.supplierState')}
-                value={stateName}
-                onChange={setStateName}
-                maxLength={100}
-                placeholder={t('suppliers.statePlaceholder')}
-              />
-              <Input
-                label={t('suppliers.stateCode')}
-                value={stateCode}
-                onChange={(value) => {
-                  setStateCode(value.replace(/\D/g, '').slice(0, 2));
-                  setTaxIdentityError('');
-                }}
-                maxLength={2}
-                inputMode="numeric"
-                placeholder={t('suppliers.stateCodePlaceholder')}
-              />
-              {taxIdentityError && (
-                <p className="stock-warning" role="alert">{taxIdentityError}</p>
-              )}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
-                  {t('suppliers.defaultPurchaseFirm')}
-                </label>
-                <IonSelect
-                  aria-label={t('suppliers.defaultPurchaseFirm')}
-                  value={defaultFirmId}
-                  placeholder={t('suppliers.noDefaultFirm')}
-                  onIonChange={(event) => setDefaultFirmId(event.detail.value)}
-                  interface="popover"
-                >
-                  <IonSelectOption value="">{t('suppliers.noDefaultFirm')}</IonSelectOption>
-                  {firms.map((firm) => (
-                    <IonSelectOption key={firm.id} value={firm.id}>{firm.display_name}</IonSelectOption>
-                  ))}
-                </IonSelect>
-              </div>
-              <Button
-                onClick={handleCreateSupplier}
-                loading={creating || updating}
-                fullWidth
-                size="large"
               >
-                {t('common.save')}
-              </Button>
-            </IonContent>
-          </IonModal>
-        )}
-
-        {/* Payment Modal */}
-        {showPaymentModal && paymentSupplier && (
-          <IonModal
-            isOpen={true}
-            onDidDismiss={() => {
-              setShowPaymentModal(false);
-              resetPaymentForm();
+                <IonIcon icon={close} />
+              </IonButton>
+            </IonButtons>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent className="ion-padding">
+          <Input
+            label={t('suppliers.supplierName')}
+            value={name}
+            onChange={setName}
+            error={formErrors.name}
+            maxLength={150}
+            required
+          />
+          <Input
+            label={t('suppliers.supplierPhone')}
+            value={phone}
+            onChange={setPhone}
+            type="tel"
+            error={formErrors.phone}
+            maxLength={10}
+            inputMode="numeric"
+            required
+          />
+          <Input
+            label={t('suppliers.supplierEmail')}
+            value={email}
+            onChange={setEmail}
+            type="email"
+            error={formErrors.email}
+            maxLength={254}
+          />
+          <Input
+            label={t('suppliers.supplierAddress')}
+            value={address}
+            onChange={setAddress}
+            maxLength={500}
+          />
+          <Input
+            label={t('suppliers.gstin')}
+            value={gstin}
+            onChange={(value) => {
+              const normalized = value.toUpperCase();
+              setGstin(normalized);
+              if (!stateCode && /^\d{2}/.test(normalized)) setStateCode(normalized.slice(0, 2));
+              setTaxIdentityError('');
             }}
+            maxLength={15}
+            placeholder={t('suppliers.gstinPlaceholder')}
+          />
+          <Input
+            label={t('suppliers.supplierState')}
+            value={stateName}
+            onChange={setStateName}
+            maxLength={100}
+            placeholder={t('suppliers.statePlaceholder')}
+          />
+          <Input
+            label={t('suppliers.stateCode')}
+            value={stateCode}
+            onChange={(value) => {
+              setStateCode(value.replace(/\D/g, '').slice(0, 2));
+              setTaxIdentityError('');
+            }}
+            maxLength={2}
+            inputMode="numeric"
+            placeholder={t('suppliers.stateCodePlaceholder')}
+          />
+          {taxIdentityError && (
+            <p className="stock-warning" role="alert">
+              {taxIdentityError}
+            </p>
+          )}
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
+              {t('suppliers.defaultPurchaseFirm')}
+            </label>
+            <IonSelect
+              aria-label={t('suppliers.defaultPurchaseFirm')}
+              value={defaultFirmId}
+              placeholder={t('suppliers.noDefaultFirm')}
+              onIonChange={(event) => setDefaultFirmId(event.detail.value)}
+              interface="popover"
+            >
+              <IonSelectOption value="">{t('suppliers.noDefaultFirm')}</IonSelectOption>
+              {firms.map((firm) => (
+                <IonSelectOption key={firm.id} value={firm.id}>
+                  {firm.display_name}
+                </IonSelectOption>
+              ))}
+            </IonSelect>
+          </div>
+          <Button
+            onClick={handleCreateSupplier}
+            loading={creating || updating}
+            fullWidth
+            size="large"
           >
+            {t('common.save')}
+          </Button>
+        </IonContent>
+      </IonModal>
+
+      {/* Payment Modal */}
+      <IonModal
+        isOpen={showPaymentModal}
+        onDidDismiss={() => {
+          setShowPaymentModal(false);
+          resetPaymentForm();
+        }}
+      >
+        {paymentSupplier && (
+          <>
             <IonHeader>
               <IonToolbar>
                 <IonTitle>{t('suppliers.makePayment')}</IonTitle>
                 <IonButtons slot="end">
                   <IonButton
+                    aria-label={t('common.close')}
                     onClick={() => {
                       setShowPaymentModal(false);
-                      resetPaymentForm();
                     }}
                   >
                     <IonIcon icon={close} />
@@ -618,7 +640,10 @@ const SuppliersPage: React.FC = () => {
                   aria-label={t('suppliers.paymentFirm')}
                   value={paymentFirmId}
                   placeholder={t('suppliers.selectPaymentFirm')}
-                  onIonChange={(event) => { setPaymentFirmId(event.detail.value); setPaymentAmount(''); }}
+                  onIonChange={(event) => {
+                    setPaymentFirmId(event.detail.value);
+                    setPaymentAmount('');
+                  }}
                   interface="popover"
                 >
                   {payableFirmBalances(paymentSupplier.balances_by_firm).map((item) => (
@@ -697,9 +722,9 @@ const SuppliersPage: React.FC = () => {
                 {t('suppliers.ledger.recordPayment')}
               </Button>
             </IonContent>
-          </IonModal>
+          </>
         )}
-      </IonContent>
+      </IonModal>
     </IonPage>
   );
 };
