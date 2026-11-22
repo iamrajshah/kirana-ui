@@ -1,8 +1,9 @@
 import React, { type PropsWithChildren } from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import GstReportsPage from './GstReportsPage';
 import { currentLocalMonthRange } from './gstReportDates';
+import * as gstExport from './gstReportExport';
 
 const state = vi.hoisted(() => ({
   summary: vi.fn(),
@@ -274,4 +275,17 @@ describe('GST / CA report route', () => {
       )
     );
   });
+});
+
+it('does not show an error when the user cancels the native CSV share sheet', async () => {
+  const share = vi
+    .spyOn(gstExport, 'exportGstCsv')
+    .mockRejectedValueOnce(new DOMException('Share cancelled', 'AbortError'));
+  render(<GstReportsPage />);
+  await screen.findByText('gstReports.notFiled');
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'gstReports.downloadCsv' }));
+  });
+  expect(share).toHaveBeenCalledOnce();
+  expect(screen.queryByText('Share cancelled')).toBeNull();
 });
