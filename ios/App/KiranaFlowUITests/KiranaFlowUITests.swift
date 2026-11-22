@@ -10,7 +10,7 @@ final class KiranaFlowUITests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
-        if testRun?.hasSucceeded == false {
+        if let run = testRun, run.failureCount > 0 {
             capture("business-failure"); print("KIRANA_FAILURE_AX_BEGIN\n\(app.debugDescription)\nKIRANA_FAILURE_AX_END")
         }
     }
