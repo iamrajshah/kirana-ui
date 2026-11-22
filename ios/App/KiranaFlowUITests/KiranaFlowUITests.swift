@@ -9,6 +9,12 @@ final class KiranaFlowUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    override func tearDownWithError() throws {
+        if testRun?.hasSucceeded == false {
+            capture("business-failure"); print("KIRANA_FAILURE_AX_BEGIN\n\(app.debugDescription)\nKIRANA_FAILURE_AX_END")
+        }
+    }
+
     private func capture(_ name: String) {
         let image = XCTAttachment(screenshot: app.screenshot())
         image.name = name
@@ -293,7 +299,7 @@ final class KiranaFlowUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 25))
     }
 
-    private func dismissNativeShareSheet(_ screenshot: String) {
+    private func dismissNativeShareSheet(_ screenshot: String, expectsPrint: Bool = true) {
         let copy = app.cells.matching(NSPredicate(format: "identifier == %@ AND label == %@", "actionGroupCell", "Copy")).firstMatch
         XCTAssertTrue(copy.waitForExistence(timeout: 20), "Native activity sheet did not open")
         capture(screenshot)
@@ -302,7 +308,7 @@ final class KiranaFlowUITests: XCTestCase {
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15)).tap()
         let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in !copy.exists }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 15), .completed)
-        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Print")).firstMatch.isEnabled)
+        if expectsPrint { XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Print")).firstMatch.isEnabled) }
     }
 
     func test13CameraOpenAndCancel() throws {
@@ -492,6 +498,189 @@ final class KiranaFlowUITests: XCTestCase {
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Attach customer")).firstMatch.waitForExistence(timeout: 30))
         tapVisible("Dashboard")
         XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 25))
+    }
+
+    func test20BusinessControlInventory() throws {
+        guard let shop = ProcessInfo.processInfo.environment["KIRANA_QA_SHOP"] else { throw XCTSkip("QA shop required") }
+        app.launch(); tapVisible("menu")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", shop)).firstMatch.waitForExistence(timeout: 15), "Wrong shop: refusing business tests")
+        tapVisible("Dashboard")
+        for (route, action) in [("Customers", "Add Customer"), ("Suppliers", "Add Supplier"), ("Purchases", "Create Purchase"), ("Reports", ""), ("Cash shift", "")] {
+            app.terminate(); app.launch()
+            XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 40))
+            tapVisible("menu"); tapVisible(route)
+            if !action.isEmpty { tapVisible(action) }
+            capture("business-controls-" + route.lowercased().replacingOccurrences(of: " ", with: "-"))
+            print("KIRANA_BUSINESS_AX_BEGIN: \(route)\n\(app.debugDescription)\nKIRANA_BUSINESS_AX_END")
+        }
+        app.terminate(); app.launch()
+        tapVisible("Account menu"); tapVisible("My Profile")
+        XCTAssertTrue(app.staticTexts["My Profile"].firstMatch.waitForExistence(timeout: 20))
+        capture("business-settings")
+        print("KIRANA_BUSINESS_AX_BEGIN: Profile\n\(app.debugDescription)\nKIRANA_BUSINESS_AX_END")
+        tapVisible("Dashboard")
+    }
+
+    private func businessRoute(_ route: String) {
+        app.terminate(); app.launch()
+        XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 40))
+        tapVisible("menu"); tapVisible(route)
+    }
+    private func closedForm(_ field: XCUIElement) {
+        let closed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in !field.exists }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 30), .completed)
+    }
+    private func requireQAShop() throws {
+        guard let shop = ProcessInfo.processInfo.environment["KIRANA_QA_SHOP"] else { throw XCTSkip("QA shop required") }
+        app.launch(); tapVisible("menu")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", shop)).firstMatch.waitForExistence(timeout: 10), "Wrong shop: refusing writes")
+        tapVisible("Dashboard")
+    }
+    func test21CustomerAndSupplierForms() throws {
+        try requireQAShop()
+        businessRoute("Customers")
+        let initialSearch = app.searchFields.firstMatch
+        XCTAssertTrue(initialSearch.waitForExistence(timeout: 20)); enterSearch("9911223302", in: initialSearch)
+        let existingCustomer = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "9911223302")).firstMatch.waitForExistence(timeout: 5)
+        tapVisible("Add Customer")
+        let name = app.textFields["Customer Name *"].firstMatch
+        XCTAssertTrue(name.waitForExistence(timeout: 20))
+        tapVisible("Save"); XCTAssertTrue(name.exists, "Empty customer must not submit")
+        if existingCustomer { tapVisible("Close"); closedForm(name) }
+        else {
+            name.tap(); name.typeText("iPhone QA Customer 20261122")
+            let phone = app.textFields["Phone Number *"].firstMatch
+            phone.tap(); phone.typeText("9911223302")
+            tapVisible("Save"); closedForm(name)
+        }
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 20)); enterSearch("9911223302", in: search)
+        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "9911223302")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 20))
+        capture("created-customer-search")
+        tapVisible("Edit")
+        XCTAssertTrue(name.waitForExistence(timeout: 15)); replaceNumber("iPhone QA Customer Edited 20261122", in: name)
+        tapVisible("Save"); closedForm(name)
+        tapVisible("View Ledger"); XCTAssertTrue(app.staticTexts["iPhone QA Customer Edited 20261122"].firstMatch.waitForExistence(timeout: 25)); capture("new-customer-ledger")
+        print("KIRANA_BUSINESS_AX_BEGIN: Customer ledger\n\(app.debugDescription)\nKIRANA_BUSINESS_AX_END")
+        businessRoute("Suppliers")
+        let firstSupplierSearch = app.searchFields["Search suppliers..."].firstMatch
+        XCTAssertTrue(firstSupplierSearch.waitForExistence(timeout: 20)); enterSearch("9911223301", in: firstSupplierSearch)
+        let existingSupplier = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "9911223301")).firstMatch.waitForExistence(timeout: 5)
+        tapVisible("Add Supplier")
+        let supplier = app.textFields["Supplier Name *"].firstMatch
+        XCTAssertTrue(supplier.waitForExistence(timeout: 20)); tapVisible("Save"); XCTAssertTrue(supplier.exists)
+        if existingSupplier { tapVisible("Close"); closedForm(supplier) }
+        else {
+            supplier.tap(); supplier.typeText("iPhone QA Supplier 20261122")
+            let supplierPhone = app.textFields["Phone Number *"].firstMatch
+            supplierPhone.tap(); supplierPhone.typeText("9911223301")
+            let state = app.textFields["State"].firstMatch; state.tap(); state.typeText("Maharashtra")
+            let code = app.textFields["GST state code"].firstMatch; code.tap(); code.typeText("27")
+            tapVisible("Save"); closedForm(supplier)
+        }
+        let supplierSearch = app.searchFields["Search suppliers..."].firstMatch
+        XCTAssertTrue(supplierSearch.waitForExistence(timeout: 20)); enterSearch("9911223301", in: supplierSearch)
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "9911223301")).firstMatch.waitForExistence(timeout: 20))
+        tapVisible("Edit"); XCTAssertTrue(supplier.waitForExistence(timeout: 15))
+        let address = app.textFields["Address"].firstMatch; replaceNumber("QA supplier address updated", in: address)
+        tapVisible("Save"); closedForm(supplier); capture("created-and-edited-supplier")
+        tapVisible("View Ledger"); XCTAssertTrue(app.staticTexts["iPhone QA Supplier 20261122"].firstMatch.waitForExistence(timeout: 25)); capture("new-supplier-ledger")
+        print("KIRANA_BUSINESS_AX_BEGIN: Supplier ledger\n\(app.debugDescription)\nKIRANA_BUSINESS_AX_END")
+        tapVisible("Dashboard")
+    }
+    func test22PurchasePackControls() throws {
+        try requireQAShop(); businessRoute("Purchases"); tapVisible("Create Purchase")
+        tapVisible("Select Supplier")
+        let supplierSearch = app.searchFields["Search suppliers..."].firstMatch
+        XCTAssertTrue(supplierSearch.waitForExistence(timeout: 20)); enterSearch("9911223301", in: supplierSearch)
+        let supplier = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "9911223301")).firstMatch
+        XCTAssertTrue(supplier.waitForExistence(timeout: 20)); supplier.tap()
+        let invoice = app.textFields["Invoice Number *"].firstMatch
+        XCTAssertTrue(invoice.waitForExistence(timeout: 15)); invoice.tap(); invoice.typeText("PHONE-20261122-1")
+        let search = app.searchFields["Search products to add..."].firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 20)); enterSearch("IOS-PHONE-QA-20261121", in: search)
+        let product = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "IOS-PHONE-QA-20261121")).firstMatch
+        XCTAssertTrue(product.waitForExistence(timeout: 25)); product.tap()
+        capture("purchase-item-controls")
+        print("KIRANA_BUSINESS_AX_BEGIN: Purchase item\n\(app.debugDescription)\nKIRANA_BUSINESS_AX_END")
+    }
+    func test23ShiftVarianceAndClose() throws {
+        try requireQAShop(); businessRoute("Cash shift")
+        let opening = app.textFields["Opening cash"].firstMatch
+        XCTAssertTrue(opening.waitForExistence(timeout: 25)); replaceNumber("500", in: opening)
+        let counter = app.textFields["Counter name (optional)"].firstMatch; counter.tap(); counter.typeText("QA-PHONE-22")
+        tapVisible("Open shift")
+        let counted = app.textFields["Counted cash"].firstMatch
+        XCTAssertTrue(counted.waitForExistence(timeout: 25)); counted.tap(); counted.typeText("490")
+        let close = app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Close shift")).firstMatch
+        XCTAssertFalse(close.isEnabled, "Cash variance requires an explanation")
+        let reason = app.textFields["Reason for cash difference"].firstMatch
+        XCTAssertTrue(reason.waitForExistence(timeout: 15)); reason.tap(); reason.typeText("QA counted cash variance")
+        capture("shift-variance-requires-explanation"); tapVisible("Close shift")
+        XCTAssertTrue(opening.waitForExistence(timeout: 25)); capture("shift-closed-history")
+        tapVisible("Dashboard")
+    }
+    func test24ReportAndGSTControls() throws {
+        try requireQAShop(); businessRoute("Reports")
+        let gst = app.buttons.matching(NSPredicate(format: "label ==[c] %@", "GST & CA reports")).firstMatch
+        capture("reports-before-wait"); print("KIRANA_REPORT_PROBE\n\(app.debugDescription)"); XCTAssertTrue(gst.waitForExistence(timeout: 25)); capture("reports-overview")
+        print("KIRANA_BUSINESS_AX_BEGIN: Reports loaded\n\(app.debugDescription)\nKIRANA_BUSINESS_AX_END")
+        gst.tap()
+        XCTAssertTrue(app.staticTexts["GST & CA reports"].firstMatch.waitForExistence(timeout: 25))
+        capture("gst-ca-controls")
+        print("KIRANA_BUSINESS_AX_BEGIN: GST loaded\n\(app.debugDescription)\nKIRANA_BUSINESS_AX_END")
+        tapVisible("Download CSV"); dismissNativeShareSheet("gst-summary-csv", expectsPrint: false)
+        for view in ["Sales register", "Purchase / input tax", "HSN summary"] {
+            tapVisible(view); tapVisible("Download CSV"); dismissNativeShareSheet("gst-\(view)-csv", expectsPrint: false)
+        }
+        tapVisible("Dashboard")
+    }
+
+    func test25ExistingLedgers() throws {
+        try requireQAShop(); businessRoute("Customers")
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 20)); enterSearch("9911223302", in: search)
+        tapVisible("View Ledger")
+        XCTAssertTrue(app.staticTexts["iPhone QA Customer Edited 20261122"].firstMatch.waitForExistence(timeout: 25))
+        capture("customer-ledger-loaded")
+        businessRoute("Suppliers")
+        let supplierSearch = app.searchFields["Search suppliers..."].firstMatch
+        XCTAssertTrue(supplierSearch.waitForExistence(timeout: 20)); enterSearch("9911223301", in: supplierSearch)
+        tapVisible("View Ledger")
+        XCTAssertTrue(app.staticTexts["iPhone QA Supplier 20261122"].firstMatch.waitForExistence(timeout: 25))
+        capture("supplier-ledger-loaded"); tapVisible("Dashboard")
+    }
+    func test27ThirtyTwoProductCashBill() throws {
+        guard let raw = ProcessInfo.processInfo.environment["KIRANA_QA_LONG_SKUS"],
+              let data = raw.data(using: .utf8), let skus = try JSONSerialization.jsonObject(with: data) as? [String], skus.count == 32 else { throw XCTSkip("Explicit 32-product QA fixture required") }
+        try requireQAShop(); tapVisible("Billing")
+        for sku in skus { addProduct(sku) }
+        capture("long-bill-32-products-before-payment")
+        tapVisible("Cash")
+        let cleared = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in !self.app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Cash")).firstMatch.exists }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [cleared], timeout: 45), .completed)
+        capture("long-bill-cash-completed"); tapVisible("Dashboard")
+        XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 25))
+    }
+
+    func test26ReportNativePrint() throws {
+        try requireQAShop(); businessRoute("Reports")
+        tapVisible("Print report")
+        let cancel = app.buttons["Cancel"].firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout: 20), "Report print must open the real native preview")
+        capture("native-report-print-preview"); cancel.tap(); tapVisible("Dashboard")
+    }
+
+    func test28NamedFormCloseControls() throws {
+        try requireQAShop(); businessRoute("Customers"); tapVisible("Add Customer")
+        let customer = app.textFields["Customer Name *"].firstMatch
+        XCTAssertTrue(customer.waitForExistence(timeout: 15)); tapVisible("Close"); closedForm(customer)
+        capture("customer-close-accessible")
+        businessRoute("Suppliers"); tapVisible("Add Supplier")
+        let supplier = app.textFields["Supplier Name *"].firstMatch
+        XCTAssertTrue(supplier.waitForExistence(timeout: 15)); tapVisible("Close"); closedForm(supplier)
+        capture("supplier-close-accessible"); tapVisible("Dashboard")
     }
 
 }
