@@ -397,6 +397,7 @@ export const CustomersPage: React.FC = () => {
                 </IonTitle>
                 <IonButtons slot="end">
                   <IonButton
+                    aria-label={t('common.close')}
                     onClick={() => {
                       setShowModal(false);
                       resetForm();

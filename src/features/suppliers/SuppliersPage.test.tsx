@@ -81,8 +81,8 @@ vi.mock('@ionic/react', () => {
     IonSelectOption: Container,
     IonInfiniteScroll: Container,
     IonInfiniteScrollContent: Container,
-    IonButton: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
-      <button onClick={onClick}>{children}</button>
+    IonButton: ({ children, onClick, ...props }: PropsWithChildren<{ onClick?: () => void; 'aria-label'?: string }>) => (
+      <button onClick={onClick} aria-label={props['aria-label']}>{children}</button>
     ),
     IonItemOption: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
       <button onClick={onClick}>{children}</button>
@@ -205,4 +205,12 @@ it('preloads GST identity for supplier editing', () => {
   expect((screen.getByLabelText('suppliers.gstin') as HTMLInputElement).value).toBe('24ABCDE1234F1Z5');
   expect((screen.getByLabelText('suppliers.supplierState') as HTMLInputElement).value).toBe('Gujarat');
   expect((screen.getByLabelText('suppliers.stateCode') as HTMLInputElement).value).toBe('24');
+});
+
+
+it('provides a named close control that dismisses the supplier form', () => {
+  render(<SuppliersPage />);
+  fireEvent.click(screen.getAllByRole('button', { name: 'suppliers.addSupplier' })[0]);
+  fireEvent.click(screen.getByRole('button', { name: 'common.close' }));
+  expect(screen.queryByRole('button', { name: 'common.close' })).toBeNull();
 });
