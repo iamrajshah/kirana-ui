@@ -71,6 +71,62 @@ describe.each(['android', 'ios'])('tokenVault on %s', (name) => {
     expect(localStorage.getItem('refresh_token')).toBeNull();
   });
 
+  it('still migrates encrypted legacy entries into the atomic bundle', async () => {
+    secureGet
+      .mockResolvedValueOnce({ value: null })
+      .mockResolvedValueOnce({ value: 'legacy-secure-access' })
+      .mockResolvedValueOnce({ value: 'legacy-secure-refresh' });
+    const { hydrateTokens } = await import('./tokenVault');
+    await expect(hydrateTokens()).resolves.toEqual({
+      accessToken: 'legacy-secure-access',
+      refreshToken: 'legacy-secure-refresh',
+    });
+    expect(secureSet).toHaveBeenCalledWith({
+      key: 'session_bundle',
+      value: JSON.stringify({
+        accessToken: 'legacy-secure-access',
+        refreshToken: 'legacy-secure-refresh',
+      }),
+    });
+  });
+
+  it('does not expose tokens if secure persistence fails', async () => {
+    secureSet.mockRejectedValueOnce(new Error('Secure write failed'));
+    const { persistTokens, peekTokens } = await import('./tokenVault');
+    await expect(
+      persistTokens({ accessToken: 'uncommitted', refreshToken: 'uncommitted' })
+    ).rejects.toThrow('Secure write failed');
+    expect(peekTokens()).toBeNull();
+    expect(localStorage.getItem('access_token')).toBeNull();
+  });
+
+  it('does not repeat a durable write for the same listener notification', async () => {
+    const { persistTokens } = await import('./tokenVault');
+    const tokens = { accessToken: 'committed', refreshToken: 'committed' };
+    await persistTokens(tokens);
+    await persistTokens(tokens);
+    expect(secureSet).toHaveBeenCalledTimes(1);
+  });
+
+  it('orders a pending native write before logout removes the bundle', async () => {
+    let finish!: () => void;
+    secureSet.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        })
+    );
+    const { persistTokens, clearTokens, peekTokens } = await import('./tokenVault');
+    const pending = persistTokens({ accessToken: 'pending', refreshToken: 'pending' });
+    await Promise.resolve();
+    const cleared = clearTokens();
+    finish();
+    await pending;
+    await cleared;
+    expect(peekTokens()).toBeNull();
+    expect(secureRemove).toHaveBeenCalledWith({ key: 'session_bundle' });
+  });
+
   it('retains browser token persistence for web sessions', async () => {
     platform.native = false;
     const { persistTokens } = await import('./tokenVault');

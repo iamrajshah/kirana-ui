@@ -1,3 +1,5 @@
+import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
 import React, { useState, useEffect, ReactNode } from 'react';
 import { ThemeContext, type Theme } from './ThemeState';
 
@@ -11,6 +13,12 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     document.body.classList.remove('light', 'dark');
     document.body.classList.add(theme);
     localStorage.setItem('kirana-ui-theme', theme);
+    if (Capacitor.isNativePlatform()) {
+      // Capacitor names the background style: Dark renders light status-bar text.
+      void StatusBar.setStyle({ style: theme === 'dark' ? Style.Dark : Style.Light }).catch(
+        () => undefined
+      );
+    }
   }, [theme]);
 
   const toggleTheme = () => {

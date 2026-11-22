@@ -110,7 +110,7 @@ export const lifecycleApi = apiSlice.injectEndpoints({
       async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
         try {
           const credentials = (await queryFulfilled).data.data;
-          dispatch(setCredentials(credentials));
+          await dispatch(setCredentials(credentials));
           dispatch(apiSlice.util.resetApiState());
         } catch {
           // Failed selection stays in the current shop; the mutation exposes its error.

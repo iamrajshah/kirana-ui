@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { describe, expect, it, vi } from 'vitest';
-import { createReceiptOutputService } from './outputService';
+import { createReceiptOutputService, getReceiptOutputFeedback } from './outputService';
 import type { ReceiptViewModel } from './types';
 
 const receipt = {
@@ -146,3 +146,36 @@ describe('receipt output service', () => {
     expect(service.getState()).toEqual({ phase: 'idle', action: null });
   });
 });
+
+it('treats native print cancellation as cancellation, without a false download notice', async () => {
+  const service = createReceiptOutputService({
+    createPdf: async () => pdf,
+    print: async () => false,
+  });
+  await service.run('print', receipt);
+  expect(service.getState()).toMatchObject({ phase: 'cancelled', fallbackDownloaded: false });
+  expect(getReceiptOutputFeedback(service.getState())).toBeNull();
+});
+it.each(['pdf', 'share'] as const)(
+  'uses the native export sheet for %s and does not navigate the WebView on cancellation',
+  async (action) => {
+    const download = vi.fn();
+    const nativeShare = vi
+      .fn()
+      .mockRejectedValue(new DOMException('Share cancelled', 'AbortError'));
+    const service = createReceiptOutputService({
+      createPdf: async () => pdf,
+      isNative: () => true,
+      nativeShare,
+      download,
+    });
+    await service.run(action, receipt);
+    expect(nativeShare).toHaveBeenCalledOnce();
+    expect(download).not.toHaveBeenCalled();
+    expect(service.getState()).toMatchObject({
+      phase: 'cancelled',
+      action,
+      fallbackDownloaded: false,
+    });
+  }
+);

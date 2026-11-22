@@ -19,7 +19,7 @@ interface SharePayload {
 interface OutputDependencies {
   createPdf: (receipt: ReceiptViewModel, paperWidth?: ReceiptPaperWidth) => Promise<Blob>;
   download: (blob: Blob, fileName: string) => void;
-  print: (blob: Blob, paperWidth: ReceiptPaperWidth) => Promise<void> | void;
+  print: (blob: Blob, paperWidth: ReceiptPaperWidth) => Promise<void | boolean> | void | boolean;
   webShare: {
     canShare: (payload: SharePayload) => boolean;
     share: (payload: SharePayload) => Promise<void>;
@@ -97,7 +97,12 @@ const defaultDependencies: OutputDependencies = {
   createPdf: async (receipt, paperWidth) =>
     (await import('./pdfRenderer')).renderReceiptPdf(receipt, paperWidth),
   download: downloadBlob,
-  print: printReceipt,
+  print: async (blob, paperWidth) => {
+    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios') {
+      return (await import('./nativePrintAdapter')).printNativePdf(blob);
+    }
+    return printReceipt(blob, paperWidth);
+  },
   webShare: {
     canShare: (payload) => typeof navigator.canShare === 'function' && navigator.canShare(payload),
     share: (payload) => navigator.share(payload),
@@ -112,7 +117,8 @@ const isCancellation = (error: unknown) =>
 
 export const getReceiptOutputFeedback = (state: ReceiptOutputState): ReceiptOutputFeedback => {
   if (state.phase === 'generating' || state.phase === 'handing-off') return 'working';
-  if (state.phase === 'cancelled' || (state.phase === 'completed' && state.fallbackDownloaded)) {
+  if (state.phase === 'cancelled') return state.fallbackDownloaded ? 'downloaded' : null;
+  if (state.phase === 'completed' && state.fallbackDownloaded) {
     return 'downloaded';
   }
   if (state.phase === 'recoverable-error') return 'error';
@@ -156,21 +162,19 @@ export const createReceiptOutputService = (overrides: Partial<OutputDependencies
     try {
       if (action === 'print') {
         const blob = await dependencies.createPdf(receipt, paperWidth);
-        await dependencies.print(blob, paperWidth);
-        setState({ phase: 'completed', action });
+        const printed = await dependencies.print(blob, paperWidth);
+        setState(
+          printed === false
+            ? { phase: 'cancelled', action, fallbackDownloaded: false }
+            : { phase: 'completed', action }
+        );
         return state;
       }
 
       const blob = await dependencies.createPdf(receipt);
       const fileName = safeFileName(receipt.invoiceNumber);
-      if (action === 'pdf') {
-        dependencies.download(blob, fileName);
-        setState({ phase: 'completed', action });
-        return state;
-      }
-
-      setState({ phase: 'handing-off', action });
       if (dependencies.isNative()) {
+        setState({ phase: 'handing-off', action });
         try {
           await dependencies.nativeShare(
             blob,
@@ -179,10 +183,17 @@ export const createReceiptOutputService = (overrides: Partial<OutputDependencies
           );
           setState({ phase: 'completed', action });
         } catch (error) {
-          downloadShareFallback(blob, fileName, action, error);
+          if (!isCancellation(error)) throw error;
+          setState({ phase: 'cancelled', action, fallbackDownloaded: false });
         }
         return state;
       }
+      if (action === 'pdf') {
+        dependencies.download(blob, fileName);
+        setState({ phase: 'completed', action });
+        return state;
+      }
+      setState({ phase: 'handing-off', action });
 
       const file = new File([blob], fileName, { type: 'application/pdf' });
       const payload: SharePayload = {

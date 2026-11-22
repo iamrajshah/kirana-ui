@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { IonContent, IonPage } from '@ionic/react';
+import { IonContent } from '@ionic/react';
 
 interface RoutePageSuspenseProps {
   children: React.ReactNode;
@@ -9,7 +9,7 @@ interface RoutePageSuspenseProps {
 export const RoutePageSuspense: React.FC<RoutePageSuspenseProps> = ({ children, loadingLabel }) => (
   <Suspense
     fallback={
-      <IonPage className="route-loading-page">
+      <div className="ion-page route-loading-page">
         <IonContent>
           <section className="route-loading-skeleton" role="status" aria-live="polite">
             <div className="route-loading-skeleton__heading">
@@ -27,7 +27,7 @@ export const RoutePageSuspense: React.FC<RoutePageSuspenseProps> = ({ children, 
             <span className="route-loading-skeleton__label">{loadingLabel}</span>
           </section>
         </IonContent>
-      </IonPage>
+      </div>
     }
   >
     {children}

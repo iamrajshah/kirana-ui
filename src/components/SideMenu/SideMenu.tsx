@@ -32,7 +32,10 @@ export const SideMenu: React.FC = () => {
       <IonHeader>
         <IonToolbar className="workspace-menu-toolbar">
           <IonTitle>
-            <span className="workspace-menu-brand" aria-label={t('common.appName')}>
+            <span
+              className="workspace-menu-brand"
+              aria-label={`${t('common.appName')}: ${user?.tenant?.name || t('common.store')}`}
+            >
               <span className="workspace-menu-brand__mark" aria-hidden="true">
                 क
               </span>

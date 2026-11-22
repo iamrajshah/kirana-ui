@@ -82,7 +82,8 @@ vi.mock('@components', () => ({
   ),
   Loading: () => <div>loading</div>,
 }));
-vi.mock('@ionic/react', () => {
+vi.mock('@ionic/react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ionic/react')>();
   const Container = ({ children }: PropsWithChildren) => <div>{children}</div>;
   const IonModal = React.forwardRef<
     { dismiss: () => Promise<void> },
@@ -91,12 +92,12 @@ vi.mock('@ionic/react', () => {
     React.useImperativeHandle(ref, () => ({ dismiss: dismissPaymentModal }));
     return (
       <div data-testid="payment-modal" data-open={String(Boolean(isOpen))}>
-        {children}
+        {isOpen ? children : null}
       </div>
     );
   });
   return {
-    IonPage: Container,
+    IonPage: actual.IonPage,
     IonContent: Container,
     IonList: Container,
     IonItem: Container,
@@ -325,4 +326,27 @@ it('coalesces pending submits, reuses a lost-response key, and rotates it for ed
     createPayment.mock.calls[0][0].idempotency_key
   );
   await waitFor(() => expect(dismissPaymentModal).toHaveBeenCalledOnce());
+});
+
+it('keeps the collection modal out of the real Ionic route-page registry', async () => {
+  const { NavContext, StackContext } =
+    await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
+  const registerIonPage = vi.fn();
+  const RoutedPayments = () => {
+    const nav = React.useContext(NavContext);
+    const stack = React.useContext(StackContext);
+    return (
+      <NavContext.Provider value={{ ...nav, hasIonicRouter: () => true }}>
+        <StackContext.Provider value={{ ...stack, registerIonPage }}>
+          <PaymentsPage />
+        </StackContext.Provider>
+      </NavContext.Provider>
+    );
+  };
+  query.data = { data: [] };
+  render(<RoutedPayments />);
+  expect(registerIonPage).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getAllByRole('button', { name: 'payments.recordPayment' })[0]);
+  expect(screen.getByLabelText('payments.searchCustomers')).toBeTruthy();
+  expect(registerIonPage).toHaveBeenCalledTimes(1);
 });

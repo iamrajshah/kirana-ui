@@ -11,7 +11,6 @@ import {
   IonContent,
   IonIcon,
   IonToast,
-  IonPage,
 } from '@ionic/react';
 import { close } from 'ionicons/icons';
 import { Input } from '@components/Input';
@@ -76,7 +75,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     <>
       {isOpen && (
         <IonModal isOpen={true} onDidDismiss={onDidDismiss}>
-          <IonPage>
+          <div className="ion-page">
             <IonHeader>
               <IonToolbar>
                 <IonTitle>{t('categories.add')}</IonTitle>
@@ -110,7 +109,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
                 {creating ? t('common.creating') : t('categories.create')}
               </IonButton>
             </IonContent>
-          </IonPage>
+          </div>
         </IonModal>
       )}
 

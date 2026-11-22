@@ -1,12 +1,12 @@
 .trial-countdown {
   z-index: 4;
   display: flex;
-  min-height: 42px;
+  min-height: calc(42px + env(safe-area-inset-top));
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 8px 16px;
+  padding: calc(8px + env(safe-area-inset-top)) 16px 8px;
   border-bottom: 1px solid color-mix(in srgb, var(--ion-color-warning) 42%, transparent);
   background: color-mix(in srgb, var(--ion-color-warning) 14%, var(--ion-background-color));
   color: var(--ion-text-color);
@@ -37,7 +37,12 @@
   .trial-countdown {
     flex-wrap: wrap;
     gap: 2px 7px;
-    padding-block: 6px;
+    padding-block: calc(6px + env(safe-area-inset-top)) 6px;
     text-align: center;
   }
+}
+
+/* The banner owns the top inset while it is above the page toolbar. */
+.workspace-main:has(> .trial-countdown) ion-header ion-toolbar:first-of-type {
+  padding-top: 0;
 }
