@@ -275,6 +275,7 @@ final class KiranaFlowUITests: XCTestCase {
             theme.tap(); Thread.sleep(forTimeInterval: 1); capture("profile-dark-mode")
             theme.tap(); Thread.sleep(forTimeInterval: 1); capture("profile-restored-light-mode")
         } else { XCTFail("Theme switch is unavailable") }
+        XCTAssertFalse(app.debugDescription.contains("security.platform.ios"), "iOS device platform must have a translated label")
         tapVisible("Dashboard")
     }
 
@@ -687,7 +688,8 @@ final class KiranaFlowUITests: XCTestCase {
     private func selectWebOption(_ label: String, value: String) {
         dismissNotificationBanner()
         let popup = app.popUpButtons[label].firstMatch
-        let control = popup.exists ? popup : app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+        let select = app.otherElements.matching(NSPredicate(format: "label == %@ AND value != nil", label)).firstMatch
+        let control = popup.exists ? popup : select.exists ? select : app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
         XCTAssertTrue(control.waitForExistence(timeout: 15)); control.tap()
         let wheel = app.pickerWheels.firstMatch
         if wheel.waitForExistence(timeout: 2) {
@@ -775,6 +777,46 @@ final class KiranaFlowUITests: XCTestCase {
         tapVisible("View Ledger")
         XCTAssertTrue(app.staticTexts["iPhone QA Supplier 20261122"].firstMatch.waitForExistence(timeout: 25))
         capture("supplier-ledger-after-settlement"); tapVisible("Dashboard")
+        XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 25))
+    }
+
+    func test33RevokedQASessionReturnsToLogin() throws {
+        guard ProcessInfo.processInfo.environment["KIRANA_QA_EXPECT_REVOKED"] == "1",
+              ProcessInfo.processInfo.environment["KIRANA_QA_SHOP"] == "iPhone QA Demo 20261121" else {
+            throw XCTSkip("Host must revoke only the explicitly configured disposable QA device first")
+        }
+        app.terminate(); app.launch()
+        XCTAssertTrue(app.secureTextFields.firstMatch.waitForExistence(timeout: 45), "A revoked device session must return to Login on relaunch")
+        XCTAssertFalse(app.staticTexts["Your shop at a glance"].firstMatch.exists)
+        capture("revoked-qa-session-requires-login")
+    }
+
+    func test34PurchaseImportFilePickerAndCancel() throws {
+        try requireQAShop(); businessRoute("Purchases"); tapVisible("Import supplier bill")
+        tapVisible("Choose image or PDF")
+        let file = app.buttons["Choose File"].firstMatch
+        if file.waitForExistence(timeout: 3) { file.tap() }
+        let cancel = app.buttons["Cancel"].firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout: 20), "Native file chooser must expose cancellation")
+        capture("purchase-import-native-file-picker"); cancel.tap()
+        let choose = app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Choose image or PDF")).firstMatch
+        XCTAssertTrue(choose.waitForExistence(timeout: 15)); capture("purchase-import-cancelled")
+        tapVisible("Dashboard")
+    }
+    func test35NativeBarcodeLabelPrinting() throws {
+        try requireQAShop(); businessRoute("Products")
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 20)); enterSearch("IOS-PHONE-QA-20261121", in: search)
+        let product = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "IOS-PHONE-QA-20261121")).firstMatch
+        XCTAssertTrue(product.waitForExistence(timeout: 25)); product.tap()
+        tapVisible("Generate or print barcode label")
+        let generate = app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Generate store barcode")).firstMatch
+        if generate.waitForExistence(timeout: 3) { generate.tap() }
+        tapVisible("Print 1 label")
+        let cancel = app.buttons["Cancel"].firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout: 25), "Barcode labels must open a real native print preview")
+        capture("barcode-label-native-print-preview"); cancel.tap()
+        tapVisible("Close"); tapVisible("Dashboard")
         XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 25))
     }
 
