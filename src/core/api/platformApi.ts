@@ -1,3 +1,4 @@
+import { runInActiveWorkspace } from '@core/workspace/browserWorkspace';
 import { API_BASE_URL, STORAGE_KEYS } from '@core/constants';
 
 export interface PlatformAdmin {
@@ -183,22 +184,23 @@ const parseResponse = async <T>(response: Response): Promise<T> => {
   return payload.data;
 };
 
-const platformRequest = async <T>(path: string, init?: RequestInit): Promise<T> => {
-  const token = localStorage.getItem(STORAGE_KEYS.PLATFORM_ACCESS_TOKEN);
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      'content-type': 'application/json',
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
-      ...init?.headers,
-    },
+const platformRequest = async <T>(path: string, init?: RequestInit): Promise<T> =>
+  runInActiveWorkspace(async () => {
+    const token = localStorage.getItem(STORAGE_KEYS.PLATFORM_ACCESS_TOKEN);
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers: {
+        'content-type': 'application/json',
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+        ...init?.headers,
+      },
+    });
+    if (response.status === 401) {
+      localStorage.removeItem(STORAGE_KEYS.PLATFORM_ACCESS_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.PLATFORM_ADMIN);
+    }
+    return parseResponse<T>(response);
   });
-  if (response.status === 401) {
-    localStorage.removeItem(STORAGE_KEYS.PLATFORM_ACCESS_TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.PLATFORM_ADMIN);
-  }
-  return parseResponse<T>(response);
-};
 
 export const platformApi = {
   async login(email: string, password: string) {
@@ -337,7 +339,11 @@ export const platformApi = {
     );
   },
 
-  changeSubscription(id: string, planCode: string, billingCycle: 'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY') {
+  changeSubscription(
+    id: string,
+    planCode: string,
+    billingCycle: 'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY'
+  ) {
     return platformRequest<{ applied: boolean; subscriptionId: string; conflicts: unknown[] }>(
       `/platform/tenants/${id}/subscription`,
       {

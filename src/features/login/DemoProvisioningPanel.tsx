@@ -1,3 +1,4 @@
+import { runInActiveWorkspace } from '@core/workspace/browserWorkspace';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { API_BASE_URL } from '@core/constants';
 import { Button } from '@components';
@@ -28,22 +29,24 @@ const request = async (
   method: 'GET' | 'POST',
   signal: AbortSignal
 ) => {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers: { authorization: `Bearer ${token}` },
-    signal,
+  return runInActiveWorkspace(async () => {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      method,
+      headers: { authorization: `Bearer ${token}` },
+      signal,
+    });
+    let body: { data?: ProvisioningStatus; message?: string } | null = null;
+    try {
+      body = (await response.json()) as { data?: ProvisioningStatus; message?: string };
+    } catch {
+      // Gateways and older rate-limit middleware can return plain text. Keep the
+      // transport detail out of the customer UI and classify by HTTP status.
+    }
+    if (!response.ok || !body?.data) {
+      throw new ProvisioningRequestError(body?.message || '', response.status);
+    }
+    return body.data;
   });
-  let body: { data?: ProvisioningStatus; message?: string } | null = null;
-  try {
-    body = (await response.json()) as { data?: ProvisioningStatus; message?: string };
-  } catch {
-    // Gateways and older rate-limit middleware can return plain text. Keep the
-    // transport detail out of the customer UI and classify by HTTP status.
-  }
-  if (!response.ok || !body?.data) {
-    throw new ProvisioningRequestError(body?.message || '', response.status);
-  }
-  return body.data;
 };
 
 const waitForResume = (signal: AbortSignal) =>

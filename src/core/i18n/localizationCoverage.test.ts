@@ -16,6 +16,11 @@ import foodHi from '../../features/food-licences/locales/hi.json';
 import foodMr from '../../features/food-licences/locales/mr.json';
 import foodGu from '../../features/food-licences/locales/gu.json';
 
+import workspaceEn from '../workspace/locales/en.json';
+import workspaceHi from '../workspace/locales/hi.json';
+import workspaceMr from '../workspace/locales/mr.json';
+import workspaceGu from '../workspace/locales/gu.json';
+
 type LocaleTree = Record<string, unknown>;
 
 const flattenKeys = (value: LocaleTree, prefix = ''): string[] =>
@@ -28,7 +33,7 @@ const flattenKeys = (value: LocaleTree, prefix = ''): string[] =>
 
 const englishKeys = new Set([
   ...flattenKeys(en),
-  ...flattenKeys({ taxWorkspace: taxEn, foodLicences: foodEn }),
+  ...flattenKeys({ taxWorkspace: taxEn, foodLicences: foodEn, workspaceLease: workspaceEn }),
 ]);
 
 const sourceFiles = (directory: string): string[] =>
@@ -166,6 +171,9 @@ const hardCodedCopy = () => {
 
 describe('localization coverage', () => {
   it('keeps every supported locale aligned with English', () => {
+    [workspaceHi, workspaceMr, workspaceGu].forEach((locale) =>
+      expect(flattenKeys(locale).sort()).toEqual(flattenKeys(workspaceEn).sort())
+    );
     const expectedKeys = flattenKeys(en).sort();
     [hi, mr, gu].forEach((locale) => expect(flattenKeys(locale).sort()).toEqual(expectedKeys));
     [taxHi, taxMr, taxGu].forEach((locale) =>
