@@ -463,4 +463,35 @@ final class KiranaFlowUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", shop)).firstMatch.waitForExistence(timeout: 10))
         tapVisible("Dashboard")
     }
+    func test19ColdCheckoutSettledElsewhere() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let shop = env["KIRANA_QA_SHOP"], let product = env["KIRANA_QA_PRODUCT"], let customer = env["KIRANA_QA_CUSTOMER"] else { throw XCTSkip("QA fixtures required") }
+        app.terminate(); app.launch()
+        XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 40))
+        tapVisible("menu")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", shop)).firstMatch.waitForExistence(timeout: 10))
+        tapVisible("Dashboard"); tapVisible("Billing")
+        attachQACustomer(customer); addProduct(product); tapVisible("Card / Other")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Collect Payment")).firstMatch.waitForExistence(timeout: 20))
+        capture("saved-unpaid-checkout-before-relaunch")
+        app.terminate(); app.launch()
+        XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 40))
+        tapVisible("Payments"); tapVisible("Record Payment")
+        let search = app.textFields["Search customers by name or phone"].firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 15)); enterSearch(customer, in: search)
+        let match = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH[c] %@", customer)).firstMatch
+        XCTAssertTrue(match.waitForExistence(timeout: 20)); match.tap()
+        let amount = app.textFields["Enter amount"].firstMatch
+        XCTAssertTrue(amount.waitForExistence(timeout: 15)); amount.tap(); amount.typeText("100")
+        tapVisible("Save"); tapVisible("Billing")
+        let products = app.searchFields["Search product by name or SKU"].firstMatch
+        XCTAssertTrue(products.waitForExistence(timeout: 30), "Paid-checkout recovery stranded Billing accessibility")
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Collect Payment")).firstMatch.exists)
+        capture("cold-settled-checkout-cleared")
+        addProduct(product); tapVisible("Cash")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Attach customer")).firstMatch.waitForExistence(timeout: 30))
+        tapVisible("Dashboard")
+        XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 25))
+    }
+
 }
