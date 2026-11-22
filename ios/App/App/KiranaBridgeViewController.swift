@@ -127,7 +127,10 @@ final class KiranaNativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
 final class KiranaDocumentsPlugin: CAPPlugin, CAPBridgedPlugin {
     let identifier = "KiranaDocumentsPlugin"
     let jsName = "KiranaDocuments"
-    let pluginMethods: [CAPPluginMethod] = [CAPPluginMethod(name: "printPdf", returnType: CAPPluginReturnPromise)]
+    let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "printPdf", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "printHtml", returnType: CAPPluginReturnPromise)
+    ]
     private var printing = false
 
     @objc func printPdf(_ call: CAPPluginCall) {
@@ -136,6 +139,18 @@ final class KiranaDocumentsPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("Invalid receipt PDF", "PRINT_INVALID_PDF")
             return
         }
+        presentPrint(call, data: data, html: nil)
+    }
+
+    @objc func printHtml(_ call: CAPPluginCall) {
+        guard let html = call.getString("html"), !html.isEmpty, html.utf8.count <= 2_000_000 else {
+            call.reject("Invalid report content", "PRINT_INVALID_HTML")
+            return
+        }
+        presentPrint(call, data: nil, html: html)
+    }
+
+    private func presentPrint(_ call: CAPPluginCall, data: Data?, html: String?) {
         DispatchQueue.main.async {
             guard !self.printing, let presenter = self.bridge?.viewController,
                   presenter.presentedViewController == nil else {
@@ -143,7 +158,7 @@ final class KiranaDocumentsPlugin: CAPPlugin, CAPBridgedPlugin {
                 return
             }
             guard UIPrintInteractionController.isPrintingAvailable,
-                  UIPrintInteractionController.canPrint(data) else {
+                  data.map({ UIPrintInteractionController.canPrint($0) }) ?? (html != nil) else {
                 call.reject("Printing is unavailable on this device", "PRINT_UNAVAILABLE")
                 return
             }
@@ -154,9 +169,11 @@ final class KiranaDocumentsPlugin: CAPPlugin, CAPBridgedPlugin {
             info.outputType = .general
             controller.printInfo = info
             controller.printingItem = data
+            controller.printFormatter = html.map { UIMarkupTextPrintFormatter(markupText: $0) }
             let completion: (UIPrintInteractionController, Bool, Error?) -> Void = { _, completed, error in
                 self.printing = false
                 controller.printingItem = nil
+                controller.printFormatter = nil
                 if error != nil { call.reject("Unable to print receipt", "PRINT_FAILED") }
                 else { call.resolve(["completed": completed]) }
             }
@@ -170,6 +187,7 @@ final class KiranaDocumentsPlugin: CAPPlugin, CAPBridgedPlugin {
             if !shown {
                 self.printing = false
                 controller.printingItem = nil
+                controller.printFormatter = nil
                 call.reject("Unable to open print preview", "PRINT_UNAVAILABLE")
             }
         }

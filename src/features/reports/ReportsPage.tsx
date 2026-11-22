@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navbar } from '@components/Navbar';
 import {
@@ -47,6 +47,8 @@ import { selectCommercialAccess, selectCurrentUser } from '@core/auth/authSlice'
 import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
 import { useGetFirmsQuery } from '@core/api/firmApi';
 import { ROUTES } from '@core/constants';
+import notificationService from '@core/services/notificationService';
+import { printReport } from './reportPrint';
 
 const reportOptions = [
   ['sales', 'reports.salesReport'],
@@ -88,6 +90,22 @@ const firmScopedReports = new Set<ReportId>([
 export const ReportsPage: React.FC = () => {
   const { t } = useTranslation();
   const history = useHistory();
+  const reportContent = useRef<HTMLDivElement>(null);
+  const [printing, setPrinting] = useState(false);
+  const handlePrint = async () => {
+    if (printing || !reportContent.current) return;
+    setPrinting(true);
+    try {
+      await printReport(
+        t(reportOptions.find(([id]) => id === selectedReport)?.[1] ?? 'reports.title'),
+        reportContent.current.innerText
+      );
+    } catch (error) {
+      notificationService.handleApiError(error);
+    } finally {
+      setPrinting(false);
+    }
+  };
   const currentUser = useAppSelector(selectCurrentUser);
   const commercialAccess = useAppSelector(selectCommercialAccess);
   const canUseAdvancedReports = canUseCommercialFeature(
@@ -262,6 +280,20 @@ export const ReportsPage: React.FC = () => {
     topPayables: { isError: topPayablesError, refetch: refetchTopPayables },
     supplierLedger: { isError: supplierLedgerError, refetch: refetchSupplierLedger },
     purchaseTrend: { isError: purchaseTrendError, refetch: refetchPurchaseTrend },
+  };
+
+  const reportLoading: Record<ReportId, boolean | undefined> = {
+    sales: salesLoading,
+    outstanding: outstandingLoading,
+    inventory: inventoryLoading,
+    cashbook: cashbookLoading,
+    profitLoss: profitLossLoading,
+    topSelling: topSellingLoading,
+    supplierOutstanding: supplierOutstandingLoading,
+    purchaseRegister: purchaseRegisterLoading,
+    topPayables: topPayablesLoading,
+    supplierLedger: supplierLedgerLoading,
+    purchaseTrend: purchaseTrendLoading,
   };
 
   // Accumulate data when new page loads
@@ -1089,26 +1121,32 @@ export const ReportsPage: React.FC = () => {
 
           {/* Report Content */}
           <div className="mt-4 report-output">
-            {commercialAccess?.planCode === 'DEMO' && (
-              <div className="report-demo-marker" role="status">
-                {t('commercial.demoDocumentMarker')}
-              </div>
-            )}
             <div className="report-output-actions">
-              <IonButton fill="outline" onClick={() => window.print()}>
+              <IonButton
+                fill="outline"
+                disabled={
+                  printing ||
+                  reportLoading[selectedReport] ||
+                  reportRequests[selectedReport].isError
+                }
+                onClick={() => void handlePrint()}
+              >
                 {t('reports.printReport')}
               </IonButton>
             </div>
-            {reportRequests[selectedReport]?.isError ? (
-              <div className="workspace-state">
-                <p>{t('reports.loadFailed')}</p>
-                <IonButton onClick={() => reportRequests[selectedReport]?.refetch?.()}>
-                  {t('common.retry')}
-                </IonButton>
-              </div>
-            ) : (
-              reportRenderers[selectedReport]()
-            )}
+            <div ref={reportContent}>
+              {commercialAccess?.planCode === 'DEMO' && <p>{t('commercial.demoDocumentMarker')}</p>}
+              {reportRequests[selectedReport]?.isError ? (
+                <div className="workspace-state">
+                  <p>{t('reports.loadFailed')}</p>
+                  <IonButton onClick={() => reportRequests[selectedReport]?.refetch?.()}>
+                    {t('common.retry')}
+                  </IonButton>
+                </div>
+              ) : (
+                reportRenderers[selectedReport]()
+              )}
+            </div>
           </div>
         </div>
       </IonContent>
