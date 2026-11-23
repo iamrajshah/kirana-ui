@@ -838,9 +838,11 @@ final class KiranaFlowUITests: XCTestCase {
         let search = app.searchFields["Search suppliers..."].firstMatch
         XCTAssertTrue(search.waitForExistence(timeout: 20)); enterSearch("9911223301", in: search)
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "9911223301")).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 25)); row.tap()
+        XCTAssertTrue(row.waitForExistence(timeout: 25))
         assertUnavailableOnMobile("Make Payment"); assertUnavailableOnMobile("Edit")
-        tapVisible("View Ledger"); capture("mobile-supplier-ledger-readable")
+        tapVisible("View Ledger")
+        XCTAssertTrue(app.staticTexts["iPhone QA Supplier 20261122"].firstMatch.waitForExistence(timeout: 25))
+        capture("mobile-supplier-ledger-readable")
         tapVisible("Dashboard")
     }
     func test37MobileInventoryAndStaffRestrictions() throws {
