@@ -9,8 +9,8 @@
     "provisioning": "Shop setup is still in progress. Please wait for setup to finish.",
     "roleDenied": "Your staff role does not allow this operation. Contact your owner.",
     "demoDocumentMarker": "DEMO — NOT A VALID BUSINESS DOCUMENT",
-    "deviceDenied": "This feature is view only on this device. Use an enabled device to make changes.",
-    "deviceViewOnly": "View only on this device. Changes are available on an enabled device."
+    "deviceDenied": "Unavailable on this device. Use an enabled device.",
+    "deviceViewOnly": "View only on this device. Make changes on an enabled device."
   },
   "security": {
     "title": "Devices & security",
