@@ -1,0 +1,40 @@
+.mobile-signup {
+  margin-block: 1rem;
+}
+.mobile-signup > button {
+  color: var(--ion-color-primary);
+  font-weight: 600;
+  min-height: 44px;
+}
+.mobile-signup__panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--ion-color-medium);
+  border-radius: 12px;
+  background: var(--ion-background-color);
+  color: var(--ion-text-color);
+}
+.mobile-signup__panel label {
+  display: grid;
+  gap: 0.4rem;
+}
+.mobile-signup__panel input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.65rem;
+  border: 1px solid var(--ion-color-medium);
+  border-radius: 6px;
+  color: var(--ion-text-color);
+  background: var(--ion-background-color);
+}
+.mobile-signup__panel button {
+  min-height: 44px;
+  padding: 0.65rem;
+  border: 1px solid var(--ion-color-primary);
+  border-radius: 6px;
+  color: var(--ion-color-primary);
+}
+.mobile-signup__panel button:disabled {
+  opacity: 0.5;
+}
