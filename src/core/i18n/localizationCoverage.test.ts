@@ -21,6 +21,8 @@ import workspaceHi from '../workspace/locales/hi.json';
 import workspaceMr from '../workspace/locales/mr.json';
 import workspaceGu from '../workspace/locales/gu.json';
 
+import mobileSignup from '../../features/login/mobileSignupTranslations.json';
+
 type LocaleTree = Record<string, unknown>;
 
 const flattenKeys = (value: LocaleTree, prefix = ''): string[] =>
@@ -33,6 +35,7 @@ const flattenKeys = (value: LocaleTree, prefix = ''): string[] =>
 
 const englishKeys = new Set([
   ...flattenKeys(en),
+  ...flattenKeys({ mobileSignup: mobileSignup.en }),
   ...flattenKeys({ taxWorkspace: taxEn, foodLicences: foodEn, workspaceLease: workspaceEn }),
 ]);
 
@@ -173,6 +176,9 @@ describe('localization coverage', () => {
   it('keeps every supported locale aligned with English', () => {
     [workspaceHi, workspaceMr, workspaceGu].forEach((locale) =>
       expect(flattenKeys(locale).sort()).toEqual(flattenKeys(workspaceEn).sort())
+    );
+    [mobileSignup.hi, mobileSignup.mr, mobileSignup.gu].forEach((locale) =>
+      expect(flattenKeys(locale).sort()).toEqual(flattenKeys(mobileSignup.en).sort())
     );
     const expectedKeys = flattenKeys(en).sort();
     [hi, mr, gu].forEach((locale) => expect(flattenKeys(locale).sort()).toEqual(expectedKeys));

@@ -1,3 +1,4 @@
+vi.mock('@core/i18n', () => ({ default: { addResourceBundle: vi.fn() } }));
 // @vitest-environment jsdom
 
 import React, { type PropsWithChildren } from 'react';
@@ -64,6 +65,7 @@ vi.mock('@core/api/lifecycleApi', () => ({
   },
 }));
 vi.mock('@core/auth/deviceIdentity', () => ({
+  isNativeMobile: () => true,
   getDeviceDescriptor: () =>
     Promise.resolve({ installationId: 'install-1', platform: 'WEB', name: 'Web · Test' }),
 }));
@@ -72,7 +74,9 @@ vi.mock('./DeviceLimitDialog', () => ({
     details,
     onReplace,
   }: {
-    details: { devices: Array<{ id: string; name: string; platform: 'WEB'; lastSeenAt: string }> } | null;
+    details: {
+      devices: Array<{ id: string; name: string; platform: 'WEB'; lastSeenAt: string }>;
+    } | null;
     onReplace: (device: { id: string; name: string; platform: 'WEB'; lastSeenAt: string }) => void;
   }) =>
     details ? (
@@ -96,7 +100,9 @@ vi.mock('./GoogleSignInButton', () => ({
       <button type="button" onClick={() => onCredential('google-credential')}>
         google-provider-success
       </button>
-      <button type="button" onClick={onCancel}>google-provider-cancel</button>
+      <button type="button" onClick={onCancel}>
+        google-provider-cancel
+      </button>
       <button type="button" onClick={() => onError('provider failed')}>
         google-provider-failure
       </button>

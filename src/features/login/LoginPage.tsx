@@ -1,3 +1,4 @@
+import { MobileSignup } from './MobileSignup';
 import React, { useCallback, useRef, useState } from 'react';
 import {
   IonContent,
@@ -359,6 +360,17 @@ export const LoginPage: React.FC = () => {
                   <a href={ROUTES.TERMS}>{t('auth.terms')}</a>
                 </span>
               </label>
+              {productInformation && (
+                <MobileSignup
+                  legal={productInformation.legal}
+                  accepted={legalAccepted}
+                  onReady={(phone, chosenPassword) => {
+                    setEmailOrPhone(phone);
+                    setPassword(chosenPassword);
+                    setIdentityOutcome(t('mobileSignup.ready'));
+                  }}
+                />
+              )}
               {productInformation ? (
                 <GoogleSignInButton
                   onCredential={handleGoogleCredential}
