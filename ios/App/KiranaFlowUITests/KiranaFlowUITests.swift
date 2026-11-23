@@ -820,4 +820,51 @@ final class KiranaFlowUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 25))
     }
 
+    private func assertUnavailableOnMobile(_ label: String) {
+        let controls = app.buttons.matching(NSPredicate(format: "label ==[c] %@", label))
+        XCTAssertFalse(controls.allElementsBoundByIndex.contains { $0.exists && $0.isEnabled && $0.isHittable }, "Mobile must not expose writable control: \(label)")
+    }
+    private func assertMobileReadOnlyNotice() {
+        let notice = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "View only on this device")).firstMatch
+        XCTAssertTrue(notice.waitForExistence(timeout: 25), "Read-only device notice must explain the restriction")
+    }
+    func test36MobilePurchaseAndSupplierRestrictions() throws {
+        try requireQAShop(); businessRoute("Purchases")
+        assertMobileReadOnlyNotice()
+        assertUnavailableOnMobile("Create Purchase"); assertUnavailableOnMobile("Import supplier bill")
+        capture("mobile-purchases-read-only")
+        businessRoute("Suppliers")
+        assertMobileReadOnlyNotice(); assertUnavailableOnMobile("Add Supplier")
+        let search = app.searchFields["Search suppliers..."].firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 20)); enterSearch("9911223301", in: search)
+        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "9911223301")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 25)); row.tap()
+        assertUnavailableOnMobile("Make Payment"); assertUnavailableOnMobile("Edit")
+        tapVisible("View Ledger"); capture("mobile-supplier-ledger-readable")
+        tapVisible("Dashboard")
+    }
+    func test37MobileInventoryAndStaffRestrictions() throws {
+        try requireQAShop(); businessRoute("Inventory")
+        assertMobileReadOnlyNotice()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 20)); enterSearch("IOS-PHONE-QA-20261121", in: search)
+        assertUnavailableOnMobile("Edit"); capture("mobile-inventory-read-only")
+        businessRoute("Users")
+        assertMobileReadOnlyNotice(); assertUnavailableOnMobile("Add User")
+        capture("mobile-staff-read-only"); tapVisible("Dashboard")
+    }
+    func test38MobileHiddenToolsAndAvailablePayments() throws {
+        try requireQAShop(); tapVisible("menu")
+        assertUnavailableOnMobile("Import / Export"); assertUnavailableOnMobile("Import and Export")
+        capture("mobile-hidden-bulk-tools"); tapVisible("Payments")
+        tapVisible("Record Payment")
+        let search = app.textFields["Search customers by name or phone"].firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 20), "Mobile payment form must remain available")
+        capture("mobile-payments-still-writable")
+        app.terminate(); app.launch()
+        XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 40))
+        businessRoute("Purchases"); assertMobileReadOnlyNotice(); assertUnavailableOnMobile("Create Purchase")
+        capture("mobile-policy-restored-after-relaunch"); tapVisible("Dashboard")
+    }
+
 }
