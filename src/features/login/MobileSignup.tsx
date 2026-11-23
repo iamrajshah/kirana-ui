@@ -40,7 +40,14 @@ export const MobileSignup: React.FC<{
     try {
       const payload =
         action === 'request'
-          ? { phone, name, password, ...(email.trim() ? { email: email.trim() } : {}), ...legal }
+          ? {
+              phone,
+              name,
+              password,
+              ...(email.trim() ? { email: email.trim() } : {}),
+              privacyVersion: legal.privacyVersion,
+              termsVersion: legal.termsVersion,
+            }
           : action === 'verify'
             ? { challengeId: challenge, otp }
             : { phone, password };
@@ -51,8 +58,17 @@ export const MobileSignup: React.FC<{
           body: JSON.stringify(payload),
         });
         const body = await response.json().catch(() => null);
-        if (!response.ok || !body?.success)
-          throw new Error(body?.message || t('mobileSignup.failed'));
+        if (!response.ok || !body?.success) {
+          const errors =
+            body?.errors && typeof body.errors === 'object'
+              ? Object.values(body.errors)
+                  .flat()
+                  .filter((item): item is string => typeof item === 'string')
+              : [];
+          throw new Error(
+            errors.length ? errors.join(' ') : body?.message || t('mobileSignup.failed')
+          );
+        }
         return body.data as { challengeId?: string; provisioningToken?: string };
       });
       if (data.challengeId) setChallenge(data.challengeId);

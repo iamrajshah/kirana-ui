@@ -17,15 +17,15 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
+const legal = {
+  privacyVersion: 'v1',
+  termsVersion: 'v1',
+  privacyUrl: 'https://example.test/privacy',
+  termsUrl: 'https://example.test/terms',
+};
 const mount = (accepted = true) => {
   const ready = vi.fn();
-  render(
-    <MobileSignup
-      legal={{ privacyVersion: 'v1', termsVersion: 'v1' }}
-      accepted={accepted}
-      onReady={ready}
-    />
-  );
+  render(<MobileSignup legal={legal} accepted={accepted} onReady={ready} />);
   fireEvent.click(screen.getByText('mobileSignup.title'));
   return ready;
 };
@@ -59,6 +59,13 @@ it('keeps verification purpose separate and offers normal login only after provi
   fireEvent.click(screen.getByText('mobileSignup.send'));
   await screen.findByLabelText('mobileSignup.code');
   expect(fetch.mock.calls[0][0]).toContain('/auth/signup/mobile/request');
+  expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({
+    phone: '9876543210',
+    name: 'Owner',
+    password: 'LongPassword123',
+    privacyVersion: 'v1',
+    termsVersion: 'v1',
+  });
   fireEvent.change(screen.getByLabelText('mobileSignup.code'), { target: { value: '123456' } });
   fireEvent.click(screen.getByText('mobileSignup.verify'));
   await screen.findByText('finish-demo');
@@ -80,4 +87,22 @@ it('shows failed verification without starting a trial or retrying automatically
   await waitFor(() => expect(screen.getByRole('alert').textContent).toBe('Try later'));
   expect(fetch).toHaveBeenCalledTimes(1);
   expect(screen.queryByText('finish-demo')).toBeNull();
+});
+
+it('shows field validation details instead of only a generic error', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValue({
+        ok: false,
+        json: async () => ({
+          message: 'Validation failed',
+          errors: { password: ['Use at least 10 characters'] },
+        }),
+      })
+  );
+  mount();
+  fireEvent.click(screen.getByText('mobileSignup.send'));
+  expect((await screen.findByRole('alert')).textContent).toBe('Use at least 10 characters');
 });
