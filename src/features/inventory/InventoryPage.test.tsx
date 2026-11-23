@@ -4,7 +4,18 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { InventoryPage } from './InventoryPage';
 
 const query = vi.hoisted(() => ({
-  data: { data: [{ variant_id: 'variant-1', quantity: 3, low_stock_threshold: 5, is_low_stock: true, variant: { sku: 'RICE-1', product: { name: 'Rice' } } }], meta: { total: 1 } } as unknown,
+  data: {
+    data: [
+      {
+        variant_id: 'variant-1',
+        quantity: 3,
+        low_stock_threshold: 5,
+        is_low_stock: true,
+        variant: { sku: 'RICE-1', product: { name: 'Rice' } },
+      },
+    ],
+    meta: { total: 1 },
+  } as unknown,
   searchData: null as unknown,
   isError: false,
   failAtSkip: null as number | null,
@@ -14,6 +25,7 @@ const query = vi.hoisted(() => ({
   push: vi.fn(),
 }));
 
+vi.mock('@core/commercial/useDeviceWriteAccess', () => ({ useDeviceWriteAccess: () => true }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('react-router-dom', () => ({ useHistory: () => ({ push: query.push }) }));
 vi.mock('@core/hooks', () => ({ useAppSelector: () => ({ roles: ['OWNER'] }) }));
@@ -26,10 +38,15 @@ vi.mock('@core/api/inventoryApi', () => ({
   useGetInventoryQuery: (args: unknown) => {
     query.args(args);
     const failed = query.isError || query.failAtSkip === (args as { skip: number }).skip;
-    const response = (args as { search?: string }).search && query.searchData
-      ? query.searchData
-      : query.data;
-    return { ...query, currentData: failed ? undefined : response, isError: failed, isLoading: false, isFetching: false };
+    const response =
+      (args as { search?: string }).search && query.searchData ? query.searchData : query.data;
+    return {
+      ...query,
+      currentData: failed ? undefined : response,
+      isError: failed,
+      isLoading: false,
+      isFetching: false,
+    };
   },
   useUpdateInventoryMutation: () => [query.updateInventory, { isLoading: false }],
 }));
@@ -40,25 +57,66 @@ vi.mock('@components', () => ({
   Loading: () => <div>loading</div>,
   EmptyState: ({ message }: { message: string }) => <div>{message}</div>,
   Input: ({ label }: { label: string }) => <input aria-label={label} />,
-  Button: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => <button onClick={onClick}>{children}</button>,
+  Button: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
+    <button onClick={onClick}>{children}</button>
+  ),
 }));
 vi.mock('@ionic/react', () => {
   const Container = ({ children }: PropsWithChildren) => <div>{children}</div>;
   return {
-    IonPage: Container, IonContent: Container, IonList: Container, IonItem: Container,
-    IonLabel: Container, IonBadge: Container, IonIcon: Container, IonModal: Container,
-    IonButtons: Container, IonToast: Container, IonHeader: Container, IonToolbar: Container,
-    IonTitle: Container, IonListHeader: Container,
-    IonInfiniteScroll: ({ children, onIonInfinite, disabled }: PropsWithChildren<{ onIonInfinite?: (event: CustomEvent) => void; disabled?: boolean }>) => (
-      <button aria-label="load-more" disabled={disabled} onClick={() => onIonInfinite?.({ target: { complete: vi.fn() } } as unknown as CustomEvent)}>{children}</button>
+    IonPage: Container,
+    IonContent: Container,
+    IonList: Container,
+    IonItem: Container,
+    IonLabel: Container,
+    IonBadge: Container,
+    IonIcon: Container,
+    IonModal: Container,
+    IonButtons: Container,
+    IonToast: Container,
+    IonHeader: Container,
+    IonToolbar: Container,
+    IonTitle: Container,
+    IonListHeader: Container,
+    IonInfiniteScroll: ({
+      children,
+      onIonInfinite,
+      disabled,
+    }: PropsWithChildren<{ onIonInfinite?: (event: CustomEvent) => void; disabled?: boolean }>) => (
+      <button
+        aria-label="load-more"
+        disabled={disabled}
+        onClick={() => onIonInfinite?.({ target: { complete: vi.fn() } } as unknown as CustomEvent)}
+      >
+        {children}
+      </button>
     ),
     IonInfiniteScrollContent: Container,
-    IonButton: ({ children, onClick, ...props }: PropsWithChildren<{ onClick?: () => void; 'aria-label'?: string }>) => <button onClick={onClick} aria-label={props['aria-label']}>{children}</button>,
+    IonButton: ({
+      children,
+      onClick,
+      ...props
+    }: PropsWithChildren<{ onClick?: () => void; 'aria-label'?: string }>) => (
+      <button onClick={onClick} aria-label={props['aria-label']}>
+        {children}
+      </button>
+    ),
   };
 });
 
 beforeEach(() => {
-  query.data = { data: [{ variant_id: 'variant-1', quantity: 3, low_stock_threshold: 5, is_low_stock: true, variant: { sku: 'RICE-1', product: { name: 'Rice' } } }], meta: { total: 1 } };
+  query.data = {
+    data: [
+      {
+        variant_id: 'variant-1',
+        quantity: 3,
+        low_stock_threshold: 5,
+        is_low_stock: true,
+        variant: { sku: 'RICE-1', product: { name: 'Rice' } },
+      },
+    ],
+    meta: { total: 1 },
+  };
   query.searchData = null;
   query.isError = false;
   query.failAtSkip = null;
@@ -163,7 +221,18 @@ it('keeps a server-returned brand or packaging match visible', () => {
 });
 
 it('loads inventory in 50-row pages', async () => {
-  query.data = { data: [{ variant_id: 'variant-1', quantity: 3, low_stock_threshold: 5, is_low_stock: true, variant: { sku: 'RICE-1', product: { name: 'Rice' } } }], meta: { total: 100 } };
+  query.data = {
+    data: [
+      {
+        variant_id: 'variant-1',
+        quantity: 3,
+        low_stock_threshold: 5,
+        is_low_stock: true,
+        variant: { sku: 'RICE-1', product: { name: 'Rice' } },
+      },
+    ],
+    meta: { total: 100 },
+  };
   render(<InventoryPage />);
 
   fireEvent.click(screen.getByRole('button', { name: 'load-more' }));
@@ -171,7 +240,18 @@ it('loads inventory in 50-row pages', async () => {
 });
 
 it('restarts the ordered inventory window after editing from a later page', async () => {
-  query.data = { data: [{ variant_id: 'variant-1', quantity: 3, low_stock_threshold: 5, is_low_stock: true, variant: { sku: 'RICE-1', product: { name: 'Rice' } } }], meta: { total: 100 } };
+  query.data = {
+    data: [
+      {
+        variant_id: 'variant-1',
+        quantity: 3,
+        low_stock_threshold: 5,
+        is_low_stock: true,
+        variant: { sku: 'RICE-1', product: { name: 'Rice' } },
+      },
+    ],
+    meta: { total: 100 },
+  };
   render(<InventoryPage />);
 
   fireEvent.click(screen.getByRole('button', { name: 'load-more' }));
@@ -185,7 +265,18 @@ it('restarts the ordered inventory window after editing from a later page', asyn
 });
 
 it('keeps loaded inventory visible and offers retry when a later page fails', async () => {
-  query.data = { data: [{ variant_id: 'variant-1', quantity: 3, low_stock_threshold: 5, is_low_stock: true, variant: { sku: 'RICE-1', product: { name: 'Rice' } } }], meta: { total: 100 } };
+  query.data = {
+    data: [
+      {
+        variant_id: 'variant-1',
+        quantity: 3,
+        low_stock_threshold: 5,
+        is_low_stock: true,
+        variant: { sku: 'RICE-1', product: { name: 'Rice' } },
+      },
+    ],
+    meta: { total: 100 },
+  };
   query.failAtSkip = 50;
   render(<InventoryPage />);
 

@@ -15,6 +15,7 @@ const state = vi.hoisted(() => ({
   getSettings: vi.fn(),
 }));
 
+vi.mock('@core/commercial/useDeviceWriteAccess', () => ({ useDeviceWriteAccess: () => true }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('@core/hooks', () => ({
   useAppSelector: (selector: (value: unknown) => unknown) =>

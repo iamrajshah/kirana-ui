@@ -49,7 +49,8 @@ export type CommercialDenialCode =
   | 'COMMERCIAL_LIMIT_REACHED'
   | 'COMMERCIAL_ACCESS_STALE'
   | 'COMMERCIAL_PROVISIONING'
-  | 'COMMERCIAL_ROLE_DENIED';
+  | 'COMMERCIAL_ROLE_DENIED'
+  | 'COMMERCIAL_DEVICE_DENIED';
 
 export interface CommercialAccessSummary {
   planCode: CommercialPlanCode;
@@ -57,6 +58,16 @@ export interface CommercialAccessSummary {
   state: CommercialState;
   accessStateVersion: string;
   entitlements: readonly CommercialFeatureCode[];
+  deviceProfile?: 'MOBILE' | 'TABLET' | 'WEB';
+  deviceAccess?: {
+    revision: number;
+    version?: string;
+    versions?: Partial<Record<'MOBILE' | 'TABLET' | 'WEB', string>>;
+    profiles: Record<
+      'MOBILE' | 'TABLET' | 'WEB',
+      Partial<Record<CommercialFeatureCode, 'HIDDEN' | 'READ_ONLY' | 'FULL'>>
+    >;
+  };
   featureRoles?: Partial<Record<CommercialFeatureCode, readonly string[]>>;
   limits: { staff: number | null; firms: number | null };
   demoExpiresAt: string | null;

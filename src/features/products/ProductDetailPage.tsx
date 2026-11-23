@@ -1,3 +1,4 @@
+import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useState } from 'react';
 import {
   IonPage,
@@ -47,6 +48,7 @@ import './ProductDetailPage.css';
 
 export const ProductDetailPage: React.FC = () => {
   const { t } = useTranslation();
+  const deviceWrite = useDeviceWriteAccess('PRODUCTS');
   const currentUser = useAppSelector(selectCurrentUser);
   const commercialAccess = useAppSelector(selectCommercialAccess);
   const canManageBarcodes = canUseCommercialFeature(
@@ -311,7 +313,11 @@ export const ProductDetailPage: React.FC = () => {
           </IonButtons>
           <IonTitle>{product.name}</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handleEditClick} aria-label={t('products.editProduct')}>
+            <IonButton
+              disabled={!deviceWrite}
+              onClick={handleEditClick}
+              aria-label={t('products.editProduct')}
+            >
               <IonIcon slot="icon-only" icon={pencil} />
             </IonButton>
           </IonButtons>
@@ -417,6 +423,7 @@ export const ProductDetailPage: React.FC = () => {
                           <IonButton
                             fill="clear"
                             size="small"
+                            disabled={!deviceWrite}
                             aria-label={t('products.editVariant')}
                             onClick={(e) => {
                               e.preventDefault();
@@ -568,6 +575,7 @@ export const ProductDetailPage: React.FC = () => {
                         <IonButton
                           expand="block"
                           fill="outline"
+                          disabled={!deviceWrite}
                           onClick={() => handlePurchaseCostClick(variant)}
                         >
                           <IonIcon slot="start" icon={cashOutline} />
@@ -672,7 +680,7 @@ export const ProductDetailPage: React.FC = () => {
                 <div style={{ marginTop: '24px' }}>
                   <Button
                     onClick={handleUpdateProduct}
-                    disabled={updating || !editName.trim()}
+                    disabled={!deviceWrite || updating || !editName.trim()}
                     loading={updating}
                   >
                     {t('products.updateProduct')}

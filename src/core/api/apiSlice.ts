@@ -1,3 +1,4 @@
+import { currentDeviceProfile } from '@core/commercial/deviceAccess';
 import { browserWorkspace } from '@core/workspace/browserWorkspace';
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
@@ -34,6 +35,7 @@ const baseQuery = fetchBaseQuery({
         auth?: { accessToken?: string | null; sessionContext?: SessionContext | null };
       }
     ).auth;
+    headers.set('x-pos-device-profile', currentDeviceProfile());
     const token = auth?.accessToken ?? localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
     if (token) {
       headers.set('authorization', `Bearer ${token}`);
@@ -41,6 +43,10 @@ const baseQuery = fetchBaseQuery({
     const commercial = auth?.sessionContext?.commercialAccess;
     if (commercial && 'accessStateVersion' in commercial) {
       headers.set('x-access-state-version', commercial.accessStateVersion);
+      const deviceVersion =
+        commercial.deviceAccess?.versions?.[commercial.deviceProfile ?? currentDeviceProfile()] ??
+        commercial.deviceAccess?.version;
+      if (deviceVersion) headers.set('x-device-access-version', deviceVersion);
     }
     return headers;
   },
@@ -55,7 +61,7 @@ interface AuthSnapshot {
   refreshToken: string;
 }
 
-const SESSION_SENSITIVE_TAGS = [
+export const SESSION_SENSITIVE_TAGS = [
   'User',
   'Customer',
   'Product',
@@ -71,6 +77,8 @@ const SESSION_SENSITIVE_TAGS = [
   'Firm',
   'Report',
   'FoodLicence',
+  'Shift',
+  'StorefrontOffer',
 ] as const;
 
 const readAuthSnapshot = (api: QueryApi): AuthSnapshot | null => {
@@ -136,6 +144,10 @@ const synchronizeSessionState = (
       (api.getState() as { auth?: { sessionContext?: SessionContext | null } }).auth?.sessionContext
         ?.commercialAccess as CommercialAccessSummary | undefined
     )?.accessStateVersion;
+    const previousDeviceVersion = (
+      (api.getState() as { auth?: { sessionContext?: SessionContext } }).auth?.sessionContext
+        ?.commercialAccess as CommercialAccessSummary | undefined
+    )?.deviceAccess?.version;
     const [sessionResult, accessResult] = await Promise.all([
       withTimeout(Promise.resolve(baseQuery('/auth/session-context', api, extraOptions))),
       withTimeout(Promise.resolve(baseQuery('/subscription/access', api, extraOptions))),
@@ -160,7 +172,10 @@ const synchronizeSessionState = (
           commercialAccess,
         })
       );
-      if (previousVersion && previousVersion !== commercialAccess.accessStateVersion) {
+      if (
+        (previousVersion && previousVersion !== commercialAccess.accessStateVersion) ||
+        previousDeviceVersion !== commercialAccess.deviceAccess?.version
+      ) {
         api.dispatch(apiSlice.util.invalidateTags([...SESSION_SENSITIVE_TAGS]));
       }
     }
@@ -303,6 +318,27 @@ const baseQueryWithReauth: BaseQueryFn<ApiRequestArgs, unknown, FetchBaseQueryEr
       delete requestArgs.suppressErrorToast;
       delete requestArgs.skipReauth;
     }
+    const currentAccess = (api.getState() as { auth?: { sessionContext?: SessionContext } }).auth
+      ?.sessionContext?.commercialAccess as CommercialAccessSummary | undefined;
+    const requestPath = typeof requestArgs === 'string' ? requestArgs : requestArgs.url;
+    const blockedFeature = currentAccess?.deviceAccess
+      ? (await import('@core/commercial/deviceRequestPolicy')).deviceRequestBlocked(
+          currentAccess,
+          requestPath,
+          typeof requestArgs === 'string' ? 'GET' : (requestArgs.method ?? 'GET')
+        )
+      : null;
+    if (blockedFeature) {
+      const denial = {
+        code: 'COMMERCIAL_DEVICE_DENIED' as const,
+        reason: 'Device access is restricted.',
+        action: 'CONTACT_SUPPORT' as const,
+        feature: blockedFeature,
+        accessStateVersion: currentAccess?.accessStateVersion,
+      };
+      if (!suppressErrorToast) notificationService.error(commercialDenialMessage(denial));
+      return { error: { status: 403, data: { success: false, commercial: denial } } };
+    }
     let result = await baseQuery(requestArgs, api, extraOptions);
 
     if (result.error) {
@@ -319,7 +355,9 @@ const baseQueryWithReauth: BaseQueryFn<ApiRequestArgs, unknown, FetchBaseQueryEr
         )?.accessStateVersion;
         if (
           snapshot &&
-          (!commercialDenial.accessStateVersion ||
+          (commercialDenial.code === 'COMMERCIAL_DEVICE_DENIED' ||
+            commercialDenial.code === 'COMMERCIAL_ACCESS_STALE' ||
+            !commercialDenial.accessStateVersion ||
             commercialDenial.accessStateVersion !== previousVersion)
         ) {
           void synchronizeSessionState(

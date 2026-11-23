@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { PaymentsPage } from './PaymentsPage';
 
+const device = vi.hoisted(() => ({ write: true }));
 const query = vi.hoisted(() => ({ data: undefined as unknown, isError: false, refetch: vi.fn() }));
 const createPayment = vi.hoisted(() => vi.fn());
 const dismissPaymentModal = vi.hoisted(() => vi.fn<[], Promise<void>>());
@@ -11,6 +12,9 @@ const pendingInvoicesQuery = vi.hoisted(() => ({
   isLoading: false,
 }));
 
+vi.mock('@core/commercial/useDeviceWriteAccess', () => ({
+  useDeviceWriteAccess: () => device.write,
+}));
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
 }));
@@ -71,8 +75,14 @@ vi.mock('@components', () => ({
       ))}
     </select>
   ),
-  Button: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
-    <button onClick={onClick}>{children}</button>
+  Button: ({
+    children,
+    onClick,
+    disabled,
+  }: PropsWithChildren<{ onClick?: () => void; disabled?: boolean }>) => (
+    <button disabled={disabled} onClick={onClick}>
+      {children}
+    </button>
   ),
   EmptyState: ({ message, action }: { message: string; action?: React.ReactNode }) => (
     <div>
@@ -121,6 +131,7 @@ vi.mock('@ionic/react', async (importOriginal) => {
 });
 
 beforeEach(() => {
+  device.write = true;
   query.data = undefined;
   query.isError = false;
   query.refetch.mockClear();
@@ -349,4 +360,15 @@ it('keeps the collection modal out of the real Ionic route-page registry', async
   fireEvent.click(screen.getAllByRole('button', { name: 'payments.recordPayment' })[0]);
   expect(screen.getByLabelText('payments.searchCustomers')).toBeTruthy();
   expect(registerIonPage).toHaveBeenCalledTimes(1);
+});
+
+it('disables collection saving when this device has view-only payment access', () => {
+  query.data = { data: [] };
+  device.write = false;
+  render(<PaymentsPage />);
+  fireEvent.click(screen.getAllByRole('button', { name: 'payments.recordPayment' })[0]);
+  const save = screen.getByRole('button', { name: 'common.save' }) as HTMLButtonElement;
+  expect(save.disabled).toBe(true);
+  fireEvent.click(save);
+  expect(createPayment).not.toHaveBeenCalled();
 });

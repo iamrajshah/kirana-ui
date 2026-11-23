@@ -622,3 +622,7 @@ moving historical transactions between firms are outside this change.
 Developer pointers: `core/api/foodLicenceApi.ts`, `features/food-licences/`,
 `CreatePurchasePage`, `PurchaseBillImportPage`, `PurchaseDetailPage`. New text is
 loaded with the feature bundle to preserve the production entry-size budget.
+
+## Device feature access
+
+See [Mobile, Tablet and Web policy](docs/device-feature-access.md) for the agreed defaults, templates, enforcement and QA contract. Implemented in the device-feature-templates branch; see the linked QA receipt. This is not a production deployment receipt.

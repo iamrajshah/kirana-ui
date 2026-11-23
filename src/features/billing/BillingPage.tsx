@@ -1,3 +1,4 @@
+import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   IonButton,
@@ -113,6 +114,7 @@ const isInvoiceSettled = (invoice: Invoice) => {
 
 export const BillingPage: React.FC = () => {
   const { t } = useTranslation();
+  const deviceWrite = useDeviceWriteAccess('BILLING');
   const location = useLocation<{ claimedVersion?: number }>();
   const history = useHistory();
   const currentUser = useAppSelector(selectCurrentUser);
@@ -997,6 +999,7 @@ export const BillingPage: React.FC = () => {
   };
 
   const handleSaveAsDraft = async () => {
+    if (!deviceWrite) return;
     if (!validateBillReady()) return;
     try {
       if (editInvoiceId) {
@@ -1078,6 +1081,7 @@ export const BillingPage: React.FC = () => {
   };
 
   const handleCheckout = async (quickMode?: PaymentMode) => {
+    if (!deviceWrite) return;
     if (!validateBillReady()) return;
     let invoiceId: string | null = null;
     const previousBalanceAtCheckout = previousCustomerBalance;
@@ -1108,6 +1112,7 @@ export const BillingPage: React.FC = () => {
   };
 
   const handlePayLater = async () => {
+    if (!deviceWrite) return;
     if (!validateBillReady()) return;
     if (!customerId) {
       notificationService.error(t('billing.creditRequiresCustomer'));
@@ -1803,7 +1808,11 @@ export const BillingPage: React.FC = () => {
                         color="success"
                         className="min-h-touch"
                         disabled={
-                          !cartItems.length || isBusy || !checkoutQuoteReady || stockConflict
+                          !deviceWrite ||
+                          !cartItems.length ||
+                          isBusy ||
+                          !checkoutQuoteReady ||
+                          stockConflict
                         }
                         onClick={() => handleCheckout('CASH')}
                       >
@@ -1814,7 +1823,11 @@ export const BillingPage: React.FC = () => {
                         color="primary"
                         className="min-h-touch"
                         disabled={
-                          !cartItems.length || isBusy || !checkoutQuoteReady || stockConflict
+                          !deviceWrite ||
+                          !cartItems.length ||
+                          isBusy ||
+                          !checkoutQuoteReady ||
+                          stockConflict
                         }
                         onClick={() => handleCheckout('UPI')}
                       >
@@ -1824,7 +1837,11 @@ export const BillingPage: React.FC = () => {
                         fill="outline"
                         className="min-h-touch"
                         disabled={
-                          !cartItems.length || isBusy || !checkoutQuoteReady || stockConflict
+                          !deviceWrite ||
+                          !cartItems.length ||
+                          isBusy ||
+                          !checkoutQuoteReady ||
+                          stockConflict
                         }
                         onClick={() => handleCheckout()}
                       >
@@ -1834,7 +1851,7 @@ export const BillingPage: React.FC = () => {
                       <IonButton
                         fill="clear"
                         className="min-h-touch"
-                        disabled={!cartItems.length || isBusy || stockConflict}
+                        disabled={!deviceWrite || !cartItems.length || isBusy || stockConflict}
                         onClick={handleSaveAsDraft}
                       >
                         <IonIcon icon={bookmark} slot="start" />
@@ -1846,7 +1863,11 @@ export const BillingPage: React.FC = () => {
                           color="warning"
                           className="col-span-2 min-h-touch"
                           disabled={
-                            !cartItems.length || isBusy || !checkoutQuoteReady || stockConflict
+                            !deviceWrite ||
+                            !cartItems.length ||
+                            isBusy ||
+                            !checkoutQuoteReady ||
+                            stockConflict
                           }
                           onClick={() => void handlePayLater()}
                         >
@@ -1872,20 +1893,20 @@ export const BillingPage: React.FC = () => {
               </div>
               <IonButton
                 color="success"
-                disabled={isBusy || !checkoutQuoteReady || stockConflict}
+                disabled={!deviceWrite || isBusy || !checkoutQuoteReady || stockConflict}
                 onClick={() => handleCheckout('CASH')}
               >
                 {t('billing.cash')}
               </IonButton>
               <IonButton
-                disabled={isBusy || !checkoutQuoteReady || stockConflict}
+                disabled={!deviceWrite || isBusy || !checkoutQuoteReady || stockConflict}
                 onClick={() => handleCheckout('UPI')}
               >
                 {t('payment.upi')}
               </IonButton>
               <IonButton
                 fill="outline"
-                disabled={isBusy || !checkoutQuoteReady || stockConflict}
+                disabled={!deviceWrite || isBusy || !checkoutQuoteReady || stockConflict}
                 onClick={() => handleCheckout()}
               >
                 <IonIcon icon={card} slot="icon-only" />
@@ -1893,7 +1914,7 @@ export const BillingPage: React.FC = () => {
               {customerId && (
                 <IonButton
                   color="warning"
-                  disabled={isBusy || !checkoutQuoteReady || stockConflict}
+                  disabled={!deviceWrite || isBusy || !checkoutQuoteReady || stockConflict}
                   onClick={() => void handlePayLater()}
                 >
                   {t('billing.khata')}

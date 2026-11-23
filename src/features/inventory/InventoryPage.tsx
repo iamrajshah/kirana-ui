@@ -1,3 +1,4 @@
+import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useEffect, useMemo, useState } from 'react';
 import { apiErrorMessage } from '@core/services/notificationService';
 import { Navbar } from '@components/Navbar';
@@ -39,6 +40,7 @@ const saleableQuantity = (item: Inventory) => item.saleable_quantity ?? item.qua
 
 export const InventoryPage: React.FC = () => {
   const { t } = useTranslation();
+  const deviceWrite = useDeviceWriteAccess('INVENTORY');
   const history = useHistory();
   const user = useAppSelector(selectCurrentUser);
   const commercialAccess = useAppSelector(selectCommercialAccess);
@@ -263,6 +265,7 @@ export const InventoryPage: React.FC = () => {
                               )}
                             </div>
                             <IonButton
+                              disabled={!deviceWrite}
                               onClick={() => handleEditClick(item)}
                               fill="outline"
                               aria-label={t('common.edit')}

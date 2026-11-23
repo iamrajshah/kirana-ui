@@ -1,3 +1,4 @@
+import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useMemo, useRef, useState } from 'react';
 import {
   IonAlert,
@@ -43,6 +44,9 @@ const InvoiceDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
   const { t } = useTranslation();
+  const deviceWrite = useDeviceWriteAccess('INVOICES');
+  const deviceBillingWrite = useDeviceWriteAccess('BILLING');
+  const devicePaymentWrite = useDeviceWriteAccess('PAYMENTS');
   const documentQuery = useGetFinalizedDocumentQuery(id);
   const nonDocument = documentQuery.data?.data.kind === 'NON_DOCUMENT';
   const invoiceQuery = useGetInvoiceByIdQuery(id, { skip: !nonDocument });
@@ -177,13 +181,17 @@ const InvoiceDetailPage: React.FC = () => {
   if (receipt && finalizedDocument) {
     const outputFeedback = getReceiptOutputFeedback(receiptOutput.state);
     const outputMessage = outputFeedback
-      ? t({
-          working: 'invoiceDetail.preparingOutput',
-          downloaded: 'invoiceDetail.pdfDownloaded',
-          error: 'invoiceDetail.outputFailed',
-        }[outputFeedback])
+      ? t(
+          {
+            working: 'invoiceDetail.preparingOutput',
+            downloaded: 'invoiceDetail.pdfDownloaded',
+            error: 'invoiceDetail.outputFailed',
+          }[outputFeedback]
+        )
       : null;
     const mayCollect =
+      deviceWrite &&
+      devicePaymentWrite &&
       Number(receipt.payment.remaining) > 0 &&
       receipt.customer.kind === 'named' &&
       Boolean(finalizedDocument.customer?.id) &&
@@ -249,7 +257,10 @@ const InvoiceDetailPage: React.FC = () => {
                   fill="outline"
                   onClick={() => {
                     if (!openWhatsAppReceipt(receipt)) {
-                      setToast({ color: 'danger', message: t('invoiceDetail.whatsAppInvalidPhone') });
+                      setToast({
+                        color: 'danger',
+                        message: t('invoiceDetail.whatsAppInvalidPhone'),
+                      });
                     }
                   }}
                 >
@@ -407,7 +418,7 @@ const InvoiceDetailPage: React.FC = () => {
               {settingsData?.data.document_mode !== 'GST_TAX_INVOICE' && (
                 <IonButton
                   expand="block"
-                  disabled={finalizing}
+                  disabled={!deviceWrite || !deviceBillingWrite || finalizing}
                   onClick={() => setShowPaymentModal(true)}
                 >
                   {t('invoiceDetail.finalizeAndCollectPayment')}
@@ -417,7 +428,7 @@ const InvoiceDetailPage: React.FC = () => {
                 expand="block"
                 color="danger"
                 fill="outline"
-                disabled={cancelling}
+                disabled={!deviceWrite || !deviceBillingWrite || cancelling}
                 onClick={() => setShowCancelAlert(true)}
               >
                 {t('invoiceDetail.cancelInvoice')}

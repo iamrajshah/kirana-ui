@@ -1,3 +1,4 @@
+import { deviceCanWrite } from '@core/commercial/deviceAccess';
 import React from 'react';
 import { Redirect, useLocation } from 'react-router';
 import { useAppSelector } from '@hooks/useAppSelector';
@@ -63,12 +64,21 @@ export const PrivateRoute: React.FC<PrivateRouteProps> = ({
   if (permission && !hasAccessToTab(user?.roles || [], permission)) {
     return <Redirect to={ROUTES.DASHBOARD} />;
   }
+
   if (
     commercialFeature &&
     !canUseCommercialFeature(user?.roles || [], commercialAccess, commercialFeature)
   ) {
-    return <Redirect to={ROUTES.DASHBOARD} />;
+    return (
+      <Redirect to={location.pathname === ROUTES.DASHBOARD ? ROUTES.PROFILE : ROUTES.DASHBOARD} />
+    );
   }
 
+  if (
+    commercialFeature &&
+    !deviceCanWrite(commercialAccess, commercialFeature) &&
+    ([ROUTES.PURCHASE_CREATE, ROUTES.PURCHASE_IMPORT] as string[]).includes(location.pathname)
+  )
+    return <Redirect to={ROUTES.PURCHASES} />;
   return <>{children}</>;
 };

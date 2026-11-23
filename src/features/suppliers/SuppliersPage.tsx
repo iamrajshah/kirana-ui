@@ -1,3 +1,4 @@
+import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useState, useEffect, useRef } from 'react';
 import { createIdempotentAttempt } from '@utils/idempotentAttempt';
 import type { Supplier, SupplierPaymentMode } from '../../core/api/supplierApi';
@@ -58,11 +59,12 @@ import {
 
 const SuppliersPage: React.FC = () => {
   const { t } = useTranslation();
+  const deviceWrite = useDeviceWriteAccess('SUPPLIERS');
   const history = useHistory();
   const user = useAppSelector(selectCurrentUser);
   const userRoles = user?.roles || [];
-  const hasCreatePermission = hasPermission(userRoles, 'SUPPLIER_CREATE');
-  const hasUpdatePermission = hasPermission(userRoles, 'SUPPLIER_UPDATE');
+  const hasCreatePermission = deviceWrite && hasPermission(userRoles, 'SUPPLIER_CREATE');
+  const hasUpdatePermission = deviceWrite && hasPermission(userRoles, 'SUPPLIER_UPDATE');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
@@ -257,7 +259,13 @@ const SuppliersPage: React.FC = () => {
       notificationService.warning(t('suppliers.selectPaymentFirm'));
       return;
     }
-    if (!paymentFitsFirmBalance(paymentSupplier.balances_by_firm, paymentFirmId, parseFloat(paymentAmount))) {
+    if (
+      !paymentFitsFirmBalance(
+        paymentSupplier.balances_by_firm,
+        paymentFirmId,
+        parseFloat(paymentAmount)
+      )
+    ) {
       notificationService.warning(t('suppliers.paymentExceedsFirmBalance'));
       return;
     }
@@ -352,15 +360,23 @@ const SuppliersPage: React.FC = () => {
                           <h2>{supplier.name}</h2>
                           <p>{supplier.phone}</p>
                           {supplier.email && <p>{supplier.email}</p>}
-                          {supplier.gstin && <p>{t('suppliers.gstin')}: {supplier.gstin}</p>}
+                          {supplier.gstin && (
+                            <p>
+                              {t('suppliers.gstin')}: {supplier.gstin}
+                            </p>
+                          )}
                           {(supplier.state || supplier.state_code) && (
                             <p>
-                              {t('suppliers.supplierState')}: {supplier.state || t('common.notAvailable')}
+                              {t('suppliers.supplierState')}:{' '}
+                              {supplier.state || t('common.notAvailable')}
                               {supplier.state_code ? ` (${supplier.state_code})` : ''}
                             </p>
                           )}
                           {supplier.default_purchase_firm && (
-                            <p>{t('suppliers.defaultPurchaseFirm')}: {supplier.default_purchase_firm.display_name}</p>
+                            <p>
+                              {t('suppliers.defaultPurchaseFirm')}:{' '}
+                              {supplier.default_purchase_firm.display_name}
+                            </p>
                           )}
                           {supplier.balance !== 0 && (
                             <p className={supplier.balance > 0 ? 'stock-warning' : undefined}>
@@ -372,7 +388,7 @@ const SuppliersPage: React.FC = () => {
                           {(supplier.balances_by_firm || []).map((item) => (
                             <p key={item.firm_id}>
                               {item.firm.display_name}
-                              {!item.firm.is_active ? ` (${t('firms.inactive')})` : ''}: {' '}
+                              {!item.firm.is_active ? ` (${t('firms.inactive')})` : ''}:{' '}
                               {item.balance > 0
                                 ? `${t('suppliers.amountOwed')} ${formatCurrency(item.balance)}`
                                 : `${t('suppliers.advance')} ${formatCurrency(Math.abs(item.balance))}`}
@@ -382,7 +398,7 @@ const SuppliersPage: React.FC = () => {
                       </IonItem>
                       {hasUpdatePermission && (
                         <IonItemOptions side="end">
-                          {hasPayableFirmBalance(supplier.balances_by_firm) && (
+                          {deviceWrite && hasPayableFirmBalance(supplier.balances_by_firm) && (
                             <IonItemOption
                               color="success"
                               onClick={() => handleMakePayment(supplier)}
@@ -410,7 +426,7 @@ const SuppliersPage: React.FC = () => {
                       </IonButton>
                       {hasUpdatePermission && (
                         <div className="workspace-actions">
-                          {hasPayableFirmBalance(supplier.balances_by_firm) && (
+                          {deviceWrite && hasPayableFirmBalance(supplier.balances_by_firm) && (
                             <IonButton fill="outline" onClick={() => handleMakePayment(supplier)}>
                               {t('suppliers.makePayment')}
                             </IonButton>
@@ -528,7 +544,9 @@ const SuppliersPage: React.FC = () => {
                 placeholder={t('suppliers.stateCodePlaceholder')}
               />
               {taxIdentityError && (
-                <p className="stock-warning" role="alert">{taxIdentityError}</p>
+                <p className="stock-warning" role="alert">
+                  {taxIdentityError}
+                </p>
               )}
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
@@ -543,7 +561,9 @@ const SuppliersPage: React.FC = () => {
                 >
                   <IonSelectOption value="">{t('suppliers.noDefaultFirm')}</IonSelectOption>
                   {firms.map((firm) => (
-                    <IonSelectOption key={firm.id} value={firm.id}>{firm.display_name}</IonSelectOption>
+                    <IonSelectOption key={firm.id} value={firm.id}>
+                      {firm.display_name}
+                    </IonSelectOption>
                   ))}
                 </IonSelect>
               </div>
@@ -617,7 +637,10 @@ const SuppliersPage: React.FC = () => {
                   aria-label={t('suppliers.paymentFirm')}
                   value={paymentFirmId}
                   placeholder={t('suppliers.selectPaymentFirm')}
-                  onIonChange={(event) => { setPaymentFirmId(event.detail.value); setPaymentAmount(''); }}
+                  onIonChange={(event) => {
+                    setPaymentFirmId(event.detail.value);
+                    setPaymentAmount('');
+                  }}
                   interface="popover"
                 >
                   {payableFirmBalances(paymentSupplier.balances_by_firm).map((item) => (
