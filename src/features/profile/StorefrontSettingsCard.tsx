@@ -1,3 +1,4 @@
+import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useEffect, useState } from 'react';
 import {
   IonButton,
@@ -20,6 +21,7 @@ import { apiErrorMessage } from '@core/services/notificationService';
 
 export const StorefrontSettingsCard: React.FC = () => {
   const { t } = useTranslation();
+  const deviceWrite = useDeviceWriteAccess('ONLINE_ORDERS');
   const user = useAppSelector((state) => state.auth.user);
   const isOwner = user?.roles?.includes('OWNER') ?? false;
   const { data, isLoading, isError, refetch } = useGetTenantSettingsQuery(undefined, {
@@ -103,7 +105,7 @@ export const StorefrontSettingsCard: React.FC = () => {
             )}
             <IonButton
               expand="block"
-              disabled={isSaving || showStockQuantity === persistedValue}
+              disabled={!deviceWrite || isSaving || showStockQuantity === persistedValue}
               onClick={() => void handleSave()}
             >
               <IonIcon icon={save} slot="start" />

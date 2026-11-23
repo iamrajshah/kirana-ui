@@ -18,6 +18,7 @@ import { PaymentsPage } from './PaymentsPage';
 const createPayment = vi.hoisted(() => vi.fn());
 const searchCustomers = vi.hoisted(() => vi.fn());
 
+vi.mock('@core/commercial/useDeviceWriteAccess', () => ({ useDeviceWriteAccess: () => true }));
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: 'en' } }),
 }));

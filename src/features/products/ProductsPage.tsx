@@ -1,3 +1,4 @@
+import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react';
 import type { Category } from '@core/api/categoryApi';
 import type { Product, UqcCode } from '@core/types';
@@ -54,6 +55,8 @@ const ProductTaxWorkspace = lazy(() => import('./ProductTaxWorkspace'));
 
 export const ProductsPage: React.FC = () => {
   const { t } = useTranslation();
+  const deviceWrite = useDeviceWriteAccess('PRODUCTS');
+  const canDesignBarcodes = useDeviceWriteAccess('CUSTOM_BARCODE');
   const history = useHistory();
   const [present] = useIonActionSheet();
   const [search, setSearch] = useState('');
@@ -275,14 +278,22 @@ export const ProductsPage: React.FC = () => {
           <div className="workspace-header">
             <h1>{t('products.title')}</h1>
             <div className="workspace-actions stock-primary-actions">
-              <IonButton fill="outline" onClick={() => setShowTaxWorkspace(true)}>
+              <IonButton
+                disabled={!deviceWrite}
+                fill="outline"
+                onClick={() => setShowTaxWorkspace(true)}
+              >
                 {t('taxWorkspace.title')}
               </IonButton>
-              <IonButton fill="outline" onClick={() => history.push(ROUTES.PRODUCT_BARCODE)}>
+              <IonButton
+                disabled={!canDesignBarcodes}
+                fill="outline"
+                onClick={() => history.push(ROUTES.PRODUCT_BARCODE)}
+              >
                 <IonIcon slot="start" icon={barcodeOutline} />
                 {t('products.scanBarcode')}
               </IonButton>
-              <IonButton onClick={() => setShowModal(true)}>
+              <IonButton disabled={!deviceWrite} onClick={() => setShowModal(true)}>
                 <IonIcon slot="start" icon={add} />
                 {t('products.addManually')}
               </IonButton>
@@ -367,6 +378,7 @@ export const ProductsPage: React.FC = () => {
 
         <IonFab vertical="bottom" horizontal="end" slot="fixed" className="stock-fab">
           <IonFabButton
+            disabled={!deviceWrite}
             aria-label={t('products.addProduct')}
             onClick={() => {
               present({

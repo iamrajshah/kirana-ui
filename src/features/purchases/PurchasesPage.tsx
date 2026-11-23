@@ -1,3 +1,4 @@
+import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import '../food-licences/translations';
 import React, { useState } from 'react';
 import {
@@ -39,11 +40,12 @@ import { canUseCommercialFeature } from '@core/commercial/commercialAccess';
 
 const PurchasesPage: React.FC = () => {
   const { t } = useTranslation();
+  const deviceWrite = useDeviceWriteAccess('PURCHASES');
   const history = useHistory();
   const user = useAppSelector(selectCurrentUser);
   const commercialAccess = useAppSelector(selectCommercialAccess);
   const userRoles = user?.roles || [];
-  const hasCreatePermission = hasPermission(userRoles, 'PURCHASE_CREATE');
+  const hasCreatePermission = deviceWrite && hasPermission(userRoles, 'PURCHASE_CREATE');
   const canImportPurchaseBill =
     hasCreatePermission &&
     canUseCommercialFeature(userRoles, commercialAccess, 'PURCHASE_BILL_IMPORT');

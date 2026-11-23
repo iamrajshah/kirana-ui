@@ -9,6 +9,7 @@ const state = vi.hoisted(() => ({
   gstPercent: null as number | null,
 }));
 
+vi.mock('@core/commercial/useDeviceWriteAccess', () => ({useDeviceWriteAccess: () => true}));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('react-router', () => ({ useParams: () => ({ id: 'product-1' }) }));
 vi.mock('@core/auth/authSlice', () => ({

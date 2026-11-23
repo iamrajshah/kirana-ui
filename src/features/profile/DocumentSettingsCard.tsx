@@ -1,3 +1,4 @@
+import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   IonButton,
@@ -60,6 +61,7 @@ const toPayload = (form: UpdateTenantDocumentSettings): UpdateTenantDocumentSett
 
 export const DocumentSettingsCard: React.FC = () => {
   const { t } = useTranslation();
+  const deviceWrite = useDeviceWriteAccess('FIRMS_SETTINGS');
   const { data, isLoading, isError, refetch } = useGetTenantSettingsQuery();
   const [updateSettings, { isLoading: isSaving }] = useUpdateTenantSettingsMutation();
   const [form, setForm] = useState<UpdateTenantDocumentSettings | null>(null);
@@ -300,7 +302,7 @@ export const DocumentSettingsCard: React.FC = () => {
             <IonButton
               type="submit"
               expand="block"
-              disabled={isSaving || blockers.length > 0 || capabilityBlocked}
+              disabled={!deviceWrite || isSaving || blockers.length > 0 || capabilityBlocked}
             >
               <IonIcon icon={save} slot="start" />
               {isSaving ? t('documentSettings.saving') : t('documentSettings.save')}

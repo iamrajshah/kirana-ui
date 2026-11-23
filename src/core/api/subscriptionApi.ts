@@ -1,6 +1,6 @@
 import type { CommercialAccessSummary } from '@core/commercial';
 import { setCommercialAccess } from '@core/auth/authSlice';
-import { apiSlice } from './apiSlice';
+import { apiSlice, SESSION_SENSITIVE_TAGS } from './apiSlice';
 
 export interface RenewalRequest {
   id: string;
@@ -22,10 +22,30 @@ export const subscriptionApi = apiSlice.injectEndpoints({
     getCommercialAccess: builder.query<CommercialAccessSummary, void>({
       query: () => '/subscription/access',
       transformResponse: (response: { data: CommercialAccessSummary }) => response.data,
-      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+      async onQueryStarted(_arg, { dispatch, getState, queryFulfilled }) {
+        const before = (
+          getState() as unknown as {
+            auth: {
+              user?: { id: string };
+              sessionVersion?: number;
+              sessionContext?: { commercialAccess?: CommercialAccessSummary };
+            };
+          }
+        ).auth;
+        const oldDeviceVersion = before.sessionContext?.commercialAccess?.deviceAccess?.version;
         try {
           const { data } = await queryFulfilled;
+          const current = (
+            getState() as unknown as { auth: { user?: { id: string }; sessionVersion?: number } }
+          ).auth;
+          if (
+            current.user?.id !== before.user?.id ||
+            current.sessionVersion !== before.sessionVersion
+          )
+            return;
           dispatch(setCommercialAccess(data));
+          if (oldDeviceVersion !== data.deviceAccess?.version)
+            dispatch(apiSlice.util.invalidateTags([...SESSION_SENSITIVE_TAGS]));
         } catch {
           // The query retains its error; keep the last confirmed access state.
         }

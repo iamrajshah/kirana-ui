@@ -8,7 +8,9 @@
     "stale": "દુકાનની ઍક્સેસ બદલાઈ છે. રિફ્રેશ કરીને ફરી પ્રયાસ કરો.",
     "provisioning": "દુકાન સેટઅપ ચાલુ છે. પૂર્ણ થાય ત્યાં સુધી રાહ જુઓ.",
     "roleDenied": "તમારી કર્મચારી ભૂમિકા આ કાર્યની મંજૂરી આપતી નથી. માલિકનો સંપર્ક કરો.",
-    "demoDocumentMarker": "DEMO — NOT A VALID BUSINESS DOCUMENT"
+    "demoDocumentMarker": "DEMO — NOT A VALID BUSINESS DOCUMENT",
+    "deviceDenied": "આ ઉપકરણ પર આ સુવિધા ફક્ત જોઈ શકાય છે. ફેરફાર માટે સક્ષમ ઉપકરણનો ઉપયોગ કરો.",
+    "deviceViewOnly": "આ ઉપકરણ પર ફક્ત જોઈ શકાય છે. ફેરફારો સક્ષમ ઉપકરણ પર ઉપલબ્ધ છે."
   },
   "security": {
     "title": "ડિવાઇસ અને સુરક્ષા",

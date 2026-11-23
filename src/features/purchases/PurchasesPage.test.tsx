@@ -4,12 +4,25 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import PurchasesPage from './PurchasesPage';
 
 const state = vi.hoisted(() => ({
-  data: { data: [{ id: 'purchase-1', invoice_number: 'INV-1', invoice_date: '2026-10-12', total_amount: 150, paid_amount: 50, status: 'PARTIAL', suppliers: { name: 'Patel Traders' } }] } as unknown,
+  data: {
+    data: [
+      {
+        id: 'purchase-1',
+        invoice_number: 'INV-1',
+        invoice_date: '2026-10-12',
+        total_amount: 150,
+        paid_amount: 50,
+        status: 'PARTIAL',
+        suppliers: { name: 'Patel Traders' },
+      },
+    ],
+  } as unknown,
   isError: false,
   refetch: vi.fn(),
   push: vi.fn(),
 }));
 
+vi.mock('@core/commercial/useDeviceWriteAccess', () => ({ useDeviceWriteAccess: () => true }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('react-router', () => ({ useHistory: () => ({ push: state.push }) }));
 vi.mock('@core/hooks', () => ({ useAppSelector: () => ({ roles: ['OWNER'] }) }));
@@ -18,26 +31,68 @@ vi.mock('@core/auth/authSlice', () => ({
   selectCommercialAccess: vi.fn(),
 }));
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
-vi.mock('../../core/api/purchaseApi', () => ({ useGetPurchasesQuery: () => ({ ...state, isLoading: false }) }));
-vi.mock('@core/api/firmApi', () => ({ useGetFirmsQuery: () => ({ data: { data: { firms: [] } } }) }));
+vi.mock('../../core/api/purchaseApi', () => ({
+  useGetPurchasesQuery: () => ({ ...state, isLoading: false }),
+}));
+vi.mock('@core/api/firmApi', () => ({
+  useGetFirmsQuery: () => ({ data: { data: { firms: [] } } }),
+}));
 vi.mock('@ionic/react', () => {
   const Container = ({ children }: PropsWithChildren) => <div>{children}</div>;
   return {
-    IonPage: Container, IonContent: Container, IonList: Container, IonCardHeader: Container,
-    IonCardTitle: Container, IonCardContent: Container, IonBadge: Container, IonIcon: Container,
-    IonSpinner: Container, IonRefresher: Container, IonRefresherContent: Container,
-    IonText: Container, IonFab: Container, IonFabButton: Container, IonToolbar: Container,
-    IonSelect: Container, IonSelectOption: Container,
-    IonCard: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => <button onClick={onClick}>{children}</button>,
-    IonSearchbar: ({ onIonInput }: { onIonInput: (event: { detail: { value: string } }) => void }) => <input aria-label="search" onChange={(event) => onIonInput({ detail: { value: event.target.value } })} />,
-    IonButton: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => <button onClick={onClick}>{children}</button>,
+    IonPage: Container,
+    IonContent: Container,
+    IonList: Container,
+    IonCardHeader: Container,
+    IonCardTitle: Container,
+    IonCardContent: Container,
+    IonBadge: Container,
+    IonIcon: Container,
+    IonSpinner: Container,
+    IonRefresher: Container,
+    IonRefresherContent: Container,
+    IonText: Container,
+    IonFab: Container,
+    IonFabButton: Container,
+    IonToolbar: Container,
+    IonSelect: Container,
+    IonSelectOption: Container,
+    IonCard: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
+      <button onClick={onClick}>{children}</button>
+    ),
+    IonSearchbar: ({
+      onIonInput,
+    }: {
+      onIonInput: (event: { detail: { value: string } }) => void;
+    }) => (
+      <input
+        aria-label="search"
+        onChange={(event) => onIonInput({ detail: { value: event.target.value } })}
+      />
+    ),
+    IonButton: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
+      <button onClick={onClick}>{children}</button>
+    ),
   };
 });
 
 beforeEach(() => {
-  state.data = { data: [{ id: 'purchase-1', invoice_number: 'INV-1', invoice_date: '2026-10-12', total_amount: 150, paid_amount: 50, status: 'PARTIAL', suppliers: { name: 'Patel Traders' } }] };
+  state.data = {
+    data: [
+      {
+        id: 'purchase-1',
+        invoice_number: 'INV-1',
+        invoice_date: '2026-10-12',
+        total_amount: 150,
+        paid_amount: 50,
+        status: 'PARTIAL',
+        suppliers: { name: 'Patel Traders' },
+      },
+    ],
+  };
   state.isError = false;
-  state.refetch.mockClear(); state.push.mockClear();
+  state.refetch.mockClear();
+  state.push.mockClear();
 });
 afterEach(cleanup);
 
@@ -59,7 +114,19 @@ it('offers retry when purchases cannot be loaded', () => {
 });
 
 it('can search by supplier when an older purchase has no invoice number', () => {
-  state.data = { data: [{ id: 'purchase-1', invoice_number: null, invoice_date: '2026-10-12', total_amount: 150, paid_amount: 50, status: 'PARTIAL', suppliers: { name: 'Patel Traders' } }] };
+  state.data = {
+    data: [
+      {
+        id: 'purchase-1',
+        invoice_number: null,
+        invoice_date: '2026-10-12',
+        total_amount: 150,
+        paid_amount: 50,
+        status: 'PARTIAL',
+        suppliers: { name: 'Patel Traders' },
+      },
+    ],
+  };
   render(<PurchasesPage />);
   fireEvent.change(screen.getByRole('textbox', { name: 'search' }), { target: { value: 'Patel' } });
   expect(screen.getByText('Patel Traders')).toBeTruthy();

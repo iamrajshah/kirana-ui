@@ -1,3 +1,4 @@
+import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   IonBadge,
@@ -62,6 +63,7 @@ const nullable = (value: string | null | undefined) => value?.trim() || null;
 
 export const FirmSettingsCard: React.FC = () => {
   const { t } = useTranslation();
+  const deviceWrite = useDeviceWriteAccess('FIRMS_SETTINGS');
   const currentUser = useAppSelector(selectCurrentUser);
   const commercialAccess = useAppSelector(selectCommercialAccess);
   const { data, isLoading, isError, refetch } = useGetFirmsQuery();
@@ -73,9 +75,9 @@ export const FirmSettingsCard: React.FC = () => {
   const [form, setForm] = useState<FirmInput | null>(null);
 
   const firms = useMemo(() => data?.data.firms || [], [data]);
-  const canAddFirm = firms.length === 0 || canUseCommercialFeature(
-    currentUser?.roles ?? [], commercialAccess, 'MULTI_FIRM'
-  );
+  const canAddFirm =
+    firms.length === 0 ||
+    canUseCommercialFeature(currentUser?.roles ?? [], commercialAccess, 'MULTI_FIRM');
   const isSaving = isCreating || isUpdating;
 
   useEffect(() => {
@@ -148,7 +150,12 @@ export const FirmSettingsCard: React.FC = () => {
   const saveFirm = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!form) return;
-    if (!form.code.trim() || !form.legal_name.trim() || !form.display_name.trim() || !form.invoice_prefix.trim()) {
+    if (
+      !form.code.trim() ||
+      !form.legal_name.trim() ||
+      !form.display_name.trim() ||
+      !form.invoice_prefix.trim()
+    ) {
       notificationService.warning(t('firms.requiredFields'));
       return;
     }
@@ -223,7 +230,9 @@ export const FirmSettingsCard: React.FC = () => {
         {isError && (
           <div role="alert">
             <p>{t('firms.loadFailed')}</p>
-            <IonButton fill="outline" onClick={() => refetch()}>{t('common.retry')}</IonButton>
+            <IonButton fill="outline" onClick={() => refetch()}>
+              {t('common.retry')}
+            </IonButton>
           </div>
         )}
 
@@ -234,23 +243,44 @@ export const FirmSettingsCard: React.FC = () => {
                 <div className="firm-settings-row" key={firm.id}>
                   <div>
                     <strong>{firm.display_name}</strong>
-                    <p>{firm.legal_name} · {firm.code}</p>
-                    {firm.is_default_sales && <IonBadge color="success">{t('firms.salesDefault')}</IonBadge>}
+                    <p>
+                      {firm.legal_name} · {firm.code}
+                    </p>
+                    {firm.is_default_sales && (
+                      <IonBadge color="success">{t('firms.salesDefault')}</IonBadge>
+                    )}
                     {!firm.is_active && <IonBadge color="medium">{t('firms.inactive')}</IonBadge>}
                   </div>
                   <div className="workspace-actions">
                     {!firm.is_default_sales && firm.is_active && (
-                      <IonButton fill="outline" disabled={isSettingDefault} onClick={() => void makeDefault(firm)}>
+                      <IonButton
+                        fill="outline"
+                        disabled={!deviceWrite || isSettingDefault}
+                        onClick={() => void makeDefault(firm)}
+                      >
                         <IonIcon icon={star} slot="start" /> {t('firms.makeSalesDefault')}
                       </IonButton>
                     )}
-                    <IonButton fill="outline" disabled={isLoadingFirm} onClick={() => void editFirm(firm.id)}>{t('common.edit')}</IonButton>
+                    <IonButton
+                      fill="outline"
+                      disabled={!deviceWrite || isLoadingFirm}
+                      onClick={() => void editFirm(firm.id)}
+                    >
+                      {t('common.edit')}
+                    </IonButton>
                   </div>
                 </div>
               ))}
             </div>
             {!canAddFirm && <p role="status">{t('firms.businessPlanRequired')}</p>}
-            <IonButton disabled={!canAddFirm} expand="block" onClick={() => { setEditingId(null); setForm(blankFirm()); }}>
+            <IonButton
+              disabled={!deviceWrite || !canAddFirm}
+              expand="block"
+              onClick={() => {
+                setEditingId(null);
+                setForm(blankFirm());
+              }}
+            >
               <IonIcon icon={add} slot="start" /> {t('firms.addFirm')}
             </IonButton>
           </>
@@ -259,19 +289,82 @@ export const FirmSettingsCard: React.FC = () => {
         {form && (
           <form onSubmit={saveFirm}>
             <div className="document-settings-grid">
-              <Input label={t('firms.displayName')} value={form.display_name} onChange={(value) => setField('display_name', value)} required />
-              <Input label={t('firms.legalName')} value={form.legal_name} onChange={(value) => setField('legal_name', value)} required />
-              <Input label={t('firms.code')} value={form.code} onChange={(value) => setField('code', value)} maxLength={20} required />
-              <Input label={t('firms.invoicePrefix')} value={form.invoice_prefix} onChange={(value) => setField('invoice_prefix', value)} maxLength={12} required />
-              <Input label={t('firms.gstin')} value={form.gstin || ''} onChange={(value) => setField('gstin', value)} maxLength={15} />
-              <Input label={t('firms.pan')} value={form.pan || ''} onChange={(value) => setField('pan', value)} maxLength={10} />
-              <Input label={t('firms.addressLine1')} value={form.address_line1 || ''} onChange={(value) => setField('address_line1', value)} />
-              <Input label={t('firms.addressLine2')} value={form.address_line2 || ''} onChange={(value) => setField('address_line2', value)} />
-              <Input label={t('firms.city')} value={form.city || ''} onChange={(value) => setField('city', value)} />
-              <Input label={t('firms.state')} value={form.state || ''} onChange={(value) => setField('state', value)} />
-              <Input label={t('firms.stateCode')} value={form.state_code || ''} onChange={(value) => setField('state_code', value)} maxLength={2} />
-              <Input label={t('firms.postalCode')} value={form.postal_code || ''} onChange={(value) => setField('postal_code', value)} maxLength={6} />
-              <Input label={t('firms.phone')} value={form.phone || ''} onChange={(value) => setField('phone', value)} type="tel" />
+              <Input
+                label={t('firms.displayName')}
+                value={form.display_name}
+                onChange={(value) => setField('display_name', value)}
+                required
+              />
+              <Input
+                label={t('firms.legalName')}
+                value={form.legal_name}
+                onChange={(value) => setField('legal_name', value)}
+                required
+              />
+              <Input
+                label={t('firms.code')}
+                value={form.code}
+                onChange={(value) => setField('code', value)}
+                maxLength={20}
+                required
+              />
+              <Input
+                label={t('firms.invoicePrefix')}
+                value={form.invoice_prefix}
+                onChange={(value) => setField('invoice_prefix', value)}
+                maxLength={12}
+                required
+              />
+              <Input
+                label={t('firms.gstin')}
+                value={form.gstin || ''}
+                onChange={(value) => setField('gstin', value)}
+                maxLength={15}
+              />
+              <Input
+                label={t('firms.pan')}
+                value={form.pan || ''}
+                onChange={(value) => setField('pan', value)}
+                maxLength={10}
+              />
+              <Input
+                label={t('firms.addressLine1')}
+                value={form.address_line1 || ''}
+                onChange={(value) => setField('address_line1', value)}
+              />
+              <Input
+                label={t('firms.addressLine2')}
+                value={form.address_line2 || ''}
+                onChange={(value) => setField('address_line2', value)}
+              />
+              <Input
+                label={t('firms.city')}
+                value={form.city || ''}
+                onChange={(value) => setField('city', value)}
+              />
+              <Input
+                label={t('firms.state')}
+                value={form.state || ''}
+                onChange={(value) => setField('state', value)}
+              />
+              <Input
+                label={t('firms.stateCode')}
+                value={form.state_code || ''}
+                onChange={(value) => setField('state_code', value)}
+                maxLength={2}
+              />
+              <Input
+                label={t('firms.postalCode')}
+                value={form.postal_code || ''}
+                onChange={(value) => setField('postal_code', value)}
+                maxLength={6}
+              />
+              <Input
+                label={t('firms.phone')}
+                value={form.phone || ''}
+                onChange={(value) => setField('phone', value)}
+                type="tel"
+              />
             </div>
             <IonToggle
               checked={form.is_active}
@@ -289,29 +382,88 @@ export const FirmSettingsCard: React.FC = () => {
               <fieldset key={index} className="document-settings-gst">
                 <legend>{t('firms.bankAccountNumber', { number: index + 1 })}</legend>
                 <div className="document-settings-grid">
-                  <Input label={t('firms.accountHolder')} value={account.account_holder_name} onChange={(value) => setBankField(index, 'account_holder_name', value)} required />
-                  <Input label={t('firms.bankName')} value={account.bank_name} onChange={(value) => setBankField(index, 'bank_name', value)} required />
-                  <Input label={t('firms.accountNumber')} value={account.account_number} onChange={(value) => setBankField(index, 'account_number', value)} required />
-                  <Input label={t('firms.ifsc')} value={account.ifsc_code} onChange={(value) => setBankField(index, 'ifsc_code', value)} required />
-                  <Input label={t('firms.branch')} value={account.branch_name || ''} onChange={(value) => setBankField(index, 'branch_name', value)} />
-                  <Input label={t('firms.accountType')} value={account.account_type || ''} onChange={(value) => setBankField(index, 'account_type', value)} />
+                  <Input
+                    label={t('firms.accountHolder')}
+                    value={account.account_holder_name}
+                    onChange={(value) => setBankField(index, 'account_holder_name', value)}
+                    required
+                  />
+                  <Input
+                    label={t('firms.bankName')}
+                    value={account.bank_name}
+                    onChange={(value) => setBankField(index, 'bank_name', value)}
+                    required
+                  />
+                  <Input
+                    label={t('firms.accountNumber')}
+                    value={account.account_number}
+                    onChange={(value) => setBankField(index, 'account_number', value)}
+                    required
+                  />
+                  <Input
+                    label={t('firms.ifsc')}
+                    value={account.ifsc_code}
+                    onChange={(value) => setBankField(index, 'ifsc_code', value)}
+                    required
+                  />
+                  <Input
+                    label={t('firms.branch')}
+                    value={account.branch_name || ''}
+                    onChange={(value) => setBankField(index, 'branch_name', value)}
+                  />
+                  <Input
+                    label={t('firms.accountType')}
+                    value={account.account_type || ''}
+                    onChange={(value) => setBankField(index, 'account_type', value)}
+                  />
                 </div>
                 <div className="workspace-actions">
-                  <IonButton type="button" fill={account.is_primary ? 'solid' : 'outline'} onClick={() => setBankField(index, 'is_primary', true)}>
+                  <IonButton
+                    type="button"
+                    fill={account.is_primary ? 'solid' : 'outline'}
+                    onClick={() => setBankField(index, 'is_primary', true)}
+                  >
                     {t('firms.primaryAccount')}
                   </IonButton>
-                  <IonButton type="button" fill="clear" color="danger" onClick={() => setField('bank_accounts', (form.bank_accounts || []).filter((_, itemIndex) => itemIndex !== index))}>
+                  <IonButton
+                    type="button"
+                    fill="clear"
+                    color="danger"
+                    onClick={() =>
+                      setField(
+                        'bank_accounts',
+                        (form.bank_accounts || []).filter((_, itemIndex) => itemIndex !== index)
+                      )
+                    }
+                  >
                     <IonIcon icon={trash} slot="start" /> {t('firms.removeBankAccount')}
                   </IonButton>
                 </div>
               </fieldset>
             ))}
-            <IonButton type="button" fill="outline" onClick={() => setField('bank_accounts', [...(form.bank_accounts || []), blankBankAccount()])}>
+            <IonButton
+              type="button"
+              fill="outline"
+              onClick={() =>
+                setField('bank_accounts', [...(form.bank_accounts || []), blankBankAccount()])
+              }
+            >
               <IonIcon icon={add} slot="start" /> {t('firms.addBankAccount')}
             </IonButton>
             <div className="workspace-actions firm-settings-form-actions">
-              <IonButton type="button" fill="outline" onClick={() => { setEditingId(null); setForm(null); }}>{t('common.cancel')}</IonButton>
-              <IonButton type="submit" disabled={isSaving}>{isSaving ? t('common.loading') : t('common.save')}</IonButton>
+              <IonButton
+                type="button"
+                fill="outline"
+                onClick={() => {
+                  setEditingId(null);
+                  setForm(null);
+                }}
+              >
+                {t('common.cancel')}
+              </IonButton>
+              <IonButton type="submit" disabled={!deviceWrite || isSaving}>
+                {isSaving ? t('common.loading') : t('common.save')}
+              </IonButton>
             </div>
           </form>
         )}
