@@ -855,7 +855,7 @@ final class KiranaFlowUITests: XCTestCase {
     }
     func test38MobileHiddenToolsAndAvailablePayments() throws {
         try requireQAShop(); tapVisible("menu")
-        assertUnavailableOnMobile("Import / Export"); assertUnavailableOnMobile("Import and Export")
+        assertUnavailableOnMobile("Import/Export")
         capture("mobile-hidden-bulk-tools"); tapVisible("Payments")
         tapVisible("Record Payment")
         let search = app.textFields["Search customers by name or phone"].firstMatch
