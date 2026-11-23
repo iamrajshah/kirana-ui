@@ -31,6 +31,11 @@ import { SessionLifecycleSync } from './SessionLifecycleSync';
 import { ProvisioningRecoveryPage } from '@features/account/ProvisioningRecoveryPage';
 import { TrialCountdownBanner } from '@components/TrialCountdownBanner';
 
+const DeviceAccessNotice = lazy(() =>
+  import('@core/commercial/DeviceAccessNotice').then((module) => ({
+    default: module.DeviceAccessNotice,
+  }))
+);
 const DashboardPage = lazy(() =>
   import('@features/dashboard/DashboardPage').then((module) => ({ default: module.DashboardPage }))
 );
@@ -221,6 +226,9 @@ export const MainLayout: React.FC = () => {
         <SideMenu />
         <div id="main-content" className="workspace-main">
           <TrialCountdownBanner />
+          <React.Suspense fallback={null}>
+            <DeviceAccessNotice />
+          </React.Suspense>
           <IonTabs className="workspace-tabs">
             <IonRouterOutlet>
               <Route exact path={ROUTES.PROFILE} render={() => renderPage(ProfilePage)} />

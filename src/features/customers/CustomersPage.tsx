@@ -1,3 +1,4 @@
+import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useMemo, useState, useEffect } from 'react';
 import type { Customer } from '@core/types';
 import {
@@ -47,11 +48,12 @@ const PAGE_SIZE = 50;
 
 export const CustomersPage: React.FC = () => {
   const { t } = useTranslation();
+  const deviceWrite = useDeviceWriteAccess('CUSTOMERS_KHATA');
   const history = useHistory();
   const user = useAppSelector(selectCurrentUser);
   const userRoles = user?.roles || [];
-  const canCreateCustomer = hasPermission(userRoles, 'CUSTOMER_CREATE');
-  const canUpdateCustomer = hasPermission(userRoles, 'CUSTOMER_UPDATE');
+  const canCreateCustomer = deviceWrite && hasPermission(userRoles, 'CUSTOMER_CREATE');
+  const canUpdateCustomer = deviceWrite && hasPermission(userRoles, 'CUSTOMER_UPDATE');
 
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search.trim(), 300);

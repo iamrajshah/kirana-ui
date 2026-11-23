@@ -1,3 +1,4 @@
+import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import { createIdempotentAttempt } from '@utils/idempotentAttempt';
 import React, { useState, useMemo, useRef } from 'react';
 import { Navbar } from '@components/Navbar';
@@ -35,6 +36,7 @@ import './PaymentsPage.css';
 
 export const PaymentsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
+  const deviceWrite = useDeviceWriteAccess('PAYMENTS');
   const { data, isLoading, isError, refetch } = useGetPaymentsQuery({});
   const [
     searchCustomers,
@@ -90,6 +92,7 @@ export const PaymentsPage: React.FC = () => {
   }, [invoiceId, pendingInvoicesData]);
 
   const handleCreatePayment = async () => {
+    if (!deviceWrite) return;
     // Validation
     if (!customerId) {
       setErrorMessage(t('payments.selectCustomerError'));
@@ -442,6 +445,7 @@ export const PaymentsPage: React.FC = () => {
                 onClick={() => {
                   handleCreatePayment();
                 }}
+                disabled={!deviceWrite}
                 loading={creating}
                 fullWidth
                 size="large"

@@ -1,3 +1,4 @@
+import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
@@ -45,6 +46,7 @@ const nextActions: Partial<Record<StorefrontOrderStatus, StorefrontOrderStatus[]
 
 const StorefrontOrdersPage: React.FC = () => {
   const { t } = useTranslation();
+  const deviceWrite = useDeviceWriteAccess('ONLINE_ORDERS');
   const history = useHistory();
   const currentUser = useAppSelector(selectCurrentUser);
   const [section, setSection] = useState<'orders' | 'offers'>('orders');
@@ -222,7 +224,10 @@ const StorefrontOrdersPage: React.FC = () => {
                     >
                       {t('storefrontOrders.offerEditor.publishNow')}
                     </IonToggle>
-                    <IonButton type="submit" disabled={creatingOffer || title.trim().length < 3}>
+                    <IonButton
+                      type="submit"
+                      disabled={!deviceWrite || creatingOffer || title.trim().length < 3}
+                    >
                       {t('storefrontOrders.offerEditor.create')}
                     </IonButton>
                   </form>
@@ -258,6 +263,7 @@ const StorefrontOrdersPage: React.FC = () => {
                           <IonButton
                             fill="outline"
                             onClick={() =>
+                              deviceWrite &&
                               void updateOffer({
                                 id: offer.id,
                                 data: { is_active: !offer.is_active },
@@ -271,6 +277,7 @@ const StorefrontOrdersPage: React.FC = () => {
                           <IonButton
                             fill="clear"
                             color="danger"
+                            disabled={!deviceWrite}
                             onClick={() => void deleteOffer(offer.id)}
                           >
                             {t('common.delete')}
@@ -335,7 +342,7 @@ const StorefrontOrdersPage: React.FC = () => {
                     {(nextActions[order.status] ?? []).map((status) => (
                       <IonButton
                         key={status}
-                        disabled={updating}
+                        disabled={!deviceWrite || updating}
                         color={status === 'CANCELLED' ? 'danger' : 'primary'}
                         fill={status === 'CANCELLED' ? 'outline' : 'solid'}
                         onClick={() => updateStatus({ id: order.id, status })}
@@ -358,7 +365,7 @@ const StorefrontOrdersPage: React.FC = () => {
                     )}
                     {order.status === 'READY' && order.invoice_status === 'PAID' && (
                       <IonButton
-                        disabled={updating}
+                        disabled={!deviceWrite || updating}
                         onClick={() => updateStatus({ id: order.id, status: 'COMPLETED' })}
                       >
                         {t('storefrontOrders.actions.COMPLETED')}

@@ -1,3 +1,4 @@
+import { deviceFeatureMode } from './deviceAccess';
 import type {
   CommercialAccessSummary,
   CommercialDenial,
@@ -78,6 +79,7 @@ const hasDirectCommercialFeatureAccess = (
   access: CommercialAccessSummary,
   feature: CommercialFeatureCode
 ): boolean =>
+  deviceFeatureMode(access, feature) !== 'HIDDEN' &&
   hasCommercialFeatureRoleAccess(roles, access, feature) &&
   hasCommercialFeatureEntitlement(access, feature);
 
@@ -117,6 +119,7 @@ const denialMessageKeys: Record<CommercialDenial['code'], string> = {
   COMMERCIAL_ACCESS_STALE: 'commercial.stale',
   COMMERCIAL_PROVISIONING: 'commercial.provisioning',
   COMMERCIAL_ROLE_DENIED: 'commercial.roleDenied',
+  COMMERCIAL_DEVICE_DENIED: 'commercial.deviceDenied',
 };
 
 const denialActions = new Set<CommercialDenial['action']>([
@@ -154,3 +157,10 @@ export const isCommercialDenial = (value: unknown): value is CommercialDenial =>
     typeof value.action === 'string' &&
     denialActions.has(value.action as CommercialDenial['action'])
   );
+
+export const canWriteCommercialFeature = (
+  roles: string[],
+  access: CommercialAccessSummary | null | undefined,
+  feature: CommercialFeatureCode
+): boolean =>
+  canUseCommercialFeature(roles, access, feature) && deviceFeatureMode(access, feature) === 'FULL';

@@ -1,3 +1,4 @@
+import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useState, useEffect, useRef } from 'react';
 import { createIdempotentAttempt } from '@utils/idempotentAttempt';
 import type { Supplier, SupplierPaymentMode } from '../../core/api/supplierApi';
@@ -58,11 +59,12 @@ import {
 
 const SuppliersPage: React.FC = () => {
   const { t } = useTranslation();
+  const deviceWrite = useDeviceWriteAccess('SUPPLIERS');
   const history = useHistory();
   const user = useAppSelector(selectCurrentUser);
   const userRoles = user?.roles || [];
-  const hasCreatePermission = hasPermission(userRoles, 'SUPPLIER_CREATE');
-  const hasUpdatePermission = hasPermission(userRoles, 'SUPPLIER_UPDATE');
+  const hasCreatePermission = deviceWrite && hasPermission(userRoles, 'SUPPLIER_CREATE');
+  const hasUpdatePermission = deviceWrite && hasPermission(userRoles, 'SUPPLIER_UPDATE');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
@@ -395,7 +397,7 @@ const SuppliersPage: React.FC = () => {
                       </IonItem>
                       {hasUpdatePermission && (
                         <IonItemOptions side="end">
-                          {hasPayableFirmBalance(supplier.balances_by_firm) && (
+                          {deviceWrite && hasPayableFirmBalance(supplier.balances_by_firm) && (
                             <IonItemOption
                               color="success"
                               onClick={() => handleMakePayment(supplier)}
@@ -423,7 +425,7 @@ const SuppliersPage: React.FC = () => {
                       </IonButton>
                       {hasUpdatePermission && (
                         <div className="workspace-actions">
-                          {hasPayableFirmBalance(supplier.balances_by_firm) && (
+                          {deviceWrite && hasPayableFirmBalance(supplier.balances_by_firm) && (
                             <IonButton fill="outline" onClick={() => handleMakePayment(supplier)}>
                               {t('suppliers.makePayment')}
                             </IonButton>

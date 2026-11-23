@@ -27,6 +27,7 @@ const state = vi.hoisted(() => ({
   createVariant: vi.fn(),
 }));
 
+vi.mock('@core/commercial/useDeviceWriteAccess', () => ({ useDeviceWriteAccess: () => true }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('react-router', () => ({ useHistory: () => ({ push: state.push }) }));
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));

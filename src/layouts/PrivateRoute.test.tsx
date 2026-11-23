@@ -341,3 +341,26 @@ describe('protected route configuration', () => {
     ]);
   });
 });
+
+it('returns to the always-available profile instead of redirecting forever when Dashboard is hidden on this device', () => {
+  useLocation.mockReturnValue({ pathname: ROUTES.DASHBOARD });
+  useAppSelector
+    .mockReturnValueOnce(true)
+    .mockReturnValueOnce({ roles: ['OWNER'] })
+    .mockReturnValueOnce(false)
+    .mockReturnValueOnce({
+      planCode: 'BUSINESS',
+      state: 'ACTIVE',
+      accessStateVersion: '7.d2',
+      entitlements: ['DASHBOARD'],
+      deviceProfile: 'MOBILE',
+      deviceAccess: { revision: 2, profiles: { MOBILE: { DASHBOARD: 'HIDDEN' } } },
+    });
+  render(
+    <PrivateRoute commercialFeature="DASHBOARD">
+      <div>dashboard content</div>
+    </PrivateRoute>
+  );
+  expect(screen.getByTestId('redirect').textContent).toBe(ROUTES.PROFILE);
+  expect(screen.queryByText('dashboard content')).toBeNull();
+});

@@ -1,3 +1,4 @@
+import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGetFirmsQuery } from '@core/api/firmApi';
@@ -24,6 +25,7 @@ const blank = (): FoodLicenceInput => ({
 });
 export const FoodLicenceSettingsCard: React.FC = () => {
   const { t } = useTranslation();
+  const deviceWrite = useDeviceWriteAccess('FOOD_LICENCES');
   const { data, isFetching, isError, refetch } = useGetFoodLicencesQuery();
   const { data: firmsData } = useGetFirmsQuery();
   const [create, { isLoading: creating }] = useCreateFoodLicenceMutation();
@@ -117,7 +119,7 @@ export const FoodLicenceSettingsCard: React.FC = () => {
                 : t('foodLicences.unknownValidity')}
             </span>
             <span>{t(licence.is_active ? 'foodLicences.active' : 'foodLicences.inactive')}</span>
-            <button type="button" disabled={busy} onClick={() => edit(licence)}>
+            <button type="button" disabled={!deviceWrite || busy} onClick={() => edit(licence)}>
               {t('foodLicences.edit')}
             </button>
           </article>
@@ -127,7 +129,10 @@ export const FoodLicenceSettingsCard: React.FC = () => {
         <button
           type="button"
           disabled={
-            isError || isFetching || licences.filter((licence) => licence.is_active).length >= 3
+            !deviceWrite ||
+            isError ||
+            isFetching ||
+            licences.filter((licence) => licence.is_active).length >= 3
           }
           onClick={() => {
             setForm(blank());
@@ -141,7 +146,7 @@ export const FoodLicenceSettingsCard: React.FC = () => {
       )}
       {form && (
         <form onSubmit={(event) => void submit(event)}>
-          <fieldset disabled={busy}>
+          <fieldset disabled={!deviceWrite || busy}>
             <legend>{t(editing ? 'foodLicences.edit' : 'foodLicences.add')}</legend>
             <label>
               {t('foodLicences.firm')}

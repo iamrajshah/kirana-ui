@@ -1,3 +1,4 @@
+import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useState } from 'react';
 import {
   IonPage,
@@ -28,6 +29,7 @@ import './UsersPage.css';
 
 export const UsersPage: React.FC = () => {
   const { t } = useTranslation();
+  const deviceWrite = useDeviceWriteAccess('STAFF');
   const ROLE_OPTIONS = [
     { value: 'MANAGER', label: t('users.manager') },
     { value: 'CASHIER', label: t('users.cashier') },
@@ -131,7 +133,7 @@ export const UsersPage: React.FC = () => {
               <p>{t('users.managementDescription')}</p>
             </div>
             <div className="workspace-actions">
-              <IonButton onClick={() => setShowModal(true)}>
+              <IonButton disabled={!deviceWrite} onClick={() => setShowModal(true)}>
                 <IonIcon icon={add} slot="start" />
                 {t('users.addUser')}
               </IonButton>
@@ -171,6 +173,7 @@ export const UsersPage: React.FC = () => {
                           {user.is_active ? t('common.active') : t('common.inactive')}
                         </IonBadge>
                         <IonToggle
+                          disabled={!deviceWrite}
                           checked={user.is_active}
                           aria-label={`${user.name}: ${
                             user.is_active ? t('common.active') : t('common.inactive')

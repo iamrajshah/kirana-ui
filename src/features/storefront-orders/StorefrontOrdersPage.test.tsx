@@ -13,6 +13,7 @@ const state = vi.hoisted(() => ({
   orders: [] as Array<Record<string, unknown>>,
 }));
 
+vi.mock('@core/commercial/useDeviceWriteAccess', () => ({useDeviceWriteAccess: () => true}));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('react-router-dom', () => ({ useHistory: () => ({ push: state.push }) }));
 vi.mock('@core/hooks', () => ({

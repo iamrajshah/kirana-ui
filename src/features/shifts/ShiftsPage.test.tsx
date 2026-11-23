@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   refetchHistory: vi.fn(),
 }));
 
+vi.mock('@core/commercial/useDeviceWriteAccess', () => ({ useDeviceWriteAccess: () => true }));
 vi.mock('@core/api/shiftApi', () => ({
   useGetCurrentShiftQuery: () => mocks.currentQuery(),
   useGetShiftsQuery: () => mocks.historyQuery(),

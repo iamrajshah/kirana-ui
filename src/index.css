@@ -266,3 +266,12 @@ input::-ms-reveal,
 input::-ms-clear {
   display: none;
 }
+
+.device-access-notice {
+  flex-shrink: 0;
+  padding: 0.65rem 1rem;
+  color: var(--ion-text-color);
+  background: var(--ion-color-light);
+  border-bottom: 1px solid var(--ion-color-medium);
+  font-size: 0.875rem;
+}
