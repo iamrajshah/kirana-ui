@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonModal,
   IonHeader,
@@ -43,6 +43,7 @@ export const BankAccountFormModal: React.FC<BankAccountFormModalProps> = ({
   editingAccount,
 }) => {
   const { t } = useTranslation();
+  const modal = useRef<HTMLIonModalElement>(null);
   const [formData, setFormData] = useState<BankAccountFormData>({
     account_holder_name: '',
     bank_name: '',
@@ -123,12 +124,14 @@ export const BankAccountFormModal: React.FC<BankAccountFormModalProps> = ({
   };
 
   return (
-    <IonModal isOpen={isOpen} onDidDismiss={handleClose}>
+    <IonModal ref={modal} isOpen={isOpen} onDidDismiss={handleClose}>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>{editingAccount ? t('foundation.bank.editAccount') : t('foundation.bank.addAccount')}</IonTitle>
+          <IonTitle>
+            {editingAccount ? t('foundation.bank.editAccount') : t('foundation.bank.addAccount')}
+          </IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handleClose}>
+            <IonButton onClick={() => void modal.current?.dismiss()}>
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>
@@ -154,7 +157,11 @@ export const BankAccountFormModal: React.FC<BankAccountFormModalProps> = ({
         />
 
         <Input
-          label={editingAccount ? t('foundation.bank.accountNumberKeep') : t('foundation.bank.accountNumber')}
+          label={
+            editingAccount
+              ? t('foundation.bank.accountNumberKeep')
+              : t('foundation.bank.accountNumber')
+          }
           value={formData.account_number}
           onChange={(value) => setFormData({ ...formData, account_number: value })}
           required={!editingAccount}

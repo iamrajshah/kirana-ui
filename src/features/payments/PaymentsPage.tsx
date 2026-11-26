@@ -1,3 +1,4 @@
+import { focusFirstEditable } from '@components/keyboardNavigation';
 import { hasPermission } from '@core/permissions/permissions';
 import { useAppSelector } from '@core/hooks';
 import { selectCurrentUser } from '@core/auth/authSlice';
@@ -80,6 +81,15 @@ export const PaymentsPage: React.FC = () => {
     void searchCustomers(debouncedCustomerSearch, true);
   }, [customerSearchReady, debouncedCustomerSearch, searchCustomers, showModal]);
 
+  React.useEffect(() => {
+    if (!showModal || !selectedCustomer) return;
+    const frame = requestAnimationFrame(() => {
+      const field = paymentModalRef.current?.querySelector?.<HTMLIonInputElement>('ion-input');
+      void field?.setFocus?.();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [showModal, selectedCustomer]);
+
   // Load pending invoices when customer is selected
   React.useEffect(() => {
     if (customerId) {
@@ -148,6 +158,8 @@ export const PaymentsPage: React.FC = () => {
   };
 
   const resetForm = () => {
+    setQuickCustomer(false);
+    setHighlight(0);
     setCustomerId('');
     setSelectedCustomer(null);
     setInvoiceId('');
@@ -314,6 +326,7 @@ export const PaymentsPage: React.FC = () => {
 
         {/* Record Payment Modal */}
         <IonModal
+          onDidPresent={(event) => focusFirstEditable(event.target as HTMLElement)}
           ref={paymentModalRef}
           isOpen={showModal}
           onDidDismiss={() => {

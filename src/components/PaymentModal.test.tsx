@@ -303,3 +303,15 @@ describe('PaymentModal completion', () => {
     );
   });
 });
+
+it('clears an unsubmitted collection draft after cancellation, then reopening', () => {
+  const props = { onClose: vi.fn(), onPayment: vi.fn(), invoiceAmount: 100 };
+  const view = render(<PaymentModal {...props} isOpen />);
+  fireEvent.click(screen.getByRole('button', { name: 'payment.partialPayment' }));
+  fireEvent.change(screen.getByLabelText('payment.partialAmount'), { target: { value: '35' } });
+  view.rerender(<PaymentModal {...props} isOpen={false} />);
+  view.rerender(<PaymentModal {...props} isOpen />);
+  fireEvent.click(screen.getByRole('button', { name: 'payment.partialPayment' }));
+  expect((screen.getByLabelText('payment.partialAmount') as HTMLInputElement).value).toBe('');
+  expect(props.onPayment).not.toHaveBeenCalled();
+});

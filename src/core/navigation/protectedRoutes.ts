@@ -89,6 +89,7 @@ export const protectedPageRoutes: readonly ProtectedPageRouteAccess[] = [
 ];
 
 const mainLayoutRouteIds = [
+  'settings',
   'dashboard',
   'billing',
   'customers',

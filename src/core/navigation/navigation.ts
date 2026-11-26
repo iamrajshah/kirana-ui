@@ -1,5 +1,6 @@
 import {
   home,
+  settingsOutline,
   cart,
   people,
   cube,
@@ -35,6 +36,7 @@ export interface NavigationItem {
   group: NavigationGroup;
   primary?: boolean;
   permission?: TabPermission;
+  roles?: readonly string[];
   commercialFeature?: CommercialFeatureCode;
 }
 
@@ -194,6 +196,16 @@ export const navigationItems: readonly NavigationItem[] = [
     group: 'more',
   },
   {
+    id: 'settings',
+    permission: 'settings',
+    roles: ['OWNER'],
+    href: ROUTES.SETTINGS,
+    labelKey: 'profile.settings',
+    icon: settingsOutline,
+    group: 'manage',
+    commercialFeature: 'FIRMS_SETTINGS',
+  },
+  {
     id: 'about',
     href: ROUTES.ABOUT,
     labelKey: 'about.title',
@@ -205,6 +217,7 @@ export const navigationItems: readonly NavigationItem[] = [
 export const getNavigationItems = (roles: string[], access?: CommercialAccessSummary | null) =>
   navigationItems.filter(
     (item) =>
+      (!item.roles || item.roles.some((role) => roles.includes(role))) &&
       (!item.permission || hasAccessToTab(roles, item.permission)) &&
       (!item.commercialFeature || canUseCommercialFeature(roles, access, item.commercialFeature))
   );

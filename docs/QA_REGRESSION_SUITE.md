@@ -1,5 +1,7 @@
 # Kirana POS QA Regression Suite
 
+Latest local billing evidence and rerun checklist: [Billing live review](QA_BILLING_LIVE_REVIEW.md).
+
 Use a disposable or explicitly approved demo tenant. Never store passwords,
 tokens, OTPs, customer data, or provider keys in this file or a test report.
 
@@ -428,3 +430,19 @@ server disposable-MySQL suite verifies commit, rollback on audit failure, stale
 concurrent saves, cross-tenant IDs and historical snapshot preservation.
 GST invoice issuance must reject an unset rate or malformed HSN; explicit zero
 remains valid, and provisional drafts/Simple Receipts remain compatible.
+
+## POS usability acceptance — 26 November 2026 (local, awaiting user approval)
+
+Review in order: Billing, Customers, Invoices, Payments, Products, Inventory, Categories, Suppliers, Purchases. Repeat shared controls at desktop, tablet and phone widths, with dark/light themes and translated labels.
+
+1. Search billing with arrows/Enter; create three drafts; confirm no fourth draft action. Switch drafts without losing lines.
+2. Open each create modal, enter values, cancel and reopen: values/errors must be blank. Verify edits still reload existing values. Closing a modal must restore underlying page interaction.
+3. Use Enter through required text/number fields and searchable selections; verify invalid fields stay focused, Escape closes only the list, and no payment/purchase is implicitly submitted.
+4. Select customer/supplier with arrows and Enter. Purchase Space must browse available products. Check selected row, quantity, rate and totals.
+5. Review GST/HSN table and selectors in light/dark themes and narrow layouts.
+6. Check Settings owner navigation, section keyboard tabs and role/device denial. Profile retains language/theme and account controls.
+7. Run financial recovery/replay, billing, purchase, stock and permission unit regressions. UI fixtures alone are insufficient for live payment acceptance.
+
+Evidence for this local batch is recorded in the workspace output folder `output/pos-usability-review-20261126`. No backend migration or deployment is part of this batch. User manual acceptance is required before merge/release.
+
+Final local result for this batch: 142 Vitest files / 725 tests passed; 45 feature browser checks across three viewport widths passed; real modal fixture passed desktop and phone; TypeScript and changed-source ESLint passed. Browser fixtures use synthetic API responses. Real tenant payment/purchase writes and physical scanner/printing remain manual acceptance checks before release.

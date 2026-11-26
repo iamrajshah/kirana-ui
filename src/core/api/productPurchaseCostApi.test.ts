@@ -61,6 +61,17 @@ describe('product purchase-cost API contracts', () => {
     vi.unstubAllGlobals();
   });
 
+  it('uses the catalogue for Space browsing and the typed endpoint for product search', async () => {
+    const store = createStore();
+    await store.dispatch(productApi.endpoints.searchVariants.initiate({ search: ' ' })).unwrap();
+    expect(requests[0].url).toContain('/products/catalog');
+    await store
+      .dispatch(productApi.endpoints.searchVariants.initiate({ search: ' rice ' }))
+      .unwrap();
+    expect(requests[1].url).toContain('/products/search?q=rice');
+    store.dispatch(apiSlice.util.resetApiState());
+  });
+
   it('loads protected cost snapshots separately from the ordinary product response', async () => {
     const store = createStore();
     await store.dispatch(productApi.endpoints.getProductPurchaseCosts.initiate('3')).unwrap();

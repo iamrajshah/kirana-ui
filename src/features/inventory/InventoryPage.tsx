@@ -174,7 +174,6 @@ export const InventoryPage: React.FC = () => {
 
       setShowSuccess(true);
       setShowModal(false);
-      setSelectedItem(null);
     } catch (error: unknown) {
       console.error('❌ Error updating inventory:', error);
       setErrorMessage(apiErrorMessage(error, t('inventory.failedToUpdate')));
@@ -299,8 +298,14 @@ export const InventoryPage: React.FC = () => {
           )}
         </div>
 
-        {showModal && selectedItem && (
-          <IonModal isOpen={true} onDidDismiss={() => setShowModal(false)}>
+        {selectedItem && (
+          <IonModal
+            isOpen={showModal}
+            onDidDismiss={() => {
+              setShowModal(false);
+              setSelectedItem(null);
+            }}
+          >
             <div className="ion-page">
               <IonHeader>
                 <IonToolbar>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { advanceOnEnter } from './keyboardNavigation';
+import { advanceOnEnter, KeyboardNavigation } from './keyboardNavigation';
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -76,4 +76,33 @@ it('uses Ionic disabled properties rather than the presence of disabled="false"'
   expect(focus).toHaveBeenCalledOnce();
   expect(submit).not.toHaveBeenCalled();
   form.remove();
+});
+
+it('advances native page fields through the app-level fallback and preserves autocomplete handling', () => {
+  vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([
+    { width: 100 },
+  ] as unknown as DOMRectList);
+  render(
+    <>
+      <KeyboardNavigation />
+      <form>
+        <input aria-label="Native quantity" defaultValue="2" />
+        <input aria-label="Native cost" />
+        <input aria-label="Picker" role="combobox" />
+        <textarea aria-label="Notes" />
+      </form>
+    </>
+  );
+  const first = screen.getByLabelText('Native quantity');
+  first.focus();
+  fireEvent.keyDown(first, { key: 'Enter' });
+  expect(document.activeElement).toBe(screen.getByLabelText('Native cost'));
+  const picker = screen.getByLabelText('Picker');
+  picker.focus();
+  fireEvent.keyDown(picker, { key: 'Enter' });
+  expect(document.activeElement).toBe(picker);
+  const notes = screen.getByLabelText('Notes');
+  notes.focus();
+  fireEvent.keyDown(notes, { key: 'Enter' });
+  expect(document.activeElement).toBe(notes);
 });

@@ -128,7 +128,8 @@
       "upi": "UPI",
       "card": "Card",
       "bankTransfer": "Bank Transfer"
-    }
+    },
+    "selectionShortcuts": "↑ ↓ Move · Enter Select · Esc Close"
   },
   "validation": {
     "validName": "Enter a name containing letters (maximum 150 characters).",

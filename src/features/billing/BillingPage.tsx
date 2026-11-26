@@ -10,6 +10,7 @@ import {
   type BillWorkspace,
 } from './billWorkspaces';
 import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
+import './BillingDialogs.css';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   IonButton,
@@ -290,6 +291,8 @@ const BillingWorkspacePage: React.FC = () => {
   const [heldConflict, setHeldConflict] = useState(false);
   const loadedInvoiceSnapshotRef = useRef<string | null>(null);
   const heldBillsTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const checkoutInFlight = useRef(false);
+  const [checkoutPending, setCheckoutPending] = useState(false);
   const invoiceIdempotencyKey = useRef(initialDraft?.requestKey ?? generateIdempotencyKey());
   const paymentIdempotencyKey = useRef(
     restoredPendingCheckout?.paymentIdempotencyKey ?? generateIdempotencyKey()
@@ -441,6 +444,7 @@ const BillingWorkspacePage: React.FC = () => {
     currentUser?.roles?.some((role) => ['OWNER', 'MANAGER'].includes(role.toUpperCase()))
   );
   const isBusy =
+    checkoutPending ||
     invoiceUnavailable ||
     creating ||
     updating ||
@@ -802,6 +806,7 @@ const BillingWorkspacePage: React.FC = () => {
     !creating &&
     !updating &&
     !finalizing &&
+    !checkoutPending &&
     !paying &&
     !splittingPayment &&
     !cancelling &&
@@ -1228,10 +1233,12 @@ const BillingWorkspacePage: React.FC = () => {
   };
 
   const handleCheckout = async (quickMode?: PaymentMode) => {
-    if (!deviceWrite) return;
+    if (!deviceWrite || checkoutInFlight.current) return;
     if (!validateBillReady()) return;
     let invoiceId: string | null = null;
     const previousBalanceAtCheckout = previousCustomerBalance;
+    checkoutInFlight.current = true;
+    setCheckoutPending(true);
     try {
       const quote = await fetchCheckoutQuote();
       if (!quote) return;
@@ -1255,16 +1262,21 @@ const BillingWorkspacePage: React.FC = () => {
     } catch (error: unknown) {
       if (isConflictError(error)) setHeldConflict(true);
       notificationService.error(apiErrorMessage(error, t('billing.failedToCreateInvoice'), true));
+    } finally {
+      checkoutInFlight.current = false;
+      setCheckoutPending(false);
     }
   };
 
   const handlePayLater = async () => {
-    if (!deviceWrite) return;
+    if (!deviceWrite || checkoutInFlight.current) return;
     if (!validateBillReady()) return;
     if (!customerId) {
       notificationService.error(t('billing.creditRequiresCustomer'));
       return;
     }
+    checkoutInFlight.current = true;
+    setCheckoutPending(true);
     try {
       const quote = await fetchCheckoutQuote();
       if (!quote) return;
@@ -1274,6 +1286,9 @@ const BillingWorkspacePage: React.FC = () => {
     } catch (error: unknown) {
       if (isConflictError(error)) setHeldConflict(true);
       notificationService.error(apiErrorMessage(error, t('billing.failedToCreateInvoice'), true));
+    } finally {
+      checkoutInFlight.current = false;
+      setCheckoutPending(false);
     }
   };
 
@@ -1503,20 +1518,26 @@ const BillingWorkspacePage: React.FC = () => {
                     {t('counterWork.bill', { number: index + 1 })}
                   </button>
                 ))}
-                <button
-                  type="button"
-                  className="min-h-touch rounded-lg border px-3"
-                  disabled={
-                    workspaces.bills.length >= 3 ||
-                    isBusy ||
-                    showPaymentModal ||
-                    Boolean(pendingInvoiceId) ||
-                    Boolean(unknownBarcode)
-                  }
-                  onClick={() => switchWorkspace()}
-                >
-                  {t('counterWork.newBill')}
-                </button>
+                {workspaces.bills.length < 3 ? (
+                  <button
+                    type="button"
+                    className="min-h-touch rounded-lg border px-3 disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled={
+                      workspaces.bills.length >= 3 ||
+                      isBusy ||
+                      showPaymentModal ||
+                      Boolean(pendingInvoiceId) ||
+                      Boolean(unknownBarcode)
+                    }
+                    onClick={() => switchWorkspace()}
+                  >
+                    {t('counterWork.newBill')}
+                  </button>
+                ) : (
+                  <span role="status" className="px-3 text-sm">
+                    3/3 {t('counterWork.bills')}
+                  </span>
+                )}
                 <button
                   type="button"
                   className="min-h-touch px-3"
@@ -1827,6 +1848,7 @@ const BillingWorkspacePage: React.FC = () => {
                     }}
                   >
                     <input
+                      id="counter-barcode-input"
                       type="text"
                       inputMode="none"
                       autoComplete="off"
@@ -1834,7 +1856,7 @@ const BillingWorkspacePage: React.FC = () => {
                       value={barcodeInput}
                       onChange={(event) => setBarcodeInput(event.target.value)}
                       onKeyDown={(event) => {
-                        if (event.key === 'Tab' && barcodeInput.trim()) {
+                        if ((event.key === 'Enter' || event.key === 'Tab') && barcodeInput.trim()) {
                           event.preventDefault();
                           addScannedBarcode(barcodeInput);
                         }
@@ -1979,6 +2001,7 @@ const BillingWorkspacePage: React.FC = () => {
                     items={cartItems}
                     stock={availableStockByVariant}
                     disabled={
+                      checkoutPending ||
                       creating ||
                       updating ||
                       finalizing ||
@@ -2010,6 +2033,7 @@ const BillingWorkspacePage: React.FC = () => {
                             min="0"
                             step="0.01"
                             value={billDiscount}
+                            disabled={isBusy}
                             className="w-full border-0 bg-transparent text-right font-semibold outline-none"
                             onChange={(event) => setBillDiscount(Number(event.target.value) || 0)}
                           />
@@ -2347,22 +2371,25 @@ const BillingWorkspacePage: React.FC = () => {
 
         <IonModal
           isOpen={Boolean(unknownBarcode)}
+          className="counter-resolution-modal"
           aria-labelledby="unknown-barcode-title"
           onDidDismiss={() => {
             setUnknownBarcode(null);
             resumeBarcodeQueue();
           }}
         >
-          {unknownBarcode && (
-            <UnknownBarcodeResolution
-              key={unknownBarcode}
-              barcode={unknownBarcode}
-              canCreate={canCreateBarcodeProduct}
-              isCreating={creatingBarcodeProduct}
-              onCreate={createUnknownBarcodeProduct}
-              onDismiss={dismissUnknownBarcode}
-            />
-          )}
+          <IonContent className="counter-resolution-content">
+            {unknownBarcode && (
+              <UnknownBarcodeResolution
+                key={unknownBarcode}
+                barcode={unknownBarcode}
+                canCreate={canCreateBarcodeProduct}
+                isCreating={creatingBarcodeProduct}
+                onCreate={createUnknownBarcodeProduct}
+                onDismiss={dismissUnknownBarcode}
+              />
+            )}
+          </IonContent>
         </IonModal>
 
         <IonModal

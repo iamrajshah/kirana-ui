@@ -81,10 +81,13 @@ export const productApi = apiSlice.injectEndpoints({
       providesTags: (result, error, id) => [{ type: 'Product', id }],
     }),
     searchVariants: builder.query<ApiResponse<BillingSearchVariant[]>, { search: string }>({
-      query: ({ search }) => ({
-        url: '/products/search',
-        params: { q: search },
-      }),
+      query: ({ search }) =>
+        search.trim()
+          ? {
+              url: '/products/search',
+              params: { q: search.trim() },
+            }
+          : '/products/catalog',
       providesTags: ['Product'],
     }),
     getBillingCatalog: builder.query<

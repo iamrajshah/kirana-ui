@@ -1,9 +1,11 @@
+import { focusNextEditable } from './keyboardNavigation';
 import React, { useId, useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
 type Props<T extends string | readonly string[]> = {
   label: string;
+  hideLabel?: boolean;
   id?: string;
   name?: string;
   ariaLabelledBy?: string;
@@ -25,6 +27,7 @@ export function SearchableSelect<T extends string | readonly string[]>({
   ariaLabelledBy,
   multiple,
   label,
+  hideLabel,
   value,
   onChange,
   options,
@@ -115,7 +118,7 @@ export function SearchableSelect<T extends string | readonly string[]>({
           setOpen(false);
       }}
     >
-      {label && (
+      {label && !hideLabel && (
         <label htmlFor={id} className="block mb-2 font-medium">
           {label}
           {required ? ' *' : ''}
@@ -195,9 +198,13 @@ export function SearchableSelect<T extends string | readonly string[]>({
           }
           if (event.key === 'Enter') {
             event.preventDefault();
-            if (open && results[highlight] && !results[highlight].disabled)
+            if (open && results[highlight] && !results[highlight].disabled) {
               choose(results[highlight].value);
-            else setOpen(true);
+              if (!multiple)
+                requestAnimationFrame(() => {
+                  if (inputRef.current) focusNextEditable(inputRef.current);
+                });
+            } else setOpen(true);
           }
           if (event.key === ' ' && !open) {
             event.preventDefault();
@@ -206,6 +213,11 @@ export function SearchableSelect<T extends string | readonly string[]>({
           }
         }}
       />
+      {open && (
+        <small className="block mt-1" style={{ color: 'var(--ion-color-medium)' }}>
+          {t('common.selectionShortcuts')}
+        </small>
+      )}
       {open &&
         createPortal(
           <div

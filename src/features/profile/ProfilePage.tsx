@@ -36,7 +36,7 @@ import { StorefrontSettingsCard } from './StorefrontSettingsCard';
 import { selectCommercialAccess } from '@core/auth/authSlice';
 import { canUseCommercialFeature } from '@core/commercial';
 
-export const ProfilePage: React.FC = () => {
+export const ProfilePage: React.FC<{ shopSettings?: boolean }> = ({ shopSettings = false }) => {
   const { t, i18n } = useTranslation();
   const user = useAppSelector((state) => state.auth.user);
   const commercialAccess = useAppSelector(selectCommercialAccess);
@@ -49,6 +49,19 @@ export const ProfilePage: React.FC = () => {
     roles.includes('OWNER') && canUseCommercialFeature(roles, commercialAccess, 'FIRMS_SETTINGS');
   const canManageStorefront =
     roles.includes('OWNER') && canUseCommercialFeature(roles, commercialAccess, 'ONLINE_ORDERS');
+
+  const [settingsSection, setSettingsSection] = useState('documents');
+  const settingsSections = [
+    ...(canManageTenantSettings ? [{ id: 'documents', label: t('documentSettings.title') }] : []),
+    ...(canManageFirms ? [{ id: 'firms', label: t('firms.title') }] : []),
+    ...(canManageFirms && canUseCommercialFeature(roles, commercialAccess, 'FOOD_LICENCES')
+      ? [{ id: 'licences', label: t('foodLicences.title') }]
+      : []),
+    ...(canManageStorefront ? [{ id: 'storefront', label: t('storefrontSettings.title') }] : []),
+  ];
+  const activeSection = settingsSections.some((section) => section.id === settingsSection)
+    ? settingsSection
+    : settingsSections[0]?.id;
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -119,120 +132,197 @@ export const ProfilePage: React.FC = () => {
           <IonButtons slot="start">
             <IonBackButton defaultHref="/dashboard" />
           </IonButtons>
-          <IonTitle>{t('profile.title')}</IonTitle>
+          <IonTitle>{t(shopSettings ? 'profile.settings' : 'profile.title')}</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
-        <IonCard>
-          <IonCardHeader>
-            <IonCardTitle>
-              <IonIcon icon={person} style={{ marginRight: '8px' }} />
-              {t('profile.updateProfileInformation')}
-            </IonCardTitle>
-          </IonCardHeader>
-          <IonCardContent>
-            <Input
-              label={t('profile.name')}
-              value={name}
-              onChange={setName}
-              placeholder={t('profile.name')}
-              required
-            />
-            <Input
-              label={t('profile.phone')}
-              value={phone}
-              onChange={setPhone}
-              type="tel"
-              placeholder={t('foundation.profile.phoneExample')}
-              required
-            />
-            <Input
-              label={t('profile.email')}
-              value={user?.email || ''}
-              onChange={() => undefined}
-              type="email"
-              placeholder={t('profile.emailPlaceholder')}
-              disabled
-            />
-            <p className="text-sm" style={{ color: 'var(--ion-color-medium)' }}>
-              {t('profile.emailReadOnly')}
-            </p>
+        {!shopSettings && (
+          <IonCard>
+            <IonCardHeader>
+              <IonCardTitle>
+                <IonIcon icon={person} style={{ marginRight: '8px' }} />
+                {t('profile.updateProfileInformation')}
+              </IonCardTitle>
+            </IonCardHeader>
+            <IonCardContent>
+              <Input
+                label={t('profile.name')}
+                value={name}
+                onChange={setName}
+                placeholder={t('profile.name')}
+                required
+              />
+              <Input
+                label={t('profile.phone')}
+                value={phone}
+                onChange={setPhone}
+                type="tel"
+                placeholder={t('foundation.profile.phoneExample')}
+                required
+              />
+              <Input
+                label={t('profile.email')}
+                value={user?.email || ''}
+                onChange={() => undefined}
+                type="email"
+                placeholder={t('profile.emailPlaceholder')}
+                disabled
+              />
+              <p className="text-sm" style={{ color: 'var(--ion-color-medium)' }}>
+                {t('profile.emailReadOnly')}
+              </p>
 
-            <IonButton
-              onClick={handleUpdateProfile}
-              disabled={isLoading}
-              expand="block"
-              style={{ marginTop: '20px' }}
-            >
-              <IonIcon icon={save} slot="start" />
-              {t('profile.updateProfile')}
-            </IonButton>
-          </IonCardContent>
-        </IonCard>
-
-        {canManageTenantSettings && <DocumentSettingsCard />}
-        {canManageFirms && <FirmSettingsCard />}
-        {canManageFirms && canUseCommercialFeature(roles, commercialAccess, 'FOOD_LICENCES') && (
-          <FoodLicenceSettingsCard />
+              <IonButton
+                onClick={handleUpdateProfile}
+                disabled={isLoading}
+                expand="block"
+                style={{ marginTop: '20px' }}
+              >
+                <IonIcon icon={save} slot="start" />
+                {t('profile.updateProfile')}
+              </IonButton>
+            </IonCardContent>
+          </IonCard>
         )}
-        {canManageStorefront && <StorefrontSettingsCard />}
 
-        <IonCard>
-          <IonCardHeader>
-            <IonCardTitle>{t('profile.settings')}</IonCardTitle>
-          </IonCardHeader>
-          <IonItem>
-            <IonIcon icon={languageIcon} slot="start" />
-            <IonLabel>{t('profile.language')}</IonLabel>
-            <SelectionControl
-              aria-label={t('profile.selectLanguage')}
-              value={i18n.language}
-              placeholder={t('profile.selectLanguage')}
-              onIonChange={(e) => handleLanguageChange(e.detail.value)}
-              interface="action-sheet"
-              interfaceOptions={{
-                header: t('profile.selectLanguage'),
-                cssClass: 'language-selector-sheet',
-              }}
-            >
-              {languages.map((lang) => (
-                <SelectionOption key={lang.code} value={lang.code}>
-                  {lang.name}
-                </SelectionOption>
+        {!shopSettings && (canManageTenantSettings || canManageFirms || canManageStorefront) && (
+          <IonButton routerLink="/settings">{t('profile.settings')}</IonButton>
+        )}
+        {shopSettings && (
+          <>
+            <div className="shop-settings-tabs" role="tablist" aria-label={t('profile.settings')}>
+              {settingsSections.map((section) => (
+                <button
+                  key={section.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeSection === section.id}
+                  tabIndex={activeSection === section.id ? 0 : -1}
+                  onKeyDown={(event) => {
+                    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                    event.preventDefault();
+                    const index = settingsSections.findIndex((item) => item.id === section.id);
+                    const next =
+                      event.key === 'Home'
+                        ? 0
+                        : event.key === 'End'
+                          ? settingsSections.length - 1
+                          : (index +
+                              (event.key === 'ArrowRight' ? 1 : -1) +
+                              settingsSections.length) %
+                            settingsSections.length;
+                    setSettingsSection(settingsSections[next].id);
+                    document.getElementById(`settings-tab-${settingsSections[next].id}`)?.focus();
+                  }}
+                  aria-controls={`settings-${section.id}`}
+                  id={`settings-tab-${section.id}`}
+                  onClick={() => setSettingsSection(section.id)}
+                >
+                  {section.label}
+                </button>
               ))}
-            </SelectionControl>
-          </IonItem>
-
-          <IonItem>
-            <IonIcon icon={contrast} slot="start" />
-            <IonLabel>{t('profile.theme')}</IonLabel>
-            <IonToggle checked={theme === 'dark'} onIonChange={toggleTheme} slot="end">
-              {theme === 'dark' ? t('profile.darkMode') : t('profile.lightMode')}
-            </IonToggle>
-          </IonItem>
-        </IonCard>
-
-        <IonCard>
-          <IonCardHeader>
-            <IonCardTitle>{t('profile.accountInformation')}</IonCardTitle>
-          </IonCardHeader>
-          <IonCardContent>
-            <div className="info-row">
-              <span className="info-label">{t('profile.userId')}:</span>
-              <span className="info-value">{user?.id}</span>
             </div>
-            <div className="info-row">
-              <span className="info-label">{t('profile.role')}:</span>
-              <span className="info-value">{user?.roles?.[0] || t('common.defaultUserRole')}</span>
-            </div>
-            <div className="info-row">
-              <span className="info-label">{t('profile.company')}:</span>
-              <span className="info-value">{user?.tenant?.name || t('common.notAvailable')}</span>
-            </div>
-          </IonCardContent>
-        </IonCard>
+            <section
+              role="tabpanel"
+              id="settings-documents"
+              aria-labelledby="settings-tab-documents"
+              hidden={activeSection !== 'documents'}
+            >
+              {canManageTenantSettings && <DocumentSettingsCard />}
+            </section>
+            <section
+              role="tabpanel"
+              id="settings-firms"
+              aria-labelledby="settings-tab-firms"
+              hidden={activeSection !== 'firms'}
+            >
+              {canManageFirms && <FirmSettingsCard />}
+            </section>
+            <section
+              role="tabpanel"
+              id="settings-licences"
+              aria-labelledby="settings-tab-licences"
+              hidden={activeSection !== 'licences'}
+            >
+              {canManageFirms &&
+                canUseCommercialFeature(roles, commercialAccess, 'FOOD_LICENCES') && (
+                  <FoodLicenceSettingsCard />
+                )}
+            </section>
+            <section
+              role="tabpanel"
+              id="settings-storefront"
+              aria-labelledby="settings-tab-storefront"
+              hidden={activeSection !== 'storefront'}
+            >
+              {canManageStorefront && <StorefrontSettingsCard />}
+            </section>
+          </>
+        )}
+        {!shopSettings && (
+          <>
+            <IonCard>
+              <IonCardHeader>
+                <IonCardTitle>{t('profile.settings')}</IonCardTitle>
+              </IonCardHeader>
+              <IonItem>
+                <IonIcon icon={languageIcon} slot="start" />
+                <IonLabel>{t('profile.language')}</IonLabel>
+                <SelectionControl
+                  aria-label={t('profile.selectLanguage')}
+                  value={i18n.language}
+                  placeholder={t('profile.selectLanguage')}
+                  onIonChange={(e) => handleLanguageChange(e.detail.value)}
+                  interface="action-sheet"
+                  interfaceOptions={{
+                    header: t('profile.selectLanguage'),
+                    cssClass: 'language-selector-sheet',
+                  }}
+                >
+                  {languages.map((lang) => (
+                    <SelectionOption key={lang.code} value={lang.code}>
+                      {lang.name}
+                    </SelectionOption>
+                  ))}
+                </SelectionControl>
+              </IonItem>
 
-        <DeviceSecurityCard />
+              <IonItem>
+                <IonIcon icon={contrast} slot="start" />
+                <IonLabel>{t('profile.theme')}</IonLabel>
+                <IonToggle checked={theme === 'dark'} onIonChange={toggleTheme} slot="end">
+                  {theme === 'dark' ? t('profile.darkMode') : t('profile.lightMode')}
+                </IonToggle>
+              </IonItem>
+            </IonCard>
+
+            <IonCard>
+              <IonCardHeader>
+                <IonCardTitle>{t('profile.accountInformation')}</IonCardTitle>
+              </IonCardHeader>
+              <IonCardContent>
+                <div className="info-row">
+                  <span className="info-label">{t('profile.userId')}:</span>
+                  <span className="info-value">{user?.id}</span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">{t('profile.role')}:</span>
+                  <span className="info-value">
+                    {user?.roles?.[0] || t('common.defaultUserRole')}
+                  </span>
+                </div>
+                <div className="info-row">
+                  <span className="info-label">{t('profile.company')}:</span>
+                  <span className="info-value">
+                    {user?.tenant?.name || t('common.notAvailable')}
+                  </span>
+                </div>
+              </IonCardContent>
+            </IonCard>
+
+            <DeviceSecurityCard />
+          </>
+        )}
 
         <IonToast
           isOpen={showSuccess}
@@ -253,3 +343,5 @@ export const ProfilePage: React.FC = () => {
     </IonPage>
   );
 };
+
+export const ShopSettingsPage: React.FC = () => <ProfilePage shopSettings />;

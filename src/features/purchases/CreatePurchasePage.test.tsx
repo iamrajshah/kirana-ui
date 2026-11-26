@@ -159,7 +159,8 @@ vi.mock('@ionic/react', () => {
     IonText: Container,
     IonSelect: Container,
     IonSelectOption: Container,
-    IonModal: Container,
+    IonModal: ({ children, isOpen }: { children?: React.ReactNode; isOpen?: boolean }) =>
+      isOpen ? <div>{children}</div> : null,
     IonBadge: Container,
     IonIcon: () => null,
     IonButton: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (

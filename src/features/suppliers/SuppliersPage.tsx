@@ -1,3 +1,4 @@
+import { focusFirstEditable } from '@components/keyboardNavigation';
 import { SelectionControl, SelectionOption } from '@components/SelectionControl';
 import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useState, useEffect, useRef } from 'react';
@@ -244,6 +245,7 @@ const SuppliersPage: React.FC = () => {
   };
 
   const handleMakePayment = (supplier: Supplier) => {
+    resetPaymentForm();
     setPaymentSupplier(supplier);
     setPaymentFirmId(preferredPayableFirmId(supplier));
     setShowPaymentModal(true);
@@ -285,7 +287,6 @@ const SuppliersPage: React.FC = () => {
       succeeded = true;
 
       notificationService.success(t('suppliers.paymentRecordedSuccess'));
-      resetPaymentForm();
       setShowPaymentModal(false);
       refetch();
     } catch (error) {
@@ -317,7 +318,12 @@ const SuppliersPage: React.FC = () => {
             <h1>{t('suppliers.title')}</h1>
             {hasCreatePermission && (
               <div className="workspace-actions stock-primary-actions">
-                <IonButton onClick={() => setShowModal(true)}>
+                <IonButton
+                  onClick={() => {
+                    resetForm();
+                    setShowModal(true);
+                  }}
+                >
                   <IonIcon slot="start" icon={add} />
                   {t('suppliers.addSupplier')}
                 </IonButton>
@@ -452,7 +458,10 @@ const SuppliersPage: React.FC = () => {
           <IonFab vertical="bottom" horizontal="end" slot="fixed" className="stock-fab">
             <IonFabButton
               aria-label={t('suppliers.addSupplier')}
-              onClick={() => setShowModal(true)}
+              onClick={() => {
+                resetForm();
+                setShowModal(true);
+              }}
             >
               <IonIcon icon={add} />
             </IonFabButton>
@@ -460,128 +469,134 @@ const SuppliersPage: React.FC = () => {
         )}
 
         {/* Add/Edit Supplier Modal */}
-        {showModal && (
-          <IonModal isOpen={showModal} onDidDismiss={() => setShowModal(false)}>
-            <IonHeader>
-              <IonToolbar>
-                <IonTitle>
-                  {editingSupplier ? t('suppliers.editSupplier') : t('suppliers.addSupplier')}
-                </IonTitle>
-                <IonButtons slot="end">
-                  <IonButton
-                    onClick={() => {
-                      setShowModal(false);
-                      resetForm();
-                    }}
-                  >
-                    <IonIcon icon={close} />
-                  </IonButton>
-                </IonButtons>
-              </IonToolbar>
-            </IonHeader>
-            <IonContent className="ion-padding">
-              <Input
-                label={t('suppliers.supplierName')}
-                value={name}
-                onChange={setName}
-                error={formErrors.name}
-                maxLength={150}
-                required
-              />
-              <Input
-                label={t('suppliers.supplierPhone')}
-                value={phone}
-                onChange={setPhone}
-                type="tel"
-                error={formErrors.phone}
-                maxLength={10}
-                inputMode="numeric"
-                required
-              />
-              <Input
-                label={t('suppliers.supplierEmail')}
-                value={email}
-                onChange={setEmail}
-                type="email"
-                error={formErrors.email}
-                maxLength={254}
-              />
-              <Input
-                label={t('suppliers.supplierAddress')}
-                value={address}
-                onChange={setAddress}
-                maxLength={500}
-              />
-              <Input
-                label={t('suppliers.gstin')}
-                value={gstin}
-                onChange={(value) => {
-                  const normalized = value.toUpperCase();
-                  setGstin(normalized);
-                  if (!stateCode && /^\d{2}/.test(normalized)) setStateCode(normalized.slice(0, 2));
-                  setTaxIdentityError('');
-                }}
-                maxLength={15}
-                placeholder={t('suppliers.gstinPlaceholder')}
-              />
-              <Input
-                label={t('suppliers.supplierState')}
-                value={stateName}
-                onChange={setStateName}
-                maxLength={100}
-                placeholder={t('suppliers.statePlaceholder')}
-              />
-              <Input
-                label={t('suppliers.stateCode')}
-                value={stateCode}
-                onChange={(value) => {
-                  setStateCode(value.replace(/\D/g, '').slice(0, 2));
-                  setTaxIdentityError('');
-                }}
-                maxLength={2}
-                inputMode="numeric"
-                placeholder={t('suppliers.stateCodePlaceholder')}
-              />
-              {taxIdentityError && (
-                <p className="stock-warning" role="alert">
-                  {taxIdentityError}
-                </p>
-              )}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
-                  {t('suppliers.defaultPurchaseFirm')}
-                </label>
-                <SelectionControl
-                  aria-label={t('suppliers.defaultPurchaseFirm')}
-                  value={defaultFirmId}
-                  placeholder={t('suppliers.noDefaultFirm')}
-                  onIonChange={(event) => setDefaultFirmId(event.detail.value)}
-                  interface="popover"
+        <IonModal
+          onDidPresent={(event) => focusFirstEditable(event.target as HTMLElement)}
+          isOpen={showModal}
+          onDidDismiss={() => {
+            setShowModal(false);
+            resetForm();
+          }}
+        >
+          <IonHeader>
+            <IonToolbar>
+              <IonTitle>
+                {editingSupplier ? t('suppliers.editSupplier') : t('suppliers.addSupplier')}
+              </IonTitle>
+              <IonButtons slot="end">
+                <IonButton
+                  onClick={() => {
+                    setShowModal(false);
+                    resetForm();
+                  }}
                 >
-                  <SelectionOption value="">{t('suppliers.noDefaultFirm')}</SelectionOption>
-                  {firms.map((firm) => (
-                    <SelectionOption key={firm.id} value={firm.id}>
-                      {firm.display_name}
-                    </SelectionOption>
-                  ))}
-                </SelectionControl>
-              </div>
-              <Button
-                onClick={handleCreateSupplier}
-                loading={creating || updating}
-                fullWidth
-                size="large"
+                  <IonIcon icon={close} />
+                </IonButton>
+              </IonButtons>
+            </IonToolbar>
+          </IonHeader>
+          <IonContent className="ion-padding">
+            <Input
+              label={t('suppliers.supplierName')}
+              value={name}
+              onChange={setName}
+              error={formErrors.name}
+              maxLength={150}
+              required
+            />
+            <Input
+              label={t('suppliers.supplierPhone')}
+              value={phone}
+              onChange={setPhone}
+              type="tel"
+              error={formErrors.phone}
+              maxLength={10}
+              inputMode="numeric"
+              required
+            />
+            <Input
+              label={t('suppliers.supplierEmail')}
+              value={email}
+              onChange={setEmail}
+              type="email"
+              error={formErrors.email}
+              maxLength={254}
+            />
+            <Input
+              label={t('suppliers.supplierAddress')}
+              value={address}
+              onChange={setAddress}
+              maxLength={500}
+            />
+            <Input
+              label={t('suppliers.gstin')}
+              value={gstin}
+              onChange={(value) => {
+                const normalized = value.toUpperCase();
+                setGstin(normalized);
+                if (!stateCode && /^\d{2}/.test(normalized)) setStateCode(normalized.slice(0, 2));
+                setTaxIdentityError('');
+              }}
+              maxLength={15}
+              placeholder={t('suppliers.gstinPlaceholder')}
+            />
+            <Input
+              label={t('suppliers.supplierState')}
+              value={stateName}
+              onChange={setStateName}
+              maxLength={100}
+              placeholder={t('suppliers.statePlaceholder')}
+            />
+            <Input
+              label={t('suppliers.stateCode')}
+              value={stateCode}
+              onChange={(value) => {
+                setStateCode(value.replace(/\D/g, '').slice(0, 2));
+                setTaxIdentityError('');
+              }}
+              maxLength={2}
+              inputMode="numeric"
+              placeholder={t('suppliers.stateCodePlaceholder')}
+            />
+            {taxIdentityError && (
+              <p className="stock-warning" role="alert">
+                {taxIdentityError}
+              </p>
+            )}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
+                {t('suppliers.defaultPurchaseFirm')}
+              </label>
+              <SelectionControl
+                aria-label={t('suppliers.defaultPurchaseFirm')}
+                value={defaultFirmId}
+                placeholder={t('suppliers.noDefaultFirm')}
+                onIonChange={(event) => setDefaultFirmId(event.detail.value)}
+                interface="popover"
               >
-                {t('common.save')}
-              </Button>
-            </IonContent>
-          </IonModal>
-        )}
+                <SelectionOption value="">{t('suppliers.noDefaultFirm')}</SelectionOption>
+                {firms.map((firm) => (
+                  <SelectionOption key={firm.id} value={firm.id}>
+                    {firm.display_name}
+                  </SelectionOption>
+                ))}
+              </SelectionControl>
+            </div>
+            <Button
+              onClick={handleCreateSupplier}
+              loading={creating || updating}
+              fullWidth
+              size="large"
+            >
+              {t('common.save')}
+            </Button>
+          </IonContent>
+        </IonModal>
 
         {/* Payment Modal */}
-        {showPaymentModal && paymentSupplier && (
+        {paymentSupplier && (
           <IonModal
-            isOpen={true}
+            onDidPresent={(event) => focusFirstEditable(event.target as HTMLElement)}
+            isOpen={showPaymentModal}
             onDidDismiss={() => {
               setShowPaymentModal(false);
               resetPaymentForm();
@@ -594,7 +609,6 @@ const SuppliersPage: React.FC = () => {
                   <IonButton
                     onClick={() => {
                       setShowPaymentModal(false);
-                      resetPaymentForm();
                     }}
                   >
                     <IonIcon icon={close} />

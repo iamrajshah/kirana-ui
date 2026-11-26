@@ -1,3 +1,4 @@
+import { focusFirstEditable } from '@components/keyboardNavigation';
 import React, { useState } from 'react';
 import { apiErrorMessage } from '@core/services/notificationService';
 import {
@@ -57,6 +58,8 @@ export const CategoriesPage: React.FC = () => {
   const categories = categoriesResponse?.data || [];
 
   const resetForm = () => {
+    setShowError(false);
+    setErrorMessage('');
     setCategoryName('');
     setEditingId(null);
     setHsn('');
@@ -189,60 +192,62 @@ export const CategoriesPage: React.FC = () => {
           )}
 
           {/* Add Category Modal */}
-          {showModal && (
-            <IonModal isOpen={true} onDidDismiss={() => setShowModal(false)}>
-              <div className="ion-page">
-                <IonHeader>
-                  <IonToolbar>
-                    <IonTitle>{t(editingId === null ? 'categories.add' : 'common.edit')}</IonTitle>
-                    <IonButtons slot="end">
-                      <IonButton onClick={() => setShowModal(false)}>
-                        <IonIcon icon={close} />
-                      </IonButton>
-                    </IonButtons>
-                  </IonToolbar>
-                </IonHeader>
-                <IonContent className="ion-padding">
-                  <Input
-                    label={t('categories.name')}
-                    value={categoryName}
-                    onChange={setCategoryName}
-                    placeholder={t('categories.namePlaceholder')}
-                    required
-                  />
-                  <Input
-                    label={t('taxFields.hsnCode')}
-                    value={hsn}
-                    onChange={setHsn}
-                    maxLength={8}
-                    inputMode="numeric"
-                  />
-                  <Input
-                    label={t('products.gstLabel')}
-                    value={gst}
-                    onChange={setGst}
-                    type="number"
-                    min={0}
-                    max={100}
-                  />
-                  <Input
-                    label={t('categories.optionalDescription')}
-                    value={categoryDescription}
-                    onChange={setCategoryDescription}
-                    placeholder={t('categories.descriptionPlaceholder')}
-                  />
-                  <IonButton
-                    expand="block"
-                    onClick={handleCreateCategory}
-                    disabled={creating || updating || !categoryName.trim()}
-                    className="ion-margin-top"
-                  >
-                    {creating ? t('common.creating') : t('categories.create')}
-                  </IonButton>
-                </IonContent>
-              </div>
-            </IonModal>
-          )}
+          <IonModal
+            onDidPresent={(event) => focusFirstEditable(event.target as HTMLElement)}
+            isOpen={showModal}
+            onDidDismiss={() => setShowModal(false)}
+          >
+            <div className="ion-page">
+              <IonHeader>
+                <IonToolbar>
+                  <IonTitle>{t(editingId === null ? 'categories.add' : 'common.edit')}</IonTitle>
+                  <IonButtons slot="end">
+                    <IonButton onClick={() => setShowModal(false)}>
+                      <IonIcon icon={close} />
+                    </IonButton>
+                  </IonButtons>
+                </IonToolbar>
+              </IonHeader>
+              <IonContent className="ion-padding">
+                <Input
+                  label={t('categories.name')}
+                  value={categoryName}
+                  onChange={setCategoryName}
+                  placeholder={t('categories.namePlaceholder')}
+                  required
+                />
+                <Input
+                  label={t('taxFields.hsnCode')}
+                  value={hsn}
+                  onChange={setHsn}
+                  maxLength={8}
+                  inputMode="numeric"
+                />
+                <Input
+                  label={t('products.gstLabel')}
+                  value={gst}
+                  onChange={setGst}
+                  type="number"
+                  min={0}
+                  max={100}
+                />
+                <Input
+                  label={t('categories.optionalDescription')}
+                  value={categoryDescription}
+                  onChange={setCategoryDescription}
+                  placeholder={t('categories.descriptionPlaceholder')}
+                />
+                <IonButton
+                  expand="block"
+                  onClick={handleCreateCategory}
+                  disabled={creating || updating || !categoryName.trim()}
+                  className="ion-margin-top"
+                >
+                  {creating ? t('common.creating') : t('categories.create')}
+                </IonButton>
+              </IonContent>
+            </div>
+          </IonModal>
 
           {/* Success Toast */}
           <IonToast

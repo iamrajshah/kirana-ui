@@ -81,7 +81,7 @@ export const UnknownBarcodeResolution: React.FC<UnknownBarcodeResolutionProps> =
   };
 
   return (
-    <div className="flex min-h-full items-center justify-center bg-slate-950/40 p-3">
+    <div className="flex min-h-full items-start justify-center bg-slate-950/40 p-3">
       <IonCard className="m-0 w-full max-w-lg rounded-3xl shadow-2xl">
         <IonCardContent className="p-5 sm:p-6">
           <div className="flex items-start gap-3">

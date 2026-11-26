@@ -17,6 +17,7 @@ import gujaratiRegular from '@fontsource/noto-sans-gujarati/files/noto-sans-guja
 import gujaratiBold from '@fontsource/noto-sans-gujarati/files/noto-sans-gujarati-gujarati-700-normal.woff?url';
 import type { ReceiptPaperWidth, ReceiptViewModel } from './types';
 import { defaultReceiptLabels } from './receiptLabels';
+import { receiptPdfTextRuns } from './receiptPdfText';
 
 let fontsRegistered = false;
 
@@ -50,21 +51,13 @@ const registerFonts = () => {
   fontsRegistered = true;
 };
 
-const fontRuns = (value: string) => value.match(/[ऀ-ॿ]+|[઀-૿]+|[^ऀ-ॿ઀-૿]+/gu) ?? [];
-
-const familyForRun = (value: string) => {
-  if (/^[઀-૿]/u.test(value)) return 'Receipt Gujarati';
-  if (/^[ऀ-ॿ]/u.test(value)) return 'Receipt Devanagari';
-  return 'Receipt Latin';
-};
-
 const Text: React.FC<React.PropsWithChildren<TextProps>> = ({ children, ...props }) => {
   const value = React.Children.toArray(children).join('');
   return (
     <ReactPdfText {...props}>
-      {fontRuns(value).map((run, index) => (
-        <ReactPdfText style={{ fontFamily: familyForRun(run) }} key={`${index}-${run}`}>
-          {run}
+      {receiptPdfTextRuns(value).map((run, index) => (
+        <ReactPdfText style={{ fontFamily: run.family }} key={`${index}-${run.text}`}>
+          {run.text}
         </ReactPdfText>
       ))}
     </ReactPdfText>

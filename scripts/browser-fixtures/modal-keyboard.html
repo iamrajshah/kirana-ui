@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+  <body>
+    <div id="root"></div>
+    <script type="module">
+      import React from 'react';
+      import { createRoot } from 'react-dom/client';
+      import { IonApp, IonPage, IonContent, IonModal, setupIonicReact } from '@ionic/react';
+      import { Input } from '/src/components/Input.tsx';
+      import { SearchBar } from '/src/components/SearchBar.tsx';
+      import { SearchableSelect } from '/src/components/SearchableSelect.tsx';
+      import { KeyboardNavigation } from '/src/components/keyboardNavigation.ts';
+      import '/src/core/i18n/index.ts';
+      import '@ionic/react/css/core.css';
+      setupIonicReact();
+      const e = React.createElement;
+      window.selected = '';
+      window.submissions = 0;
+      function App() {
+        const [value, setValue] = React.useState('');
+        const [search, setSearch] = React.useState('');
+        const [choice, setChoice] = React.useState('');
+        const [index, setIndex] = React.useState(0);
+        return e(
+          IonApp,
+          null,
+          e(KeyboardNavigation),
+          e(
+            IonPage,
+            null,
+            e(
+              IonContent,
+              null,
+              e(
+                IonModal,
+                { isOpen: true },
+                e(
+                  IonContent,
+                  null,
+                  e(Input, { label: 'First', value, onChange: setValue, required: true }),
+                  e(SearchBar, {
+                    value: search,
+                    onChange: setSearch,
+                    debounce: 0,
+                    onKeyDown: (event) => {
+                      if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        setIndex(1);
+                      }
+                      if (event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        setIndex(0);
+                      }
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        window.selected = String(index);
+                      }
+                    },
+                  }),
+                  e(SearchableSelect, {
+                    label: 'Category',
+                    value: choice,
+                    onChange: setChoice,
+                    options: [{ value: '1', label: 'Grocery' }],
+                  }),
+                  e(
+                    'label',
+                    null,
+                    'Native price',
+                    e('input', {
+                      'aria-label': 'Native price',
+                      type: 'number',
+                      min: 2,
+                      defaultValue: 3,
+                    })
+                  ),
+                  e(
+                    'label',
+                    null,
+                    'Native stock',
+                    e('input', { 'aria-label': 'Native stock', type: 'number', defaultValue: 5 })
+                  ),
+                  e(
+                    'form',
+                    {
+                      onSubmit: (event) => {
+                        event.preventDefault();
+                        window.submissions++;
+                      },
+                    },
+                    e('button', { type: 'submit' }, 'Collect payment')
+                  )
+                )
+              )
+            )
+          )
+        );
+      }
+      createRoot(document.getElementById('root')).render(e(App));
+    </script>
+  </body>
+</html>

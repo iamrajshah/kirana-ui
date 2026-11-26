@@ -24,7 +24,12 @@ export function QuickPartyCreate(props: Props) {
       <button
         type="button"
         className="min-h-touch font-semibold"
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          setName('');
+          setPhone('');
+          setError('');
+          setOpen(!open);
+        }}
         disabled={busy}
       >
         + {t(props.kind === 'customer' ? 'customers.addCustomer' : 'suppliers.addSupplier')}

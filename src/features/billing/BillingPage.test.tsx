@@ -1032,6 +1032,20 @@ describe('BillingPage', () => {
       expect(screen.getByRole('textbox', { name: 'foundation.barcode.barcode' })).toBeTruthy();
     });
 
+    it.each(['Enter', 'Tab'])(
+      'accepts %s from the focused barcode editor without an implicit checkout',
+      async (key) => {
+        render(<BillingPage />);
+        await screen.findByText('Rice');
+        const input = screen.getByRole('textbox', { name: 'foundation.barcode.barcode' });
+        expect(input.id).toBe('counter-barcode-input');
+        fireEvent.change(input, { target: { value: '8901234567890' } });
+        fireEvent.keyDown(input, { key });
+        await waitFor(() => expect(mocks.scanBarcode).toHaveBeenCalledWith('8901234567890'));
+        expect(mocks.createInvoice).not.toHaveBeenCalled();
+      }
+    );
+
     it('accepts barcode input from a desktop counter scanner', async () => {
       render(<BillingPage />);
       await screen.findByText('Rice');
@@ -1154,6 +1168,32 @@ describe('BillingPage', () => {
         ).toBe('')
       );
     });
+  });
+
+  it('locks checkout while awaiting the quote and admits only one rapid cash intent', async () => {
+    const defaultQuote = mocks.quoteInvoice.getMockImplementation() as () => Promise<unknown>;
+    let resumeQuote: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      resumeQuote = resolve;
+    });
+    mocks.quoteInvoice.mockImplementation(async () => {
+      await gate;
+      return defaultQuote();
+    });
+    render(<BillingPage />);
+    await screen.findByText('Rice');
+    const pay = screen.getByRole('button', { name: 'billing.payCash' });
+    fireEvent.click(pay);
+    fireEvent.click(pay);
+    expect((pay as HTMLButtonElement).disabled).toBe(true);
+    expect(mocks.quoteInvoice).toHaveBeenCalledTimes(1);
+    expect(
+      (screen.getByRole('spinbutton', { name: 'billing.quantityFor Rice' }) as HTMLInputElement)
+        .disabled
+    ).toBe(true);
+    resumeQuote();
+    await waitFor(() => expect(mocks.createPayment).toHaveBeenCalledTimes(1));
+    expect(mocks.finalizeInvoice).toHaveBeenCalledTimes(1);
   });
 
   describe('checkout recovery', () => {
@@ -1619,9 +1659,8 @@ it('keeps three in-app bills independent and restores their items after remount'
   fireEvent.click(screen.getByRole('button', { name: 'counterWork.newBill' }));
   expect(screen.queryByText('Tea')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'counterWork.newBill' }));
-  expect(
-    (screen.getByRole('button', { name: 'counterWork.newBill' }) as HTMLButtonElement).disabled
-  ).toBe(true);
+  expect(screen.queryByRole('button', { name: 'counterWork.newBill' })).toBeNull();
+  expect(screen.getByText('3/3 counterWork.bills')).toBeTruthy();
   fireEvent.click(screen.getAllByRole('button', { name: 'counterWork.bill' })[0]);
   expect(await screen.findByText('Tea')).toBeTruthy();
   view.unmount();

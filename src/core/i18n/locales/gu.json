@@ -128,7 +128,8 @@
       "upi": "UPI",
       "card": "કાર્ડ",
       "bankTransfer": "બેંક ટ્રાન્સફર"
-    }
+    },
+    "selectionShortcuts": "↑ ↓ પસંદ કરો · Enter પસંદ કરો · Esc બંધ કરો"
   },
   "validation": {
     "validName": "અક્ષરો ધરાવતું નામ દાખલ કરો (મહત્તમ 150 અક્ષર).",
