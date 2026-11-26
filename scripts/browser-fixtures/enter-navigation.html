@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+  <body>
+    <div id="root"></div>
+    <script type="module">
+      import React from 'react';
+      import { createRoot } from 'react-dom/client';
+      import { IonApp, IonContent, setupIonicReact } from '@ionic/react';
+      import { Input } from '/src/components/Input.tsx';
+      import '/src/core/i18n/index.ts';
+      import '@ionic/react/css/core.css';
+      setupIonicReact();
+      const e = React.createElement;
+      window.submissions = 0;
+      function Fields() {
+        const [value, setValue] = React.useState('');
+        return e(
+          IonApp,
+          null,
+          e(
+            IonContent,
+            null,
+            e(
+              'form',
+              {
+                onSubmit: (event) => {
+                  event.preventDefault();
+                  window.submissions++;
+                },
+              },
+              e(Input, { label: 'First', value, onChange: setValue, required: true }),
+              e(Input, { label: 'Disabled', value: 'skip', onChange: () => {}, disabled: true }),
+              e(Input, { label: 'Last', value: '', onChange: () => {} }),
+              e('button', { type: 'submit' }, 'Collect payment')
+            )
+          )
+        );
+      }
+      createRoot(document.getElementById('root')).render(e(Fields));
+    </script>
+  </body>
+</html>

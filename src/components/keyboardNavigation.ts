@@ -29,7 +29,9 @@ export function advanceOnEnter(
   ).filter(
     (node) =>
       !node.closest('[hidden],[aria-hidden="true"],.ion-page-hidden') &&
-      !node.matches('[disabled],[type="hidden"]') &&
+      // Ionic may retain disabled="false"; the property is authoritative.
+      !(node as HTMLInputElement).disabled &&
+      !node.matches(':disabled,[type="hidden"]') &&
       !node.matches('ion-input input') &&
       node.getClientRects().length > 0
   );
