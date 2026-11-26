@@ -44,7 +44,7 @@ final class KiranaFlowUITests: XCTestCase {
             XCTAssertTrue(app.secureTextFields.firstMatch.waitForExistence(timeout: 25), "Logout did not return to login")
         }
         do {
-            let field = app.textFields.firstMatch
+            let field = app.textFields.matching(NSPredicate(format: "label CONTAINS[c] %@", "Email or Phone")).firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 45), "Login input did not appear")
             field.tap(); field.typeText(email)
             let secret = app.secureTextFields.firstMatch
@@ -98,7 +98,7 @@ final class KiranaFlowUITests: XCTestCase {
         let search = app.searchFields["Search product by name or SKU"].firstMatch
         XCTAssertTrue(search.waitForExistence(timeout: 25))
         enterSearch(name, in: search)
-        let product = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", name)).firstMatch
+        let product = app.otherElements.matching(NSPredicate(format: "label BEGINSWITH[c] %@", name)).firstMatch
         XCTAssertTrue(product.waitForExistence(timeout: 25), "Product result missing")
         product.tap()
     }
@@ -343,7 +343,7 @@ final class KiranaFlowUITests: XCTestCase {
         tapVisible("Attach customer")
         let search = app.searchFields["Search customer by name or phone"].firstMatch
         XCTAssertTrue(search.waitForExistence(timeout: 15)); enterSearch(customer, in: search)
-        let match = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", customer)).firstMatch
+        let match = app.buttons.matching(NSPredicate(format: "label BEGINSWITH[c] %@", customer)).firstMatch
         XCTAssertTrue(match.waitForExistence(timeout: 20)); match.tap()
     }
 
@@ -492,6 +492,34 @@ final class KiranaFlowUITests: XCTestCase {
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Attach customer")).firstMatch.waitForExistence(timeout: 30))
         tapVisible("Dashboard")
         XCTAssertTrue(app.staticTexts["Your shop at a glance"].firstMatch.waitForExistence(timeout: 25))
+    }
+
+    func test40CurrentBillingCashKhataAndPayment() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let shop = env["KIRANA_QA_SHOP"], let product = env["KIRANA_QA_PRODUCT"], let customer = env["KIRANA_QA_CUSTOMER"] else { throw XCTSkip("Disposable QA fixtures required") }
+        app.launch()
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Dashboard")).firstMatch.waitForExistence(timeout: 45))
+        tapVisible("menu")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", shop)).firstMatch.waitForExistence(timeout: 15), "Wrong shop: refusing financial writes")
+        tapVisible("Dashboard"); tapVisible("Billing")
+        addProduct(product); capture("build17-real-cash-cart")
+        tapVisible("Cash")
+        let attach = app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Attach customer")).firstMatch
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ==[c] %@", "Cash")).firstMatch.waitForNonExistence(timeout: 60), "Cash checkout did not return to empty billing")
+        XCTAssertTrue(attach.waitForExistence(timeout: 30)); capture("build17-real-cash-complete")
+        attachQACustomer(customer); addProduct(product); tapVisible("Khata")
+        XCTAssertTrue(attach.waitForExistence(timeout: 60), "Khata checkout did not return to empty billing")
+        capture("build16-real-khata-complete")
+        tapVisible("Payments"); tapVisible("Record Payment")
+        let search = app.textFields["Search customers by name or phone"].firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 20)); enterSearch(customer, in: search)
+        let match = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH[c] %@", customer)).firstMatch
+        XCTAssertTrue(match.waitForExistence(timeout: 25)); match.tap()
+        let amount = app.textFields["Enter amount"].firstMatch
+        XCTAssertTrue(amount.waitForExistence(timeout: 15)); enterSearch("100", in: amount)
+        capture("build16-real-payment-form"); tapVisible("Save")
+        XCTAssertTrue(amount.waitForNonExistence(timeout: 45), "Payment form remained open")
+        tapVisible("Dashboard"); capture("build16-real-payment-dashboard")
     }
 
 }

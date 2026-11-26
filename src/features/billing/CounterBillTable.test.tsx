@@ -74,3 +74,14 @@ describe('compact bill review', () => {
     ).toBe(false);
   });
 });
+
+it('returns focus to the counter barcode editor after quantity or rate Enter', () => {
+  render(<input id="counter-barcode-input" aria-label="Counter barcode" />);
+  setup();
+  for (const name of ['billing.quantityFor Product 1', 'billing.priceFor Product 1']) {
+    const field = screen.getByRole('spinbutton', { name });
+    field.focus();
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(document.activeElement).toBe(screen.getByLabelText('Counter barcode'));
+  }
+});
