@@ -1,3 +1,4 @@
+import { SelectionControl } from '@components/SelectionControl';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -277,7 +278,7 @@ export default function ProductTaxWorkspace({ onClose }: { onClose: () => void }
                 {keys.map((key) => (
                   <td key={key}>
                     {key === 'uqcCode' ? (
-                      <select
+                      <SelectionControl
                         aria-label={`${t(`taxWorkspace.${key}`)} ${row.sku ?? row.variantId}`}
                         disabled={busy || !!review || isFetching}
                         value={(drafts[row.variantId] ?? taxDraft(row.values))[key]}
@@ -287,7 +288,7 @@ export default function ProductTaxWorkspace({ onClose }: { onClose: () => void }
                         {uqcCodes.map((code) => (
                           <option key={code}>{code}</option>
                         ))}
-                      </select>
+                      </SelectionControl>
                     ) : (
                       <input
                         aria-label={`${t(`taxWorkspace.${key}`)} ${row.sku ?? row.variantId}`}

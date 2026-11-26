@@ -304,3 +304,8 @@ it('preloads GST identity for supplier editing', () => {
   );
   expect((screen.getByLabelText('suppliers.stateCode') as HTMLInputElement).value).toBe('24');
 });
+
+vi.mock('@components/SelectionControl', async () => {
+  const ionic = await import('@ionic/react');
+  return { SelectionControl: ionic.IonSelect, SelectionOption: ionic.IonSelectOption };
+});

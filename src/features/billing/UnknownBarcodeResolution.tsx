@@ -1,3 +1,6 @@
+import { CategoryPicker } from '@components/CategoryPicker';
+import type { Category } from '@core/api/categoryApi';
+import { advanceOnEnter } from '@components/keyboardNavigation';
 import React, { useEffect, useState } from 'react';
 import { IonButton, IonCard, IonCardContent, IonIcon } from '@ionic/react';
 import { barcodeOutline, close } from 'ionicons/icons';
@@ -7,6 +10,11 @@ export type UnknownBarcodeProductInput = {
   name: string;
   sellingPrice: number;
   openingStock: number;
+  purchasePrice?: number;
+  mrp?: number;
+  categoryId?: number;
+  hsnCode?: string;
+  gstPercent?: number;
 };
 
 type UnknownBarcodeResolutionProps = {
@@ -25,12 +33,20 @@ export const UnknownBarcodeResolution: React.FC<UnknownBarcodeResolutionProps> =
   onDismiss,
 }) => {
   const { t } = useTranslation();
+  const [details, setDetails] = useState(false);
+  const [category, setCategory] = useState<Category | null>(null);
   const [name, setName] = useState('');
   const [sellingPrice, setSellingPrice] = useState('');
+  const [purchasePrice, setPurchasePrice] = useState('');
+  const [mrp, setMrp] = useState('');
   const [openingStock, setOpeningStock] = useState('0');
 
   useEffect(() => {
     setName('');
+    setCategory(null);
+    setDetails(false);
+    setPurchasePrice('');
+    setMrp('');
     setSellingPrice('');
     setOpeningStock('0');
   }, [barcode]);
@@ -44,15 +60,23 @@ export const UnknownBarcodeResolution: React.FC<UnknownBarcodeResolutionProps> =
     Number.isFinite(parsedPrice) &&
     parsedPrice >= 0 &&
     Number.isInteger(parsedStock) &&
-    parsedStock >= 0;
+    parsedStock >= 0 &&
+    (purchasePrice === '' ||
+      (Number.isFinite(Number(purchasePrice)) && Number(purchasePrice) >= 0)) &&
+    (mrp === '' || (Number.isFinite(Number(mrp)) && Number(mrp) >= parsedPrice));
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!canSubmit || isCreating) return;
     await onCreate({
       name: name.trim(),
+      categoryId: category ? Number(category.id) : undefined,
+      hsnCode: category?.default_hsn_code ?? undefined,
+      gstPercent: category?.default_gst_percent ?? undefined,
       sellingPrice: parsedPrice,
       openingStock: parsedStock,
+      purchasePrice: purchasePrice === '' ? undefined : Number(purchasePrice),
+      mrp: mrp === '' ? undefined : Number(mrp),
     });
   };
 
@@ -110,6 +134,7 @@ export const UnknownBarcodeResolution: React.FC<UnknownBarcodeResolutionProps> =
               >
                 {t('billing.unknownBarcode.productName')}
                 <input
+                  onKeyDown={advanceOnEnter}
                   id="unknown-barcode-product-name"
                   aria-label={t('billing.unknownBarcode.productName')}
                   autoFocus
@@ -130,6 +155,7 @@ export const UnknownBarcodeResolution: React.FC<UnknownBarcodeResolutionProps> =
                   <div className="mt-1 flex min-h-touch items-center rounded-xl border border-gray-300 px-3 focus-within:border-sky-500">
                     <span className="mr-1">₹</span>
                     <input
+                      onKeyDown={advanceOnEnter}
                       id="unknown-barcode-selling-price"
                       aria-label={t('billing.unknownBarcode.sellingPrice')}
                       required
@@ -149,6 +175,7 @@ export const UnknownBarcodeResolution: React.FC<UnknownBarcodeResolutionProps> =
                 >
                   {t('billing.unknownBarcode.openingStock')}
                   <input
+                    onKeyDown={advanceOnEnter}
                     id="unknown-barcode-opening-stock"
                     aria-label={t('billing.unknownBarcode.openingStock')}
                     required
@@ -163,6 +190,40 @@ export const UnknownBarcodeResolution: React.FC<UnknownBarcodeResolutionProps> =
                 </label>
               </div>
 
+              <label className="block">
+                {t('products.purchaseCostLabel')}
+                <input
+                  className="block w-full rounded-lg border p-3"
+                  value={purchasePrice}
+                  onChange={(event) => setPurchasePrice(event.target.value)}
+                  onKeyDown={advanceOnEnter}
+                  type="number"
+                  min={0}
+                  step="0.01"
+                />
+              </label>
+              <label className="block">
+                {t('products.mrpPriceLabel')}
+                <input
+                  className="block w-full rounded-lg border p-3"
+                  value={mrp}
+                  onChange={(event) => setMrp(event.target.value)}
+                  onKeyDown={advanceOnEnter}
+                  type="number"
+                  min={parsedPrice}
+                  step="0.01"
+                />
+              </label>
+              <button type="button" className="min-h-touch" onClick={() => setDetails(!details)}>
+                {t('products.category')}
+              </button>
+              {details && (
+                <CategoryPicker
+                  value={category ? String(category.id) : ''}
+                  onSelect={setCategory}
+                  canCreate={canCreate}
+                />
+              )}
               <p className="text-xs text-gray-500">
                 {t('billing.unknownBarcode.savedForNextTime')}
               </p>

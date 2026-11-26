@@ -29,6 +29,8 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   onCategoryCreated,
 }) => {
   const { t } = useTranslation();
+  const [hsn, setHsn] = useState('');
+  const [gst, setGst] = useState('');
   const [categoryName, setCategoryName] = useState('');
   const [categoryDescription, setCategoryDescription] = useState('');
   const [showError, setShowError] = useState(false);
@@ -40,6 +42,8 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     if (!isOpen) {
       // Reset form when modal closes
       setCategoryName('');
+      setHsn('');
+      setGst('');
       setCategoryDescription('');
     }
   }, [isOpen]);
@@ -54,6 +58,8 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     try {
       const result = await createCategory({
         name: categoryName.trim(),
+        default_hsn_code: hsn.trim() || null,
+        default_gst_percent: gst === '' ? null : Number(gst),
         description: categoryDescription.trim() || undefined,
       }).unwrap();
 
@@ -99,6 +105,21 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
                 value={categoryDescription}
                 onChange={setCategoryDescription}
                 placeholder={t('categories.descriptionPlaceholder')}
+              />
+              <Input
+                label={t('taxFields.hsnCode')}
+                value={hsn}
+                onChange={setHsn}
+                maxLength={8}
+                inputMode="numeric"
+              />
+              <Input
+                label={t('products.gstLabel')}
+                value={gst}
+                onChange={setGst}
+                type="number"
+                min={0}
+                max={100}
               />
               <IonButton
                 expand="block"

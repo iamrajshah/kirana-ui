@@ -1,3 +1,4 @@
+import { SelectionControl, SelectionOption } from '@components/SelectionControl';
 import React, { useState, useEffect, useRef } from 'react';
 import { apiErrorMessage } from '@core/services/notificationService';
 import {
@@ -17,8 +18,6 @@ import {
   IonButtons,
   IonItem,
   IonLabel,
-  IonSelect,
-  IonSelectOption,
   IonToggle,
 } from '@ionic/react';
 import { save, person, language as languageIcon, contrast } from 'ionicons/icons';
@@ -185,7 +184,7 @@ export const ProfilePage: React.FC = () => {
           <IonItem>
             <IonIcon icon={languageIcon} slot="start" />
             <IonLabel>{t('profile.language')}</IonLabel>
-            <IonSelect
+            <SelectionControl
               aria-label={t('profile.selectLanguage')}
               value={i18n.language}
               placeholder={t('profile.selectLanguage')}
@@ -197,11 +196,11 @@ export const ProfilePage: React.FC = () => {
               }}
             >
               {languages.map((lang) => (
-                <IonSelectOption key={lang.code} value={lang.code}>
+                <SelectionOption key={lang.code} value={lang.code}>
                   {lang.name}
-                </IonSelectOption>
+                </SelectionOption>
               ))}
-            </IonSelect>
+            </SelectionControl>
           </IonItem>
 
           <IonItem>

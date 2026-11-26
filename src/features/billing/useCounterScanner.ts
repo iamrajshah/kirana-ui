@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 const hasActiveOverlay = (): boolean =>
   Array.from(
     document.querySelectorAll<HTMLElement>(
-      '[role="dialog"][aria-modal="true"],ion-modal.show-modal,ion-alert.overlay-presented,ion-action-sheet.overlay-presented,ion-loading.overlay-presented'
+      '[data-selection-popup], [role="dialog"][aria-modal="true"],ion-modal.show-modal,ion-alert.overlay-presented,ion-action-sheet.overlay-presented,ion-loading.overlay-presented'
     )
   ).some((overlay) => {
     for (let node: HTMLElement | null = overlay; node; node = node.parentElement) {
@@ -59,7 +59,8 @@ export const useCounterScanner = (enabled: boolean, onScan: (code: string) => vo
         event.altKey ||
         editing ||
         document.visibilityState === 'hidden' ||
-        hasActiveOverlay()
+        // Check both ends: a popup opened mid-burst must prevent committing the scan.
+        ((!buffer || event.key === 'Enter' || event.key === 'Tab') && hasActiveOverlay())
       ) {
         reset();
         return;

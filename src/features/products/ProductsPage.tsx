@@ -1,3 +1,5 @@
+import { applyCategoryTaxDefaults, categoryTaxDefaults } from './categoryDefaults';
+import { SearchableSelect } from '@components/SearchableSelect';
 import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react';
 import type { Category } from '@core/api/categoryApi';
@@ -76,7 +78,9 @@ export const ProductsPage: React.FC = () => {
     take: PAGE_SIZE,
     ...(querySearch ? { search: querySearch } : {}),
   });
-  const { data: categoriesData } = useGetCategoriesQuery();
+  const [categorySearch, setCategorySearch] = useState('');
+  const categoryQuery = useDebouncedValue(categorySearch, 200);
+  const { data: categoriesData } = useGetCategoriesQuery({ search: categoryQuery });
   const [createProduct, { isLoading: creating }] = useCreateProductMutation();
   const [createVariant, { isLoading: creatingVariant }] = useCreateVariantMutation();
   const beginLoadMore = useRequestSettledInfiniteScroll({
@@ -134,10 +138,12 @@ export const ProductsPage: React.FC = () => {
   const [brand, setBrand] = useState('');
   const [size, setSize] = useState('');
   const [packaging, setPackaging] = useState<string | null>(null);
+  const [purchasePrice, setPurchasePrice] = useState('');
   const [price, setPrice] = useState('');
   const [mrpPrice, setMrpPrice] = useState('');
   const [gstPercent, setGstPercent] = useState('');
   const [sku, setSku] = useState('');
+  const [previousCategoryDefaults, setPreviousCategoryDefaults] = useState({ hsn: '', gst: '' });
   const [hsnCode, setHsnCode] = useState('');
   const [uqcCode, setUqcCode] = useState('');
   const [unitLabel, setUnitLabel] = useState('');
@@ -170,6 +176,17 @@ export const ProductsPage: React.FC = () => {
     setSkip((previous) => previous + PAGE_SIZE);
   };
   const categories = categoriesData?.data || [];
+  const applyDefaults = (category?: Category | null) => {
+    const next = categoryTaxDefaults(category);
+    const values = applyCategoryTaxDefaults(
+      { hsn: hsnCode, gst: gstPercent },
+      previousCategoryDefaults,
+      next
+    );
+    setHsnCode(values.hsn);
+    setGstPercent(values.gst);
+    setPreviousCategoryDefaults(next);
+  };
 
   const resetForm = () => {
     setProductName('');
@@ -179,10 +196,12 @@ export const ProductsPage: React.FC = () => {
     setSize('');
     setPackaging(null);
     setPrice('');
+    setPurchasePrice('');
     setMrpPrice('');
     setGstPercent('');
     setSku('');
     setHsnCode('');
+    setPreviousCategoryDefaults({ hsn: '', gst: '' });
     setUqcCode('');
     setUnitLabel('');
     setUqcQuantityFactor('');
@@ -224,6 +243,14 @@ export const ProductsPage: React.FC = () => {
         return;
       }
 
+      if (
+        purchasePrice !== '' &&
+        (!Number.isFinite(Number(purchasePrice)) || Number(purchasePrice) < 0)
+      ) {
+        setErrorMessage(t('products.purchaseCostInvalid'));
+        setShowError(true);
+        return;
+      }
       const productResult = await createProduct({
         name: productName,
         image_url: imageUrl.trim() || null,
@@ -234,6 +261,7 @@ export const ProductsPage: React.FC = () => {
       await createVariant({
         productId: productResult.data.id,
         variant: {
+          purchase_price: purchasePrice === '' ? undefined : Number(purchasePrice),
           brand: brand || null,
           size: size || null,
           packaging: (packaging as Packaging | null) || null,
@@ -267,7 +295,8 @@ export const ProductsPage: React.FC = () => {
   };
 
   const handleCategoryCreated = (newCategory: Category) => {
-    setCategoryId(newCategory.id);
+    setCategoryId(Number(newCategory.id));
+    applyDefaults(newCategory);
   };
 
   return (
@@ -462,11 +491,16 @@ export const ProductsPage: React.FC = () => {
                   />
                 )}
 
-                <Select
+                <SearchableSelect
+                  onSearch={setCategorySearch}
                   label={t('products.categoryLabel')}
+                  onCreate={() => setShowCategoryModal(true)}
+                  createLabel={t('products.addNewCategory')}
                   value={categoryId?.toString() || ''}
                   onChange={(value) => {
                     setCategoryId(value ? parseInt(value) : null);
+                    const category = categories.find((entry) => String(entry.id) === value);
+                    applyDefaults(category);
                   }}
                   options={[
                     { value: '', label: t('products.selectCategoryPlaceholder2') },
@@ -526,6 +560,14 @@ export const ProductsPage: React.FC = () => {
                   value={price}
                   onChange={setPrice}
                   placeholder={t('products.enterPricePlaceholder')}
+                />
+                <Input
+                  label={t('products.purchaseCostLabel')}
+                  value={purchasePrice}
+                  onChange={setPurchasePrice}
+                  type="number"
+                  min={0}
+                  step="0.01"
                 />
                 <Input
                   label={t('products.mrpPriceLabel')}

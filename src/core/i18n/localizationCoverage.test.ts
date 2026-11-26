@@ -22,6 +22,7 @@ import workspaceMr from '../workspace/locales/mr.json';
 import workspaceGu from '../workspace/locales/gu.json';
 
 import mobileSignup from '../../features/login/mobileSignupTranslations.json';
+import counterWork from '../../features/billing/counterWorkTranslations.json';
 
 type LocaleTree = Record<string, unknown>;
 
@@ -35,6 +36,7 @@ const flattenKeys = (value: LocaleTree, prefix = ''): string[] =>
 
 const englishKeys = new Set([
   ...flattenKeys(en),
+  ...flattenKeys({ counterWork: counterWork.en }),
   ...flattenKeys({ mobileSignup: mobileSignup.en }),
   ...flattenKeys({ taxWorkspace: taxEn, foodLicences: foodEn, workspaceLease: workspaceEn }),
 ]);
@@ -196,4 +198,10 @@ describe('Food licence translations', () => {
   it.each([foodHi, foodMr, foodGu])('has all licence keys', (locale) => {
     expect(flattenKeys(locale).sort()).toEqual(flattenKeys(foodEn).sort());
   });
+});
+
+it('keeps counter workflow lazy translations complete in every supported language', () => {
+  for (const language of ['hi', 'mr', 'gu'] as const) {
+    expect(flattenKeys(counterWork[language]).sort()).toEqual(flattenKeys(counterWork.en).sort());
+  }
 });

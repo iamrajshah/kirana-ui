@@ -3,6 +3,9 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { PaymentsPage } from './PaymentsPage';
 
+const identity = vi.hoisted(() => ({ roles: ['OWNER'] }));
+vi.mock('@core/hooks', () => ({ useAppSelector: () => identity }));
+
 const device = vi.hoisted(() => ({ write: true }));
 const query = vi.hoisted(() => ({ data: undefined as unknown, isError: false, refetch: vi.fn() }));
 const createPayment = vi.hoisted(() => vi.fn());
@@ -131,6 +134,7 @@ vi.mock('@ionic/react', async (importOriginal) => {
 });
 
 beforeEach(() => {
+  identity.roles = ['OWNER'];
   device.write = true;
   query.data = undefined;
   query.isError = false;
@@ -371,4 +375,13 @@ it('disables collection saving when this device has view-only payment access', (
   expect(save.disabled).toBe(true);
   fireEvent.click(save);
   expect(createPayment).not.toHaveBeenCalled();
+});
+
+it('does not permit a cashier to create a customer from collections', () => {
+  identity.roles = ['CASHIER'];
+  render(<PaymentsPage />);
+  fireEvent.click(screen.getAllByRole('button', { name: 'payments.recordPayment' })[0]);
+  expect(
+    (screen.getByRole('button', { name: 'customers.addCustomer' }) as HTMLButtonElement).disabled
+  ).toBe(true);
 });

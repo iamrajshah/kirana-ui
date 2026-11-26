@@ -102,3 +102,28 @@ describe('counter HID capture', () => {
     expect(callback).toHaveBeenCalledTimes(1);
   });
 });
+
+it('suspends barcode capture while a searchable selection menu is open', () => {
+  const callback = vi.fn();
+  renderHook(() => useCounterScanner(true, callback));
+  const popup = document.createElement('div');
+  popup.dataset.selectionPopup = 'true';
+  document.body.append(popup);
+  scan('8901234567890');
+  expect(callback).not.toHaveBeenCalled();
+  popup.remove();
+  scan('8901234567890');
+  expect(callback).toHaveBeenCalledOnce();
+});
+
+it('does not commit a scan if a picker opens halfway through its burst', () => {
+  const callback = vi.fn();
+  renderHook(() => useCounterScanner(true, callback));
+  for (const key of '890123') keydown(document, key);
+  const popup = document.createElement('div');
+  popup.dataset.selectionPopup = 'true';
+  document.body.append(popup);
+  for (const key of '4567890') keydown(document, key);
+  keydown(document, 'Enter');
+  expect(callback).not.toHaveBeenCalled();
+});

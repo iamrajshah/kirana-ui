@@ -1,3 +1,4 @@
+import { selectTestChoice } from '@components/selectTestChoice';
 import React, { type PropsWithChildren } from 'react';
 import { configureStore } from '@reduxjs/toolkit';
 import { Provider } from 'react-redux';
@@ -227,9 +228,7 @@ describe('purchase prefill with the real product API hooks', () => {
     expect(
       screen.getByText('purchases.unitQuantity').parentElement?.querySelector('strong')?.textContent
     ).toBe('2');
-    fireEvent.change(screen.getByRole('combobox', { name: /Salt purchases.enteredAs/ }), {
-      target: { value: 'PACK' },
-    });
+    selectTestChoice(screen.getByRole('combobox', { name: /Salt purchases.enteredAs/ }), 'PACK');
     expect(
       (screen.getByRole('spinbutton', { name: /Salt purchases.pricePerPack/ }) as HTMLInputElement)
         .value

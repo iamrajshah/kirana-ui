@@ -1,14 +1,7 @@
+import { SelectionControl, SelectionOption } from '@components/SelectionControl';
 import { MobileSignup } from './MobileSignup';
 import React, { useCallback, useRef, useState } from 'react';
-import {
-  IonContent,
-  IonPage,
-  IonToast,
-  IonSelect,
-  IonSelectOption,
-  IonIcon,
-  IonToggle,
-} from '@ionic/react';
+import { IonContent, IonPage, IonToast, IonIcon, IonToggle } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { language as languageIcon, contrast } from 'ionicons/icons';
 import {
@@ -267,7 +260,7 @@ export const LoginPage: React.FC = () => {
                 className="text-xl"
                 style={{ color: 'var(--ion-color-primary)' }}
               />
-              <IonSelect
+              <SelectionControl
                 value={i18n.language}
                 onIonChange={(e) => handleLanguageChange(e.detail.value)}
                 interface="action-sheet"
@@ -279,11 +272,11 @@ export const LoginPage: React.FC = () => {
                 style={{ padding: 0 }}
               >
                 {languages.map((lang) => (
-                  <IonSelectOption key={lang.code} value={lang.code}>
+                  <SelectionOption key={lang.code} value={lang.code}>
                     {lang.name}
-                  </IonSelectOption>
+                  </SelectionOption>
                 ))}
-              </IonSelect>
+              </SelectionControl>
             </div>
 
             {/* Theme Toggle */}

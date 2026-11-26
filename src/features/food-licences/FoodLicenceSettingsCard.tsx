@@ -1,3 +1,4 @@
+import { SelectionControl } from '@components/SelectionControl';
 import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -150,7 +151,7 @@ export const FoodLicenceSettingsCard: React.FC = () => {
             <legend>{t(editing ? 'foodLicences.edit' : 'foodLicences.add')}</legend>
             <label>
               {t('foodLicences.firm')}
-              <select
+              <SelectionControl
                 required
                 aria-label={t('foodLicences.firm')}
                 disabled={!!editing}
@@ -165,7 +166,7 @@ export const FoodLicenceSettingsCard: React.FC = () => {
                       {firm.display_name}
                     </option>
                   ))}
-              </select>
+              </SelectionControl>
             </label>
             <label>
               {t('foodLicences.number')}

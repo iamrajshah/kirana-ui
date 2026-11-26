@@ -35,6 +35,7 @@ export interface BillingSearchVariant {
 export type Packaging = 'POUCH' | 'BOTTLE' | 'CAN' | 'BOX' | 'PACKET' | 'JAR' | 'LOOSE';
 
 interface CreateProductRequest {
+  initial_variant?: CreateVariantRequest & { opening_quantity?: number };
   name: string;
   image_url?: string | null;
   category_id?: number | null;
@@ -49,6 +50,7 @@ interface UpdateProductRequest {
 }
 
 interface CreateVariantRequest {
+  purchase_price?: number;
   brand?: string | null;
   size?: string | null;
   packaging?: Packaging | null;

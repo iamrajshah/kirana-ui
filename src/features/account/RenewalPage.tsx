@@ -1,3 +1,4 @@
+import { SelectionControl } from '@components/SelectionControl';
 import React, { useMemo, useState, type FormEvent } from 'react';
 import { IonContent, IonPage } from '@ionic/react';
 import { Link } from 'react-router-dom';
@@ -23,7 +24,9 @@ export const RenewalPage: React.FC = () => {
   const [submitRenewal, submitState] = useSubmitRenewalMutation();
   const [uploadProof, uploadState] = useUploadRenewalProofMutation();
   const [planCode, setPlanCode] = useState<'STARTER' | 'PRO' | 'BUSINESS'>('PRO');
-  const [billingCycle, setBillingCycle] = useState<'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY'>('YEARLY');
+  const [billingCycle, setBillingCycle] = useState<'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY'>(
+    'YEARLY'
+  );
   const [provider, setProvider] = useState('BANK_TRANSFER');
   const [reference, setReference] = useState('');
   const [amount, setAmount] = useState('');
@@ -99,7 +102,7 @@ export const RenewalPage: React.FC = () => {
               <div className="grid gap-4 md:grid-cols-2">
                 <label>
                   {t('renewal.plan')}
-                  <select
+                  <SelectionControl
                     className="mt-1 w-full rounded border bg-transparent p-3"
                     value={planCode}
                     onChange={(event) => setPlanCode(event.target.value as typeof planCode)}
@@ -111,11 +114,11 @@ export const RenewalPage: React.FC = () => {
                           {plan.name}
                         </option>
                       ))}
-                  </select>
+                  </SelectionControl>
                 </label>
                 <label>
                   {t('renewal.billingCycle')}
-                  <select
+                  <SelectionControl
                     className="mt-1 w-full rounded border bg-transparent p-3"
                     value={billingCycle}
                     onChange={(event) => setBillingCycle(event.target.value as typeof billingCycle)}
@@ -123,7 +126,7 @@ export const RenewalPage: React.FC = () => {
                     <option value="YEARLY">{t('account.yearly')}</option>
                     <option value="HALF_YEARLY">{t('account.half_yearly')}</option>
                     <option value="QUARTERLY">{t('account.quarterly')}</option>
-                  </select>
+                  </SelectionControl>
                 </label>
               </div>
               <div className="grid gap-4 md:grid-cols-2">

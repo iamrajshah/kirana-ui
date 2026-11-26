@@ -1,3 +1,4 @@
+import { advanceOnEnter } from './keyboardNavigation';
 import React, { useState } from 'react';
 import { IonIcon, IonInput } from '@ionic/react';
 import { eye, eyeOff } from 'ionicons/icons';
@@ -12,6 +13,8 @@ interface InputProps {
   required?: boolean;
   disabled?: boolean;
   error?: string;
+  onEnter?: () => void;
+  onKeyDown?: React.KeyboardEventHandler<HTMLIonInputElement>;
   maxLength?: number;
   min?: number;
   max?: number;
@@ -28,6 +31,8 @@ export const Input: React.FC<InputProps> = ({
   required = false,
   disabled = false,
   error,
+  onEnter,
+  onKeyDown,
   maxLength,
   min,
   max,
@@ -41,9 +46,17 @@ export const Input: React.FC<InputProps> = ({
   const visibleLabel = required && !label.trim().endsWith('*') ? `${label} *` : label;
 
   return (
-    <div className="mb-4">
+    <div className="mb-4 group">
       <div className="relative">
         <IonInput
+          onKeyDown={(event) => {
+            onKeyDown?.(event);
+            if (event.defaultPrevented) return;
+            if (onEnter && event.key === 'Enter' && !event.nativeEvent.isComposing) {
+              event.preventDefault();
+              onEnter();
+            } else advanceOnEnter(event);
+          }}
           label={visibleLabel}
           labelPlacement="stacked"
           value={value}
@@ -96,6 +109,12 @@ export const Input: React.FC<InputProps> = ({
           </button>
         )}
       </div>
+      <small
+        className="hidden group-focus-within:block"
+        style={{ color: 'var(--ion-color-medium)' }}
+      >
+        ↵ → {t('common.next')}
+      </small>
     </div>
   );
 };

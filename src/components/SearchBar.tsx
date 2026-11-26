@@ -6,6 +6,10 @@ interface SearchBarProps {
   onChange: (value: string) => void;
   placeholder?: string;
   debounce?: number;
+  onKeyDown?: React.KeyboardEventHandler<HTMLIonSearchbarElement>;
+  activeDescendant?: string;
+  controls?: string;
+  expanded?: boolean;
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
@@ -13,14 +17,20 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onChange,
   placeholder = 'Search...',
   debounce = 300,
-}) => {
-  return (
-    <IonSearchbar
-      value={value}
-      onIonInput={(e: CustomEvent) => onChange(e.detail.value ?? '')}
-      placeholder={placeholder}
-      debounce={debounce}
-      className="p-0"
-    />
-  );
-};
+  onKeyDown,
+  activeDescendant,
+  controls,
+  expanded,
+}) => (
+  <IonSearchbar
+    value={value}
+    onIonInput={(e: CustomEvent) => onChange(e.detail.value ?? '')}
+    placeholder={placeholder}
+    debounce={debounce}
+    onKeyDown={onKeyDown}
+    aria-activedescendant={activeDescendant}
+    aria-controls={controls}
+    aria-expanded={expanded}
+    className="p-0"
+  />
+);

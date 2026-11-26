@@ -4,6 +4,8 @@ import type { ApiResponse, PaginatedApiResponse } from '../types';
 export interface Category {
   id: number;
   name: string;
+  default_hsn_code?: string | null;
+  default_gst_percent?: number | null;
   description?: string | null;
   is_active: boolean;
   tenant_id: string;
@@ -25,13 +27,30 @@ export const categoryApi = apiSlice.injectEndpoints({
     }),
     createCategory: builder.mutation<
       ApiResponse<Category>,
-      { name: string; description?: string }
+      {
+        name: string;
+        description?: string;
+        default_hsn_code?: string | null;
+        default_gst_percent?: number | null;
+      }
     >({
       query: (body) => ({
         url: '/categories',
         method: 'POST',
         body,
       }),
+      invalidatesTags: ['Category'],
+    }),
+    updateCategory: builder.mutation<
+      ApiResponse<Category>,
+      {
+        id: number;
+        name: string;
+        default_hsn_code?: string | null;
+        default_gst_percent?: number | null;
+      }
+    >({
+      query: ({ id, ...body }) => ({ url: `/categories/${id}`, method: 'PATCH', body }),
       invalidatesTags: ['Category'],
     }),
     updateCategoryStatus: builder.mutation<
@@ -53,4 +72,5 @@ export const {
   useLazyGetCategoriesQuery,
   useCreateCategoryMutation,
   useUpdateCategoryStatusMutation,
+  useUpdateCategoryMutation,
 } = categoryApi;

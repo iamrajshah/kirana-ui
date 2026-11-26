@@ -1,3 +1,4 @@
+import { SelectionControl, SelectionOption } from '@components/SelectionControl';
 import React, { useEffect, useState } from 'react';
 import {
   IonButton,
@@ -7,17 +8,11 @@ import {
   IonCardTitle,
   IonItem,
   IonLabel,
-  IonSelect,
-  IonSelectOption,
   IonSpinner,
 } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router';
-import {
-  useGetDevicesQuery,
-  useLogoutMutation,
-  useRevokeDeviceMutation,
-} from '@core/api/authApi';
+import { useGetDevicesQuery, useLogoutMutation, useRevokeDeviceMutation } from '@core/api/authApi';
 import { useGetUsersQuery } from '@core/api/userApi';
 import { useAppDispatch, useAppSelector } from '@core/hooks';
 import { logout, selectCurrentUser } from '@core/auth/authSlice';
@@ -35,10 +30,9 @@ export const DeviceSecurityCard: React.FC = () => {
   const [message, setMessage] = useState('');
   const { data: staff } = useGetUsersQuery(undefined, { skip: !isOwner });
   const isSelf = selectedUserId === user?.id;
-  const devices = useGetDevicesQuery(
-    isSelf ? undefined : { userId: selectedUserId },
-    { skip: !selectedUserId }
-  );
+  const devices = useGetDevicesQuery(isSelf ? undefined : { userId: selectedUserId }, {
+    skip: !selectedUserId,
+  });
   const [revokeDevice, revokeState] = useRevokeDeviceMutation();
   const [logoutRequest, logoutState] = useLogoutMutation();
 
@@ -89,18 +83,18 @@ export const DeviceSecurityCard: React.FC = () => {
         {isOwner && (
           <IonItem>
             <IonLabel>{t('security.staffMember')}</IonLabel>
-            <IonSelect
+            <SelectionControl
               value={selectedUserId}
               onIonChange={(event) => setSelectedUserId(event.detail.value)}
             >
               {(staff?.data ?? [])
                 .filter((member) => member.is_active)
                 .map((member) => (
-                  <IonSelectOption key={member.id} value={member.id}>
+                  <SelectionOption key={member.id} value={member.id}>
                     {member.name}
-                  </IonSelectOption>
+                  </SelectionOption>
                 ))}
-            </IonSelect>
+            </SelectionControl>
           </IonItem>
         )}
         {devices.isLoading ? (

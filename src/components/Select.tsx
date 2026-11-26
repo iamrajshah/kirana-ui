@@ -1,5 +1,5 @@
 import React from 'react';
-import { IonItem, IonLabel, IonSelect, IonSelectOption } from '@ionic/react';
+import { SearchableSelect } from './SearchableSelect';
 
 interface Option {
   value: string;
@@ -27,32 +27,22 @@ export const Select: React.FC<SelectProps> = ({
   disabled = false,
   error,
 }) => {
-  const handleChange = React.useCallback((e: CustomEvent) => {
-    onChange(e.detail.value);
-  }, [onChange]);
-
   return (
-    <div className="mb-4">
-      <IonItem className={error ? 'ion-invalid' : ''} lines="none">
-        <IonLabel position="stacked" className="text-base font-medium mb-2">
-          {label} {required && <span className="text-danger">*</span>}
-        </IonLabel>
-        <IonSelect
-          value={value}
-          onIonChange={handleChange}
-          placeholder={placeholder}
-          disabled={disabled}
-          interface="alert"
-          className="text-base"
-        >
-          {options.map((option) => (
-            <IonSelectOption key={option.value} value={option.value}>
-              {option.label}
-            </IonSelectOption>
-          ))}
-        </IonSelect>
-      </IonItem>
-      {error && <div className="text-danger text-sm mt-1 px-4">{error}</div>}
-    </div>
+    <>
+      <SearchableSelect
+        label={label}
+        value={value}
+        onChange={onChange}
+        options={options}
+        placeholder={placeholder}
+        required={required}
+        disabled={disabled}
+      />
+      {error && (
+        <div role="alert" className="text-danger text-sm mt-1">
+          {error}
+        </div>
+      )}
+    </>
   );
 };

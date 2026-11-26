@@ -27,11 +27,16 @@ import {
   useGetCategoriesQuery,
   useCreateCategoryMutation,
   useUpdateCategoryStatusMutation,
+  useUpdateCategoryMutation,
 } from '@core/api/categoryApi';
 import './CategoriesPage.css';
 
 export const CategoriesPage: React.FC = () => {
   const { t } = useTranslation();
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [hsn, setHsn] = useState('');
+  const [gst, setGst] = useState('');
+  const [updateCategory, { isLoading: updating }] = useUpdateCategoryMutation();
   const [showModal, setShowModal] = useState(false);
   const [categoryName, setCategoryName] = useState('');
   const [categoryDescription, setCategoryDescription] = useState('');
@@ -53,6 +58,9 @@ export const CategoriesPage: React.FC = () => {
 
   const resetForm = () => {
     setCategoryName('');
+    setEditingId(null);
+    setHsn('');
+    setGst('');
     setCategoryDescription('');
   };
 
@@ -64,10 +72,13 @@ export const CategoriesPage: React.FC = () => {
     }
 
     try {
-      await createCategory({
+      const payload = {
         name: categoryName.trim(),
-        description: categoryDescription.trim() || undefined,
-      }).unwrap();
+        default_hsn_code: hsn.trim() || null,
+        default_gst_percent: gst === '' ? null : Number(gst),
+      };
+      if (editingId !== null) await updateCategory({ id: editingId, ...payload }).unwrap();
+      else await createCategory(payload).unwrap();
 
       setShowSuccess(true);
       setShowModal(false);
@@ -103,7 +114,12 @@ export const CategoriesPage: React.FC = () => {
               <p>{t('categories.description')}</p>
             </div>
             <div className="workspace-actions">
-              <IonButton onClick={() => setShowModal(true)}>
+              <IonButton
+                onClick={() => {
+                  resetForm();
+                  setShowModal(true);
+                }}
+              >
                 <IonIcon slot="start" icon={add} />
                 {t('categories.add')}
               </IonButton>
@@ -130,6 +146,26 @@ export const CategoriesPage: React.FC = () => {
                       <IonItem lines="none">
                         <IonLabel>
                           <h2>{category.name}</h2>
+                          <p>
+                            {t('taxFields.hsnCode')}: {category.default_hsn_code || '—'} ·{' '}
+                            {t('products.gstLabel')}: {category.default_gst_percent ?? '—'}
+                          </p>
+                          <IonButton
+                            fill="clear"
+                            onClick={() => {
+                              setEditingId(category.id);
+                              setCategoryName(category.name);
+                              setHsn(category.default_hsn_code || '');
+                              setGst(
+                                category.default_gst_percent == null
+                                  ? ''
+                                  : String(category.default_gst_percent)
+                              );
+                              setShowModal(true);
+                            }}
+                          >
+                            {t('common.edit')}
+                          </IonButton>
                           {category.description && <p>{category.description}</p>}
                         </IonLabel>
                         <div
@@ -158,7 +194,7 @@ export const CategoriesPage: React.FC = () => {
               <div className="ion-page">
                 <IonHeader>
                   <IonToolbar>
-                    <IonTitle>{t('categories.add')}</IonTitle>
+                    <IonTitle>{t(editingId === null ? 'categories.add' : 'common.edit')}</IonTitle>
                     <IonButtons slot="end">
                       <IonButton onClick={() => setShowModal(false)}>
                         <IonIcon icon={close} />
@@ -175,6 +211,21 @@ export const CategoriesPage: React.FC = () => {
                     required
                   />
                   <Input
+                    label={t('taxFields.hsnCode')}
+                    value={hsn}
+                    onChange={setHsn}
+                    maxLength={8}
+                    inputMode="numeric"
+                  />
+                  <Input
+                    label={t('products.gstLabel')}
+                    value={gst}
+                    onChange={setGst}
+                    type="number"
+                    min={0}
+                    max={100}
+                  />
+                  <Input
                     label={t('categories.optionalDescription')}
                     value={categoryDescription}
                     onChange={setCategoryDescription}
@@ -183,7 +234,7 @@ export const CategoriesPage: React.FC = () => {
                   <IonButton
                     expand="block"
                     onClick={handleCreateCategory}
-                    disabled={creating || !categoryName.trim()}
+                    disabled={creating || updating || !categoryName.trim()}
                     className="ion-margin-top"
                   >
                     {creating ? t('common.creating') : t('categories.create')}

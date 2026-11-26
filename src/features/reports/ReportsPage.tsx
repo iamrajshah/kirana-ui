@@ -1,3 +1,4 @@
+import { SelectionControl, SelectionOption } from '@components/SelectionControl';
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navbar } from '@components/Navbar';
@@ -12,8 +13,6 @@ import {
   IonItem,
   IonLabel,
   IonBadge,
-  IonSelect,
-  IonSelectOption,
   IonIcon,
   IonButton,
   IonInfiniteScroll,
@@ -1011,7 +1010,7 @@ export const ReportsPage: React.FC = () => {
             <IonCardContent>
               <IonItem lines="none">
                 <IonIcon icon={statsChartOutline} slot="start" className="text-xl" />
-                <IonSelect
+                <SelectionControl
                   value={selectedReport}
                   placeholder={t('reports.selectReport')}
                   onIonChange={(e) => selectReport(e.detail.value as ReportId)}
@@ -1022,7 +1021,7 @@ export const ReportsPage: React.FC = () => {
                   }}
                 >
                   {reportOptions.map(([id, labelKey]) => (
-                    <IonSelectOption
+                    <SelectionOption
                       key={id}
                       value={id}
                       disabled={advancedReports.has(id) && !canUseAdvancedReports}
@@ -1031,9 +1030,9 @@ export const ReportsPage: React.FC = () => {
                       {advancedReports.has(id) && !canUseAdvancedReports
                         ? ` · ${t('commercial.upgrade')}`
                         : ''}
-                    </IonSelectOption>
+                    </SelectionOption>
                   ))}
-                </IonSelect>
+                </SelectionControl>
               </IonItem>
             </IonCardContent>
           </IonCard>
@@ -1043,20 +1042,20 @@ export const ReportsPage: React.FC = () => {
               <IonCardContent>
                 <IonItem lines="none">
                   <IonLabel>{t('reports.accountingFirm')}</IonLabel>
-                  <IonSelect
+                  <SelectionControl
                     aria-label={t('reports.accountingFirm')}
                     value={effectiveFirm}
                     onIonChange={(event) => setSelectedFirmId(event.detail.value)}
                   >
                     {firms.map((firm) => (
-                      <IonSelectOption key={firm.id} value={firm.id}>
+                      <SelectionOption key={firm.id} value={firm.id}>
                         {firm.legal_name}
-                      </IonSelectOption>
+                      </SelectionOption>
                     ))}
-                    <IonSelectOption value="CONSOLIDATED">
+                    <SelectionOption value="CONSOLIDATED">
                       {t('reports.allFirmsConsolidated')}
-                    </IonSelectOption>
-                  </IonSelect>
+                    </SelectionOption>
+                  </SelectionControl>
                 </IonItem>
                 <p className="report-firm-label">
                   {effectiveFirm === 'CONSOLIDATED'

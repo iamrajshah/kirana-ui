@@ -1,3 +1,4 @@
+import { SelectionControl, SelectionOption } from '@components/SelectionControl';
 import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useState, useEffect, useRef } from 'react';
 import { createIdempotentAttempt } from '@utils/idempotentAttempt';
@@ -23,8 +24,6 @@ import {
   IonItemOptions,
   IonItemOption,
   RefresherEventDetail,
-  IonSelect,
-  IonSelectOption,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
 } from '@ionic/react';
@@ -552,20 +551,20 @@ const SuppliersPage: React.FC = () => {
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
                   {t('suppliers.defaultPurchaseFirm')}
                 </label>
-                <IonSelect
+                <SelectionControl
                   aria-label={t('suppliers.defaultPurchaseFirm')}
                   value={defaultFirmId}
                   placeholder={t('suppliers.noDefaultFirm')}
                   onIonChange={(event) => setDefaultFirmId(event.detail.value)}
                   interface="popover"
                 >
-                  <IonSelectOption value="">{t('suppliers.noDefaultFirm')}</IonSelectOption>
+                  <SelectionOption value="">{t('suppliers.noDefaultFirm')}</SelectionOption>
                   {firms.map((firm) => (
-                    <IonSelectOption key={firm.id} value={firm.id}>
+                    <SelectionOption key={firm.id} value={firm.id}>
                       {firm.display_name}
-                    </IonSelectOption>
+                    </SelectionOption>
                   ))}
-                </IonSelect>
+                </SelectionControl>
               </div>
               <Button
                 onClick={handleCreateSupplier}
@@ -633,7 +632,7 @@ const SuppliersPage: React.FC = () => {
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
                   {t('suppliers.paymentFirm')}
                 </label>
-                <IonSelect
+                <SelectionControl
                   aria-label={t('suppliers.paymentFirm')}
                   value={paymentFirmId}
                   placeholder={t('suppliers.selectPaymentFirm')}
@@ -644,11 +643,11 @@ const SuppliersPage: React.FC = () => {
                   interface="popover"
                 >
                   {payableFirmBalances(paymentSupplier.balances_by_firm).map((item) => (
-                    <IonSelectOption key={item.firm_id} value={item.firm_id}>
+                    <SelectionOption key={item.firm_id} value={item.firm_id}>
                       {item.firm.display_name} · {formatCurrency(item.balance)}
-                    </IonSelectOption>
+                    </SelectionOption>
                   ))}
-                </IonSelect>
+                </SelectionControl>
               </div>
 
               <div
@@ -683,7 +682,7 @@ const SuppliersPage: React.FC = () => {
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
                   {t('common.labels.paymentMode')}
                 </label>
-                <IonSelect
+                <SelectionControl
                   value={paymentMode}
                   onIonChange={(e) => setPaymentMode(e.detail.value as SupplierPaymentMode)}
                   interface="popover"
@@ -693,13 +692,13 @@ const SuppliersPage: React.FC = () => {
                     padding: '8px',
                   }}
                 >
-                  <IonSelectOption value="CASH">{t('common.paymentModes.cash')}</IonSelectOption>
-                  <IonSelectOption value="UPI">{t('common.paymentModes.upi')}</IonSelectOption>
-                  <IonSelectOption value="CARD">{t('common.paymentModes.card')}</IonSelectOption>
-                  <IonSelectOption value="BANK">
+                  <SelectionOption value="CASH">{t('common.paymentModes.cash')}</SelectionOption>
+                  <SelectionOption value="UPI">{t('common.paymentModes.upi')}</SelectionOption>
+                  <SelectionOption value="CARD">{t('common.paymentModes.card')}</SelectionOption>
+                  <SelectionOption value="BANK">
                     {t('common.paymentModes.bankTransfer')}
-                  </IonSelectOption>
-                </IonSelect>
+                  </SelectionOption>
+                </SelectionControl>
               </div>
 
               <Input

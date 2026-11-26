@@ -1,3 +1,4 @@
+import { SelectionControl } from '@components/SelectionControl';
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -569,7 +570,7 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
             <div className="barcode-extra-fields">
               <label>
                 {t('products.labelPreset')}
-                <select
+                <SelectionControl
                   value={labelPreset}
                   onChange={(event) => {
                     setLabelPreset(event.target.value);
@@ -582,7 +583,7 @@ export const ProductBarcodeLabelModal: React.FC<Props> = ({
                   <option value="STANDARD">{t('products.presetStandard')}</option>
                   <option value="LOOSE">{t('products.presetLoose')}</option>
                   <option value="PACKED">{t('products.presetPacked')}</option>
-                </select>
+                </SelectionControl>
               </label>
               <label>
                 {t('products.labelNetWeight')}
