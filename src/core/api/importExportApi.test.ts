@@ -35,6 +35,18 @@ describe('Import/Export API contract', () => {
 
     expect(formData.get('type')).toBe('CUSTOMER');
     expect(formData.get('importType')).toBeNull();
+    expect(formData.get('autoCreateCategories')).toBe('false');
+    expect(formData.get('sellingPriceBasis')).toBe('UNKNOWN');
+    expect(
+      createImportFormData(new File(['data'], 'items.csv'), 'PRODUCT', true, 'EXCLUSIVE').get(
+        'sellingPriceBasis'
+      )
+    ).toBe('EXCLUSIVE');
+    expect(
+      createImportFormData(new File(['data'], 'items.csv'), 'PRODUCT', true).get(
+        'autoCreateCategories'
+      )
+    ).toBe('true');
   });
 
   it('requests category exports through the authenticated API layer', async () => {

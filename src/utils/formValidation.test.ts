@@ -27,7 +27,7 @@ describe('QA regression validation', () => {
   it('only accepts the import formats supported by the API', () => {
     expect(isSupportedImportFile('customers.csv')).toBe(true);
     expect(isSupportedImportFile('customers.xlsx')).toBe(true);
-    expect(isSupportedImportFile('customers.xls')).toBe(true);
+    expect(isSupportedImportFile('customers.xls')).toBe(false);
     expect(isSupportedImportFile('customers.pdf')).toBe(false);
   });
 
