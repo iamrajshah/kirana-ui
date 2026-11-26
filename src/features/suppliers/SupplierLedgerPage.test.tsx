@@ -18,33 +18,68 @@ vi.mock('@core/services/notificationService', () => ({
   default: { warning: vi.fn(), success: vi.fn(), handleApiError: vi.fn() },
 }));
 vi.mock('@core/api/firmApi', () => ({
-  useGetFirmsQuery: () => ({ data: { data: { firms: [
-    { id: '2', code: 'JT', legal_name: 'Jitendra Trading', display_name: 'Jitendra Trading', is_active: true, is_default_sales: false },
-  ] } } }),
+  useGetFirmsQuery: () => ({
+    data: {
+      data: {
+        firms: [
+          {
+            id: '2',
+            code: 'JT',
+            legal_name: 'Jitendra Trading',
+            display_name: 'Jitendra Trading',
+            is_active: true,
+            is_default_sales: false,
+          },
+        ],
+      },
+    },
+  }),
 }));
 vi.mock('../../core/api/supplierApi', () => ({
   useGetSupplierByIdQuery: () => ({
-    data: { success: true, data: {
-      id: '8', name: 'Gemini', phone: '9876543210', email: null, address: null,
-      is_active: true, created_at: '2026-10-23', default_purchase_firm_id: '2',
-      balances_by_firm: [{
-        firm_id: '2', balance: 400,
-        firm: { id: '2', code: 'JT', legal_name: 'Jitendra Trading', display_name: 'Jitendra Trading', is_active: true, is_default_sales: false },
-      }],
-    } },
+    data: {
+      success: true,
+      data: {
+        id: '8',
+        name: 'Gemini',
+        phone: '9876543210',
+        email: null,
+        address: null,
+        is_active: true,
+        created_at: '2026-10-23',
+        default_purchase_firm_id: '2',
+        balances_by_firm: [
+          {
+            firm_id: '2',
+            balance: 400,
+            firm: {
+              id: '2',
+              code: 'JT',
+              legal_name: 'Jitendra Trading',
+              display_name: 'Jitendra Trading',
+              is_active: true,
+              is_default_sales: false,
+            },
+          },
+        ],
+      },
+    },
     isLoading: false,
   }),
   useGetSupplierLedgerQuery: (args: { firm_id?: string }) => {
     state.ledgerArgs.push(args);
     return {
-      data: { success: true, data: {
-        entries: [],
-        summary: {
-          totalCredit: args.firm_id === '2' ? 500 : 0,
-          totalDebit: args.firm_id === '2' ? 100 : 0,
-          balance: args.firm_id === '2' ? 400 : 0,
+      data: {
+        success: true,
+        data: {
+          entries: [],
+          summary: {
+            totalCredit: args.firm_id === '2' ? 500 : 0,
+            totalDebit: args.firm_id === '2' ? 100 : 0,
+            balance: args.firm_id === '2' ? 400 : 0,
+          },
         },
-      } },
+      },
       isLoading: false,
       refetch: vi.fn(),
     };
@@ -69,14 +104,39 @@ vi.mock('./components', () => ({
 vi.mock('@ionic/react', () => {
   const Container = ({ children }: PropsWithChildren) => <div>{children}</div>;
   return {
-    IonPage: Container, IonHeader: Container, IonToolbar: Container, IonTitle: Container,
-    IonContent: Container, IonButtons: Container, IonBackButton: Container, IonCard: Container,
-    IonCardHeader: Container, IonCardTitle: Container, IonCardContent: Container, IonList: Container,
-    IonItem: Container, IonLabel: Container, IonSpinner: Container, IonRefresher: Container,
-    IonRefresherContent: Container, IonBadge: Container, IonFab: Container, IonFabButton: Container,
-    IonIcon: Container, IonModal: Container, IonButton: Container, IonGrid: Container, IonRow: Container,
-    IonCol: Container, IonAlert: Container,
-    IonSelect: ({ children, value, onIonChange, ...props }: PropsWithChildren<{
+    IonPage: Container,
+    IonHeader: Container,
+    IonToolbar: Container,
+    IonTitle: Container,
+    IonContent: Container,
+    IonButtons: Container,
+    IonBackButton: Container,
+    IonCard: Container,
+    IonCardHeader: Container,
+    IonCardTitle: Container,
+    IonCardContent: Container,
+    IonList: Container,
+    IonItem: Container,
+    IonLabel: Container,
+    IonSpinner: Container,
+    IonRefresher: Container,
+    IonRefresherContent: Container,
+    IonBadge: Container,
+    IonFab: Container,
+    IonFabButton: Container,
+    IonIcon: Container,
+    IonModal: Container,
+    IonButton: Container,
+    IonGrid: Container,
+    IonRow: Container,
+    IonCol: Container,
+    IonAlert: Container,
+    IonSelect: ({
+      children,
+      value,
+      onIonChange,
+      ...props
+    }: PropsWithChildren<{
       value?: string;
       onIonChange?: (event: { detail: { value: string } }) => void;
       'aria-label'?: string;
@@ -114,4 +174,9 @@ describe('SupplierLedgerPage ledger serialization', () => {
       'suppliers.ledger.payable'
     );
   });
+});
+
+vi.mock('@components/SelectionControl', async () => {
+  const ionic = await import('@ionic/react');
+  return { SelectionControl: ionic.IonSelect, SelectionOption: ionic.IonSelectOption };
 });

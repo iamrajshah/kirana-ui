@@ -11,6 +11,7 @@ const state = vi.hoisted(() => ({
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('react-router', () => ({
+  useLocation: () => ({ pathname: '/products/barcode/add' }),
   useHistory: () => ({ push: vi.fn(), goBack: state.goBack }),
 }));
 vi.mock('@core/api/productApi', () => ({
@@ -99,6 +100,9 @@ describe('AddProductBarcodePage GST quantity facts', () => {
     fireEvent.change(screen.getByLabelText('products.sellingPrice *'), {
       target: { value: '280' },
     });
+    fireEvent.change(screen.getByLabelText('products.purchaseCostLabel'), {
+      target: { value: '240' },
+    });
     fireEvent.change(screen.getByLabelText('taxFields.uqcQuantityFactor'), {
       target: { value: '5' },
     });
@@ -113,7 +117,11 @@ describe('AddProductBarcodePage GST quantity facts', () => {
     await waitFor(() => expect(state.createProduct).toHaveBeenCalledOnce());
     expect(state.createProduct).toHaveBeenCalledWith(
       expect.objectContaining({
-        variant: expect.objectContaining({ gstPercent: 1.5, uqcQuantityFactor: 5 }),
+        variant: expect.objectContaining({
+          gstPercent: 1.5,
+          uqcQuantityFactor: 5,
+          purchasePrice: 240,
+        }),
       })
     );
   });

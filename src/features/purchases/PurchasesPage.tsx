@@ -1,3 +1,4 @@
+import { SelectionControl, SelectionOption } from '@components/SelectionControl';
 import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import '../food-licences/translations';
 import React, { useState } from 'react';
@@ -18,8 +19,6 @@ import {
   IonFab,
   IonFabButton,
   IonButton,
-  IonSelect,
-  IonSelectOption,
   RefresherEventDetail,
 } from '@ionic/react';
 import { add, documentText, scanOutline } from 'ionicons/icons';
@@ -112,20 +111,20 @@ const PurchasesPage: React.FC = () => {
               onIonInput={(e) => setSearchTerm(e.detail.value || '')}
               placeholder={t('purchases.searchPurchases')}
             />
-            <IonSelect
+            <SelectionControl
               aria-label={t('purchases.filterByFirm')}
               value={firmId}
               onIonChange={(event) => setFirmId(event.detail.value)}
               interface="popover"
               placeholder={t('purchases.allFirms')}
             >
-              <IonSelectOption value="">{t('purchases.allFirms')}</IonSelectOption>
+              <SelectionOption value="">{t('purchases.allFirms')}</SelectionOption>
               {(firmsData?.data.firms || []).map((firm) => (
-                <IonSelectOption key={firm.id} value={firm.id}>
+                <SelectionOption key={firm.id} value={firm.id}>
                   {firm.display_name}
-                </IonSelectOption>
+                </SelectionOption>
               ))}
-            </IonSelect>
+            </SelectionControl>
           </div>
 
           {isLoading ? (

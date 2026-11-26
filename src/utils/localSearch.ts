@@ -1,7 +1,10 @@
 import type { BillingSearchVariant } from '@core/api/productApi';
 import type { Customer, Inventory, Product } from '@core/types';
 
-const normalize = (value: unknown) => String(value ?? '').trim().toLocaleLowerCase();
+const normalize = (value: unknown) =>
+  String(value ?? '')
+    .trim()
+    .toLocaleLowerCase();
 
 const includesQuery = (query: string, values: unknown[]) =>
   values.some((value) => normalize(value).includes(query));
@@ -12,17 +15,12 @@ export const filterBillingCatalog = (
   limit = 20
 ) => {
   const query = normalize(rawQuery);
+  if (!query && rawQuery.length > 0) return items.slice(0, limit);
   if (query.length < 2) return [];
 
   return items
     .filter((item) =>
-      includesQuery(query, [
-        item.product_name,
-        item.sku,
-        item.brand,
-        item.size,
-        item.packaging,
-      ])
+      includesQuery(query, [item.product_name, item.sku, item.brand, item.size, item.packaging])
     )
     .slice(0, limit);
 };
@@ -41,7 +39,7 @@ export const filterProducts = (items: Product[], rawQuery: string) => {
           variant.brand,
           variant.size,
           variant.packaging,
-          ...((variant.barcodes ?? []).map((barcode) => barcode.barcode)),
+          ...(variant.barcodes ?? []).map((barcode) => barcode.barcode),
         ])
       )
     );

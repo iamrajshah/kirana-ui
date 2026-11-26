@@ -627,6 +627,7 @@ export interface CreateProductFromBarcodeRequest {
   variant: {
     sku?: string | null;
     mrp: number;
+    purchasePrice?: number;
     sellingPrice: number;
     unit?: string | null;
     unitValue?: number | null;

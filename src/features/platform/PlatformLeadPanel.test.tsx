@@ -1,3 +1,4 @@
+import { selectTestChoice } from '@components/selectTestChoice';
 // @vitest-environment jsdom
 import React from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -134,12 +135,8 @@ describe('PlatformLeadPanel', () => {
     render(<PlatformLeadPanel plans={plans} onActivated={vi.fn()} />);
     fireEvent.click(await screen.findByRole('button', { name: /Prospect Shop/ }));
     fireEvent.click(await screen.findByText('platform.commercial.deletionHandling'));
-    fireEvent.change(screen.getByLabelText('platform.commercial.deletionRequest'), {
-      target: { value: '31' },
-    });
-    fireEvent.change(screen.getByLabelText('platform.commercial.decision'), {
-      target: { value: 'REJECTED' },
-    });
+    selectTestChoice(screen.getByLabelText('platform.commercial.deletionRequest'), '31');
+    selectTestChoice(screen.getByLabelText('platform.commercial.decision'), 'REJECTED');
     fireEvent.change(screen.getByLabelText('platform.commercial.notes'), {
       target: { value: 'Verified duplicate request' },
     });
@@ -192,7 +189,11 @@ describe('PlatformLeadPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Second Prospect/ }));
     await screen.findByText(/google-second/);
-    expect((screen.getByLabelText('platform.commercial.confirmRepair') as HTMLInputElement).checked).toBe(false);
-    expect((screen.getByLabelText('platform.commercial.confirmDeletion') as HTMLInputElement).checked).toBe(false);
+    expect(
+      (screen.getByLabelText('platform.commercial.confirmRepair') as HTMLInputElement).checked
+    ).toBe(false);
+    expect(
+      (screen.getByLabelText('platform.commercial.confirmDeletion') as HTMLInputElement).checked
+    ).toBe(false);
   });
 });

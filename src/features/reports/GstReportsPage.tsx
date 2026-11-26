@@ -1,13 +1,6 @@
+import { SelectionControl, SelectionOption } from '@components/SelectionControl';
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  IonButton,
-  IonContent,
-  IonIcon,
-  IonPage,
-  IonSelect,
-  IonSelectOption,
-  IonSpinner,
-} from '@ionic/react';
+import { IonButton, IonContent, IonIcon, IonPage, IonSpinner } from '@ionic/react';
 import { downloadOutline, refreshOutline } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import { Navbar } from '@components/Navbar';
@@ -273,18 +266,18 @@ const GstReportsPage: React.FC = () => {
             </label>
             <label>
               <span>{t('gstReports.firm')}</span>
-              <IonSelect
+              <SelectionControl
                 value={firmId}
                 interface="popover"
                 onIonChange={(event) => setFirmId(event.detail.value)}
               >
                 {firms.map((firm) => (
-                  <IonSelectOption key={firm.id} value={firm.id}>
+                  <SelectionOption key={firm.id} value={firm.id}>
                     {firm.display_name}
                     {!firm.is_active ? ` (${t('common.inactive')})` : ''}
-                  </IonSelectOption>
+                  </SelectionOption>
                 ))}
-              </IonSelect>
+              </SelectionControl>
             </label>
           </section>
           {skip && (

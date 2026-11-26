@@ -1,3 +1,4 @@
+import { SelectionControl, SelectionOption } from '@components/SelectionControl';
 import React, { useEffect, useRef, useState } from 'react';
 import { createIdempotentAttempt } from '@utils/idempotentAttempt';
 import type {
@@ -33,8 +34,6 @@ import {
   IonGrid,
   IonRow,
   IonCol,
-  IonSelect,
-  IonSelectOption,
   IonAlert,
 } from '@ionic/react';
 import { cash, close } from 'ionicons/icons';
@@ -102,7 +101,12 @@ const SupplierLedgerPage: React.FC = () => {
     data: ledgerData,
     isLoading: loadingLedger,
     refetch,
-  } = useGetSupplierLedgerQuery({ id: id!, page: 1, limit: 50, firm_id: firmFilterId || undefined });
+  } = useGetSupplierLedgerQuery({
+    id: id!,
+    page: 1,
+    limit: 50,
+    firm_id: firmFilterId || undefined,
+  });
   const { data: firmsData } = useGetFirmsQuery();
   const { data: bankAccountsData } = useGetBankAccountsQuery(id!);
   const [makePayment, { isLoading: processingPayment }] = useMakeSupplierPaymentMutation();
@@ -220,13 +224,7 @@ const SupplierLedgerPage: React.FC = () => {
     }
 
     const payload = paymentAttempt.current.begin(
-      buildSupplierPaymentPayload(
-        id!,
-        paymentFirmId,
-        parseFloat(amount),
-        paymentMode,
-        notes
-      )
+      buildSupplierPaymentPayload(id!, paymentFirmId, parseFloat(amount), paymentMode, notes)
     );
     if (!payload) return;
     let succeeded = false;
@@ -392,19 +390,20 @@ const SupplierLedgerPage: React.FC = () => {
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
                 {t('suppliers.ledger.filterByFirm')}
               </label>
-              <IonSelect
+              <SelectionControl
                 aria-label={t('suppliers.ledger.filterByFirm')}
                 value={firmFilterId}
                 onIonChange={(event) => setFirmFilterId(event.detail.value)}
                 interface="popover"
               >
-                <IonSelectOption value="">{t('suppliers.ledger.allFirms')}</IonSelectOption>
+                <SelectionOption value="">{t('suppliers.ledger.allFirms')}</SelectionOption>
                 {firms.map((firm) => (
-                  <IonSelectOption key={firm.id} value={firm.id}>
-                    {firm.display_name}{!firm.is_active ? ` (${t('firms.inactive')})` : ''}
-                  </IonSelectOption>
+                  <SelectionOption key={firm.id} value={firm.id}>
+                    {firm.display_name}
+                    {!firm.is_active ? ` (${t('firms.inactive')})` : ''}
+                  </SelectionOption>
                 ))}
-              </IonSelect>
+              </SelectionControl>
             </div>
           </IonCardContent>
         </IonCard>
@@ -467,7 +466,11 @@ const SupplierLedgerPage: React.FC = () => {
                                   {entry.ref_id}
                                 </p>
                               )}
-                              {entry.firm && <p>{t('suppliers.ledger.firm')}: {entry.firm.display_name}</p>}
+                              {entry.firm && (
+                                <p>
+                                  {t('suppliers.ledger.firm')}: {entry.firm.display_name}
+                                </p>
+                              )}
                             </IonLabel>
                             <div slot="end" className="entry-amount credit-amount">
                               {formatCurrency(entry.credit)}
@@ -526,7 +529,11 @@ const SupplierLedgerPage: React.FC = () => {
                                   {entry.description}
                                 </p>
                               )}
-                              {entry.firm && <p>{t('suppliers.ledger.firm')}: {entry.firm.display_name}</p>}
+                              {entry.firm && (
+                                <p>
+                                  {t('suppliers.ledger.firm')}: {entry.firm.display_name}
+                                </p>
+                              )}
                             </IonLabel>
                             <div slot="end" className="entry-amount debit-amount">
                               {formatCurrency(entry.debit)}
@@ -569,19 +576,22 @@ const SupplierLedgerPage: React.FC = () => {
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
                   {t('suppliers.paymentFirm')}
                 </label>
-                <IonSelect
+                <SelectionControl
                   aria-label={t('suppliers.paymentFirm')}
                   value={paymentFirmId}
                   placeholder={t('suppliers.selectPaymentFirm')}
-                  onIonChange={(event) => { setPaymentFirmId(event.detail.value); setAmount(''); }}
+                  onIonChange={(event) => {
+                    setPaymentFirmId(event.detail.value);
+                    setAmount('');
+                  }}
                   interface="popover"
                 >
                   {payableFirmBalances(firmBalances).map((item) => (
-                    <IonSelectOption key={item.firm_id} value={item.firm_id}>
+                    <SelectionOption key={item.firm_id} value={item.firm_id}>
                       {item.firm.display_name} · {formatCurrency(item.balance)}
-                    </IonSelectOption>
+                    </SelectionOption>
                   ))}
-                </IonSelect>
+                </SelectionControl>
               </div>
               <IonCard>
                 <IonCardContent>
@@ -616,7 +626,7 @@ const SupplierLedgerPage: React.FC = () => {
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
                   {t('suppliers.ledger.paymentMode')}
                 </label>
-                <IonSelect
+                <SelectionControl
                   value={paymentMode}
                   onIonChange={(e) => setPaymentMode(e.detail.value as SupplierPaymentMode)}
                   interface="popover"
@@ -626,13 +636,13 @@ const SupplierLedgerPage: React.FC = () => {
                     padding: '8px',
                   }}
                 >
-                  <IonSelectOption value="CASH">{t('suppliers.ledger.cash')}</IonSelectOption>
-                  <IonSelectOption value="UPI">{t('suppliers.ledger.upi')}</IonSelectOption>
-                  <IonSelectOption value="CARD">{t('suppliers.ledger.card')}</IonSelectOption>
-                  <IonSelectOption value="BANK">
+                  <SelectionOption value="CASH">{t('suppliers.ledger.cash')}</SelectionOption>
+                  <SelectionOption value="UPI">{t('suppliers.ledger.upi')}</SelectionOption>
+                  <SelectionOption value="CARD">{t('suppliers.ledger.card')}</SelectionOption>
+                  <SelectionOption value="BANK">
                     {t('suppliers.ledger.bankTransfer')}
-                  </IonSelectOption>
-                </IonSelect>
+                  </SelectionOption>
+                </SelectionControl>
               </div>
 
               <Input

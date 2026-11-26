@@ -1,3 +1,4 @@
+import { selectTestChoice } from '@components/selectTestChoice';
 import React, { type PropsWithChildren } from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
@@ -190,9 +191,7 @@ it('loads customers in 50-row pages', async () => {
 it('requests a fresh first page when customer sorting changes', async () => {
   render(<CustomersPage />);
 
-  fireEvent.change(screen.getByLabelText('customers.sortLabel'), {
-    target: { value: 'NAME_ASC' },
-  });
+  selectTestChoice(screen.getByLabelText('customers.sortLabel'), 'NAME_ASC');
 
   await waitFor(() =>
     expect(query.args).toHaveBeenLastCalledWith({ skip: 0, take: 50, sort: 'NAME_ASC' })

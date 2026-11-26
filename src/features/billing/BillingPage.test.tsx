@@ -6,6 +6,7 @@ import { BillingPage } from './BillingPage';
 const mocks = vi.hoisted(() => ({
   historyReplace: vi.fn(),
   historyPush: vi.fn(),
+  catalog: [] as Array<Record<string, unknown>>,
   createInvoice: vi.fn(),
   quoteInvoice: vi.fn(),
   quoteTrigger: vi.fn(),
@@ -126,13 +127,16 @@ vi.mock('@components', () => ({
     value,
     onChange,
     placeholder,
+    onKeyDown,
   }: {
     value: string;
     onChange: (value: string) => void;
     placeholder: string;
+    onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
   }) => (
     <input
       aria-label={placeholder}
+      onKeyDown={onKeyDown}
       value={value}
       onChange={(event) => onChange(event.target.value)}
     />
@@ -264,7 +268,11 @@ vi.mock('@core/api/customerApi', () => ({
 }));
 
 vi.mock('@core/api/productApi', () => ({
-  useGetBillingCatalogQuery: () => ({ data: { data: [] }, isLoading: false, isFetching: false }),
+  useGetBillingCatalogQuery: () => ({
+    data: { data: mocks.catalog },
+    isLoading: false,
+    isFetching: false,
+  }),
   useLazyScanBarcodeQuery: () => [apiTrigger(mocks.scanBarcode), { isFetching: false }],
   useCreateProductFromBarcodeMutation: () => [
     apiTrigger(mocks.createProductFromBarcode),
@@ -330,6 +338,7 @@ beforeEach(() => {
     unwrap: () => mocks.quoteInvoice(payload),
   }));
   localStorage.clear();
+  mocks.catalog = [];
   mocks.search = '?edit=edit-1';
   mocks.pathname = '/billing';
   mocks.locationState = null;
@@ -1599,4 +1608,73 @@ describe('BillingPage', () => {
       expect(mocks.historyReplace).toHaveBeenCalledWith('/billing');
     });
   });
+});
+
+it('keeps three in-app bills independent and restores their items after remount', async () => {
+  mocks.search = '';
+  const view = render(<BillingPage />);
+  fireEvent.click(screen.getByRole('button', { name: 'billing.scanBarcode' }));
+  fireEvent.click(screen.getByRole('button', { name: 'camera scan' }));
+  await screen.findByText('Tea');
+  fireEvent.click(screen.getByRole('button', { name: 'counterWork.newBill' }));
+  expect(screen.queryByText('Tea')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'counterWork.newBill' }));
+  expect(
+    (screen.getByRole('button', { name: 'counterWork.newBill' }) as HTMLButtonElement).disabled
+  ).toBe(true);
+  fireEvent.click(screen.getAllByRole('button', { name: 'counterWork.bill' })[0]);
+  expect(await screen.findByText('Tea')).toBeTruthy();
+  view.unmount();
+  render(<BillingPage />);
+  expect(await screen.findByText('Tea')).toBeTruthy();
+  expect(screen.getAllByRole('button', { name: 'counterWork.bill' })).toHaveLength(3);
+  expect(mocks.createInvoice).not.toHaveBeenCalled();
+  expect(mocks.createPayment).not.toHaveBeenCalled();
+});
+
+it('requires confirmation before discarding a populated bill', async () => {
+  mocks.search = '';
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+  render(<BillingPage />);
+  fireEvent.click(screen.getByRole('button', { name: 'billing.scanBarcode' }));
+  fireEvent.click(screen.getByRole('button', { name: 'camera scan' }));
+  await screen.findByText('Tea');
+  fireEvent.click(screen.getByRole('button', { name: 'counterWork.closeBill' }));
+  expect(confirm).toHaveBeenCalled();
+  expect(screen.getByText('Tea')).toBeTruthy();
+  confirm.mockRestore();
+});
+
+it('opens a bounded product list with Space and selects the highlighted product with arrows and Enter', async () => {
+  mocks.search = '';
+  mocks.catalog = [
+    {
+      id: 'sugar',
+      product_id: '1',
+      product_name: 'Sugar',
+      price: 40,
+      sku: 'SUG',
+      available_quantity: 10,
+      low_stock_threshold: 1,
+    },
+    {
+      id: 'milk',
+      product_id: '2',
+      product_name: 'Milk',
+      price: 60,
+      sku: 'MILK',
+      available_quantity: 5,
+      low_stock_threshold: 1,
+    },
+  ];
+  render(<BillingPage />);
+  const search = screen.getByLabelText('billing.searchProductPlaceholder');
+  fireEvent.change(search, { target: { value: ' ' } });
+  expect(screen.getByText('Milk')).toBeTruthy();
+  expect(screen.getByText('Sugar')).toBeTruthy();
+  fireEvent.keyDown(search, { key: 'ArrowDown' });
+  fireEvent.keyDown(search, { key: 'Enter' });
+  expect(await screen.findByRole('spinbutton', { name: 'billing.quantityFor Milk' })).toBeTruthy();
+  expect(screen.queryByRole('spinbutton', { name: 'billing.quantityFor Sugar' })).toBeNull();
+  expect(mocks.createInvoice).not.toHaveBeenCalled();
 });

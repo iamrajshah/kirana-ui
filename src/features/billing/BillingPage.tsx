@@ -1,3 +1,14 @@
+import { hasPermission } from '@core/permissions/permissions';
+import './counterWork.translations';
+import { LazyQuickProductCreate as QuickProductCreate } from '@components/LazyQuickCreate';
+import { LazyQuickPartyCreate as QuickPartyCreate } from '@components/LazyQuickCreate';
+import {
+  loadWorkspaces,
+  saveWorkspaces,
+  workspaceKey,
+  newBillWorkspace,
+  type BillWorkspace,
+} from './billWorkspaces';
 import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -112,12 +123,16 @@ const isInvoiceSettled = (invoice: Invoice) => {
   );
 };
 
-export const BillingPage: React.FC = () => {
+const BillingWorkspacePage: React.FC = () => {
   const { t } = useTranslation();
   const deviceWrite = useDeviceWriteAccess('BILLING');
+  const productWrite = useDeviceWriteAccess('PRODUCTS');
+  const customerDeviceWrite = useDeviceWriteAccess('CUSTOMERS_KHATA');
   const location = useLocation<{ claimedVersion?: number }>();
   const history = useHistory();
   const currentUser = useAppSelector(selectCurrentUser);
+  const customerWrite =
+    customerDeviceWrite && hasPermission(currentUser?.roles ?? [], 'CUSTOMER_CREATE');
   const commercialAccess = useAppSelector(selectCommercialAccess);
   const canViewMarginPreview = canUseCommercialFeature(
     currentUser?.roles ?? [],
@@ -135,6 +150,21 @@ export const BillingPage: React.FC = () => {
   const editInvoiceId = query.get('edit');
   const focusedHeldBillId = query.get('held');
   const claimedVersion = location.state?.claimedVersion;
+  const draftStorageKey = workspaceKey(
+    billingStorageOwner.tenantId || '',
+    billingStorageOwner.userId
+  );
+  const [workspaces, setWorkspaces] = useState(() => loadWorkspaces(draftStorageKey));
+  const initialDraft = useRef(
+    editInvoiceId || restoredPendingCheckout
+      ? null
+      : workspaces.bills.find((bill) => bill.id === workspaces.active)
+  ).current;
+  const [draftSaveFailed, setDraftSaveFailed] = useState(false);
+  const [quickProduct, setQuickProduct] = useState(false);
+  const [productHighlight, setProductHighlight] = useState(0);
+  const [customerHighlight, setCustomerHighlight] = useState(0);
+  const [showQuickCustomer, setShowQuickCustomer] = useState(false);
 
   const {
     data: billingCatalogData,
@@ -186,8 +216,8 @@ export const BillingPage: React.FC = () => {
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const debouncedCustomerSearchTerm = useDebouncedValue(customerSearchTerm.trim(), 300);
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
-  const [cartItems, setCartItems] = useState<BillingCartItem[]>([]);
-  const cartItemsRef = useRef<BillingCartItem[]>([]);
+  const [cartItems, setCartItems] = useState<BillingCartItem[]>(initialDraft?.items ?? []);
+  const cartItemsRef = useRef<BillingCartItem[]>(initialDraft?.items ?? []);
   const replaceCartItems = useCallback(
     (next: BillingCartItem[] | ((current: BillingCartItem[]) => BillingCartItem[])) => {
       const resolved = typeof next === 'function' ? next(cartItemsRef.current) : next;
@@ -200,7 +230,7 @@ export const BillingPage: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Pick<
     Customer,
     'id' | 'name' | 'phone' | 'state_code' | 'credit_balance'
-  > | null>(null);
+  > | null>(initialDraft?.customer ?? null);
   const initializedInvoiceId = useRef<string | null>(null);
   const barcodeQueueRef = useRef<Array<{ barcode: string; billGeneration: number }>>([]);
   const barcodeProcessingRef = useRef(false);
@@ -211,7 +241,7 @@ export const BillingPage: React.FC = () => {
   const heldRenewalPendingRef = useRef(false);
   const heldMutationPendingRef = useRef(false);
   const [pendingBarcodeCount, setPendingBarcodeCount] = useState(0);
-  const [billDiscount, setBillDiscount] = useState(0);
+  const [billDiscount, setBillDiscount] = useState(initialDraft?.discount ?? 0);
   const [showPaymentModal, setShowPaymentModal] = useState(Boolean(restoredPendingCheckout));
   const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(
     restoredPendingCheckout?.invoiceId ?? null
@@ -241,7 +271,7 @@ export const BillingPage: React.FC = () => {
   const [activeQuote, setActiveQuote] = useState<InvoiceQuote | null>(null);
   const [activeQuoteKey, setActiveQuoteKey] = useState<string | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
-  const [placeOfSupplyCode, setPlaceOfSupplyCode] = useState('');
+  const [placeOfSupplyCode, setPlaceOfSupplyCode] = useState(initialDraft?.placeOfSupply ?? '');
   const [showHeldBills, setShowHeldBills] = useState(Boolean(focusedHeldBillId));
   const [showWhatsAppPaste, setShowWhatsAppPaste] = useState(false);
   const [counterLabel, setCounterLabel] = useState<string | null>(() => {
@@ -260,7 +290,7 @@ export const BillingPage: React.FC = () => {
   const [heldConflict, setHeldConflict] = useState(false);
   const loadedInvoiceSnapshotRef = useRef<string | null>(null);
   const heldBillsTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const invoiceIdempotencyKey = useRef(generateIdempotencyKey());
+  const invoiceIdempotencyKey = useRef(initialDraft?.requestKey ?? generateIdempotencyKey());
   const paymentIdempotencyKey = useRef(
     restoredPendingCheckout?.paymentIdempotencyKey ?? generateIdempotencyKey()
   );
@@ -317,7 +347,9 @@ export const BillingPage: React.FC = () => {
       ),
     [billingCatalogData?.data]
   );
-  const customerSearchReady = debouncedCustomerSearchTerm.length >= 2;
+  const customerSearchReady =
+    debouncedCustomerSearchTerm.length >= 2 ||
+    (customerSearchTerm.length > 0 && !customerSearchTerm.trim());
   useEffect(() => {
     if (!showCustomerSearch || !customerSearchReady) return;
     void searchCustomers(debouncedCustomerSearchTerm, true);
@@ -330,6 +362,16 @@ export const BillingPage: React.FC = () => {
     [customerSearchReady, customerSearchTerm, customersData?.data]
   );
   const searchLoading = billingCatalogLoading || billingCatalogFetching;
+  useEffect(() => {
+    document
+      .getElementById(`counter-product-${productHighlight}`)
+      ?.scrollIntoView?.({ block: 'nearest' });
+  }, [productHighlight]);
+  useEffect(() => {
+    document
+      .getElementById(`counter-customer-${customerHighlight}`)
+      ?.scrollIntoView?.({ block: 'nearest' });
+  }, [customerHighlight]);
   const customerIndexLoading = customerSearchReady && (customersLoading || customersFetching);
   const totals = useMemo(
     () => calculateBillingTotals(cartItems, billDiscount, 'amount', 0),
@@ -394,6 +436,8 @@ export const BillingPage: React.FC = () => {
   }
   const barcodeWorkPending = pendingBarcodeCount > 0 || barcodeLoading;
   const canCreateBarcodeProduct = Boolean(
+    deviceWrite &&
+    productWrite &&
     currentUser?.roles?.some((role) => ['OWNER', 'MANAGER'].includes(role.toUpperCase()))
   );
   const isBusy =
@@ -404,7 +448,61 @@ export const BillingPage: React.FC = () => {
     paying ||
     cancelling ||
     barcodeWorkPending ||
-    creatingBarcodeProduct;
+    creatingBarcodeProduct ||
+    quickProduct;
+
+  useEffect(() => {
+    if (editInvoiceId || !currentUser) return;
+    const active: BillWorkspace = {
+      id: workspaces.active,
+      items: pendingInvoiceId || completionInvoiceId ? [] : cartItems,
+      customer: pendingInvoiceId || completionInvoiceId ? null : selectedCustomer,
+      discount: pendingInvoiceId || completionInvoiceId ? 0 : billDiscount,
+      placeOfSupply: placeOfSupplyCode,
+      requestKey:
+        pendingInvoiceId || completionInvoiceId
+          ? generateIdempotencyKey()
+          : invoiceIdempotencyKey.current,
+    };
+    const updated = {
+      ...workspaces,
+      bills: workspaces.bills.map((bill) => (bill.id === active.id ? active : bill)),
+    };
+    setDraftSaveFailed(!saveWorkspaces(draftStorageKey, updated));
+  }, [
+    workspaces,
+    cartItems,
+    selectedCustomer,
+    billDiscount,
+    placeOfSupplyCode,
+    pendingInvoiceId,
+    completionInvoiceId,
+    editInvoiceId,
+    draftStorageKey,
+    currentUser,
+  ]);
+
+  useEffect(() => {
+    const warn = (event: BeforeUnloadEvent) => {
+      if ((draftSaveFailed || editInvoiceId || isBusy) && cartItemsRef.current.length) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [draftSaveFailed, editInvoiceId, isBusy]);
+
+  useEffect(() => {
+    if (typeof history.block !== 'function') return;
+    return history.block(() => {
+      if (cartItemsRef.current.length && (draftSaveFailed || isBusy || Boolean(editInvoiceId))) {
+        return t('counterWork.leaveUnsaved');
+      }
+      return undefined;
+    });
+  }, [history, draftSaveFailed, isBusy, editInvoiceId, t]);
+
   const checkoutQuoteReady =
     !tenantSettingsLoading &&
     (!customerId ||
@@ -714,7 +812,8 @@ export const BillingPage: React.FC = () => {
     !showCounterDialog &&
     !showHeldBills &&
     !showWhatsAppPaste &&
-    !showCustomerSearch;
+    !showCustomerSearch &&
+    !quickProduct;
   useCounterScanner(counterScannerReady, addScannedBarcode);
 
   const updateQuantity = (variantId: string, quantity: number) => {
@@ -741,10 +840,12 @@ export const BillingPage: React.FC = () => {
       const response = await createProductFromBarcode({
         barcode: unknownBarcode,
         productMaster: { name: input.name },
-        product: { name: input.name },
+        product: { name: input.name, categoryId: input.categoryId, hsnCode: input.hsnCode },
         variant: {
-          mrp: input.sellingPrice,
+          mrp: input.mrp ?? input.sellingPrice,
           sellingPrice: input.sellingPrice,
+          purchasePrice: input.purchasePrice,
+          gstPercent: input.gstPercent,
         },
         inventory: { quantity: input.openingStock },
       }).unwrap();
@@ -812,6 +913,52 @@ export const BillingPage: React.FC = () => {
     loadedInvoiceSnapshotRef.current = null;
     invoiceIdempotencyKey.current = generateIdempotencyKey();
     paymentIdempotencyKey.current = generateIdempotencyKey();
+  };
+
+  const switchWorkspace = (targetId?: string, close = false) => {
+    if (
+      isBusy ||
+      showPaymentModal ||
+      pendingInvoiceId ||
+      editInvoiceId ||
+      showHeldBills ||
+      unknownBarcode
+    )
+      return;
+    if (
+      close &&
+      (cartItems.length || selectedCustomer || billDiscount) &&
+      !window.confirm(t('counterWork.discardBill'))
+    )
+      return;
+    const current: BillWorkspace = {
+      id: workspaces.active,
+      items: cartItems,
+      customer: selectedCustomer,
+      discount: billDiscount,
+      placeOfSupply: placeOfSupplyCode,
+      requestKey: invoiceIdempotencyKey.current,
+    };
+    let bills = workspaces.bills.map((bill) => (bill.id === current.id ? current : bill));
+    if (close) bills = bills.filter((bill) => bill.id !== current.id);
+    let target = bills.find((bill) => bill.id === targetId);
+    if (!target) {
+      if (close && bills.length) target = bills[0];
+      else {
+        if (bills.length >= 3) return;
+        target = newBillWorkspace();
+        bills.push(target);
+      }
+    }
+    // Invalidate queued scans and outstanding quotes before installing another draft.
+    quoteGenerationRef.current += 1;
+    resetForm();
+    replaceCartItems(target.items);
+    setSelectedCustomer(target.customer);
+    setBillDiscount(target.discount);
+    setPlaceOfSupplyCode(target.placeOfSupply);
+    invoiceIdempotencyKey.current = target.requestKey;
+    setWorkspaces({ active: target.id, bills });
   };
 
   const invoicePayload = (status: 'DRAFT' | 'FINALIZED', quote?: InvoiceQuote) => ({
@@ -1279,6 +1426,7 @@ export const BillingPage: React.FC = () => {
       )
     : null;
 
+  const renderBillGeneration = billGenerationRef.current;
   return (
     <IonPage>
       <Navbar
@@ -1324,6 +1472,69 @@ export const BillingPage: React.FC = () => {
           />
         ) : (
           <main className="mx-auto max-w-7xl px-3 pb-44 pt-3 sm:px-5 lg:pb-8">
+            {!editInvoiceId && (
+              <div
+                className="mb-3 flex flex-wrap items-center gap-2"
+                role="group"
+                aria-label={t('counterWork.bills')}
+              >
+                {workspaces.bills.map((bill, index) => (
+                  <button
+                    type="button"
+                    key={bill.id}
+                    aria-pressed={bill.id === workspaces.active}
+                    disabled={
+                      isBusy ||
+                      showPaymentModal ||
+                      Boolean(pendingInvoiceId) ||
+                      Boolean(unknownBarcode)
+                    }
+                    className="min-h-touch rounded-lg border px-4"
+                    style={
+                      bill.id === workspaces.active
+                        ? {
+                            background: 'var(--ion-color-primary)',
+                            color: 'var(--ion-color-primary-contrast)',
+                          }
+                        : {}
+                    }
+                    onClick={() => switchWorkspace(bill.id)}
+                  >
+                    {t('counterWork.bill', { number: index + 1 })}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="min-h-touch rounded-lg border px-3"
+                  disabled={
+                    workspaces.bills.length >= 3 ||
+                    isBusy ||
+                    showPaymentModal ||
+                    Boolean(pendingInvoiceId) ||
+                    Boolean(unknownBarcode)
+                  }
+                  onClick={() => switchWorkspace()}
+                >
+                  {t('counterWork.newBill')}
+                </button>
+                <button
+                  type="button"
+                  className="min-h-touch px-3"
+                  disabled={
+                    isBusy ||
+                    showPaymentModal ||
+                    Boolean(pendingInvoiceId) ||
+                    Boolean(unknownBarcode)
+                  }
+                  onClick={() => switchWorkspace(undefined, true)}
+                >
+                  {t('counterWork.closeBill')}
+                </button>
+              </div>
+            )}
+            {draftSaveFailed && <p role="alert">{t('counterWork.storageFailed')}</p>}
+            <p className="mb-2 text-sm">{t('counterWork.shortcuts')}</p>
+
             {invoiceUnavailable && invoiceError && (
               <div role="alert" className="mb-3 rounded-xl border border-red-200 p-3">
                 <p>{t('invoiceDetail.invoiceNotFound')}</p>
@@ -1408,7 +1619,47 @@ export const BillingPage: React.FC = () => {
                 <div className="mt-3 rounded-xl bg-white p-2 shadow-sm">
                   <SearchBar
                     value={customerSearchTerm}
-                    onChange={setCustomerSearchTerm}
+                    controls="counter-customer-results"
+                    activeDescendant={
+                      matchingCustomers[customerHighlight]
+                        ? `counter-customer-${customerHighlight}`
+                        : undefined
+                    }
+                    expanded={showCustomerSearch}
+                    onChange={(value) => {
+                      setCustomerSearchTerm(value);
+                      setCustomerHighlight(0);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.nativeEvent.isComposing) return;
+                      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        if (!customerSearchTerm) setCustomerSearchTerm(' ');
+                        setCustomerHighlight((index) =>
+                          Math.max(
+                            0,
+                            Math.min(
+                              matchingCustomers.length - 1,
+                              index + (event.key === 'ArrowDown' ? 1 : -1)
+                            )
+                          )
+                        );
+                      }
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        const customer = matchingCustomers[customerHighlight];
+                        if (customer && !customerIndexLoading) {
+                          setSelectedCustomer(customer);
+                          setPlaceOfSupplyCode('');
+                          setCustomerSearchTerm('');
+                          setShowCustomerSearch(false);
+                        }
+                      }
+                      if (event.key === 'Escape') {
+                        event.preventDefault();
+                        setShowCustomerSearch(false);
+                      }
+                    }}
                     placeholder={t('billing.searchCustomerPlaceholder')}
                     debounce={0}
                   />
@@ -1426,10 +1677,17 @@ export const BillingPage: React.FC = () => {
                       <p className="p-2 text-sm text-gray-500">{t('billing.noCustomersFound')}</p>
                     )}
                   {customerSearchReady && (
-                    <IonList className="max-h-52 overflow-auto">
-                      {matchingCustomers.map((customer) => (
+                    <IonList
+                      id="counter-customer-results"
+                      role="listbox"
+                      className="max-h-52 overflow-auto"
+                    >
+                      {matchingCustomers.map((customer, index) => (
                         <IonItem
                           key={customer.id}
+                          id={`counter-customer-${index}`}
+                          role="option"
+                          aria-selected={index === customerHighlight}
                           button
                           detail
                           onClick={() => {
@@ -1438,7 +1696,11 @@ export const BillingPage: React.FC = () => {
                             setCustomerSearchTerm('');
                             setShowCustomerSearch(false);
                           }}
-                          style={{ '--min-height': '52px' }}
+                          style={{
+                            '--min-height': '52px',
+                            '--background':
+                              index === customerHighlight ? 'var(--ion-color-light)' : undefined,
+                          }}
                         >
                           <IonLabel>
                             <h3 className="font-semibold">{customer.name}</h3>
@@ -1447,6 +1709,30 @@ export const BillingPage: React.FC = () => {
                         </IonItem>
                       ))}
                     </IonList>
+                  )}
+                  <button
+                    type="button"
+                    className="min-h-touch px-3"
+                    disabled={!customerWrite}
+                    onClick={() => setShowQuickCustomer(true)}
+                  >
+                    {t('customers.addCustomer')}
+                  </button>
+                  {showQuickCustomer && customerWrite && (
+                    <QuickPartyCreate
+                      kind="customer"
+                      onCreated={(customer) => {
+                        if (
+                          !billingMountedRef.current ||
+                          renderBillGeneration !== billGenerationRef.current
+                        )
+                          return;
+                        setSelectedCustomer(customer);
+                        setPlaceOfSupplyCode('');
+                        setShowCustomerSearch(false);
+                        setShowQuickCustomer(false);
+                      }}
+                    />
                   )}
                   {customerId && (
                     <IonButton
@@ -1472,7 +1758,44 @@ export const BillingPage: React.FC = () => {
                     <div className="min-w-0 flex-1">
                       <SearchBar
                         value={searchTerm}
-                        onChange={setSearchTerm}
+                        controls="counter-product-results"
+                        activeDescendant={
+                          matchingVariants[productHighlight]
+                            ? `counter-product-${productHighlight}`
+                            : undefined
+                        }
+                        expanded={Boolean(searchTerm)}
+                        onChange={(value) => {
+                          setSearchTerm(value);
+                          setProductHighlight(0);
+                        }}
+                        debounce={0}
+                        onKeyDown={(event) => {
+                          if (event.nativeEvent.isComposing) return;
+                          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                            event.preventDefault();
+                            if (!searchTerm) setSearchTerm(' ');
+                            setProductHighlight((index) =>
+                              Math.max(
+                                0,
+                                Math.min(
+                                  matchingVariants.length - 1,
+                                  index + (event.key === 'ArrowDown' ? 1 : -1)
+                                )
+                              )
+                            );
+                          }
+                          if (event.key === 'Enter') {
+                            event.preventDefault();
+                            const item = matchingVariants[productHighlight];
+                            if (item && (item.saleable_quantity ?? item.available_quantity) > 0)
+                              addToCart(item);
+                          }
+                          if (event.key === 'Escape') {
+                            event.preventDefault();
+                            setSearchTerm('');
+                          }
+                        }}
                         placeholder={t('billing.searchProductPlaceholder')}
                       />
                     </div>
@@ -1543,12 +1866,40 @@ export const BillingPage: React.FC = () => {
                     {lastScannedProduct &&
                       ` · ${t('billing.lastScanned', { product: lastScannedProduct })}`}
                   </p>
+                  {canCreateBarcodeProduct && !quickProduct && (
+                    <button
+                      type="button"
+                      className="min-h-touch px-3"
+                      onClick={() => setQuickProduct(true)}
+                    >
+                      {t('products.addProduct')}
+                    </button>
+                  )}
+                  {quickProduct && (
+                    <QuickProductCreate
+                      initialName={searchTerm}
+                      onClose={() => setQuickProduct(false)}
+                      onCreated={(variant) => {
+                        if (
+                          !billingMountedRef.current ||
+                          renderBillGeneration !== billGenerationRef.current
+                        )
+                          return;
+                        addToCart(variant);
+                        setSearchTerm('');
+                      }}
+                    />
+                  )}
                   {searchLoading && (
                     <p className="p-3 text-center text-sm text-gray-500">{t('common.loading')}</p>
                   )}
                   {searchTerm && (
-                    <IonList className="max-h-64 overflow-auto">
-                      {matchingVariants.map((variant) => {
+                    <IonList
+                      id="counter-product-results"
+                      role="listbox"
+                      className="max-h-64 overflow-auto"
+                    >
+                      {matchingVariants.map((variant, index) => {
                         const saleableQuantity =
                           variant.saleable_quantity ?? variant.available_quantity;
                         const expiredStockBlocked =
@@ -1558,10 +1909,17 @@ export const BillingPage: React.FC = () => {
                         return (
                           <IonItem
                             key={variant.id}
+                            id={`counter-product-${index}`}
+                            role="option"
+                            aria-selected={index === productHighlight}
                             button
                             disabled={outOfStock}
                             onClick={() => addToCart(variant)}
-                            style={{ '--min-height': '56px' }}
+                            style={{
+                              '--min-height': '56px',
+                              '--background':
+                                index === productHighlight ? 'var(--ion-color-light)' : undefined,
+                            }}
                           >
                             <IonLabel>
                               <h3 className="font-semibold">{variant.product_name}</h3>
@@ -2033,4 +2391,15 @@ export const BillingPage: React.FC = () => {
       </IonContent>
     </IonPage>
   );
+};
+
+// Server-held invoices and local unsaved bills must never share component state.
+// Remount on identity or edit-target change; local bills recover from their own scoped storage.
+export const BillingPage: React.FC = () => {
+  const user = useAppSelector(selectCurrentUser);
+  const location = useLocation();
+  const editId = useRef(new URLSearchParams(location.search).get('edit') || 'local');
+  if (location.pathname === ROUTES.BILLING)
+    editId.current = new URLSearchParams(location.search).get('edit') || 'local';
+  return <BillingWorkspacePage key={`${user?.tenant?.id}:${user?.id}:${editId.current}`} />;
 };

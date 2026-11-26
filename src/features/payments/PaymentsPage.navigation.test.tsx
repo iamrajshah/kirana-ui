@@ -15,6 +15,8 @@ import { Route } from 'react-router-dom';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { PaymentsPage } from './PaymentsPage';
 
+vi.mock('@core/hooks', () => ({ useAppSelector: () => ({ roles: ['OWNER'] }) }));
+
 const createPayment = vi.hoisted(() => vi.fn());
 const searchCustomers = vi.hoisted(() => vi.fn());
 

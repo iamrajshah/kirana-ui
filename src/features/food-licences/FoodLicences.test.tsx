@@ -1,3 +1,4 @@
+import { selectTestChoice } from '@components/selectTestChoice';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -77,6 +78,7 @@ describe('purchase licence selection', () => {
       ])
     );
     render(<FoodLicenceSelector firmId="1" invoiceDate="2026-06-01" value="" onChange={vi.fn()} />);
+    fireEvent.focus(screen.getByRole('combobox'));
     expect(screen.getByRole('option', { name: /Jayesh/ })).toBeTruthy();
     expect(screen.queryByRole('option', { name: /Other firm|Expired|Archived/ })).toBeNull();
   });
@@ -120,7 +122,7 @@ describe('owner food licence register', () => {
   it('creates a licence under a firm, separately from GST and firm creation', async () => {
     render(<FoodLicenceSettingsCard />);
     fireEvent.click(screen.getByRole('button', { name: 'foodLicences.add' }));
-    fireEvent.change(screen.getByLabelText('foodLicences.firm'), { target: { value: '1' } });
+    selectTestChoice(screen.getByLabelText('foodLicences.firm'), '1');
     for (const [key, value] of [
       ['number', '11526000000002'],
       ['label', 'Jitendra licence'],

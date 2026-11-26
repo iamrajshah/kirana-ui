@@ -1,3 +1,4 @@
+import { SelectionControl } from '@components/SelectionControl';
 import React, { useMemo, useState } from 'react';
 import { IonButton, IonContent, IonHeader, IonTitle, IonToolbar } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
@@ -83,7 +84,7 @@ export const WhatsAppPastePanel: React.FC<Props> = ({ catalog, onCancel, onConfi
                   </label>
                   <label>
                     {t('billing.whatsapp.product')}
-                    <select
+                    <SelectionControl
                       className="dialog-field mt-1 min-h-touch w-full rounded-lg border border-gray-300 px-2"
                       value={line.selectedVariantId ?? ''}
                       onChange={(event) =>
@@ -98,7 +99,7 @@ export const WhatsAppPastePanel: React.FC<Props> = ({ catalog, onCancel, onConfi
                             .join(' · ')}
                         </option>
                       ))}
-                    </select>
+                    </SelectionControl>
                   </label>
                 </div>
               </article>

@@ -1,3 +1,4 @@
+import { SelectionControl, SelectionOption } from '@components/SelectionControl';
 import React, { useMemo, useState } from 'react';
 import {
   IonBadge,
@@ -8,8 +9,6 @@ import {
   IonPage,
   IonRefresher,
   IonRefresherContent,
-  IonSelect,
-  IonSelectOption,
   type RefresherEventDetail,
 } from '@ionic/react';
 import { alertCircleOutline, calendarOutline, cubeOutline } from 'ionicons/icons';
@@ -139,18 +138,18 @@ const ExpiryAlertsPage: React.FC = () => {
               <p>{t('expiry.subtitle')}</p>
             </div>
             <div className="expiry-controls">
-              <IonSelect
+              <SelectionControl
                 aria-label={t('expiry.windowLabel')}
                 value={windowDays}
                 interface="popover"
                 onIonChange={(event) => setWindowDays(Number(event.detail.value))}
               >
                 {[7, 15, 30, 60, 90].map((days) => (
-                  <IonSelectOption key={days} value={days}>
+                  <SelectionOption key={days} value={days}>
                     {t('expiry.nextDays', { count: days })}
-                  </IonSelectOption>
+                  </SelectionOption>
                 ))}
-              </IonSelect>
+              </SelectionControl>
             </div>
           </header>
 
@@ -286,14 +285,14 @@ const ExpiryAlertsPage: React.FC = () => {
               </label>
               <label>
                 <span>{t('expiry.disposition')}</span>
-                <select
+                <SelectionControl
                   value={disposition}
                   onChange={(event) => setDisposition(event.target.value as typeof disposition)}
                 >
                   <option value="EXPIRED">{t('expiry.dispositions.EXPIRED')}</option>
                   <option value="DAMAGED">{t('expiry.dispositions.DAMAGED')}</option>
                   <option value="OTHER">{t('expiry.dispositions.OTHER')}</option>
-                </select>
+                </SelectionControl>
               </label>
               <label>
                 <span>{t('expiry.adjustReason')}</span>

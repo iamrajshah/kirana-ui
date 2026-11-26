@@ -1,6 +1,11 @@
+import { applyCategoryTaxDefaults, categoryTaxDefaults } from './categoryDefaults';
+import { useDebouncedValue } from '@hooks/useDebouncedValue';
+import { SearchableSelect } from '@components/SearchableSelect';
 import React, { useState } from 'react';
 import type { Category } from '@core/api/categoryApi';
 import { apiErrorMessage } from '@core/services/notificationService';
+import { useLocation } from 'react-router';
+import { useCounterScanner } from '../billing/useCounterScanner';
 import { useHistory } from 'react-router';
 import {
   IonContent,
@@ -41,6 +46,7 @@ import './stock-workspace.css';
 
 export const AddProductBarcodePage: React.FC = () => {
   const history = useHistory();
+  const location = useLocation();
   const { t } = useTranslation();
   const isMobile = isPlatform('capacitor');
 
@@ -58,10 +64,12 @@ export const AddProductBarcodePage: React.FC = () => {
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [sku, setSku] = useState('');
   const [mrp, setMrp] = useState('');
+  const [purchasePrice, setPurchasePrice] = useState('');
   const [sellingPrice, setSellingPrice] = useState('');
   const [unit, setUnit] = useState('');
   const [unitValue, setUnitValue] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [previousCategoryDefaults, setPreviousCategoryDefaults] = useState({ hsn: '', gst: '' });
   const [hsnCode, setHsnCode] = useState('');
   const [gstPercent, setGstPercent] = useState('');
   const [uqcCode, setUqcCode] = useState('');
@@ -79,15 +87,33 @@ export const AddProductBarcodePage: React.FC = () => {
   // API
   const [lookupBarcode, { isLoading: scanning }] = useLazyLookupBarcodeQuery();
   const [createProduct, { isLoading: creating }] = useCreateProductFromBarcodeMutation();
-  const { data: categoriesData } = useGetCategoriesQuery();
+  const [categorySearch, setCategorySearch] = useState('');
+  const categoryQuery = useDebouncedValue(categorySearch, 200);
+  const { data: categoriesData } = useGetCategoriesQuery({ search: categoryQuery });
 
   const categories = categoriesData?.data || [];
+  const applyDefaults = (category?: Category | null) => {
+    const next = categoryTaxDefaults(category);
+    const values = applyCategoryTaxDefaults(
+      { hsn: hsnCode, gst: gstPercent },
+      previousCategoryDefaults,
+      next
+    );
+    setHsnCode(values.hsn);
+    setGstPercent(values.gst);
+    setPreviousCategoryDefaults(next);
+  };
 
   // Handle barcode scan from camera (mobile) or manual input (web)
   const handleBarcodeScanned = (scannedBarcode: string) => {
     setBarcode(scannedBarcode);
     checkBarcode(scannedBarcode);
   };
+
+  useCounterScanner(
+    location.pathname.includes('barcode') && !scanning && !creating && !showCategoryModal,
+    handleBarcodeScanned
+  );
 
   const checkBarcode = async (barcodeValue: string) => {
     if (!barcodeValue.trim()) {
@@ -153,12 +179,30 @@ export const AddProductBarcodePage: React.FC = () => {
 
   const handleCategoryCreated = (newCategory: Category) => {
     // Auto-select the newly created category
-    setCategoryId(newCategory.id);
+    setCategoryId(Number(newCategory.id));
+    applyDefaults(newCategory);
   };
 
   const handleSubmit = async () => {
     // Validate
     if (!barcode || !productMasterName || !productName || !mrp || !sellingPrice || !quantity) {
+      setErrorMessage(t('foundation.barcode.fillRequired'));
+      setShowError(true);
+      return;
+    }
+    if (
+      purchasePrice !== '' &&
+      (!Number.isFinite(Number(purchasePrice)) || Number(purchasePrice) < 0)
+    ) {
+      setErrorMessage(t('products.purchaseCostInvalid'));
+      setShowError(true);
+      return;
+    }
+    if (
+      !Number.isInteger(Number(quantity)) ||
+      Number(quantity) < 0 ||
+      Number(mrp) < Number(sellingPrice)
+    ) {
       setErrorMessage(t('foundation.barcode.fillRequired'));
       setShowError(true);
       return;
@@ -198,6 +242,7 @@ export const AddProductBarcodePage: React.FC = () => {
           sku: sku || null,
           mrp: parseFloat(mrp),
           sellingPrice: parseFloat(sellingPrice),
+          purchasePrice: purchasePrice === '' ? undefined : Number(purchasePrice),
           unit: unit || null,
           unitValue: unitValue ? parseFloat(unitValue) : null,
           imageUrl: foundProduct?.image_url || null,
@@ -227,6 +272,7 @@ export const AddProductBarcodePage: React.FC = () => {
 
   const resetForm = () => {
     setBarcode('');
+    setPurchasePrice('');
     setFoundProduct(null);
     setShowForm(false);
     setProductMasterName('');
@@ -241,6 +287,7 @@ export const AddProductBarcodePage: React.FC = () => {
     setUnitValue('');
     setQuantity('');
     setHsnCode('');
+    setPreviousCategoryDefaults({ hsn: '', gst: '' });
     setGstPercent('');
     setUqcCode('');
     setUnitLabel('');
@@ -288,6 +335,9 @@ export const AddProductBarcodePage: React.FC = () => {
                   <div>
                     <Input
                       label={t('foundation.barcode.barcode')}
+                      onEnter={() => {
+                        if (!scanning && barcode.trim()) void checkBarcode(barcode);
+                      }}
                       value={barcode}
                       onChange={(value) => setBarcode(value)}
                       placeholder={t('foundation.barcode.enterBarcode')}
@@ -412,8 +462,11 @@ export const AddProductBarcodePage: React.FC = () => {
                       />
 
                       <div className="space-y-2">
-                        <Select
+                        <SearchableSelect
+                          onSearch={setCategorySearch}
                           label={`${t('products.category')} *`}
+                          onCreate={() => setShowCategoryModal(true)}
+                          createLabel={t('products.addNewCategory')}
                           value={categoryId?.toString() || ''}
                           onChange={(value) => {
                             if (value === 'ADD_NEW') {
@@ -421,6 +474,10 @@ export const AddProductBarcodePage: React.FC = () => {
                               // Don't update categoryId state
                             } else {
                               setCategoryId(value ? parseInt(value) : null);
+                              const category = categories.find(
+                                (entry) => String(entry.id) === value
+                              );
+                              applyDefaults(category);
                             }
                           }}
                           options={[
@@ -463,6 +520,14 @@ export const AddProductBarcodePage: React.FC = () => {
                           onChange={(value) => setMrp(value)}
                           placeholder="0.00"
                           type="number"
+                        />
+                        <Input
+                          label={t('products.purchaseCostLabel')}
+                          value={purchasePrice}
+                          onChange={setPurchasePrice}
+                          type="number"
+                          min={0}
+                          step="0.01"
                         />
                         <Input
                           label={`${t('products.sellingPrice')} *`}

@@ -1,3 +1,7 @@
+import { hasPermission } from '@core/permissions/permissions';
+import { useAppSelector } from '@core/hooks';
+import { selectCurrentUser } from '@core/auth/authSlice';
+import { LazyQuickPartyCreate as QuickPartyCreate } from '@components/LazyQuickCreate';
 import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import { createIdempotentAttempt } from '@utils/idempotentAttempt';
 import React, { useState, useMemo, useRef } from 'react';
@@ -37,6 +41,10 @@ import './PaymentsPage.css';
 export const PaymentsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const deviceWrite = useDeviceWriteAccess('PAYMENTS');
+  const customerDeviceWrite = useDeviceWriteAccess('CUSTOMERS_KHATA');
+  const currentUser = useAppSelector(selectCurrentUser);
+  const customerWrite =
+    customerDeviceWrite && hasPermission(currentUser?.roles ?? [], 'CUSTOMER_CREATE');
   const { data, isLoading, isError, refetch } = useGetPaymentsQuery({});
   const [
     searchCustomers,
@@ -52,6 +60,8 @@ export const PaymentsPage: React.FC = () => {
   const [paymentMode, setPaymentMode] = useState('CASH');
   const [referenceNote, setReferenceNote] = useState('');
   const [paymentSearch, setPaymentSearch] = useState('');
+  const [highlight, setHighlight] = useState(0);
+  const [quickCustomer, setQuickCustomer] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
   const debouncedCustomerSearch = useDebouncedValue(customerSearch.trim(), 300);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -59,7 +69,8 @@ export const PaymentsPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const paymentAttempt = useRef(createIdempotentAttempt());
   const paymentModalRef = useRef<HTMLIonModalElement | null>(null);
-  const customerSearchReady = debouncedCustomerSearch.length >= 2;
+  const customerSearchReady =
+    debouncedCustomerSearch.length >= 2 || (customerSearch.length > 0 && !customerSearch.trim());
 
   const [getPendingInvoices, { data: pendingInvoicesData, isLoading: loadingInvoices }] =
     useLazyGetPendingInvoicesByCustomerQuery();
@@ -350,7 +361,35 @@ export const PaymentsPage: React.FC = () => {
                   <Input
                     label={t('payments.searchCustomers')}
                     value={customerSearch}
-                    onChange={setCustomerSearch}
+                    onChange={(value) => {
+                      setCustomerSearch(value);
+                      setHighlight(0);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.nativeEvent.isComposing) return;
+                      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        if (!customerSearch) setCustomerSearch(' ');
+                        setHighlight((index) =>
+                          Math.max(
+                            0,
+                            Math.min(
+                              matchingCustomers.length - 1,
+                              index + (event.key === 'ArrowDown' ? 1 : -1)
+                            )
+                          )
+                        );
+                      }
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        const customer = matchingCustomers[highlight];
+                        if (customer && !customersFetching && !customersLoading) {
+                          setSelectedCustomer(customer);
+                          setCustomerId(customer.id);
+                          setCustomerSearch('');
+                        }
+                      }
+                    }}
                     placeholder={t('payments.searchCustomers')}
                   />
                   {customerSearch.trim().length > 0 && !customerSearchReady && (
@@ -365,18 +404,37 @@ export const PaymentsPage: React.FC = () => {
                     matchingCustomers.length === 0 && (
                       <p className="form-note">{t('payments.noCustomersFound')}</p>
                     )}
+                  <button
+                    type="button"
+                    className="min-h-touch"
+                    disabled={!customerWrite}
+                    onClick={() => setQuickCustomer(true)}
+                  >
+                    {t('customers.addCustomer')}
+                  </button>
+                  {quickCustomer && customerWrite && (
+                    <QuickPartyCreate
+                      kind="customer"
+                      onCreated={(customer) => {
+                        setSelectedCustomer(customer);
+                        setCustomerId(customer.id);
+                        setCustomerSearch('');
+                        setQuickCustomer(false);
+                      }}
+                    />
+                  )}
                   {customerSearchReady && matchingCustomers.length > 0 && (
                     <div
                       className="payment-customer-results"
                       role="listbox"
                       aria-label={t('payments.searchCustomers')}
                     >
-                      {matchingCustomers.map((customer) => (
+                      {matchingCustomers.map((customer, index) => (
                         <button
                           key={customer.id}
                           type="button"
                           role="option"
-                          aria-selected="false"
+                          aria-selected={index === highlight}
                           onClick={() => {
                             setSelectedCustomer(customer);
                             setCustomerId(customer.id);

@@ -1,3 +1,4 @@
+import { SelectionControl, SelectionOption } from '@components/SelectionControl';
 import { FoodLicenceSelector } from '../food-licences/FoodLicenceSelector';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -7,8 +8,6 @@ import {
   IonIcon,
   IonPage,
   IonProgressBar,
-  IonSelect,
-  IonSelectOption,
   IonSpinner,
 } from '@ionic/react';
 import {
@@ -646,7 +645,7 @@ const PurchaseBillImportPage: React.FC = () => {
               <section className="workspace-record purchase-import-metadata">
                 <label>
                   <span>{t('purchases.selectSupplierTitle')}</span>
-                  <IonSelect
+                  <SelectionControl
                     value={selectedSupplierId}
                     interface="popover"
                     onIonChange={(event) => {
@@ -657,15 +656,15 @@ const PurchaseBillImportPage: React.FC = () => {
                     }}
                   >
                     {suppliers.map((supplier) => (
-                      <IonSelectOption key={supplier.id} value={supplier.id}>
+                      <SelectionOption key={supplier.id} value={supplier.id}>
                         {supplier.name}
-                      </IonSelectOption>
+                      </SelectionOption>
                     ))}
-                  </IonSelect>
+                  </SelectionControl>
                 </label>
                 <label>
                   <span>{t('purchases.purchaseFirm')}</span>
-                  <IonSelect
+                  <SelectionControl
                     value={selectedFirmId}
                     interface="popover"
                     onIonChange={(event) => {
@@ -676,11 +675,11 @@ const PurchaseBillImportPage: React.FC = () => {
                     }}
                   >
                     {firms.map((firm) => (
-                      <IonSelectOption key={firm.id} value={firm.id}>
+                      <SelectionOption key={firm.id} value={firm.id}>
                         {firm.display_name}
-                      </IonSelectOption>
+                      </SelectionOption>
                     ))}
-                  </IonSelect>
+                  </SelectionControl>
                 </label>
                 <label>
                   <span>{t('purchases.invoiceNumberLabel')}</span>
@@ -699,7 +698,7 @@ const PurchaseBillImportPage: React.FC = () => {
                 </label>
                 <label>
                   <span>{t('purchaseImport.taxTreatment')}</span>
-                  <IonSelect
+                  <SelectionControl
                     value={pricesIncludeTax ? 'INCLUSIVE' : 'EXCLUSIVE'}
                     interface="popover"
                     onIonChange={(event) => {
@@ -708,13 +707,13 @@ const PurchaseBillImportPage: React.FC = () => {
                       setConfirmedMismatch(false);
                     }}
                   >
-                    <IonSelectOption value="INCLUSIVE">
+                    <SelectionOption value="INCLUSIVE">
                       {t('purchaseImport.taxInclusive')}
-                    </IonSelectOption>
-                    <IonSelectOption value="EXCLUSIVE">
+                    </SelectionOption>
+                    <SelectionOption value="EXCLUSIVE">
                       {t('purchaseImport.taxExclusive')}
-                    </IonSelectOption>
-                  </IonSelect>
+                    </SelectionOption>
+                  </SelectionControl>
                 </label>
               </section>
 
@@ -841,7 +840,7 @@ const PurchaseBillImportPage: React.FC = () => {
                       </label>
                       <label>
                         <span>{t('purchaseImport.purchaseMode')}</span>
-                        <IonSelect
+                        <SelectionControl
                           value={item.purchaseMode ?? 'UNIT'}
                           interface="popover"
                           onIonChange={(event) =>
@@ -850,13 +849,13 @@ const PurchaseBillImportPage: React.FC = () => {
                             })
                           }
                         >
-                          <IonSelectOption value="UNIT">
+                          <SelectionOption value="UNIT">
                             {t('purchaseImport.purchaseUnit')}
-                          </IonSelectOption>
-                          <IonSelectOption value="PACK">
+                          </SelectionOption>
+                          <SelectionOption value="PACK">
                             {t('purchaseImport.purchasePack')}
-                          </IonSelectOption>
-                        </IonSelect>
+                          </SelectionOption>
+                        </SelectionControl>
                       </label>
                       {item.purchaseMode === 'PACK' && (
                         <>
@@ -1051,17 +1050,17 @@ const PurchaseBillImportPage: React.FC = () => {
                   </label>
                   <label>
                     <span>{t('purchases.paymentModeLabel')}</span>
-                    <IonSelect
+                    <SelectionControl
                       value={paymentMode}
                       interface="popover"
-                      onIonChange={(event) => setPaymentMode(event.detail.value)}
+                      onIonChange={(event) => setPaymentMode(event.detail.value as 'CASH' | 'UPI' | 'CARD' | 'BANK')}
                     >
                       {(['CASH', 'UPI', 'CARD', 'BANK'] as const).map((mode) => (
-                        <IonSelectOption key={mode} value={mode}>
+                        <SelectionOption key={mode} value={mode}>
                           {t(`purchaseImport.paymentMode.${mode}`)}
-                        </IonSelectOption>
+                        </SelectionOption>
                       ))}
-                    </IonSelect>
+                    </SelectionControl>
                   </label>
                 </div>
                 <label className="purchase-import-review-check">

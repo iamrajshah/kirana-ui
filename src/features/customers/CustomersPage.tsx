@@ -1,3 +1,4 @@
+import { SelectionControl } from '@components/SelectionControl';
 import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useMemo, useState, useEffect } from 'react';
 import type { Customer } from '@core/types';
@@ -253,7 +254,7 @@ export const CustomersPage: React.FC = () => {
           />
           <div className="customers-sort-control">
             <label htmlFor="customer-sort">{t('customers.sortLabel')}</label>
-            <select
+            <SelectionControl
               id="customer-sort"
               value={sort}
               onChange={(event) => {
@@ -267,7 +268,7 @@ export const CustomersPage: React.FC = () => {
               <option value="NAME_ASC">{t('customers.sortNameAsc')}</option>
               <option value="NAME_DESC">{t('customers.sortNameDesc')}</option>
               <option value="NEWEST">{t('customers.sortNewest')}</option>
-            </select>
+            </SelectionControl>
           </div>
 
           {(isLoading || isFetching) && allCustomers.length === 0 ? (

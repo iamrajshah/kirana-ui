@@ -259,6 +259,9 @@ it('offers retry rather than an empty catalog on request failure', () => {
 it('saves selling price and MRP when creating a product variant', async () => {
   render(<ProductsPage />);
   fireEvent.click(screen.getByRole('button', { name: 'products.addManually' }));
+  fireEvent.change(screen.getByLabelText('products.purchaseCostLabel'), {
+    target: { value: '30' },
+  });
   fireEvent.change(screen.getByLabelText('products.productNameLabel'), {
     target: { value: 'Tata Salt' },
   });
@@ -275,6 +278,7 @@ it('saves selling price and MRP when creating a product variant', async () => {
   expect(state.createVariant).toHaveBeenCalledWith({
     productId: 'product-2',
     variant: expect.objectContaining({
+      purchase_price: 30,
       price: 40,
       selling_price: 40,
       mrp_price: 50,

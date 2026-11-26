@@ -649,3 +649,8 @@ vi.mock('@core/api/foodLicenceApi', () => ({
   useCreateFoodLicenceMutation: () => [vi.fn(), { isLoading: false }],
   useUpdateFoodLicenceMutation: () => [vi.fn(), { isLoading: false }],
 }));
+
+vi.mock('@components/SelectionControl', async () => {
+  const ionic = await import('@ionic/react');
+  return { SelectionControl: ionic.IonSelect, SelectionOption: ionic.IonSelectOption };
+});

@@ -1,3 +1,4 @@
+import { CategoryPicker } from '@components/CategoryPicker';
 import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useState } from 'react';
 import {
@@ -31,7 +32,6 @@ import {
   useUpdateVariantPurchaseCostMutation,
   useGetProductPurchaseCostsQuery,
 } from '@core/api/productApi';
-import { useGetCategoriesQuery } from '@core/api/categoryApi';
 import { Loading, EmptyState, Input, Select, Button } from '@components';
 import { formatCurrency } from '@utils/helpers';
 import type { ProductVariant, UqcCode, VariantPurchaseCost } from '@core/types';
@@ -73,7 +73,6 @@ export const ProductDetailPage: React.FC = () => {
     { windowDays: 90 },
     { skip: !canTrackExpiry }
   );
-  const { data: categoriesData } = useGetCategoriesQuery();
   const [updateProduct, { isLoading: updating }] = useUpdateProductMutation();
   const [updateVariant, { isLoading: updatingVariant }] = useUpdateVariantMutation();
   const [updateVariantPurchaseCost, { isLoading: updatingPurchaseCost }] =
@@ -104,8 +103,6 @@ export const ProductDetailPage: React.FC = () => {
     'OPENING_STOCK' | 'MANUAL_CORRECTION'
   >('OPENING_STOCK');
   const [purchaseCostReason, setPurchaseCostReason] = useState('');
-
-  const categories = categoriesData?.data || [];
 
   const handleEditClick = () => {
     if (data?.data) {
@@ -661,12 +658,10 @@ export const ProductDetailPage: React.FC = () => {
                   />
                 )}
 
-                <Select
-                  label={t('products.category')}
+                <CategoryPicker
                   value={editCategoryId?.toString() || ''}
-                  onChange={(value) => setEditCategoryId(value ? parseInt(value) : null)}
-                  options={categories.map((cat) => ({ value: cat.id.toString(), label: cat.name }))}
-                  placeholder={t('common.placeholders.selectCategory')}
+                  canCreate={true}
+                  onSelect={(category) => setEditCategoryId(category ? Number(category.id) : null)}
                 />
 
                 <Input

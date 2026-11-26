@@ -40,7 +40,10 @@ const firmState = vi.hoisted(() => ({
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('@components/Navbar', () => ({ Navbar: () => null }));
 vi.mock('@components', () => ({ Loading: () => null, EmptyState: () => <div>empty</div> }));
-vi.mock('@core/hooks', () => ({ useAppSelector: (selector: (state: unknown) => unknown) => selector({ auth: { user: { roles: ['OWNER'] }, sessionContext: null } }) }));
+vi.mock('@core/hooks', () => ({
+  useAppSelector: (selector: (state: unknown) => unknown) =>
+    selector({ auth: { user: { roles: ['OWNER'] }, sessionContext: null } }),
+}));
 vi.mock('@core/auth/authSlice', () => ({
   selectCurrentUser: (state: { auth: { user: unknown } }) => state.auth.user,
   selectCommercialAccess: () => commercialState.access,
@@ -121,8 +124,14 @@ vi.mock('@ionic/react', () => {
     IonIcon: Container,
     IonInfiniteScroll: Container,
     IonInfiniteScrollContent: Container,
-    IonButton: ({ children, onClick, disabled }: PropsWithChildren<{ onClick?: () => void; disabled?: boolean }>) => (
-      <button onClick={onClick} disabled={disabled}>{children}</button>
+    IonButton: ({
+      children,
+      onClick,
+      disabled,
+    }: PropsWithChildren<{ onClick?: () => void; disabled?: boolean }>) => (
+      <button onClick={onClick} disabled={disabled}>
+        {children}
+      </button>
     ),
     IonSelectOption: Container,
     IonSelect: ({
@@ -131,7 +140,7 @@ vi.mock('@ionic/react', () => {
     }: {
       onIonChange: (event: { detail: { value: string } }) => void;
       'aria-label'?: string;
-    }) => (
+    }) =>
       ariaLabel === 'reports.accountingFirm' ? (
         <button onClick={() => onIonChange({ detail: { value: 'firm-2' } })}>
           select firm two
@@ -145,8 +154,7 @@ vi.mock('@ionic/react', () => {
             purchase register
           </button>
         </>
-      )
-    ),
+      ),
   };
 });
 
@@ -267,9 +275,7 @@ it('keeps the accounting-firm control independent from the mobile-only report ch
 it('enables firm scope from the MULTI_FIRM entitlement instead of the plan name', () => {
   commercialState.access = { planCode: 'PRO' };
   commercialState.multiFirmAllowed = true;
-  firmState.firms = [
-    { id: 'firm-1', legal_name: 'Entitled Firm', is_default_sales: true },
-  ];
+  firmState.firms = [{ id: 'firm-1', legal_name: 'Entitled Firm', is_default_sales: true }];
 
   render(<ReportsPage />);
 
@@ -381,4 +387,9 @@ it.each([
   Object.entries(reportRequests)
     .filter(([requestId]) => requestId !== id)
     .forEach(([, request]) => expect(request.refetch).not.toHaveBeenCalled());
+});
+
+vi.mock('@components/SelectionControl', async () => {
+  const ionic = await import('@ionic/react');
+  return { SelectionControl: ionic.IonSelect, SelectionOption: ionic.IonSelectOption };
 });

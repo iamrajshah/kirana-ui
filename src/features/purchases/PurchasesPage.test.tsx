@@ -131,3 +131,8 @@ it('can search by supplier when an older purchase has no invoice number', () => 
   fireEvent.change(screen.getByRole('textbox', { name: 'search' }), { target: { value: 'Patel' } });
   expect(screen.getByText('Patel Traders')).toBeTruthy();
 });
+
+vi.mock('@components/SelectionControl', async () => {
+  const ionic = await import('@ionic/react');
+  return { SelectionControl: ionic.IonSelect, SelectionOption: ionic.IonSelectOption };
+});

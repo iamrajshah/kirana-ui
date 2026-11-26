@@ -1,3 +1,4 @@
+import { selectTestChoice } from '@components/selectTestChoice';
 import React, { type PropsWithChildren } from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -213,9 +214,7 @@ describe('CreatePurchasePage pending amount', () => {
     render(<CreatePurchasePage />);
 
     await selectSalt();
-    fireEvent.change(screen.getByRole('combobox', { name: /Salt purchases.enteredAs/ }), {
-      target: { value: 'PACK' },
-    });
+    selectTestChoice(screen.getByRole('combobox', { name: /Salt purchases.enteredAs/ }), 'PACK');
 
     expect(
       (screen.getByRole('spinbutton', { name: /Salt purchases.pricePerPack/ }) as HTMLInputElement)
@@ -243,7 +242,7 @@ describe('CreatePurchasePage pending amount', () => {
     await selectSalt();
 
     expect(screen.getByText(/purchases.totalAmount/).textContent).toContain('₹40');
-    fireEvent.click(screen.getByRole('radio', { name: 'purchases.pricesExcludeTax' }));
+    selectTestChoice(screen.getByRole('combobox', { name: 'purchases.taxTreatment' }), 'EXCLUSIVE');
     expect(screen.getByText(/purchases.totalAmount/).textContent).toContain('₹47.2');
   });
 
@@ -261,7 +260,7 @@ describe('CreatePurchasePage pending amount', () => {
     fireEvent.change(screen.getByLabelText(/Salt purchases.hsnCode/), {
       target: { value: '100630' },
     });
-    fireEvent.click(screen.getByRole('radio', { name: 'purchases.pricesExcludeTax' }));
+    selectTestChoice(screen.getByRole('combobox', { name: 'purchases.taxTreatment' }), 'EXCLUSIVE');
     fireEvent.click(screen.getByRole('button', { name: 'purchases.createPurchaseButton' }));
 
     await vi.waitFor(() => expect(state.createPurchase).toHaveBeenCalledTimes(1));

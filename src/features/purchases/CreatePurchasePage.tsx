@@ -1,3 +1,6 @@
+import { SelectionControl, SelectionOption } from '@components/SelectionControl';
+import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
+import { LazyQuickPartyCreate as QuickPartyCreate } from '@components/LazyQuickCreate';
 import { FoodLicenceSelector } from '../food-licences/FoodLicenceSelector';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { BillingSearchVariant } from '@core/api/productApi';
@@ -18,8 +21,6 @@ import {
   IonText,
   IonButton,
   IonIcon,
-  IonSelect,
-  IonSelectOption,
   IonModal,
   IonBadge,
 } from '@ionic/react';
@@ -74,7 +75,10 @@ const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100)
 const CreatePurchasePage: React.FC = () => {
   const { t } = useTranslation();
   const history = useHistory();
+  const supplierDeviceWrite = useDeviceWriteAccess('SUPPLIERS');
   const currentUser = useAppSelector(selectCurrentUser);
+  const supplierWrite =
+    supplierDeviceWrite && hasPermission(currentUser?.roles ?? [], 'SUPPLIER_CREATE');
   const commercialAccess = useAppSelector(selectCommercialAccess);
   const canTrackExpiry = canUseCommercialFeature(
     currentUser?.roles ?? [],
@@ -120,6 +124,8 @@ const CreatePurchasePage: React.FC = () => {
   const [paymentMode, setPaymentMode] = useState('CASH');
   const [pricesIncludeTax, setPricesIncludeTax] = useState(true);
   const [showSupplierModal, setShowSupplierModal] = useState(false);
+  const [supplierHighlight, setSupplierHighlight] = useState(0);
+  const [quickSupplier, setQuickSupplier] = useState(false);
   const [supplierSearch, setSupplierSearch] = useState('');
 
   useEffect(() => {
@@ -508,35 +514,20 @@ const CreatePurchasePage: React.FC = () => {
               </section>
             )}
 
-            <fieldset className="purchase-tax-treatment">
-              <legend>{t('purchases.taxTreatment')}</legend>
-              <label>
-                <input
-                  type="radio"
-                  name="purchase-tax-treatment"
-                  value="INCLUSIVE"
-                  checked={pricesIncludeTax}
-                  onChange={() => setPricesIncludeTax(true)}
-                />
-                {t('purchases.pricesIncludeTax')}
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="purchase-tax-treatment"
-                  value="EXCLUSIVE"
-                  checked={!pricesIncludeTax}
-                  onChange={() => setPricesIncludeTax(false)}
-                />
-                {t('purchases.pricesExcludeTax')}
-              </label>
-            </fieldset>
+            <SelectionControl
+              aria-label={t('purchases.taxTreatment')}
+              value={pricesIncludeTax ? 'INCLUSIVE' : 'EXCLUSIVE'}
+              onChange={(event) => setPricesIncludeTax(event.target.value === 'INCLUSIVE')}
+            >
+              <option value="INCLUSIVE">{t('purchases.pricesIncludeTax')}</option>
+              <option value="EXCLUSIVE">{t('purchases.pricesExcludeTax')}</option>
+            </SelectionControl>
 
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
                 {t('purchases.purchaseFirm')}
               </label>
-              <IonSelect
+              <SelectionControl
                 aria-label={t('purchases.purchaseFirm')}
                 value={selectedFirmId}
                 disabled={firmsLoading}
@@ -548,11 +539,11 @@ const CreatePurchasePage: React.FC = () => {
                 interface="popover"
               >
                 {firms.map((firm) => (
-                  <IonSelectOption key={firm.id} value={firm.id}>
+                  <SelectionOption key={firm.id} value={firm.id}>
                     {firm.display_name}
-                  </IonSelectOption>
+                  </SelectionOption>
                 ))}
-              </IonSelect>
+              </SelectionControl>
               {selectedSupplierId &&
                 suppliers.find((supplier) => supplier.id === selectedSupplierId)
                   ?.default_purchase_firm && (
@@ -640,7 +631,7 @@ const CreatePurchasePage: React.FC = () => {
                       <div className="purchase-unit-editor">
                         <label>
                           {t('purchases.enteredAs')}
-                          <select
+                          <SelectionControl
                             aria-label={`${item.product_name} ${t('purchases.enteredAs')}`}
                             value={item.purchase_mode}
                             onChange={(event) =>
@@ -652,7 +643,7 @@ const CreatePurchasePage: React.FC = () => {
                           >
                             <option value="UNIT">{t('purchases.individualUnits')}</option>
                             <option value="PACK">{t('purchases.boxOrPack')}</option>
-                          </select>
+                          </SelectionControl>
                         </label>
                         {item.purchase_mode === 'PACK' && (
                           <div className="purchase-unit-conversion">
@@ -953,7 +944,7 @@ const CreatePurchasePage: React.FC = () => {
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
                   {t('purchases.paymentModeLabel')}
                 </label>
-                <IonSelect
+                <SelectionControl
                   value={paymentMode}
                   onIonChange={(e) => setPaymentMode(e.detail.value)}
                   interface="popover"
@@ -963,13 +954,13 @@ const CreatePurchasePage: React.FC = () => {
                     padding: '8px',
                   }}
                 >
-                  <IonSelectOption value="CASH">{t('purchases.cash')}</IonSelectOption>
-                  <IonSelectOption value="UPI">{t('purchases.upi')}</IonSelectOption>
-                  <IonSelectOption value="CARD">{t('purchases.card')}</IonSelectOption>
-                  <IonSelectOption value="BANK">
+                  <SelectionOption value="CASH">{t('purchases.cash')}</SelectionOption>
+                  <SelectionOption value="UPI">{t('purchases.upi')}</SelectionOption>
+                  <SelectionOption value="CARD">{t('purchases.card')}</SelectionOption>
+                  <SelectionOption value="BANK">
                     {t('purchases.bankTransferOption')}
-                  </IonSelectOption>
-                </IonSelect>
+                  </SelectionOption>
+                </SelectionControl>
               </div>
 
               {pending > 0 && (
@@ -1015,12 +1006,61 @@ const CreatePurchasePage: React.FC = () => {
               <div className="ion-padding-horizontal ion-padding-top">
                 <SearchBar
                   value={supplierSearch}
-                  onChange={setSupplierSearch}
+                  onChange={(value) => {
+                    setSupplierSearch(value);
+                    setSupplierHighlight(0);
+                  }}
+                  debounce={0}
+                  onKeyDown={(event) => {
+                    if (event.nativeEvent.isComposing) return;
+                    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                      event.preventDefault();
+                      setSupplierHighlight((index) =>
+                        Math.max(
+                          0,
+                          Math.min(
+                            filteredSuppliers.length - 1,
+                            index + (event.key === 'ArrowDown' ? 1 : -1)
+                          )
+                        )
+                      );
+                    }
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      const supplier = filteredSuppliers[supplierHighlight];
+                      if (supplier) {
+                        setSelectedSupplierId(supplier.id);
+                        setFirmWasOverridden(false);
+                        setSelectedFirmId(resolvePurchaseFirmId(supplier, firms));
+                        setShowSupplierModal(false);
+                      }
+                    }
+                  }}
                   placeholder={t('suppliers.searchSuppliers')}
                 />
               </div>
+              <button
+                type="button"
+                className="min-h-touch px-4"
+                disabled={!supplierWrite}
+                onClick={() => setQuickSupplier(true)}
+              >
+                {t('suppliers.addSupplier')}
+              </button>
+              {quickSupplier && supplierWrite && (
+                <QuickPartyCreate
+                  kind="supplier"
+                  onCreated={(supplier) => {
+                    setSelectedSupplierId(supplier.id);
+                    setFirmWasOverridden(false);
+                    setSelectedFirmId(resolvePurchaseFirmId(supplier, firms));
+                    setQuickSupplier(false);
+                    setShowSupplierModal(false);
+                  }}
+                />
+              )}
               <IonList>
-                {filteredSuppliers.map((supplier) => (
+                {filteredSuppliers.map((supplier, index) => (
                   <IonItem
                     key={supplier.id}
                     button
@@ -1031,7 +1071,11 @@ const CreatePurchasePage: React.FC = () => {
                       setSelectedFirmId(defaultFirmId);
                       setShowSupplierModal(false);
                     }}
-                    color={selectedSupplierId === supplier.id ? 'light' : undefined}
+                    color={
+                      selectedSupplierId === supplier.id || index === supplierHighlight
+                        ? 'light'
+                        : undefined
+                    }
                   >
                     <IonLabel>
                       <h2>{supplier.name}</h2>

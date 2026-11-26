@@ -1,3 +1,4 @@
+import { SelectionControl } from '@components/SelectionControl';
 import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -205,7 +206,7 @@ const StorefrontOrdersPage: React.FC = () => {
                     />
                     <label style={{ display: 'grid', gap: 6 }}>
                       <strong>{t('storefrontOrders.offerEditor.product')}</strong>
-                      <select
+                      <SelectionControl
                         value={productId}
                         onChange={(event) => setProductId(event.target.value)}
                         style={{ minHeight: 48, padding: '0 12px', borderRadius: 10 }}
@@ -216,7 +217,7 @@ const StorefrontOrdersPage: React.FC = () => {
                             {product.name}
                           </option>
                         ))}
-                      </select>
+                      </SelectionControl>
                     </label>
                     <IonToggle
                       checked={publishNow}

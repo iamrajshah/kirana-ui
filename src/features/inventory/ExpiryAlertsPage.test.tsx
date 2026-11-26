@@ -147,3 +147,8 @@ describe.each([
     expect(state.push).toHaveBeenCalledWith('/products/42');
   });
 });
+
+vi.mock('@components/SelectionControl', async () => {
+  const ionic = await import('@ionic/react');
+  return { SelectionControl: ionic.IonSelect, SelectionOption: ionic.IonSelectOption };
+});

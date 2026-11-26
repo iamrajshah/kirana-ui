@@ -70,10 +70,9 @@ vi.mock('@core/auth/authSlice', () => ({
 }));
 vi.mock('@ionic/react', () => {
   const Box = ({ children }: PropsWithChildren) => <div>{children}</div>;
-  const Button = ({
-    children,
-    onClick,
-  }: PropsWithChildren<{ onClick?: () => void }>) => <button onClick={onClick}>{children}</button>;
+  const Button = ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
+    <button onClick={onClick}>{children}</button>
+  );
   return {
     IonButton: Button,
     IonCard: Box,
@@ -119,4 +118,9 @@ describe('DeviceSecurityCard', () => {
     await waitFor(() => expect(mocks.revoke).toHaveBeenCalledWith('device-1'));
     expect(mocks.dispatch).toHaveBeenCalledWith({ type: 'auth/logout' });
   });
+});
+
+vi.mock('@components/SelectionControl', async () => {
+  const ionic = await import('@ionic/react');
+  return { SelectionControl: ionic.IonSelect, SelectionOption: ionic.IonSelectOption };
 });

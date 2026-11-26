@@ -1,0 +1,42 @@
+{
+  "en": {
+    "bills": "Bills",
+    "bill": "Bill {{number}}",
+    "newBill": "+ New bill",
+    "closeBill": "Close bill",
+    "discardBill": "Discard this unfinished bill?",
+    "storageFailed": "Draft could not be saved. Keep this page open or hold the bill before leaving.",
+    "shortcuts": "↑↓ Choose · Enter Select / Next field · Esc Close · Space Browse",
+    "leaveUnsaved": "This bill has unsaved changes or an operation in progress. Leave this page?"
+  },
+  "hi": {
+    "bills": "बिल",
+    "bill": "बिल {{number}}",
+    "newBill": "+ नया बिल",
+    "closeBill": "बिल बंद करें",
+    "discardBill": "यह अधूरा बिल हटाएं?",
+    "storageFailed": "बिल सहेजा नहीं जा सका। पेज खुला रखें या जाने से पहले बिल होल्ड करें।",
+    "shortcuts": "↑↓ चुनें · Enter चुनें / अगला फ़ील्ड · Esc बंद करें · Space सूची",
+    "leaveUnsaved": "इस बिल में असहेजे बदलाव हैं या प्रक्रिया चल रही है। पेज छोड़ें?"
+  },
+  "mr": {
+    "bills": "बिले",
+    "bill": "बिल {{number}}",
+    "newBill": "+ नवीन बिल",
+    "closeBill": "बिल बंद करा",
+    "discardBill": "हे अपूर्ण बिल काढायचे?",
+    "storageFailed": "बिल जतन झाले नाही. पान उघडे ठेवा किंवा जाण्यापूर्वी बिल होल्ड करा.",
+    "shortcuts": "↑↓ निवडा · Enter निवडा / पुढील रकाना · Esc बंद करा · Space यादी",
+    "leaveUnsaved": "या बिलातील बदल जतन झाले नाहीत किंवा प्रक्रिया सुरू आहे. पान सोडायचे?"
+  },
+  "gu": {
+    "bills": "બિલ",
+    "bill": "બિલ {{number}}",
+    "newBill": "+ નવું બિલ",
+    "closeBill": "બિલ બંધ કરો",
+    "discardBill": "આ અધૂરું બિલ કાઢવું છે?",
+    "storageFailed": "બિલ સાચવી શકાયું નથી. પાનું ખુલ્લું રાખો અથવા જતા પહેલાં બિલ હોલ્ડ કરો.",
+    "shortcuts": "↑↓ પસંદ કરો · Enter પસંદ / આગળ · Esc બંધ · Space યાદી",
+    "leaveUnsaved": "આ બિલમાં ન સાચવેલા ફેરફાર છે અથવા પ્રક્રિયા ચાલુ છે. પાનું છોડવું છે?"
+  }
+}

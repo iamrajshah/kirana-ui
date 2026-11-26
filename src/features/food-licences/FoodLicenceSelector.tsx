@@ -1,3 +1,4 @@
+import { SelectionControl } from '@components/SelectionControl';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGetFoodLicencesQuery, type FoodLicence } from '@core/api/foodLicenceApi';
@@ -49,7 +50,7 @@ export const FoodLicenceSelector: React.FC<{
     <div className="food-licences">
       <label>
         {t('foodLicences.purchaseLabel')}
-        <select
+        <SelectionControl
           aria-label={t('foodLicences.purchaseLabel')}
           value={value}
           disabled={!firmId || isFetching}
@@ -63,7 +64,7 @@ export const FoodLicenceSelector: React.FC<{
                 {licence.label} · {licence.licence_number}
               </option>
             ))}
-        </select>
+        </SelectionControl>
       </label>
       <small>{t('foodLicences.purchaseHint')}</small>
       {isError && (

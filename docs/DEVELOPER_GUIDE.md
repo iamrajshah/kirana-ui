@@ -136,3 +136,7 @@ The server still enforces this invariant if the UI is bypassed.
 transport/protocol failures map to `auth.demoRequestFailed`. Keep translations
 complete in English, Hindi, Marathi, and Gujarati. The resume loop is sequential
 and paced so it cannot burst every fixture stage at once.
+
+## Consistent selection controls
+
+See [selection-controls.md](selection-controls.md) for searchable single/multiple selection, keyboard interaction, popup lifecycle and scanner boundaries.

@@ -1,3 +1,4 @@
+import { SelectionControl } from '@components/SelectionControl';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -19,7 +20,9 @@ export const PlatformLeadPanel: React.FC<Props> = ({ plans, onActivated }) => {
   const [details, setDetails] = useState<PlatformLeadDetails | null>(null);
   const [leadSearch, setLeadSearch] = useState('');
   const [planCode, setPlanCode] = useState<'STARTER' | 'PRO' | 'BUSINESS'>('PRO');
-  const [billingCycle, setBillingCycle] = useState<'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY'>('YEARLY');
+  const [billingCycle, setBillingCycle] = useState<'QUARTERLY' | 'HALF_YEARLY' | 'YEARLY'>(
+    'YEARLY'
+  );
   const [form, setForm] = useState({
     shopName: '',
     ownerName: '',
@@ -236,7 +239,7 @@ export const PlatformLeadPanel: React.FC<Props> = ({ plans, onActivated }) => {
           <p className="platform-eyebrow">{t('platform.commercial.leadEyebrow')}</p>
           <h2 id="lead-heading">{t('platform.commercial.leads')}</h2>
         </div>
-          <button type="button" onClick={() => void load(leadSearch)}>
+        <button type="button" onClick={() => void load(leadSearch)}>
           {t('platform.commercial.refresh')}
         </button>
       </div>
@@ -306,7 +309,7 @@ export const PlatformLeadPanel: React.FC<Props> = ({ plans, onActivated }) => {
             </label>
             <label>
               {t('platform.commercial.targetPlan')}
-              <select
+              <SelectionControl
                 value={planCode}
                 onChange={(event) => setPlanCode(event.target.value as typeof planCode)}
               >
@@ -317,18 +320,18 @@ export const PlatformLeadPanel: React.FC<Props> = ({ plans, onActivated }) => {
                       {plan.name}
                     </option>
                   ))}
-              </select>
+              </SelectionControl>
             </label>
             <label>
               {t('platform.commercial.billingCycle')}
-              <select
+              <SelectionControl
                 value={billingCycle}
                 onChange={(event) => setBillingCycle(event.target.value as typeof billingCycle)}
               >
                 <option value="YEARLY">{t('platform.commercial.yearly')}</option>
                 <option value="HALF_YEARLY">{t('account.half_yearly')}</option>
                 <option value="QUARTERLY">{t('account.quarterly')}</option>
-              </select>
+              </SelectionControl>
             </label>
             <button type="button" onClick={() => void activate()} disabled={busy}>
               {t('platform.commercial.activate')}
@@ -418,7 +421,7 @@ export const PlatformLeadPanel: React.FC<Props> = ({ plans, onActivated }) => {
               <summary>{t('platform.commercial.deletionHandling')}</summary>
               <label>
                 {t('platform.commercial.deletionRequest')}
-                <select
+                <SelectionControl
                   value={deletion.requestId}
                   onChange={(event) => setDeletion({ ...deletion, requestId: event.target.value })}
                 >
@@ -428,11 +431,11 @@ export const PlatformLeadPanel: React.FC<Props> = ({ plans, onActivated }) => {
                       {request.id} · {request.status}
                     </option>
                   ))}
-                </select>
+                </SelectionControl>
               </label>
               <label>
                 {t('platform.commercial.decision')}
-                <select
+                <SelectionControl
                   value={deletion.decision}
                   onChange={(event) =>
                     setDeletion({
@@ -445,7 +448,7 @@ export const PlatformLeadPanel: React.FC<Props> = ({ plans, onActivated }) => {
                   <option value="COMPLETED">{t('platform.commercial.decisionComplete')}</option>
                   <option value="REJECTED">{t('platform.commercial.decisionReject')}</option>
                   <option value="CANCELLED">{t('platform.commercial.decisionCancel')}</option>
-                </select>
+                </SelectionControl>
               </label>
               <label>
                 {t('platform.commercial.notes')}
