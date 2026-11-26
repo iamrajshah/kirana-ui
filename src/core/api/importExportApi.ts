@@ -9,12 +9,20 @@ export type ExportType =
   | 'categories'
   | 'invoices'
   | 'ledger';
+export type SellingPriceBasis = 'UNKNOWN' | 'EXCLUSIVE' | 'INCLUSIVE';
 export type ExportFormat = 'CSV' | 'EXCEL';
 
-export const createImportFormData = (file: File, type: ImportType): FormData => {
+export const createImportFormData = (
+  file: File,
+  type: ImportType,
+  autoCreateCategories = false,
+  sellingPriceBasis: SellingPriceBasis = 'UNKNOWN'
+): FormData => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('type', type);
+  formData.append('autoCreateCategories', String(autoCreateCategories));
+  formData.append('sellingPriceBasis', sellingPriceBasis);
   return formData;
 };
 
@@ -39,6 +47,15 @@ export interface ImportJob {
 }
 
 export interface ImportJobDetails extends ImportJob {
+  rows: Array<{
+    row_no: number;
+    status: string;
+    error_message: string | null;
+    data: Record<string, unknown> & {
+      _import?: { format: string; warnings: string[]; source: Record<string, unknown> };
+    };
+  }>;
+  error_summary: Array<{ row_no: number; error: string }>;
   preview_data?: Record<string, unknown>[];
   errors?: Array<{
     row: number;
@@ -50,16 +67,27 @@ export interface ImportJobDetails extends ImportJob {
 export const importExportApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // Import endpoints
-    uploadImportFile: builder.mutation<ApiResponse<ImportJob>, { file: File; type: ImportType }>({
-      query: ({ file, type }) => ({
+    uploadImportFile: builder.mutation<
+      ApiResponse<ImportJob>,
+      {
+        file: File;
+        type: ImportType;
+        autoCreateCategories?: boolean;
+        sellingPriceBasis?: SellingPriceBasis;
+      }
+    >({
+      query: ({ file, type, autoCreateCategories, sellingPriceBasis }) => ({
         url: '/import/upload',
         method: 'POST',
-        body: createImportFormData(file, type),
+        body: createImportFormData(file, type, autoCreateCategories, sellingPriceBasis),
       }),
       invalidatesTags: ['Import'],
     }),
 
-    getImportJobs: builder.query<ApiResponse<ImportJob[]>, { page?: number; limit?: number }>({
+    getImportJobs: builder.query<
+      ApiResponse<ImportJob[]>,
+      { page?: number; limit?: number; type?: ImportType }
+    >({
       query: (params) => ({
         url: '/import',
         params,
@@ -72,9 +100,18 @@ export const importExportApi = apiSlice.injectEndpoints({
       providesTags: ['Import'],
     }),
 
-    commitImportJob: builder.mutation<ApiResponse<ImportJob>, string>({
+    commitImportJob: builder.mutation<
+      ApiResponse<{
+        imported: number;
+        failed: number;
+        remaining: number;
+        errors: Array<{ row_no: number; error: string }>;
+      }>,
+      string
+    >({
       query: (jobId) => ({
         url: `/import/${jobId}/commit`,
+        body: { batchSize: 50 },
         method: 'POST',
       }),
       invalidatesTags: (_result, error) => [
@@ -82,8 +119,29 @@ export const importExportApi = apiSlice.injectEndpoints({
         'Product',
         'Customer',
         'Inventory',
+        'Category',
+        'Supplier',
         ...(error ? [] : (['Dashboard'] as const)),
       ],
+    }),
+
+    downloadImportTemplate: builder.mutation<
+      string,
+      { type: ImportType; profile: 'KIRANA' | 'MARGBOOKS'; format: ExportFormat }
+    >({
+      query: ({ type, profile, format }) => ({
+        url: `/import/templates/${type}`,
+        params: { profile, format },
+        responseHandler: async (response) =>
+          response.ok ? URL.createObjectURL(await response.blob()) : response.text(),
+      }),
+    }),
+    downloadImportReview: builder.mutation<string, string>({
+      query: (jobId) => ({
+        url: `/import/${jobId}/review`,
+        responseHandler: async (response) =>
+          response.ok ? URL.createObjectURL(await response.blob()) : response.text(),
+      }),
     }),
 
     exportData: builder.mutation<string, { type: ExportType; format?: ExportFormat }>({
@@ -103,4 +161,6 @@ export const {
   useGetImportJobQuery,
   useCommitImportJobMutation,
   useExportDataMutation,
+  useDownloadImportTemplateMutation,
+  useDownloadImportReviewMutation,
 } = importExportApi;

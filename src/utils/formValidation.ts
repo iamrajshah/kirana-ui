@@ -28,8 +28,7 @@ export const validatePartyForm = ({
   return errors;
 };
 
-export const isSupportedImportFile = (fileName: string): boolean =>
-  /\.(csv|xlsx|xls)$/i.test(fileName);
+export const isSupportedImportFile = (fileName: string): boolean => /\.(csv|xlsx)$/i.test(fileName);
 
 type PurchaseSearchRecord = {
   invoice_number?: string | null;

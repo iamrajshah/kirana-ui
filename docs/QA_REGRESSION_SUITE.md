@@ -446,3 +446,26 @@ Review in order: Billing, Customers, Invoices, Payments, Products, Inventory, Ca
 Evidence for this local batch is recorded in the workspace output folder `output/pos-usability-review-20261126`. No backend migration or deployment is part of this batch. User manual acceptance is required before merge/release.
 
 Final local result for this batch: 142 Vitest files / 725 tests passed; 45 feature browser checks across three viewport widths passed; real modal fixture passed desktop and phone; TypeScript and changed-source ESLint passed. Browser fixtures use synthetic API responses. Real tenant payment/purchase writes and physical scanner/printing remain manual acceptance checks before release.
+
+## Vendor master onboarding imports — local implementation, 26 November 2026
+
+Import/Export now offers CSV/Excel samples for every supported entity, plus
+MargBooks ledger/item Excel samples. Verify actual downloaded headers and upload
+them through the UI. Check the mapped review and downloadable report before
+confirming; confirmation must be disabled until accepted. Test missing phones,
+zero GST, purchase rate/barcode/HSN, category auto-creation, duplicate/replayed
+imports and batch interruption/resumption. No source data should be posted
+before confirmation. At390/820/1440 in both themes the table scrolls inside its
+card and controls remain reachable. Language coverage includes English, Hindi,
+Marathi and Gujarati. The server's docs/MASTER_IMPORT_MIGRATION.md defines the
+financial, permission and unsupported-field boundaries; canonical exports are
+master snapshots, not complete transaction/batch backups.
+
+The real API browser receipt can be repeated with
+`scripts/check-master-import.browser.cjs`. Set POS_QA_URL to a disposable
+localhost POS, KIRANA_QA_EMAIL/KIRANA_QA_PASSWORD, PLAYWRIGHT_MODULE, XLSX_MODULE
+(the server's existing xlsx package), CHROME_PATH if needed, and EVIDENCE_DIR.
+It refuses non-local POS/API traffic, uploads one fictional product and requires
+explicit review before confirming its two opening units. It downloads and opens
+sample spreadsheets, tests responsive themes and captures browser errors. It
+does not mock the API or contain live shop credentials.
