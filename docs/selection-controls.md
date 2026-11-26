@@ -19,3 +19,9 @@ Regression entry points: `SelectionControl.test.tsx`, `SearchableSelect.test.tsx
 Manual checks: desktop/tablet/mobile menus, dark mode, translated labels, actual scanner Enter/Tab suffixes and cash/khata/payment completion. Synthetic keyboard tests do not certify physical hardware.
 
 GST-rate datalists in purchase forms remain numeric-input suggestions rather than fixed-choice selectors: users can type a rate directly, and existing tax validation still applies. They do not change a selection silently.
+
+## Enter navigation regression
+
+Ionic hosts may retain `disabled="false"` in the DOM. Focus traversal must use their `disabled` property, with native `:disabled` for fieldset inheritance; attribute presence alone skips enabled inputs.
+
+Run `scripts/check-enter-navigation.browser.mjs` against local Vite on port 3012 with Playwright installed (or supply `KIRANA_PLAYWRIGHT_MODULE`). `KIRANA_CHROME_PATH` can select an installed Chrome executable. The non-production fixture under `scripts/browser-fixtures/` mounts real Ionic inputs and checks desktop/phone-width focus traversal, invalid fields, disabled-field skipping, Tab and no implicit payment submission. It is not included in the Vite production bundle.
