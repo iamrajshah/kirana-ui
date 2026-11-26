@@ -1,6 +1,7 @@
 // Role-based menu permissions
 export const ROLE_PERMISSIONS = {
   OWNER: [
+    'settings',
     'dashboard',
     'billing',
     'customers',

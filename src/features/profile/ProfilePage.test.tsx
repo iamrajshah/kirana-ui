@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import React from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfilePage } from './ProfilePage';
 
@@ -59,12 +59,18 @@ describe('ProfilePage', () => {
 
   it('keeps firm management owner-only', () => {
     profileState.roles = ['MANAGER'];
-    render(<ProfilePage />);
+    render(<ProfilePage shopSettings />);
     expect(screen.queryByText('firm-settings')).toBeNull();
   });
 
-  it('shows firm management to an owner', () => {
+  it('keeps personal profile separate from shop configuration', () => {
     render(<ProfilePage />);
+    expect(screen.queryByText('firm-settings')).toBeNull();
+    expect(screen.getAllByText('profile.settings').length).toBeGreaterThan(0);
+  });
+
+  it('shows firm management to an owner', () => {
+    render(<ProfilePage shopSettings />);
     expect(screen.getByText('firm-settings')).toBeTruthy();
     expect(screen.getByText('storefront-settings')).toBeTruthy();
   });
@@ -73,7 +79,7 @@ describe('ProfilePage', () => {
     'keeps customer shop visibility owner-only for the %s role',
     (role) => {
       profileState.roles = [role];
-      render(<ProfilePage />);
+      render(<ProfilePage shopSettings />);
       expect(screen.queryByText('storefront-settings')).toBeNull();
     }
   );
@@ -93,3 +99,14 @@ vi.mock('@core/api/foodLicenceApi', () => ({
 vi.mock('@core/api/firmApi', () => ({
   useGetFirmsQuery: () => ({ data: { data: { firms: [] } } }),
 }));
+
+it('offers keyboard-operable shop sections without a long combined settings page', () => {
+  profileState.roles = ['OWNER'];
+  render(<ProfilePage shopSettings />);
+  expect(screen.getByRole('tabpanel', { name: 'documentSettings.title' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('tab', { name: 'firms.title' }));
+  expect(screen.queryByRole('tabpanel', { name: 'documentSettings.title' })).toBeNull();
+  expect(screen.getByRole('tabpanel', { name: 'firms.title' })).toBeTruthy();
+  fireEvent.keyDown(screen.getByRole('tab', { name: 'firms.title' }), { key: 'Home' });
+  expect(screen.getByRole('tabpanel', { name: 'documentSettings.title' })).toBeTruthy();
+});

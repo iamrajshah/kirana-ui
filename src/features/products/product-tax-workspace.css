@@ -89,3 +89,58 @@
     --height: 100%;
   }
 }
+
+/* Same surfaces, rhythm and actions as the rest of the management workspace. */
+.tax-workspace {
+  min-height: 100%;
+  padding: clamp(16px, 3vw, 32px);
+  background: var(--kirana-shell-background, var(--ion-background-color));
+}
+.tax-workspace header h2 {
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  font-weight: 700;
+  margin: 0;
+}
+.tax-workspace header,
+.tax-workspace form,
+.tax-workspace fieldset,
+.tax-workspace nav {
+  border: 1px solid var(--ion-color-step-150, #dce6e1);
+  border-radius: 16px;
+  background: var(--ion-card-background, var(--ion-item-background));
+  padding: 16px;
+}
+.tax-workspace input:not([type='checkbox']),
+.tax-workspace select {
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.tax-workspace button {
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  border-color: var(--ion-color-primary);
+  padding-inline: 16px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.tax-workspace button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+.tax-table-scroll {
+  border-radius: 16px;
+  border: 1px solid var(--ion-color-step-150, #dce6e1);
+  background: var(--ion-card-background, var(--ion-item-background));
+}
+.tax-workspace thead th {
+  z-index: 1;
+  color: var(--ion-text-color);
+  background: var(--ion-color-light);
+  padding: 12px;
+}
+.tax-workspace td {
+  padding: 12px;
+}
+.tax-workspace tr:hover {
+  background: var(--ion-color-light);
+}

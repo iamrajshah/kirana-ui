@@ -1,3 +1,4 @@
+import { KeyboardNavigation } from '@components/keyboardNavigation';
 import React, { Suspense, lazy, useEffect } from 'react';
 import { Route, Switch } from 'react-router';
 import { IonApp, setupIonicReact } from '@ionic/react';
@@ -101,6 +102,7 @@ const App: React.FC = () => {
     <Provider store={store}>
       <ThemeProvider>
         <IonApp>
+          <KeyboardNavigation />
           <Suspense
             fallback={
               <div className="workspace-state" role="status">

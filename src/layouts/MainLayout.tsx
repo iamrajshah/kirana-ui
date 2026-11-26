@@ -78,6 +78,9 @@ const PurchasesPage = lazy(() => import('@features/purchases/PurchasesPage'));
 const AboutPage = lazy(() =>
   import('@features/about/AboutPage').then((module) => ({ default: module.AboutPage }))
 );
+const ShopSettingsPage = lazy(() =>
+  import('@features/profile/ProfilePage').then((module) => ({ default: module.ShopSettingsPage }))
+);
 const ProfilePage = lazy(() =>
   import('@features/profile/ProfilePage').then((module) => ({ default: module.ProfilePage }))
 );
@@ -136,6 +139,7 @@ const priorityRoutePreloaders: readonly { href: string; load: RouteLoader }[] = 
 ];
 
 const mainPageComponents: Record<string, React.ComponentType> = {
+  [ROUTES.SETTINGS]: ShopSettingsPage,
   [ROUTES.DASHBOARD]: DashboardPage,
   [ROUTES.BILLING]: BillingPage,
   [ROUTES.CUSTOMERS]: CustomersPage,

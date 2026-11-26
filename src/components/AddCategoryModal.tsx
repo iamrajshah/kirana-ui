@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { apiErrorMessage } from '@core/services/notificationService';
 import type { Category } from '@core/api/categoryApi';
 import {
@@ -29,6 +29,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   onCategoryCreated,
 }) => {
   const { t } = useTranslation();
+  const modal = useRef<HTMLIonModalElement>(null);
   const [hsn, setHsn] = useState('');
   const [gst, setGst] = useState('');
   const [categoryName, setCategoryName] = useState('');
@@ -41,6 +42,8 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   useEffect(() => {
     if (!isOpen) {
       // Reset form when modal closes
+      setShowError(false);
+      setErrorMessage('');
       setCategoryName('');
       setHsn('');
       setGst('');
@@ -63,13 +66,12 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
         description: categoryDescription.trim() || undefined,
       }).unwrap();
 
+      await modal.current?.dismiss();
+
       // Notify parent component
       if (onCategoryCreated && result.data) {
         onCategoryCreated(result.data);
       }
-
-      // Close modal
-      onDidDismiss();
     } catch (error: unknown) {
       console.error('Error creating category:', error);
       setErrorMessage(apiErrorMessage(error, t('categories.createFailed')));
@@ -80,13 +82,13 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   return (
     <>
       {isOpen && (
-        <IonModal isOpen={true} onDidDismiss={onDidDismiss}>
+        <IonModal ref={modal} isOpen={true} onDidDismiss={onDidDismiss}>
           <div className="ion-page">
             <IonHeader>
               <IonToolbar>
                 <IonTitle>{t('categories.add')}</IonTitle>
                 <IonButtons slot="end">
-                  <IonButton onClick={onDidDismiss}>
+                  <IonButton onClick={() => void modal.current?.dismiss()}>
                     <IonIcon icon={close} />
                   </IonButton>
                 </IonButtons>

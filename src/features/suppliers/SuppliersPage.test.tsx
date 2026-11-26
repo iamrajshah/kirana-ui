@@ -105,7 +105,8 @@ vi.mock('@ionic/react', () => {
     IonRefresher: Container,
     IonRefresherContent: Container,
     IonButtons: Container,
-    IonModal: Container,
+    IonModal: ({ children, isOpen }: PropsWithChildren<{ isOpen?: boolean }>) =>
+      isOpen ? <div>{children}</div> : null,
     IonHeader: Container,
     IonToolbar: Container,
     IonTitle: Container,

@@ -21,6 +21,9 @@ describe('workspace navigation', () => {
     const owner = getNavigationItems(['OWNER']);
     const manager = getNavigationItems(['MANAGER']);
     expect(owner.map((item) => item.id)).toContain('users');
+    expect(owner.map((item) => item.id)).toContain('settings');
+    expect(manager.map((item) => item.id)).not.toContain('settings');
+    expect(getNavigationItems(['CASHIER']).map(item => item.id)).not.toContain('settings');
     expect(manager.map((item) => item.id)).not.toContain('users');
     expect(manager.map((item) => item.id)).toContain('categories');
   });

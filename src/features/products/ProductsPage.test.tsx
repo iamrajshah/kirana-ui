@@ -88,7 +88,8 @@ vi.mock('@ionic/react', () => {
     IonIcon: Container,
     IonFab: Container,
     IonFabButton: Container,
-    IonModal: Container,
+    IonModal: ({ children, isOpen }: PropsWithChildren<{ isOpen?: boolean }>) =>
+      isOpen ? <div>{children}</div> : null,
     IonButtons: Container,
     IonToast: ({ isOpen, message }: { isOpen?: boolean; message?: string }) =>
       isOpen ? <div role="alert">{message}</div> : null,
@@ -114,8 +115,14 @@ vi.mock('@ionic/react', () => {
     ),
     IonInfiniteScrollContent: Container,
     IonListHeader: Container,
-    IonButton: ({ children, onClick }: PropsWithChildren<{ onClick?: () => void }>) => (
-      <button onClick={onClick}>{children}</button>
+    IonButton: ({
+      children,
+      onClick,
+      ...props
+    }: PropsWithChildren<{ onClick?: () => void; 'aria-label'?: string }>) => (
+      <button aria-label={props['aria-label']} onClick={onClick}>
+        {children}
+      </button>
     ),
     useIonActionSheet: () => [vi.fn()],
   };
@@ -322,4 +329,15 @@ it('blocks product creation locally when the HSN length is invalid', () => {
   expect(state.createProduct).not.toHaveBeenCalled();
   expect(state.createVariant).not.toHaveBeenCalled();
   expect(screen.getByText('taxFields.hsnCodeInvalid')).toBeTruthy();
+});
+
+it('starts a clean product draft after cancelling the previous create dialog', () => {
+  render(<ProductsPage />);
+  fireEvent.click(screen.getByText('products.addManually'));
+  fireEvent.change(screen.getByLabelText('products.productNameLabel'), {
+    target: { value: 'Cancelled name' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'common.close' }));
+  fireEvent.click(screen.getByText('products.addManually'));
+  expect((screen.getByLabelText('products.productNameLabel') as HTMLInputElement).value).toBe('');
 });

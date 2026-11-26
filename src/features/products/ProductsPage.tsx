@@ -1,3 +1,4 @@
+import { focusFirstEditable } from '@components/keyboardNavigation';
 import { applyCategoryTaxDefaults, categoryTaxDefaults } from './categoryDefaults';
 import { SearchableSelect } from '@components/SearchableSelect';
 import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
@@ -189,6 +190,10 @@ export const ProductsPage: React.FC = () => {
   };
 
   const resetForm = () => {
+    setShowError(false);
+    setErrorMessage('');
+    setCategorySearch('');
+    setShowCategoryModal(false);
     setProductName('');
     setImageUrl('');
     setCategoryId(null);
@@ -322,7 +327,13 @@ export const ProductsPage: React.FC = () => {
                 <IonIcon slot="start" icon={barcodeOutline} />
                 {t('products.scanBarcode')}
               </IonButton>
-              <IonButton disabled={!deviceWrite} onClick={() => setShowModal(true)}>
+              <IonButton
+                disabled={!deviceWrite}
+                onClick={() => {
+                  resetForm();
+                  setShowModal(true);
+                }}
+              >
                 <IonIcon slot="start" icon={add} />
                 {t('products.addManually')}
               </IonButton>
@@ -424,8 +435,13 @@ export const ProductsPage: React.FC = () => {
                     text: t('products.addManually'),
                     icon: add,
                     handler: () => {
+                      resetForm();
                       setShowModal(true);
                     },
+                  },
+                  {
+                    text: t('taxWorkspace.title'),
+                    handler: () => setShowTaxWorkspace(true),
                   },
                   {
                     text: t('common.cancel'),
@@ -455,239 +471,243 @@ export const ProductsPage: React.FC = () => {
           onDidDismiss={() => setShowError(false)}
         />
 
-        {showModal && (
-          <IonModal isOpen={showModal} onDidDismiss={() => setShowModal(false)}>
-            <IonHeader>
-              <IonToolbar>
-                <IonTitle>{t('products.createProductTitle')}</IonTitle>
-                <IonButtons slot="end">
-                  <IonButton onClick={() => setShowModal(false)}>
-                    <IonIcon icon={close} />
-                  </IonButton>
-                </IonButtons>
-              </IonToolbar>
-            </IonHeader>
-            <IonContent>
-              <div style={{ padding: '16px' }}>
-                <Input
-                  label={t('products.productNameLabel')}
-                  value={productName}
-                  onChange={setProductName}
-                  placeholder={t('products.enterProductNamePlaceholder')}
-                />
-
-                <Input
-                  label={t('products.imageUrlLabel')}
-                  value={imageUrl}
-                  onChange={setImageUrl}
-                  placeholder={t('products.imageUrlPlaceholder')}
-                  inputMode="text"
-                />
-                {imageUrl && (
-                  <img
-                    src={imageUrl}
-                    alt={productName || t('products.imagePreview')}
-                    style={{ width: 120, height: 120, objectFit: 'contain', borderRadius: 12 }}
-                  />
-                )}
-
-                <SearchableSelect
-                  onSearch={setCategorySearch}
-                  label={t('products.categoryLabel')}
-                  onCreate={() => setShowCategoryModal(true)}
-                  createLabel={t('products.addNewCategory')}
-                  value={categoryId?.toString() || ''}
-                  onChange={(value) => {
-                    setCategoryId(value ? parseInt(value) : null);
-                    const category = categories.find((entry) => String(entry.id) === value);
-                    applyDefaults(category);
-                  }}
-                  options={[
-                    { value: '', label: t('products.selectCategoryPlaceholder2') },
-                    ...categories
-                      .filter((cat) => cat.is_active)
-                      .map((cat) => ({ value: cat.id.toString(), label: cat.name })),
-                  ]}
-                  placeholder={t('products.selectCategoryPlaceholder2')}
-                />
-
-                <IonButton
-                  expand="block"
-                  fill="outline"
-                  size="small"
-                  onClick={() => setShowCategoryModal(true)}
-                  style={{ marginTop: '8px' }}
-                >
-                  <IonIcon slot="start" icon={add} />
-                  {t('products.addNewCategory')}
+        <IonModal
+          onDidPresent={(event) => focusFirstEditable(event.target as HTMLElement)}
+          isOpen={showModal}
+          onDidDismiss={() => {
+            setShowModal(false);
+            resetForm();
+          }}
+        >
+          <IonHeader>
+            <IonToolbar>
+              <IonTitle>{t('products.createProductTitle')}</IonTitle>
+              <IonButtons slot="end">
+                <IonButton aria-label={t('common.close')} onClick={() => setShowModal(false)}>
+                  <IonIcon icon={close} />
                 </IonButton>
+              </IonButtons>
+            </IonToolbar>
+          </IonHeader>
+          <IonContent>
+            <div style={{ padding: '16px' }}>
+              <Input
+                label={t('products.productNameLabel')}
+                value={productName}
+                onChange={setProductName}
+                placeholder={t('products.enterProductNamePlaceholder')}
+              />
 
-                <h3
-                  style={{
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    marginTop: '24px',
-                    marginBottom: '8px',
-                  }}
-                >
-                  {t('products.variantDetailsHeading')}
-                </h3>
+              <Input
+                label={t('products.imageUrlLabel')}
+                value={imageUrl}
+                onChange={setImageUrl}
+                placeholder={t('products.imageUrlPlaceholder')}
+                inputMode="text"
+              />
+              {imageUrl && (
+                <img
+                  src={imageUrl}
+                  alt={productName || t('products.imagePreview')}
+                  style={{ width: 120, height: 120, objectFit: 'contain', borderRadius: 12 }}
+                />
+              )}
 
+              <SearchableSelect
+                onSearch={setCategorySearch}
+                label={t('products.categoryLabel')}
+                onCreate={() => setShowCategoryModal(true)}
+                createLabel={t('products.addNewCategory')}
+                value={categoryId?.toString() || ''}
+                onChange={(value) => {
+                  setCategoryId(value ? parseInt(value) : null);
+                  const category = categories.find((entry) => String(entry.id) === value);
+                  applyDefaults(category);
+                }}
+                options={[
+                  { value: '', label: t('products.selectCategoryPlaceholder2') },
+                  ...categories
+                    .filter((cat) => cat.is_active)
+                    .map((cat) => ({ value: cat.id.toString(), label: cat.name })),
+                ]}
+                placeholder={t('products.selectCategoryPlaceholder2')}
+              />
+
+              <IonButton
+                expand="block"
+                fill="outline"
+                size="small"
+                onClick={() => setShowCategoryModal(true)}
+                style={{ marginTop: '8px' }}
+              >
+                <IonIcon slot="start" icon={add} />
+                {t('products.addNewCategory')}
+              </IonButton>
+
+              <h3
+                style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  marginTop: '24px',
+                  marginBottom: '8px',
+                }}
+              >
+                {t('products.variantDetailsHeading')}
+              </h3>
+
+              <Input
+                label={t('products.brandLabel')}
+                value={brand}
+                onChange={setBrand}
+                placeholder={t('products.enterBrandPlaceholder')}
+              />
+              <Input
+                label={t('products.sizeLabel')}
+                value={size}
+                onChange={setSize}
+                placeholder={t('products.sizePlaceholder')}
+              />
+
+              <Select
+                label={t('products.packagingLabel')}
+                value={packaging || ''}
+                onChange={(value) => setPackaging(value || null)}
+                placeholder={t('products.selectPackagingPlaceholder')}
+                options={PACKAGING_OPTIONS}
+              />
+
+              <Input
+                label={t('products.sellingPriceLabel')}
+                type="number"
+                value={price}
+                onChange={setPrice}
+                placeholder={t('products.enterPricePlaceholder')}
+              />
+              <Input
+                label={t('products.purchaseCostLabel')}
+                value={purchasePrice}
+                onChange={setPurchasePrice}
+                type="number"
+                min={0}
+                step="0.01"
+              />
+              <Input
+                label={t('products.mrpPriceLabel')}
+                type="number"
+                value={mrpPrice}
+                onChange={setMrpPrice}
+                placeholder={t('products.enterMrpPlaceholder')}
+              />
+              <Input
+                label={t('products.skuLabel')}
+                value={sku}
+                onChange={setSku}
+                placeholder={t('products.enterSKUCode')}
+              />
+
+              <details className="product-tax-details" open>
+                <summary>{t('taxFields.productDetails')}</summary>
+                <p>{t('taxFields.productDetailsHint')}</p>
                 <Input
-                  label={t('products.brandLabel')}
-                  value={brand}
-                  onChange={setBrand}
-                  placeholder={t('products.enterBrandPlaceholder')}
+                  label={t('taxFields.hsnCode')}
+                  value={hsnCode}
+                  onChange={setHsnCode}
+                  maxLength={8}
+                  inputMode="numeric"
                 />
                 <Input
-                  label={t('products.sizeLabel')}
-                  value={size}
-                  onChange={setSize}
-                  placeholder={t('products.sizePlaceholder')}
-                />
-
-                <Select
-                  label={t('products.packagingLabel')}
-                  value={packaging || ''}
-                  onChange={(value) => setPackaging(value || null)}
-                  placeholder={t('products.selectPackagingPlaceholder')}
-                  options={PACKAGING_OPTIONS}
-                />
-
-                <Input
-                  label={t('products.sellingPriceLabel')}
-                  type="number"
-                  value={price}
-                  onChange={setPrice}
-                  placeholder={t('products.enterPricePlaceholder')}
-                />
-                <Input
-                  label={t('products.purchaseCostLabel')}
-                  value={purchasePrice}
-                  onChange={setPurchasePrice}
+                  label={t('products.gstLabel')}
                   type="number"
                   min={0}
+                  max={100}
                   step="0.01"
+                  inputMode="decimal"
+                  value={gstPercent}
+                  onChange={setGstPercent}
+                  placeholder={t('products.enterGSTPercentage')}
+                />
+                <Select
+                  label={t('taxFields.uqcCode')}
+                  value={uqcCode}
+                  onChange={setUqcCode}
+                  options={[
+                    { value: '', label: t('common.notAvailable') },
+                    ...[
+                      'BAG',
+                      'BAL',
+                      'BDL',
+                      'BOX',
+                      'BTL',
+                      'CTN',
+                      'DOZ',
+                      'GMS',
+                      'KGS',
+                      'LTR',
+                      'MLT',
+                      'MTR',
+                      'NOS',
+                      'PAC',
+                      'PCS',
+                      'SET',
+                    ].map((value) => ({ value, label: value })),
+                  ]}
                 />
                 <Input
-                  label={t('products.mrpPriceLabel')}
+                  label={t('taxFields.unitLabel')}
+                  value={unitLabel}
+                  onChange={setUnitLabel}
+                  maxLength={30}
+                />
+                <Input
+                  label={t('taxFields.uqcQuantityFactor')}
+                  value={uqcQuantityFactor}
+                  onChange={setUqcQuantityFactor}
                   type="number"
-                  value={mrpPrice}
-                  onChange={setMrpPrice}
-                  placeholder={t('products.enterMrpPlaceholder')}
+                  inputMode="decimal"
+                  min={0.001}
+                  max={1_000_000}
+                  step="0.001"
+                  error={
+                    uqcQuantityFactor && !parseOptionalUqcQuantityFactor(uqcQuantityFactor).valid
+                      ? t('taxFields.uqcQuantityFactorInvalid')
+                      : undefined
+                  }
                 />
-                <Input
-                  label={t('products.skuLabel')}
-                  value={sku}
-                  onChange={setSku}
-                  placeholder={t('products.enterSKUCode')}
-                />
+                <p className="product-tax-field-hint">{t('taxFields.uqcQuantityFactorHint')}</p>
+              </details>
 
-                <details className="product-tax-details" open>
-                  <summary>{t('taxFields.productDetails')}</summary>
-                  <p>{t('taxFields.productDetailsHint')}</p>
-                  <Input
-                    label={t('taxFields.hsnCode')}
-                    value={hsnCode}
-                    onChange={setHsnCode}
-                    maxLength={8}
-                    inputMode="numeric"
-                  />
-                  <Input
-                    label={t('products.gstLabel')}
-                    type="number"
-                    min={0}
-                    max={100}
-                    step="0.01"
-                    inputMode="decimal"
-                    value={gstPercent}
-                    onChange={setGstPercent}
-                    placeholder={t('products.enterGSTPercentage')}
-                  />
-                  <Select
-                    label={t('taxFields.uqcCode')}
-                    value={uqcCode}
-                    onChange={setUqcCode}
-                    options={[
-                      { value: '', label: t('common.notAvailable') },
-                      ...[
-                        'BAG',
-                        'BAL',
-                        'BDL',
-                        'BOX',
-                        'BTL',
-                        'CTN',
-                        'DOZ',
-                        'GMS',
-                        'KGS',
-                        'LTR',
-                        'MLT',
-                        'MTR',
-                        'NOS',
-                        'PAC',
-                        'PCS',
-                        'SET',
-                      ].map((value) => ({ value, label: value })),
-                    ]}
-                  />
-                  <Input
-                    label={t('taxFields.unitLabel')}
-                    value={unitLabel}
-                    onChange={setUnitLabel}
-                    maxLength={30}
-                  />
-                  <Input
-                    label={t('taxFields.uqcQuantityFactor')}
-                    value={uqcQuantityFactor}
-                    onChange={setUqcQuantityFactor}
-                    type="number"
-                    inputMode="decimal"
-                    min={0.001}
-                    max={1_000_000}
-                    step="0.001"
-                    error={
-                      uqcQuantityFactor && !parseOptionalUqcQuantityFactor(uqcQuantityFactor).valid
-                        ? t('taxFields.uqcQuantityFactorInvalid')
-                        : undefined
-                    }
-                  />
-                  <p className="product-tax-field-hint">{t('taxFields.uqcQuantityFactorHint')}</p>
-                </details>
-
-                <div style={{ marginTop: '24px' }}>
-                  <Button
-                    onClick={handleCreateProduct}
-                    disabled={creating || creatingVariant || !productName || !price}
-                    loading={creating || creatingVariant}
-                  >
-                    {t('products.createProductButton')}
-                  </Button>
-                </div>
+              <div style={{ marginTop: '24px' }}>
+                <Button
+                  onClick={handleCreateProduct}
+                  disabled={creating || creatingVariant || !productName || !price}
+                  loading={creating || creatingVariant}
+                >
+                  {t('products.createProductButton')}
+                </Button>
               </div>
-            </IonContent>
-          </IonModal>
-        )}
+            </div>
+          </IonContent>
+        </IonModal>
 
-        {showTaxWorkspace && (
-          <IonModal
-            ref={taxModal}
-            className="product-tax-modal"
-            isOpen
-            backdropDismiss={false}
-            canDismiss={(_data, role) => Promise.resolve(role === 'confirmed')}
-            onDidDismiss={() => setShowTaxWorkspace(false)}
-          >
-            <IonContent>
-              <Suspense fallback={<p>{t('common.loading')}</p>}>
-                <ProductTaxWorkspace
-                  onClose={() => {
-                    void taxModal.current?.dismiss(undefined, 'confirmed');
-                  }}
-                />
-              </Suspense>
-            </IonContent>
-          </IonModal>
-        )}
+        <IonModal
+          onDidPresent={(event) => focusFirstEditable(event.target as HTMLElement)}
+          ref={taxModal}
+          className="product-tax-modal"
+          isOpen={showTaxWorkspace}
+          backdropDismiss={false}
+          canDismiss={(_data, role) => Promise.resolve(role === 'confirmed')}
+          onDidDismiss={() => setShowTaxWorkspace(false)}
+        >
+          <IonContent>
+            <Suspense fallback={<p>{t('common.loading')}</p>}>
+              <ProductTaxWorkspace
+                onClose={() => {
+                  void taxModal.current?.dismiss(undefined, 'confirmed');
+                }}
+              />
+            </Suspense>
+          </IonContent>
+        </IonModal>
         {/* Add Category Modal */}
         <AddCategoryModal
           isOpen={showCategoryModal}

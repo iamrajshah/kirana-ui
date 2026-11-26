@@ -323,6 +323,7 @@ describe('protected route configuration', () => {
       [ROUTES.PURCHASE_IMPORT, 'purchases'],
       [ROUTES.EXPIRY_ALERTS, 'inventory'],
       [ROUTES.GST_REPORTS, 'reports'],
+      [ROUTES.SETTINGS, 'settings'],
       [ROUTES.DASHBOARD, 'dashboard'],
       [ROUTES.BILLING, 'billing'],
       [ROUTES.CUSTOMERS, 'customers'],

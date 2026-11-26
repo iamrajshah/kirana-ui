@@ -38,6 +38,7 @@ export const ROUTES = {
   CATEGORIES: '/categories',
   IMPORT_EXPORT: '/import-export',
   PROFILE: '/profile',
+  SETTINGS: '/settings',
   CHANGE_PASSWORD: '/change-password',
   ABOUT: '/about',
   PLATFORM_LOGIN: '/platform/login',

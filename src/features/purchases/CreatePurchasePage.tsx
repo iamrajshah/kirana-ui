@@ -1,3 +1,5 @@
+import { focusFirstEditable } from '@components/keyboardNavigation';
+import { useDebouncedValue } from '@hooks/useDebouncedValue';
 import { SelectionControl, SelectionOption } from '@components/SelectionControl';
 import { useDeviceWriteAccess } from '@core/commercial/useDeviceWriteAccess';
 import { LazyQuickPartyCreate as QuickPartyCreate } from '@components/LazyQuickCreate';
@@ -37,7 +39,7 @@ import {
   useLazySearchVariantsQuery,
 } from '../../core/api/productApi';
 import { SearchBar, Input, Button, EmptyState } from '../../components';
-import { formatCurrency, debounce } from '@utils/helpers';
+import { formatCurrency } from '@utils/helpers';
 import notificationService from '@core/services/notificationService';
 import { ROUTES } from '@core/constants';
 import {
@@ -103,11 +105,16 @@ const CreatePurchasePage: React.FC = () => {
   const [createPurchase, { isLoading: creating }] = useCreatePurchaseMutation();
 
   const suppliers = useMemo(() => suppliersData?.data || [], [suppliersData]);
-  const variants = variantsData?.data || [];
+  const variants = (variantsData?.data || []).slice(0, 20);
   const firms = useMemo(() => firmsData?.data.firms || [], [firmsData]);
 
   // Form state
+  const productSearchRef = useRef<HTMLIonSearchbarElement>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [productHighlight, setProductHighlight] = useState(0);
+  const searchReady =
+    searchTerm.trim().length >= 2 || (searchTerm.length > 0 && !searchTerm.trim());
+  const debouncedSearch = useDebouncedValue(searchTerm, 200);
   const [cart, setCart] = useState<CartItem[]>([]);
   const currentCart = useRef(cart);
   currentCart.current = cart;
@@ -151,12 +158,14 @@ const CreatePurchasePage: React.FC = () => {
   });
   const selectedSupplier = suppliers.find((supplier) => supplier.id === selectedSupplierId);
 
-  // Debounced search
-  const handleSearch = debounce((term: string) => {
-    if (term.length >= 2) {
-      searchVariants({ search: term });
+  useEffect(() => {
+    if (
+      debouncedSearch.trim().length >= 2 ||
+      (debouncedSearch.length > 0 && !debouncedSearch.trim())
+    ) {
+      void searchVariants({ search: debouncedSearch.trim() });
     }
-  }, 300);
+  }, [debouncedSearch, searchVariants]);
 
   const addToCart = async (variant: BillingSearchVariant) => {
     setSearchTerm('');
@@ -573,10 +582,34 @@ const CreatePurchasePage: React.FC = () => {
         <IonCard>
           <IonCardContent>
             <SearchBar
+              searchRef={productSearchRef}
               value={searchTerm}
               onChange={(val) => {
                 setSearchTerm(val);
-                handleSearch(val);
+                setProductHighlight(0);
+              }}
+              debounce={0}
+              onKeyDown={(event) => {
+                if (event.nativeEvent.isComposing) return;
+                if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                  event.preventDefault();
+                  if (!searchTerm) setSearchTerm(' ');
+                  setProductHighlight((index) =>
+                    Math.max(
+                      0,
+                      Math.min(variants.length - 1, index + (event.key === 'ArrowDown' ? 1 : -1))
+                    )
+                  );
+                }
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  if (searchReady && !searchLoading && variants[productHighlight])
+                    void addToCart(variants[productHighlight]);
+                }
+                if (event.key === 'Escape') {
+                  event.preventDefault();
+                  setSearchTerm('');
+                }
               }}
               placeholder={t('purchases.searchProductsAdd')}
             />
@@ -592,10 +625,20 @@ const CreatePurchasePage: React.FC = () => {
               </IonText>
             )}
 
-            {searchTerm.length >= 2 && variants.length > 0 && (
+            {searchReady && variants.length > 0 && (
               <IonList>
-                {variants.map((variant) => (
-                  <IonItem key={variant.id} button onClick={() => void addToCart(variant)}>
+                {variants.map((variant, index) => (
+                  <IonItem
+                    key={variant.id}
+                    button
+                    role="option"
+                    aria-selected={index === productHighlight}
+                    style={{
+                      '--background':
+                        index === productHighlight ? 'var(--ion-color-light)' : undefined,
+                    }}
+                    onClick={() => void addToCart(variant)}
+                  >
                     <IonLabel>
                       <h3>{variant.product_name}</h3>
                       <p>{variant.sku}</p>
@@ -990,106 +1033,114 @@ const CreatePurchasePage: React.FC = () => {
         )}
 
         {/* Supplier Selection Modal */}
-        {showSupplierModal && (
-          <IonModal isOpen={true} onDidDismiss={() => setShowSupplierModal(false)}>
-            <IonHeader>
-              <IonToolbar>
-                <IonTitle>{t('purchases.selectSupplierTitle')}</IonTitle>
-                <IonButtons slot="end">
-                  <IonButton onClick={() => setShowSupplierModal(false)}>
-                    {t('purchases.close')}
-                  </IonButton>
-                </IonButtons>
-              </IonToolbar>
-            </IonHeader>
-            <IonContent>
-              <div className="ion-padding-horizontal ion-padding-top">
-                <SearchBar
-                  value={supplierSearch}
-                  onChange={(value) => {
-                    setSupplierSearch(value);
-                    setSupplierHighlight(0);
-                  }}
-                  debounce={0}
-                  onKeyDown={(event) => {
-                    if (event.nativeEvent.isComposing) return;
-                    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-                      event.preventDefault();
-                      setSupplierHighlight((index) =>
-                        Math.max(
-                          0,
-                          Math.min(
-                            filteredSuppliers.length - 1,
-                            index + (event.key === 'ArrowDown' ? 1 : -1)
-                          )
+        <IonModal
+          onDidPresent={(event) => focusFirstEditable(event.target as HTMLElement)}
+          isOpen={showSupplierModal}
+          onDidDismiss={() => {
+            setShowSupplierModal(false);
+            setSupplierSearch('');
+            setSupplierHighlight(0);
+            setQuickSupplier(false);
+            void productSearchRef.current?.setFocus?.();
+          }}
+        >
+          <IonHeader>
+            <IonToolbar>
+              <IonTitle>{t('purchases.selectSupplierTitle')}</IonTitle>
+              <IonButtons slot="end">
+                <IonButton onClick={() => setShowSupplierModal(false)}>
+                  {t('purchases.close')}
+                </IonButton>
+              </IonButtons>
+            </IonToolbar>
+          </IonHeader>
+          <IonContent>
+            <div className="ion-padding-horizontal ion-padding-top">
+              <SearchBar
+                value={supplierSearch}
+                onChange={(value) => {
+                  setSupplierSearch(value);
+                  setSupplierHighlight(0);
+                }}
+                debounce={0}
+                onKeyDown={(event) => {
+                  if (event.nativeEvent.isComposing) return;
+                  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    setSupplierHighlight((index) =>
+                      Math.max(
+                        0,
+                        Math.min(
+                          filteredSuppliers.length - 1,
+                          index + (event.key === 'ArrowDown' ? 1 : -1)
                         )
-                      );
-                    }
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      const supplier = filteredSuppliers[supplierHighlight];
-                      if (supplier) {
-                        setSelectedSupplierId(supplier.id);
-                        setFirmWasOverridden(false);
-                        setSelectedFirmId(resolvePurchaseFirmId(supplier, firms));
-                        setShowSupplierModal(false);
-                      }
-                    }
-                  }}
-                  placeholder={t('suppliers.searchSuppliers')}
-                />
-              </div>
-              <button
-                type="button"
-                className="min-h-touch px-4"
-                disabled={!supplierWrite}
-                onClick={() => setQuickSupplier(true)}
-              >
-                {t('suppliers.addSupplier')}
-              </button>
-              {quickSupplier && supplierWrite && (
-                <QuickPartyCreate
-                  kind="supplier"
-                  onCreated={(supplier) => {
-                    setSelectedSupplierId(supplier.id);
-                    setFirmWasOverridden(false);
-                    setSelectedFirmId(resolvePurchaseFirmId(supplier, firms));
-                    setQuickSupplier(false);
-                    setShowSupplierModal(false);
-                  }}
-                />
-              )}
-              <IonList>
-                {filteredSuppliers.map((supplier, index) => (
-                  <IonItem
-                    key={supplier.id}
-                    button
-                    onClick={() => {
+                      )
+                    );
+                  }
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    const supplier = filteredSuppliers[supplierHighlight];
+                    if (supplier) {
                       setSelectedSupplierId(supplier.id);
                       setFirmWasOverridden(false);
-                      const defaultFirmId = resolvePurchaseFirmId(supplier, firms);
-                      setSelectedFirmId(defaultFirmId);
+                      setSelectedFirmId(resolvePurchaseFirmId(supplier, firms));
                       setShowSupplierModal(false);
-                    }}
-                    color={
-                      selectedSupplierId === supplier.id || index === supplierHighlight
-                        ? 'light'
-                        : undefined
                     }
-                  >
-                    <IonLabel>
-                      <h2>{supplier.name}</h2>
-                      <p>{supplier.phone}</p>
-                    </IonLabel>
-                    {selectedSupplierId === supplier.id && (
-                      <IonIcon icon={checkmarkCircle} slot="end" color="success" />
-                    )}
-                  </IonItem>
-                ))}
-              </IonList>
-            </IonContent>
-          </IonModal>
-        )}
+                  }
+                }}
+                placeholder={t('suppliers.searchSuppliers')}
+              />
+            </div>
+            <button
+              type="button"
+              className="min-h-touch px-4"
+              disabled={!supplierWrite}
+              onClick={() => setQuickSupplier(true)}
+            >
+              {t('suppliers.addSupplier')}
+            </button>
+            {quickSupplier && supplierWrite && (
+              <QuickPartyCreate
+                kind="supplier"
+                onCreated={(supplier) => {
+                  setSelectedSupplierId(supplier.id);
+                  setFirmWasOverridden(false);
+                  setSelectedFirmId(resolvePurchaseFirmId(supplier, firms));
+                  setQuickSupplier(false);
+                  setShowSupplierModal(false);
+                }}
+              />
+            )}
+            <IonList>
+              {filteredSuppliers.map((supplier, index) => (
+                <IonItem
+                  key={supplier.id}
+                  button
+                  onClick={() => {
+                    setSelectedSupplierId(supplier.id);
+                    setFirmWasOverridden(false);
+                    const defaultFirmId = resolvePurchaseFirmId(supplier, firms);
+                    setSelectedFirmId(defaultFirmId);
+                    setShowSupplierModal(false);
+                  }}
+                  color={
+                    selectedSupplierId === supplier.id || index === supplierHighlight
+                      ? 'light'
+                      : undefined
+                  }
+                >
+                  <IonLabel>
+                    <h2>{supplier.name}</h2>
+                    <p>{supplier.phone}</p>
+                  </IonLabel>
+                  {selectedSupplierId === supplier.id && (
+                    <IonIcon icon={checkmarkCircle} slot="end" color="success" />
+                  )}
+                </IonItem>
+              ))}
+            </IonList>
+          </IonContent>
+        </IonModal>
       </IonContent>
     </IonPage>
   );

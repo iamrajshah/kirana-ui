@@ -175,6 +175,7 @@ export default function ProductTaxWorkspace({ onClose }: { onClose: () => void }
         <label>
           {t('common.search')}
           <input
+            type="search"
             value={search}
             disabled={dirty || busy}
             onChange={(event) => setSearch(event.target.value)}

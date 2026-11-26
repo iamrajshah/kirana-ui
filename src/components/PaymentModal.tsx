@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonModal,
   IonHeader,
@@ -49,6 +49,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   allowPartial = true,
 }) => {
   const { t } = useTranslation();
+  const attempted = useRef(false);
+  const confirmedPaidAmount = useRef(paidAmount);
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('CASH');
   const [amount, setAmount] = useState<string>('');
   const [reference, setReference] = useState('');
@@ -74,6 +76,23 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         ]
   );
   const [splitLocked, setSplitLocked] = useState(Boolean(initialSplitTenders?.length));
+
+  useEffect(() => {
+    if (confirmedPaidAmount.current !== paidAmount) {
+      confirmedPaidAmount.current = paidAmount;
+      attempted.current = false;
+    }
+    // Cancelled, unsubmitted entry is a new draft next time. Never erase an uncertain payment intent.
+    if (isOpen || attempted.current || initialSplitTenders?.length) return;
+    setPaymentMode('CASH');
+    setAmount('');
+    setReference('');
+    setPaymentType('full');
+    setSplitTenders([
+      { payment_mode: 'CASH', amount: '', reference_note: '' },
+      { payment_mode: 'UPI', amount: '', reference_note: '' },
+    ]);
+  }, [isOpen, initialSplitTenders, paidAmount]);
 
   const balanceAmount = invoiceAmount - paidAmount;
   const previousOutstanding = Math.max(0, previousBalance);
@@ -105,6 +124,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       }));
       setSplitLocked(true);
       try {
+        attempted.current = true;
         const outcome = await onSplitPayment(tenders);
         if (outcome === 'uncertain') return;
         if (outcome === 'rejected') {
@@ -139,6 +159,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     }
 
     try {
+      attempted.current = true;
       await onPayment(payAmount, paymentMode, reference || undefined);
 
       // Reset form

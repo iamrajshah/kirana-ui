@@ -75,6 +75,7 @@ export function SelectionControl({
       <SearchableSelect
         id={id}
         name={name}
+        hideLabel={!label}
         label={label ?? ariaLabel ?? interfaceOptions?.header ?? placeholder ?? ''}
         value={multiple ? (Array.isArray(value) ? value : []) : String(value ?? '')}
         multiple={multiple}

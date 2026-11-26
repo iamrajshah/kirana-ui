@@ -552,149 +552,148 @@ const SupplierLedgerPage: React.FC = () => {
         {/* Make Payment FAB */}
         {hasUpdatePermission && hasPayableFirmBalance(firmBalances) && (
           <IonFab vertical="bottom" horizontal="end" slot="fixed">
-            <IonFabButton onClick={() => setShowPaymentModal(true)}>
+            <IonFabButton
+              onClick={() => {
+                setAmount('');
+                setPaymentMode('CASH');
+                setNotes('');
+                setShowPaymentModal(true);
+              }}
+            >
               <IonIcon icon={cash} />
             </IonFabButton>
           </IonFab>
         )}
 
         {/* Payment Modal */}
-        {showPaymentModal && (
-          <IonModal isOpen={true} onDidDismiss={() => setShowPaymentModal(false)}>
-            <IonHeader>
-              <IonToolbar>
-                <IonTitle>{t('suppliers.ledger.makePayment')}</IonTitle>
-                <IonButtons slot="end">
-                  <IonButton onClick={() => setShowPaymentModal(false)}>
-                    <IonIcon icon={close} />
-                  </IonButton>
-                </IonButtons>
-              </IonToolbar>
-            </IonHeader>
-            <IonContent className="ion-padding">
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
-                  {t('suppliers.paymentFirm')}
-                </label>
-                <SelectionControl
-                  aria-label={t('suppliers.paymentFirm')}
-                  value={paymentFirmId}
-                  placeholder={t('suppliers.selectPaymentFirm')}
-                  onIonChange={(event) => {
-                    setPaymentFirmId(event.detail.value);
-                    setAmount('');
-                  }}
-                  interface="popover"
-                >
-                  {payableFirmBalances(firmBalances).map((item) => (
-                    <SelectionOption key={item.firm_id} value={item.firm_id}>
-                      {item.firm.display_name} · {formatCurrency(item.balance)}
-                    </SelectionOption>
-                  ))}
-                </SelectionControl>
-              </div>
-              <IonCard>
-                <IonCardContent>
-                  <h2 style={{ margin: '0 0 8px', color: 'var(--ion-color-danger)' }}>
-                    {t('suppliers.outstandingBalance')}: {formatCurrency(selectedFirmBalance)}
-                  </h2>
-                </IonCardContent>
-              </IonCard>
-
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-                <div style={{ flex: 1 }}>
-                  <Input
-                    label={t('suppliers.ledger.amount')}
-                    value={amount}
-                    onChange={setAmount}
-                    type="number"
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-                {paymentFirmId && selectedFirmBalance > 0 && (
-                  <IonButton
-                    onClick={() => setAmount(selectedFirmBalance.toString())}
-                    style={{ marginBottom: '0' }}
-                  >
-                    {t('suppliers.ledger.payFull')}
-                  </IonButton>
-                )}
-              </div>
-
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                  {t('suppliers.ledger.paymentMode')}
-                </label>
-                <SelectionControl
-                  value={paymentMode}
-                  onIonChange={(e) => setPaymentMode(e.detail.value as SupplierPaymentMode)}
-                  interface="popover"
-                  style={{
-                    border: '1px solid var(--ion-color-medium)',
-                    borderRadius: '8px',
-                    padding: '8px',
-                  }}
-                >
-                  <SelectionOption value="CASH">{t('suppliers.ledger.cash')}</SelectionOption>
-                  <SelectionOption value="UPI">{t('suppliers.ledger.upi')}</SelectionOption>
-                  <SelectionOption value="CARD">{t('suppliers.ledger.card')}</SelectionOption>
-                  <SelectionOption value="BANK">
-                    {t('suppliers.ledger.bankTransfer')}
-                  </SelectionOption>
-                </SelectionControl>
-              </div>
-
-              <Input
-                label={t('suppliers.ledger.notesOptional')}
-                value={notes}
-                onChange={setNotes}
-                placeholder={t('suppliers.ledger.addPaymentNotes')}
-              />
-
-              <Button
-                onClick={handleMakePayment}
-                loading={processingPayment}
-                disabled={!paymentFirmId || !amount || parseFloat(amount) <= 0}
-                fullWidth
-                size="large"
+        <IonModal isOpen={showPaymentModal} onDidDismiss={() => setShowPaymentModal(false)}>
+          <IonHeader>
+            <IonToolbar>
+              <IonTitle>{t('suppliers.ledger.makePayment')}</IonTitle>
+              <IonButtons slot="end">
+                <IonButton onClick={() => setShowPaymentModal(false)}>
+                  <IonIcon icon={close} />
+                </IonButton>
+              </IonButtons>
+            </IonToolbar>
+          </IonHeader>
+          <IonContent className="ion-padding">
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>
+                {t('suppliers.paymentFirm')}
+              </label>
+              <SelectionControl
+                aria-label={t('suppliers.paymentFirm')}
+                value={paymentFirmId}
+                placeholder={t('suppliers.selectPaymentFirm')}
+                onIonChange={(event) => {
+                  setPaymentFirmId(event.detail.value);
+                  setAmount('');
+                }}
+                interface="popover"
               >
-                {t('suppliers.ledger.recordPayment')}
-              </Button>
-            </IonContent>
-          </IonModal>
-        )}
+                {payableFirmBalances(firmBalances).map((item) => (
+                  <SelectionOption key={item.firm_id} value={item.firm_id}>
+                    {item.firm.display_name} · {formatCurrency(item.balance)}
+                  </SelectionOption>
+                ))}
+              </SelectionControl>
+            </div>
+            <IonCard>
+              <IonCardContent>
+                <h2 style={{ margin: '0 0 8px', color: 'var(--ion-color-danger)' }}>
+                  {t('suppliers.outstandingBalance')}: {formatCurrency(selectedFirmBalance)}
+                </h2>
+              </IonCardContent>
+            </IonCard>
+
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+              <div style={{ flex: 1 }}>
+                <Input
+                  label={t('suppliers.ledger.amount')}
+                  value={amount}
+                  onChange={setAmount}
+                  type="number"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+              {paymentFirmId && selectedFirmBalance > 0 && (
+                <IonButton
+                  onClick={() => setAmount(selectedFirmBalance.toString())}
+                  style={{ marginBottom: '0' }}
+                >
+                  {t('suppliers.ledger.payFull')}
+                </IonButton>
+              )}
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                {t('suppliers.ledger.paymentMode')}
+              </label>
+              <SelectionControl
+                value={paymentMode}
+                onIonChange={(e) => setPaymentMode(e.detail.value as SupplierPaymentMode)}
+                interface="popover"
+                style={{
+                  border: '1px solid var(--ion-color-medium)',
+                  borderRadius: '8px',
+                  padding: '8px',
+                }}
+              >
+                <SelectionOption value="CASH">{t('suppliers.ledger.cash')}</SelectionOption>
+                <SelectionOption value="UPI">{t('suppliers.ledger.upi')}</SelectionOption>
+                <SelectionOption value="CARD">{t('suppliers.ledger.card')}</SelectionOption>
+                <SelectionOption value="BANK">{t('suppliers.ledger.bankTransfer')}</SelectionOption>
+              </SelectionControl>
+            </div>
+
+            <Input
+              label={t('suppliers.ledger.notesOptional')}
+              value={notes}
+              onChange={setNotes}
+              placeholder={t('suppliers.ledger.addPaymentNotes')}
+            />
+
+            <Button
+              onClick={handleMakePayment}
+              loading={processingPayment}
+              disabled={!paymentFirmId || !amount || parseFloat(amount) <= 0}
+              fullWidth
+              size="large"
+            >
+              {t('suppliers.ledger.recordPayment')}
+            </Button>
+          </IonContent>
+        </IonModal>
       </IonContent>
 
       {/* Bank Account Management Modal */}
-      {showBankAccountsModal && (
-        <BankAccountModal
-          isOpen={showBankAccountsModal}
-          onClose={() => {
-            setShowBankAccountsModal(false);
-          }}
-          supplierId={id!}
-          bankAccounts={bankAccounts}
-          onAddClick={handleAddBankAccount}
-          onEditClick={handleEditBankAccount}
-          onDeleteClick={handleDeleteBankAccount}
-          onSetPrimaryClick={handleSetPrimary}
-        />
-      )}
+      <BankAccountModal
+        isOpen={showBankAccountsModal}
+        onClose={() => {
+          setShowBankAccountsModal(false);
+        }}
+        supplierId={id!}
+        bankAccounts={bankAccounts}
+        onAddClick={handleAddBankAccount}
+        onEditClick={handleEditBankAccount}
+        onDeleteClick={handleDeleteBankAccount}
+        onSetPrimaryClick={handleSetPrimary}
+      />
 
       {/* Bank Account Form Modal */}
-      {showBankAccountFormModal && (
-        <BankAccountFormModal
-          isOpen={showBankAccountFormModal}
-          onClose={() => {
-            setShowBankAccountFormModal(false);
-            setEditingBankAccount(null);
-          }}
-          onSubmit={handleBankAccountFormSubmit}
-          isLoading={creatingBankAccount || updatingBankAccount}
-          editingAccount={editingBankAccount}
-        />
-      )}
+      <BankAccountFormModal
+        isOpen={showBankAccountFormModal}
+        onClose={() => {
+          setShowBankAccountFormModal(false);
+          setEditingBankAccount(null);
+        }}
+        onSubmit={handleBankAccountFormSubmit}
+        isLoading={creatingBankAccount || updatingBankAccount}
+        editingAccount={editingBankAccount}
+      />
 
       {/* Delete Confirmation Alert */}
       <IonAlert

@@ -81,7 +81,8 @@ vi.mock('@ionic/react', () => {
     IonIcon: Container,
     IonFab: Container,
     IonFabButton: Container,
-    IonModal: Container,
+    IonModal: ({ children, isOpen }: PropsWithChildren<{ isOpen?: boolean }>) =>
+      isOpen ? <div>{children}</div> : null,
     IonButtons: Container,
     IonToast: Container,
     IonHeader: Container,

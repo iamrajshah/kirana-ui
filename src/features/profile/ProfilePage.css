@@ -234,3 +234,28 @@
   color: var(--ion-color-primary-shade);
   border-radius: 0.4rem;
 }
+
+.shop-settings-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 10px 16px;
+}
+.shop-settings-tabs button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--ion-color-step-200, #dce6e1);
+  background: var(--ion-card-background, var(--ion-background-color));
+  color: var(--ion-text-color);
+  font-weight: 600;
+}
+.shop-settings-tabs button[aria-selected='true'] {
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  border-color: var(--ion-color-primary);
+}
+.shop-settings-tabs button:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 3px;
+}

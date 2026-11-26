@@ -9,7 +9,7 @@ export const GettingStartedPage: React.FC = () => {
   const { t } = useTranslation();
   const history = useHistory();
   const steps = [
-    { key: 'profile', route: ROUTES.PROFILE },
+    { key: 'profile', route: ROUTES.SETTINGS },
     { key: 'products', route: ROUTES.PRODUCTS },
     { key: 'staff', route: ROUTES.USERS },
     { key: 'shift', route: ROUTES.SHIFTS },
